@@ -1,24 +1,33 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Smartphone } from 'lucide-react';
 
 const CTASection = () => {
   return (
     <section className="py-16 bg-vocab-teal text-white">
       <div className="container mx-auto px-4 text-center">
-        <h2 className="text-3xl md:text-4xl font-bold mb-4">
+        <h2 className="text-3xl md:text-4xl font-bold mb-4 font-poppins">
           Start sounding smarter today.
         </h2>
-        <p className="text-lg md:text-xl mb-8 max-w-2xl mx-auto opacity-90">
-          5 new words daily, straight to your WhatsApp. No effort, maximum impact.
+        <p className="text-lg md:text-xl mb-8 max-w-2xl mx-auto opacity-90 font-inter">
+          5 new words daily, straight to your WhatsApp. No boring lists. No studying. Just words that stick.
         </p>
-        <Button className="bg-white hover:bg-gray-100 text-vocab-teal text-lg group px-8 py-6 rounded-full transition-all hover:scale-105">
-          Get Daily Words on WhatsApp
-          <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-        </Button>
+        
+        <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-8">
+          <Button className="bg-white hover:bg-gray-100 text-vocab-teal text-lg group px-8 py-6 rounded-full transition-all hover:scale-105 w-full md:w-auto font-poppins">
+            Start 3-Day Free Trial
+            <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+          </Button>
+          
+          <Button className="bg-vocab-purple hover:bg-vocab-purple/90 text-white text-lg group px-8 py-6 rounded-full transition-all hover:scale-105 w-full md:w-auto font-poppins">
+            Go Pro – ₹149/month
+            <Smartphone className="ml-2 h-5 w-5" />
+          </Button>
+        </div>
+        
         <p className="mt-4 opacity-80 text-sm">
-          No credit card required to start. Cancel anytime.
+          No credit card required for trial. Cancel anytime.
         </p>
       </div>
     </section>
