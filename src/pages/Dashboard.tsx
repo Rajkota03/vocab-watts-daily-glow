@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import CategorySelection from '@/components/dashboard/CategorySelection';
 import WordHistory from '@/components/dashboard/WordHistory';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Dashboard = () => {
   // Pro user default state
@@ -15,6 +17,36 @@ const Dashboard = () => {
     phone_number: '+1234567890'
   });
   const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  // Check if user is authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        navigate('/login');
+        toast({
+          title: "Authentication required",
+          description: "Please login to access your dashboard",
+        });
+      }
+    };
+    
+    checkAuth();
+    
+    // Listen for auth changes
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_OUT' || !session) {
+          navigate('/login');
+        }
+      }
+    );
+    
+    return () => {
+      authSubscription.unsubscribe();
+    };
+  }, [navigate, toast]);
 
   const handleCategoryUpdate = (category: string) => {
     // Update local state for demo purposes

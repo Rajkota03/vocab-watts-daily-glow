@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Brain, Menu, X } from 'lucide-react';
+import { Brain, Menu, X, LogIn } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Navbar = () => {
@@ -45,8 +45,9 @@ const Navbar = () => {
           <a href="#pricing" className="text-gray-700 hover:text-vocab-teal transition-colors font-medium font-inter text-sm">
             Pricing
           </a>
-          <Link to="/dashboard" className="text-gray-700 hover:text-vocab-teal transition-colors font-medium font-inter text-sm">
-            Dashboard
+          <Link to="/login" className="text-gray-700 hover:text-vocab-teal transition-colors font-medium font-inter text-sm flex items-center gap-1">
+            <LogIn className="h-4 w-4" />
+            Login
           </Link>
           <div className="flex gap-3">
             <Button className="vocab-btn-secondary" onClick={scrollToSignup}>
@@ -80,8 +81,9 @@ const Navbar = () => {
               <a href="#pricing" className="py-2 px-4 text-gray-700 hover:bg-gray-50 rounded-lg font-medium font-inter" onClick={toggleMenu}>
                 Pricing
               </a>
-              <Link to="/dashboard" className="py-2 px-4 text-gray-700 hover:bg-gray-50 rounded-lg font-medium font-inter" onClick={toggleMenu}>
-                Dashboard
+              <Link to="/login" className="py-2 px-4 text-gray-700 hover:bg-gray-50 rounded-lg font-medium font-inter flex items-center gap-2" onClick={toggleMenu}>
+                <LogIn className="h-4 w-4" />
+                Login
               </Link>
               <div className="pt-2 space-y-2">
                 <Button className="vocab-btn-secondary w-full justify-center" onClick={scrollToSignup}>
