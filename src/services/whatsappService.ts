@@ -18,7 +18,7 @@ export interface SendWordsRequest {
 // Define types based on our database schema
 type VocabWord = Database['public']['Tables']['vocabulary_words']['Row'];
 
-// Demo word lists by category
+// Demo word lists by category - now with all required properties
 const wordsByCategory: Record<string, VocabWord[]> = {
   business: [
     { 
@@ -64,83 +64,128 @@ const wordsByCategory: Record<string, VocabWord[]> = {
   ],
   academic: [
     { 
+      id: '6',
       word: "Cogent", 
       definition: "Clear, logical, and convincing", 
-      example: "She made a cogent argument during the debate." 
+      example: "She made a cogent argument during the debate.",
+      category: "academic",
+      created_at: new Date().toISOString()
     },
     { 
+      id: '7',
       word: "Empirical", 
       definition: "Based on observation or experience rather than theory", 
-      example: "The study provides empirical evidence supporting the hypothesis." 
+      example: "The study provides empirical evidence supporting the hypothesis.",
+      category: "academic",
+      created_at: new Date().toISOString()
     },
     { 
+      id: '8',
       word: "Paradigm", 
       definition: "A typical example or pattern of something", 
-      example: "This discovery represents a paradigm shift in our understanding." 
+      example: "This discovery represents a paradigm shift in our understanding.",
+      category: "academic",
+      created_at: new Date().toISOString()
     },
     { 
+      id: '9',
       word: "Ubiquitous", 
       definition: "Present, appearing, or found everywhere", 
-      example: "Smartphones have become ubiquitous in modern society." 
+      example: "Smartphones have become ubiquitous in modern society.",
+      category: "academic",
+      created_at: new Date().toISOString()
     },
     { 
+      id: '10',
       word: "Elucidate", 
       definition: "Make clear; explain", 
-      example: "The professor elucidated the complex theory with simple examples." 
+      example: "The professor elucidated the complex theory with simple examples.",
+      category: "academic",
+      created_at: new Date().toISOString()
     }
   ],
   creative: [
     { 
+      id: '11',
       word: "Ephemeral", 
       definition: "Lasting for a very short time", 
-      example: "The artist creates ephemeral installations that exist only for a day." 
+      example: "The artist creates ephemeral installations that exist only for a day.",
+      category: "creative",
+      created_at: new Date().toISOString()
     },
     { 
+      id: '12',
       word: "Serendipity", 
       definition: "The occurrence of events by chance in a beneficial way", 
-      example: "Their meeting was pure serendipity; now they're business partners." 
+      example: "Their meeting was pure serendipity; now they're business partners.",
+      category: "creative",
+      created_at: new Date().toISOString()
     },
     { 
+      id: '13',
       word: "Mellifluous", 
       definition: "Sweet or musical; pleasant to hear", 
-      example: "The singer's mellifluous voice captivated the audience." 
+      example: "The singer's mellifluous voice captivated the audience.",
+      category: "creative",
+      created_at: new Date().toISOString()
     },
     { 
+      id: '14',
       word: "Quintessential", 
       definition: "Representing the most perfect example of a quality", 
-      example: "This cafe is the quintessential Paris experience." 
+      example: "This cafe is the quintessential Paris experience.",
+      category: "creative",
+      created_at: new Date().toISOString()
     },
     { 
+      id: '15',
       word: "Ethereal", 
       definition: "Extremely delicate and light in a way that seems not of this world", 
-      example: "The painting had an ethereal quality, seeming to glow from within." 
+      example: "The painting had an ethereal quality, seeming to glow from within.",
+      category: "creative",
+      created_at: new Date().toISOString()
     }
   ],
   general: [
     { 
+      id: '16',
       word: "Eloquent", 
       definition: "Fluent or persuasive in speaking or writing", 
-      example: "Her eloquent speech moved the entire audience." 
+      example: "Her eloquent speech moved the entire audience.",
+      category: "general",
+      created_at: new Date().toISOString()
     },
     { 
+      id: '17',
       word: "Resilient", 
       definition: "Able to withstand or recover quickly from difficult conditions", 
-      example: "Children are remarkably resilient in the face of challenges." 
+      example: "Children are remarkably resilient in the face of challenges.",
+      category: "general",
+      created_at: new Date().toISOString()
     },
     { 
+      id: '18',
       word: "Meticulous", 
       definition: "Showing great attention to detail; very careful and precise", 
-      example: "He's known for his meticulous research and preparation." 
+      example: "He's known for his meticulous research and preparation.",
+      category: "general",
+      created_at: new Date().toISOString()
     },
     { 
+      id: '19',
       word: "Pragmatic", 
       definition: "Dealing with things sensibly and realistically", 
-      example: "We need a pragmatic approach to solve this problem." 
+      example: "We need a pragmatic approach to solve this problem.",
+      category: "general",
+      created_at: new Date().toISOString()
     },
     { 
+      id: '20',
       word: "Benevolent", 
       definition: "Well meaning and kindly", 
-      example: "The benevolent organization provides food and shelter to those in need." 
+      example: "The benevolent organization provides food and shelter to those in need.",
+      category: "general",
+      created_at: new Date().toISOString()
     }
   ]
 };
