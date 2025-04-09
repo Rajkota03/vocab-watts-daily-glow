@@ -1,3 +1,4 @@
+
 import { toast } from "@/components/ui/use-toast";
 
 export interface WordData {
@@ -20,6 +21,12 @@ export const sendVocabWords = async (request: SendWordsRequest): Promise<boolean
   try {
     console.log("Sending vocabulary words via WhatsApp", request);
     
+    // Validate phone number
+    if (!request.phoneNumber || request.phoneNumber.trim().length < 10) {
+      console.error("Invalid phone number:", request.phoneNumber);
+      return false;
+    }
+    
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     
@@ -33,6 +40,7 @@ export const sendVocabWords = async (request: SendWordsRequest): Promise<boolean
     // For example: await whatsappBusinessClient.sendMessage(request.phoneNumber, message);
     
     console.log("WhatsApp message content:", message);
+    console.log("Message successfully sent to:", request.phoneNumber);
     
     // Simulate successful API call
     return true;

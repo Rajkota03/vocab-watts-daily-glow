@@ -13,6 +13,7 @@ const SignupForm = () => {
   const [isPro, setIsPro] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState(1);
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,22 +31,32 @@ const SignupForm = () => {
         return;
       }
       
+      console.log("Submitting form with:", { phoneNumber, category, isPro });
+      
       // Send vocabulary words via WhatsApp
-      const success = await sendVocabWords({
+      const result = await sendVocabWords({
         phoneNumber,
         category: isPro ? category : undefined,
         isPro
       });
       
-      if (success) {
+      console.log("Result from sendVocabWords:", result);
+      
+      if (result) {
+        setSuccess(true);
         toast({
           title: "You're all set!",
           description: "You'll receive your first words shortly on WhatsApp.",
         });
-        setPhoneNumber('');
-        setCategory('');
-        setStep(1);
-        setIsPro(false);
+        
+        // Reset form after success
+        setTimeout(() => {
+          setPhoneNumber('');
+          setCategory('');
+          setStep(1);
+          setIsPro(false);
+          setSuccess(false);
+        }, 3000);
       } else {
         toast({
           title: "Something went wrong",
@@ -64,6 +75,35 @@ const SignupForm = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Show success message if form was submitted successfully
+  if (success) {
+    return (
+      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md mx-auto border border-gray-100 relative">
+        <div className="text-center">
+          <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+            <CheckCircle className="h-8 w-8 text-green-600" />
+          </div>
+          <h3 className="text-2xl font-bold mb-2">Success!</h3>
+          <p className="text-gray-600 mb-6">
+            Your first vocabulary words will be sent to your WhatsApp shortly.
+          </p>
+          <Button 
+            onClick={() => {
+              setPhoneNumber('');
+              setCategory('');
+              setStep(1);
+              setIsPro(false);
+              setSuccess(false);
+            }}
+            className="vocab-btn"
+          >
+            Sign up another number
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md mx-auto border border-gray-100 relative">
@@ -115,8 +155,18 @@ const SignupForm = () => {
               <Button 
                 type="button" 
                 className="vocab-btn w-full py-6 h-auto text-base"
-                disabled={!phoneNumber}
-                onClick={() => setStep(2)}
+                disabled={!phoneNumber || phoneNumber.trim().length < 10}
+                onClick={() => {
+                  if(phoneNumber && phoneNumber.trim().length >= 10) {
+                    setStep(2);
+                  } else {
+                    toast({
+                      title: "Invalid phone number",
+                      description: "Please enter a valid WhatsApp number.",
+                      variant: "destructive"
+                    });
+                  }
+                }}
               >
                 Continue
               </Button>
@@ -217,12 +267,12 @@ const SignupForm = () => {
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
                       Processing...
                     </>
                   ) : (
                     <>
-                      <Send className="h-4 w-4" />
+                      <Send className="h-4 w-4 mr-2" />
                       {isPro ? 'Start Pro Subscription' : 'Start Free Trial'}
                     </>
                   )}
