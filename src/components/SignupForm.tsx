@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
-import { LockKeyhole, Sparkles, Clock, CheckCircle, Info } from 'lucide-react';
+import { LockKeyhole, Sparkles, Clock, CheckCircle, Info, Send, Loader2 } from 'lucide-react';
+import { sendVocabWords } from '@/services/whatsappService';
 
 const SignupForm = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -13,21 +14,55 @@ const SignupForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState(1);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "You're all set!",
-        description: "You'll receive your first words shortly on WhatsApp.",
+    try {
+      // Validate phone number (basic validation)
+      if (!phoneNumber.trim() || phoneNumber.length < 10) {
+        toast({
+          title: "Invalid phone number",
+          description: "Please enter a valid WhatsApp number.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Send vocabulary words via WhatsApp
+      const success = await sendVocabWords({
+        phoneNumber,
+        category: isPro ? category : undefined,
+        isPro
       });
+      
+      if (success) {
+        toast({
+          title: "You're all set!",
+          description: "You'll receive your first words shortly on WhatsApp.",
+        });
+        setPhoneNumber('');
+        setCategory('');
+        setStep(1);
+        setIsPro(false);
+      } else {
+        toast({
+          title: "Something went wrong",
+          description: "We couldn't process your request. Please try again later.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error sending WhatsApp message:', error);
+      toast({
+        title: "Service error",
+        description: "We encountered an error while processing your request. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
       setIsSubmitting(false);
-      setPhoneNumber('');
-      setCategory('');
-      setStep(1);
-    }, 1500);
+    }
   };
 
   return (
@@ -180,7 +215,17 @@ const SignupForm = () => {
                   className={isPro ? "vocab-btn flex-1" : "vocab-btn-secondary flex-1"}
                   disabled={isSubmitting || (isPro && !category)}
                 >
-                  {isSubmitting ? 'Processing...' : isPro ? 'Start Pro Subscription' : 'Start Free Trial'}
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      {isPro ? 'Start Pro Subscription' : 'Start Free Trial'}
+                    </>
+                  )}
                 </Button>
               </div>
               

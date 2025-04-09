@@ -7,6 +7,14 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  
+  const scrollToSignup = () => {
+    const signupSection = document.querySelector('section:nth-of-type(5)');
+    if (signupSection) {
+      signupSection.scrollIntoView({ behavior: 'smooth' });
+      setIsMenuOpen(false);
+    }
+  };
 
   return (
     <nav className="fixed top-0 w-full bg-white bg-opacity-95 backdrop-blur-lg z-50 shadow-sm border-b border-gray-100">
@@ -37,10 +45,19 @@ const Navbar = () => {
             Pricing
           </a>
           <div className="flex gap-3">
-            <Button className="vocab-btn-secondary">
+            <Button className="vocab-btn-secondary" onClick={scrollToSignup}>
               Start Free Trial
             </Button>
-            <Button className="vocab-btn">
+            <Button className="vocab-btn" onClick={() => {
+              scrollToSignup();
+              // Set Pro mode in signup form by triggering a click on the "Switch to Pro" button after a delay
+              setTimeout(() => {
+                const switchToProButton = document.querySelector('button.text-xs.text-vocab-teal.underline');
+                if (switchToProButton) {
+                  (switchToProButton as HTMLButtonElement).click();
+                }
+              }, 100);
+            }}>
               Go Pro
             </Button>
           </div>
@@ -60,10 +77,19 @@ const Navbar = () => {
                 Pricing
               </a>
               <div className="pt-2 space-y-2">
-                <Button className="vocab-btn-secondary w-full justify-center">
+                <Button className="vocab-btn-secondary w-full justify-center" onClick={scrollToSignup}>
                   Start Free Trial
                 </Button>
-                <Button className="vocab-btn w-full justify-center">
+                <Button className="vocab-btn w-full justify-center" onClick={() => {
+                  scrollToSignup();
+                  // Set Pro mode in signup form by triggering a click on the "Switch to Pro" button after a delay
+                  setTimeout(() => {
+                    const switchToProButton = document.querySelector('button.text-xs.text-vocab-teal.underline');
+                    if (switchToProButton) {
+                      (switchToProButton as HTMLButtonElement).click();
+                    }
+                  }, 100);
+                }}>
                   Go Pro
                 </Button>
               </div>

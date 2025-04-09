@@ -9,6 +9,7 @@ import Testimonials from '@/components/Testimonials';
 import CTASection from '@/components/CTASection';
 import Footer from '@/components/Footer';
 import SignupForm from '@/components/SignupForm';
+import WhatsAppComparison from '@/components/WhatsAppComparison';
 
 const Index = () => {
   return (
@@ -20,6 +21,14 @@ const Index = () => {
         <HeroSection />
         <HowItWorks />
         <SampleWords />
+        
+        {/* WhatsApp Preview Section */}
+        <section className="py-16 bg-gradient-to-br from-white to-gray-50">
+          <div className="container mx-auto px-4">
+            <WhatsAppComparison />
+          </div>
+        </section>
+        
         <Pricing />
         <Testimonials />
         
