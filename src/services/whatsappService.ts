@@ -1,13 +1,10 @@
 
-import { toast } from "@/components/ui/use-toast";
-
-export interface WordData {
-  word: string;
-  pronunciation: string;
-  meaning: string;
-  example: string;
-  category?: string;
-}
+/**
+ * WhatsApp Service - DEMO IMPLEMENTATION
+ * 
+ * This is a simulated WhatsApp message sender for demonstration purposes.
+ * In a production environment, this would integrate with the WhatsApp Business API.
+ */
 
 export interface SendWordsRequest {
   phoneNumber: string;
@@ -15,127 +12,213 @@ export interface SendWordsRequest {
   isPro: boolean;
 }
 
-// This would typically use a real WhatsApp Business API
-// For now, we'll simulate the API call
+interface VocabWord {
+  word: string;
+  definition: string;
+  example: string;
+}
+
+// Demo word lists by category
+const wordsByCategory: Record<string, VocabWord[]> = {
+  business: [
+    { 
+      word: "Leverage", 
+      definition: "Use something to maximum advantage", 
+      example: "We can leverage our existing customer base to launch the new product." 
+    },
+    { 
+      word: "Synergy", 
+      definition: "Interaction of multiple elements that produces an effect greater than the sum of individual effects", 
+      example: "The merger created synergy between the marketing and product teams." 
+    },
+    { 
+      word: "Scalable", 
+      definition: "Able to be changed in size or scale", 
+      example: "We need a more scalable solution to handle increasing user demand." 
+    },
+    { 
+      word: "Robust", 
+      definition: "Strong and effective in all or most situations", 
+      example: "The company has built a robust infrastructure for its digital services." 
+    },
+    { 
+      word: "Pivot", 
+      definition: "A significant business strategy change", 
+      example: "The startup decided to pivot from B2C to B2B sales model." 
+    }
+  ],
+  academic: [
+    { 
+      word: "Cogent", 
+      definition: "Clear, logical, and convincing", 
+      example: "She made a cogent argument during the debate." 
+    },
+    { 
+      word: "Empirical", 
+      definition: "Based on observation or experience rather than theory", 
+      example: "The study provides empirical evidence supporting the hypothesis." 
+    },
+    { 
+      word: "Paradigm", 
+      definition: "A typical example or pattern of something", 
+      example: "This discovery represents a paradigm shift in our understanding." 
+    },
+    { 
+      word: "Ubiquitous", 
+      definition: "Present, appearing, or found everywhere", 
+      example: "Smartphones have become ubiquitous in modern society." 
+    },
+    { 
+      word: "Elucidate", 
+      definition: "Make clear; explain", 
+      example: "The professor elucidated the complex theory with simple examples." 
+    }
+  ],
+  creative: [
+    { 
+      word: "Ephemeral", 
+      definition: "Lasting for a very short time", 
+      example: "The artist creates ephemeral installations that exist only for a day." 
+    },
+    { 
+      word: "Serendipity", 
+      definition: "The occurrence of events by chance in a beneficial way", 
+      example: "Their meeting was pure serendipity; now they're business partners." 
+    },
+    { 
+      word: "Mellifluous", 
+      definition: "Sweet or musical; pleasant to hear", 
+      example: "The singer's mellifluous voice captivated the audience." 
+    },
+    { 
+      word: "Quintessential", 
+      definition: "Representing the most perfect example of a quality", 
+      example: "This cafe is the quintessential Paris experience." 
+    },
+    { 
+      word: "Ethereal", 
+      definition: "Extremely delicate and light in a way that seems not of this world", 
+      example: "The painting had an ethereal quality, seeming to glow from within." 
+    }
+  ],
+  general: [
+    { 
+      word: "Eloquent", 
+      definition: "Fluent or persuasive in speaking or writing", 
+      example: "Her eloquent speech moved the entire audience." 
+    },
+    { 
+      word: "Resilient", 
+      definition: "Able to withstand or recover quickly from difficult conditions", 
+      example: "Children are remarkably resilient in the face of challenges." 
+    },
+    { 
+      word: "Meticulous", 
+      definition: "Showing great attention to detail; very careful and precise", 
+      example: "He's known for his meticulous research and preparation." 
+    },
+    { 
+      word: "Pragmatic", 
+      definition: "Dealing with things sensibly and realistically", 
+      example: "We need a pragmatic approach to solve this problem." 
+    },
+    { 
+      word: "Benevolent", 
+      definition: "Well meaning and kindly", 
+      example: "The benevolent organization provides food and shelter to those in need." 
+    }
+  ]
+};
+
+// Default word list for non-Pro users
+const defaultWords: VocabWord[] = [
+  { 
+    word: "Ameliorate", 
+    definition: "Make something bad or unsatisfactory better", 
+    example: "The measures taken should ameliorate the situation." 
+  },
+  { 
+    word: "Brevity", 
+    definition: "Concise and exact use of words in writing or speech", 
+    example: "The speech was notable for its brevity and wit." 
+  },
+  { 
+    word: "Cacophony", 
+    definition: "A harsh, discordant mixture of sounds", 
+    example: "The cacophony of the city streets made it hard to hear the conversation." 
+  },
+  { 
+    word: "Diligent", 
+    definition: "Having or showing care and conscientiousness in one's work or duties", 
+    example: "The diligent student always completed assignments before the deadline." 
+  },
+  { 
+    word: "Eloquent", 
+    definition: "Fluent or persuasive in speaking or writing", 
+    example: "Her eloquent speech moved the entire audience." 
+  }
+];
+
+// Get sample words based on category
+const getSampleWords = (category?: string): VocabWord[] => {
+  if (!category) {
+    return defaultWords;
+  }
+  
+  return wordsByCategory[category] || defaultWords;
+};
+
+// Format words for WhatsApp message
+const formatWhatsAppMessage = (words: VocabWord[], isPro: boolean): string => {
+  const header = `🌟 *Today's VocabSpark Words* 🌟\n\n`;
+  
+  const formattedWords = words.map((word, index) => {
+    return `*${index + 1}. ${word.word}*\n` +
+           `Definition: ${word.definition}\n` +
+           `Example: _"${word.example}"_` +
+           (isPro ? '\n\n' : '\n');
+  }).join('\n');
+  
+  const footer = isPro 
+    ? '\n🚀 *Pro Subscription Active* - Thank you for supporting VocabSpark!'
+    : '\n👉 Upgrade to Pro for custom word categories and more features!';
+  
+  return header + formattedWords + footer;
+};
+
+/**
+ * Simulate sending vocabulary words via WhatsApp
+ * In a real application, this would connect to the WhatsApp Business API
+ */
 export const sendVocabWords = async (request: SendWordsRequest): Promise<boolean> => {
   try {
-    console.log("Sending vocabulary words via WhatsApp", request);
+    console.log("[DEMO] Sending vocabulary words via WhatsApp", request);
     
-    // Validate phone number
+    // Validate phone number (basic validation)
     if (!request.phoneNumber || request.phoneNumber.trim().length < 10) {
-      console.error("Invalid phone number:", request.phoneNumber);
+      console.error("[DEMO] Invalid phone number:", request.phoneNumber);
       return false;
     }
     
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Sample words to send (in a real app, these would come from a database)
+    // Get words based on category (or default words)
     const words = getSampleWords(request.category);
     
-    // Format the message
+    // Format message for WhatsApp
     const message = formatWhatsAppMessage(words, request.isPro);
     
-    // In a real implementation, you would use the WhatsApp Business API here
-    // For example: await whatsappBusinessClient.sendMessage(request.phoneNumber, message);
+    console.log("[DEMO] Would send the following message:", message);
+    console.log("[DEMO] To phone number:", request.phoneNumber);
     
-    console.log("WhatsApp message content:", message);
-    console.log("Message successfully sent to:", request.phoneNumber);
+    // In a real implementation, this would call the WhatsApp Business API
+    // Example: await whatsappBusinessApi.sendMessage(request.phoneNumber, message);
     
-    // Simulate successful API call
+    console.log("[DEMO] Successfully simulated sending message");
     return true;
   } catch (error) {
-    console.error("Failed to send WhatsApp message:", error);
+    console.error("[DEMO] Failed to simulate WhatsApp message:", error);
     return false;
   }
-};
-
-const getSampleWords = (category?: string): WordData[] => {
-  // In a real app, this would fetch from a database based on category
-  const allWords: Record<string, WordData[]> = {
-    business: [
-      {
-        word: "Arbitrage",
-        pronunciation: "/ˈɑːbɪtrɑːʒ/",
-        meaning: "The simultaneous buying and selling of assets to profit from price differences",
-        example: "He made millions through currency arbitrage."
-      },
-      {
-        word: "Synergy",
-        pronunciation: "/ˈsɪnərdʒi/",
-        meaning: "Interaction of elements that produces a combined effect greater than the sum of their separate effects",
-        example: "The merger created synergy between the two companies."
-      }
-    ],
-    academic: [
-      {
-        word: "Ephemeral",
-        pronunciation: "/ɪˈfem(ə)rəl/",
-        meaning: "Lasting for a very short time",
-        example: "The ephemeral nature of fashion trends makes them difficult to follow."
-      },
-      {
-        word: "Paradigm",
-        pronunciation: "/ˈparədaɪm/",
-        meaning: "A typical example or pattern of something",
-        example: "The scientific paradigm shifted after Einstein's discoveries."
-      }
-    ],
-    creative: [
-      {
-        word: "Juxtaposition",
-        pronunciation: "/ˌdʒʌkstəpəˈzɪʃ(ə)n/",
-        meaning: "The fact of two things being seen or placed close together with contrasting effect",
-        example: "The juxtaposition of bright colors creates visual interest in her paintings."
-      },
-      {
-        word: "Serendipity",
-        pronunciation: "/ˌserənˈdɪpɪti/",
-        meaning: "The occurrence of fortunate discoveries by accident",
-        example: "Finding that rare book was pure serendipity."
-      }
-    ],
-    general: [
-      {
-        word: "Ubiquitous",
-        pronunciation: "/juːˈbɪkwɪtəs/",
-        meaning: "Present, appearing, or found everywhere",
-        example: "Mobile phones have become ubiquitous in modern society."
-      },
-      {
-        word: "Eloquent",
-        pronunciation: "/ˈɛləkwənt/",
-        meaning: "Fluent or persuasive in speaking or writing",
-        example: "She gave an eloquent speech that moved the audience."
-      }
-    ]
-  };
-  
-  // If category is provided and exists, return those words
-  if (category && allWords[category]) {
-    return allWords[category];
-  }
-  
-  // Otherwise return general words
-  return allWords.general;
-};
-
-const formatWhatsAppMessage = (words: WordData[], isPro: boolean): string => {
-  let message = "🌟 *Your VocabSpark Words for Today* 🌟\n\n";
-  
-  words.forEach((word, index) => {
-    message += `*${index + 1}. ${word.word}* (${word.pronunciation})\n`;
-    message += `📝 *Meaning:* ${word.meaning}\n`;
-    message += `💬 *Example:* ${word.example}\n\n`;
-  });
-  
-  if (isPro) {
-    message += "✨ *PRO TIP:* Try using one of these words in conversation today!\n\n";
-  } else {
-    message += "⭐ *Upgrade to PRO for personalized words and extra features!*\n\n";
-  }
-  
-  message += "Sent with 💙 from VocabSpark";
-  
-  return message;
 };
