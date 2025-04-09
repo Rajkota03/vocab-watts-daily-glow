@@ -3,9 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
+import { Database } from '@/integrations/supabase/types';
+
+// Define types based on our database schema
+type Subscription = Database['public']['Tables']['user_subscriptions']['Row'];
 
 const AdminDashboard = () => {
-  const [subscriptions, setSubscriptions] = useState([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,6 +36,12 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       console.error('Error in fetchSubscriptions:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast({
+        title: "Error loading data",
+        description: errorMessage,
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -68,7 +78,7 @@ const AdminDashboard = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {subscriptions.map((sub: any) => (
+              {subscriptions.map((sub) => (
                 <tr key={sub.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">{sub.phone_number}</td>
                   <td className="px-4 py-3">

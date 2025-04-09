@@ -1,5 +1,6 @@
 
 import { createSubscription, getVocabWordsByCategory } from './subscriptionService';
+import { Database } from '@/integrations/supabase/types';
 
 /**
  * WhatsApp Service
@@ -14,39 +15,51 @@ export interface SendWordsRequest {
   isPro: boolean;
 }
 
-interface VocabWord {
-  word: string;
-  definition: string;
-  example: string;
-}
+// Define types based on our database schema
+type VocabWord = Database['public']['Tables']['vocabulary_words']['Row'];
 
 // Demo word lists by category
 const wordsByCategory: Record<string, VocabWord[]> = {
   business: [
     { 
+      id: '1',
       word: "Leverage", 
       definition: "Use something to maximum advantage", 
-      example: "We can leverage our existing customer base to launch the new product." 
+      example: "We can leverage our existing customer base to launch the new product.",
+      category: "business",
+      created_at: new Date().toISOString()
     },
     { 
+      id: '2',
       word: "Synergy", 
       definition: "Interaction of multiple elements that produces an effect greater than the sum of individual effects", 
-      example: "The merger created synergy between the marketing and product teams." 
+      example: "The merger created synergy between the marketing and product teams.",
+      category: "business",
+      created_at: new Date().toISOString()
     },
     { 
+      id: '3',
       word: "Scalable", 
       definition: "Able to be changed in size or scale", 
-      example: "We need a more scalable solution to handle increasing user demand." 
+      example: "We need a more scalable solution to handle increasing user demand.",
+      category: "business",
+      created_at: new Date().toISOString()
     },
     { 
+      id: '4',
       word: "Robust", 
       definition: "Strong and effective in all or most situations", 
-      example: "The company has built a robust infrastructure for its digital services." 
+      example: "The company has built a robust infrastructure for its digital services.",
+      category: "business",
+      created_at: new Date().toISOString()
     },
     { 
+      id: '5',
       word: "Pivot", 
       definition: "A significant business strategy change", 
-      example: "The startup decided to pivot from B2C to B2B sales model." 
+      example: "The startup decided to pivot from B2C to B2B sales model.",
+      category: "business",
+      created_at: new Date().toISOString()
     }
   ],
   academic: [
@@ -135,29 +148,44 @@ const wordsByCategory: Record<string, VocabWord[]> = {
 // Default word list for non-Pro users
 const defaultWords: VocabWord[] = [
   { 
+    id: '21',
     word: "Ameliorate", 
     definition: "Make something bad or unsatisfactory better", 
-    example: "The measures taken should ameliorate the situation." 
+    example: "The measures taken should ameliorate the situation.",
+    category: "general",
+    created_at: new Date().toISOString()
   },
   { 
+    id: '22',
     word: "Brevity", 
     definition: "Concise and exact use of words in writing or speech", 
-    example: "The speech was notable for its brevity and wit." 
+    example: "The speech was notable for its brevity and wit.",
+    category: "general",
+    created_at: new Date().toISOString()
   },
   { 
+    id: '23',
     word: "Cacophony", 
     definition: "A harsh, discordant mixture of sounds", 
-    example: "The cacophony of the city streets made it hard to hear the conversation." 
+    example: "The cacophony of the city streets made it hard to hear the conversation.",
+    category: "general",
+    created_at: new Date().toISOString()
   },
   { 
+    id: '24',
     word: "Diligent", 
     definition: "Having or showing care and conscientiousness in one's work or duties", 
-    example: "The diligent student always completed assignments before the deadline." 
+    example: "The diligent student always completed assignments before the deadline.",
+    category: "general",
+    created_at: new Date().toISOString()
   },
   { 
+    id: '25',
     word: "Eloquent", 
     definition: "Fluent or persuasive in speaking or writing", 
-    example: "Her eloquent speech moved the entire audience." 
+    example: "Her eloquent speech moved the entire audience.",
+    category: "general",
+    created_at: new Date().toISOString()
   }
 ];
 
@@ -167,11 +195,7 @@ const getSampleWords = async (category?: string): Promise<VocabWord[]> => {
   const dbWords = await getVocabWordsByCategory(category);
   
   if (dbWords && dbWords.length > 0) {
-    return dbWords.map(word => ({
-      word: word.word,
-      definition: word.definition,
-      example: word.example
-    }));
+    return dbWords;
   }
   
   // Fall back to hardcoded words if database fetch fails

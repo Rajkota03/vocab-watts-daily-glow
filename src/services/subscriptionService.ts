@@ -1,12 +1,17 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { addDays } from 'date-fns';
+import { Database } from '@/integrations/supabase/types';
 
 export interface SubscriptionData {
   phoneNumber: string;
   category?: string;
   isPro: boolean;
 }
+
+// Define types for our database tables
+type UserSubscription = Database['public']['Tables']['user_subscriptions']['Row'];
+type VocabularyWord = Database['public']['Tables']['vocabulary_words']['Row'];
 
 export const createSubscription = async (data: SubscriptionData) => {
   try {
@@ -71,7 +76,7 @@ export const getVocabWordsByCategory = async (category?: string) => {
       return null;
     }
     
-    return data;
+    return data as VocabularyWord[];
   } catch (error) {
     console.error('Failed to fetch vocabulary words:', error);
     return null;
