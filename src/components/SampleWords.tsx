@@ -7,31 +7,31 @@ const SampleWords = () => {
       word: 'Persnickety',
       meaning: 'Fussy or hard to please',
       example: 'The persnickety client sent back the design five times for minor adjustments.',
-      wittyExample: 'My cat is so persnickety, she won't eat unless I warm the food to exactly 37°C.'
+      wittyExample: "My cat is so persnickety, she won't eat unless I warm the food to exactly 37°C."
     },
     {
       word: 'Ubiquitous',
       meaning: 'Present, appearing, or found everywhere',
       example: 'Smartphones have become ubiquitous in modern society.',
-      wittyExample: 'Dad jokes are as ubiquitous at family gatherings as that one relative who asks why you're still single.'
+      wittyExample: "Dad jokes are as ubiquitous at family gatherings as that one relative who asks why you're still single."
     },
     {
       word: 'Serendipity',
       meaning: 'The occurrence of events by chance in a happy or beneficial way',
       example: 'Finding my lost wallet was pure serendipity.',
-      wittyExample: 'It was serendipity that I discovered my favorite coffee shop—I was running from a rain shower and ducked into the first open door!'
+      wittyExample: "It was serendipity that I discovered my favorite coffee shop—I was running from a rain shower and ducked into the first open door!"
     },
     {
       word: 'Pragmatic',
       meaning: 'Dealing with things sensibly and realistically',
       example: 'We need a pragmatic approach to solve this problem.',
-      wittyExample: 'My pragmatic roommate's solution to our ant problem was simple: clean up my cookie crumbs instead of naming each ant.'
+      wittyExample: "My pragmatic roommate's solution to our ant problem was simple: clean up my cookie crumbs instead of naming each ant."
     },
     {
       word: 'Ephemeral',
       meaning: 'Lasting for a very short time',
       example: 'The beauty of cherry blossoms is ephemeral.',
-      wittyExample: 'My motivation to exercise is as ephemeral as my New Year's resolutions—usually gone by January 3rd.'
+      wittyExample: "My motivation to exercise is as ephemeral as my New Year's resolutions—usually gone by January 3rd."
     }
   ];
 
