@@ -1,9 +1,11 @@
 
+import { createSubscription, getVocabWordsByCategory } from './subscriptionService';
+
 /**
- * WhatsApp Service - DEMO IMPLEMENTATION
+ * WhatsApp Service
  * 
- * This is a simulated WhatsApp message sender for demonstration purposes.
- * In a production environment, this would integrate with the WhatsApp Business API.
+ * This service handles sending vocabulary words to users via WhatsApp.
+ * It now integrates with Supabase to store subscriptions.
  */
 
 export interface SendWordsRequest {
@@ -160,7 +162,19 @@ const defaultWords: VocabWord[] = [
 ];
 
 // Get sample words based on category
-const getSampleWords = (category?: string): VocabWord[] => {
+const getSampleWords = async (category?: string): Promise<VocabWord[]> => {
+  // Try to get words from Supabase first
+  const dbWords = await getVocabWordsByCategory(category);
+  
+  if (dbWords && dbWords.length > 0) {
+    return dbWords.map(word => ({
+      word: word.word,
+      definition: word.definition,
+      example: word.example
+    }));
+  }
+  
+  // Fall back to hardcoded words if database fetch fails
   if (!category) {
     return defaultWords;
   }
@@ -187,8 +201,7 @@ const formatWhatsAppMessage = (words: VocabWord[], isPro: boolean): string => {
 };
 
 /**
- * Simulate sending vocabulary words via WhatsApp
- * In a real application, this would connect to the WhatsApp Business API
+ * Send vocabulary words via WhatsApp and store subscription in Supabase
  */
 export const sendVocabWords = async (request: SendWordsRequest): Promise<boolean> => {
   try {
@@ -200,11 +213,23 @@ export const sendVocabWords = async (request: SendWordsRequest): Promise<boolean
       return false;
     }
     
+    // Create subscription in Supabase
+    const subscriptionCreated = await createSubscription({
+      phoneNumber: request.phoneNumber,
+      category: request.isPro ? request.category : undefined,
+      isPro: request.isPro
+    });
+    
+    if (!subscriptionCreated) {
+      console.error("[DEMO] Failed to create subscription");
+      return false;
+    }
+    
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     // Get words based on category (or default words)
-    const words = getSampleWords(request.category);
+    const words = await getSampleWords(request.category);
     
     // Format message for WhatsApp
     const message = formatWhatsAppMessage(words, request.isPro);

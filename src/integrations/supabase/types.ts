@@ -9,7 +9,66 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      user_subscriptions: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          is_pro: boolean
+          phone_number: string
+          subscription_ends_at: string | null
+          trial_ends_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_pro?: boolean
+          phone_number: string
+          subscription_ends_at?: string | null
+          trial_ends_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_pro?: boolean
+          phone_number?: string
+          subscription_ends_at?: string | null
+          trial_ends_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      vocabulary_words: {
+        Row: {
+          category: string
+          created_at: string
+          definition: string
+          example: string
+          id: string
+          word: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          definition: string
+          example: string
+          id?: string
+          word: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          definition?: string
+          example?: string
+          id?: string
+          word?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

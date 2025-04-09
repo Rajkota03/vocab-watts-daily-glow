@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
 import { LockKeyhole, Sparkles, Clock, CheckCircle, Info, Send, Loader2 } from 'lucide-react';
 import { sendVocabWords } from '@/services/whatsappService';
+import { supabase } from '@/integrations/supabase/client';
 
 const SignupForm = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -14,6 +15,31 @@ const SignupForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState(1);
   const [success, setSuccess] = useState(false);
+  const [user, setUser] = useState(null);
+
+  // Check for existing session on component mount
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user) {
+        setUser(data.session.user);
+      }
+    };
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+
+    checkSession();
+
+    // Cleanup
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +59,22 @@ const SignupForm = () => {
       
       console.log("Submitting form with:", { phoneNumber, category, isPro });
       
-      // Send vocabulary words via WhatsApp
+      // If not logged in, create an anonymous session
+      if (!user) {
+        const { error } = await supabase.auth.signInAnonymously();
+        if (error) {
+          console.error("Error signing in anonymously:", error);
+          toast({
+            title: "Authentication error",
+            description: "We couldn't create a session for you. Please try again.",
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      
+      // Send vocabulary words via WhatsApp and store subscription
       const result = await sendVocabWords({
         phoneNumber,
         category: isPro ? category : undefined,
