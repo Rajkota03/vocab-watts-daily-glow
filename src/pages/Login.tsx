@@ -26,6 +26,19 @@ const Login = () => {
       }
     };
     checkUser();
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          navigate('/dashboard');
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,17 +57,27 @@ const Login = () => {
 
         toast({
           title: "Account created successfully",
-          description: "Please check your email for a confirmation link.",
+          description: "Please check your email for a confirmation link or proceed to login.",
         });
+        
+        // Automatically switch to login mode after signup
+        setIsSignUp(false);
       } else {
         // Sign in
-        const { error } = await supabase.auth.signInWithPassword({
+        const { error, data } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
         if (error) throw error;
 
+        // Successfully logged in
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+        });
+
+        // Navigate to dashboard
         navigate('/dashboard');
       }
     } catch (error: any) {
