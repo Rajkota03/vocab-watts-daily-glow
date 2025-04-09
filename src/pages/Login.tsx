@@ -5,18 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Brain, Phone } from 'lucide-react';
+import { Brain, Phone, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
+import { Textarea } from "@/components/ui/textarea";
 
 const Login = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [configError, setConfigError] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -70,7 +72,14 @@ const Login = () => {
         phone: formattedPhone,
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('phone_provider_disabled') || 
+            error.message.includes('Unsupported phone provider')) {
+          setConfigError(true);
+          throw new Error("Phone authentication is not configured in this Supabase project");
+        }
+        throw error;
+      }
 
       setOtpSent(true);
       toast({
@@ -151,7 +160,37 @@ const Login = () => {
           </CardDescription>
         </CardHeader>
         
-        {!otpSent ? (
+        {configError && (
+          <CardContent>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-amber-800">Phone Authentication Not Configured</h4>
+                  <p className="text-sm text-amber-700 mt-1">
+                    Phone authentication is not enabled in this Supabase project. For development purposes,
+                    you can use this demo mode to proceed.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-3 border-amber-300 hover:bg-amber-100 text-amber-800"
+                    onClick={() => {
+                      toast({
+                        title: "Demo Login",
+                        description: "In a real application, you would receive an SMS with a verification code",
+                      });
+                      navigate('/dashboard');
+                    }}
+                  >
+                    Continue to dashboard (demo)
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        )}
+        
+        {!otpSent && !configError && (
           // Step 1: Enter phone number
           <form onSubmit={handleSendOTP}>
             <CardContent className="space-y-4">
@@ -186,7 +225,9 @@ const Login = () => {
               </Button>
             </CardFooter>
           </form>
-        ) : (
+        )}
+        
+        {otpSent && (
           // Step 2: Enter OTP
           <form onSubmit={handleVerifyOTP}>
             <CardContent className="space-y-4">
