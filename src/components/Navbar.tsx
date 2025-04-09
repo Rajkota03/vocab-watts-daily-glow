@@ -23,7 +23,7 @@ const Navbar = () => {
       <div className="container mx-auto px-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <Brain className="h-8 w-8 text-vocab-teal" />
-          <span className="font-bold text-2xl text-gray-800">VocabSpark</span>
+          <span className="font-heading font-bold text-2xl text-gray-800">VocabSpark</span>
         </div>
         
         {/* Mobile menu button */}
@@ -45,7 +45,7 @@ const Navbar = () => {
           <a href="#pricing" className="text-gray-700 hover:text-vocab-teal transition-colors font-medium">
             Pricing
           </a>
-          <Button className="vocab-btn">Try it Free</Button>
+          <Button className="vocab-btn font-medium">Try it Free</Button>
         </div>
         
         {/* Mobile navigation */}
@@ -54,27 +54,27 @@ const Navbar = () => {
         }`}>
           <a 
             href="#how-it-works" 
-            className="text-2xl font-medium text-gray-800 hover:text-vocab-teal"
+            className="text-2xl font-heading font-medium text-gray-800 hover:text-vocab-teal"
             onClick={() => setMenuOpen(false)}
           >
             How It Works
           </a>
           <a 
             href="#samples" 
-            className="text-2xl font-medium text-gray-800 hover:text-vocab-teal"
+            className="text-2xl font-heading font-medium text-gray-800 hover:text-vocab-teal"
             onClick={() => setMenuOpen(false)}
           >
             Sample Words
           </a>
           <a 
             href="#pricing" 
-            className="text-2xl font-medium text-gray-800 hover:text-vocab-teal"
+            className="text-2xl font-heading font-medium text-gray-800 hover:text-vocab-teal"
             onClick={() => setMenuOpen(false)}
           >
             Pricing
           </a>
           <Button 
-            className="vocab-btn text-lg mt-6 px-10 py-6"
+            className="vocab-btn text-lg mt-6 px-10 py-6 font-medium"
             onClick={() => setMenuOpen(false)}
           >
             Try it Free

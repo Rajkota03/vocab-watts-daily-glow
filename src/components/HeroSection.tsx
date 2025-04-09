@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, CheckCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle, Smartphone } from 'lucide-react';
 
 const HeroSection = () => {
   return (
@@ -10,22 +10,22 @@ const HeroSection = () => {
         <div className="flex flex-col md:flex-row gap-12 items-center">
           <div className="flex-1 text-center md:text-left animate-fade-in">
             <div className="inline-flex items-center px-4 py-2 bg-vocab-teal/10 rounded-full text-vocab-teal mb-6 text-sm font-medium">
-              <Sparkles className="w-4 h-4 mr-2" />
-              No App, No Studying, Just Results
+              <Smartphone className="w-4 h-4 mr-2" />
+              <span className="font-medium">No App, Just WhatsApp</span>
             </div>
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6 tracking-tight">
-              5 Words a Day. <br className="hidden sm:block" />
+            <h1 className="font-heading text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-8 tracking-tight">
+              <span className="text-gray-900">5 Words a Day.</span> <br className="hidden sm:block" />
               <span className="text-vocab-teal relative inline-block">
                 Smarter You
-                <span className="absolute -bottom-2 left-0 w-full h-1 bg-vocab-yellow/60 rounded-full"></span>
-              </span> in a Week.
+                <span className="absolute -bottom-2 left-0 w-full h-2 bg-vocab-yellow/60 rounded-full"></span>
+              </span> <span className="text-gray-900">in a Week.</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-xl md:max-w-2xl leading-relaxed">
+            <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-xl md:max-w-2xl leading-relaxed font-light">
               Delivered straight to your WhatsApp. No effort. No app. No fluff.
-              Effortlessly expand your vocabulary, one ping at a time.
+              <span className="typing-animation ml-1">Effortlessly expand your vocabulary.</span>
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-              <Button className="vocab-btn text-lg group px-8 py-7">
+              <Button className="vocab-btn text-lg group px-8 py-7 font-medium">
                 Try It Free – Get Today's Words
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
@@ -51,29 +51,73 @@ const HeroSection = () => {
           </div>
           
           <div className="flex-1 max-w-md animate-float">
-            <div className="relative bg-white rounded-3xl shadow-xl p-4 md:p-6 mx-auto max-w-sm border border-gray-100">
-              <div className="absolute -top-3 -left-3 w-12 h-12 rounded-full bg-whatsapp-green flex items-center justify-center shadow-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
-                  <path d="M19.3547 4.55156C17.3906 2.58281 14.7547 1.5 11.9953 1.5C6.25781 1.5 1.58906 6.16875 1.58906 11.9062C1.58906 13.8094 2.10469 15.6656 3.07031 17.2875L1.5 22.5L6.84375 20.9578C8.40937 21.8391 10.1812 22.3078 11.9906 22.3078H11.9953C17.7281 22.3078 22.5 17.6391 22.5 11.9016C22.5 9.14219 21.3188 6.52031 19.3547 4.55156Z"/>
-                </svg>
-              </div>
-              <div className="flex items-center mb-4 border-b border-gray-100 pb-4">
-                <div className="w-10 h-10 rounded-full bg-vocab-teal/20 flex items-center justify-center">
-                  <span className="text-vocab-teal font-bold">VS</span>
+            <div className="phone-mockup max-w-sm mx-auto bg-white overflow-hidden">
+              <div className="phone-mockup-notch"></div>
+              <div className="p-3">
+                <div className="flex items-center gap-3 mb-4 border-b border-gray-100 pb-3">
+                  <button className="p-2 rounded-full bg-gray-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                  </button>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-vocab-teal flex items-center justify-center text-white font-bold">VS</div>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-sm">VocabSpark</span>
+                      <span className="text-xs text-gray-500">online</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="ml-3">
-                  <h4 className="font-bold">VocabSpark</h4>
-                  <p className="text-xs text-gray-600">Expanding your vocabulary daily</p>
+                
+                <div className="space-y-3 h-[420px] overflow-y-auto">
+                  <div className="bg-gray-100 p-3 rounded-tl-md rounded-tr-2xl rounded-br-2xl rounded-bl-2xl ml-auto max-w-[70%] text-xs">
+                    Good morning! Ready for today's vocabulary boost?
+                  </div>
+                  
+                  <div className="whatsapp-message p-4 rounded-tr-md rounded-tl-2xl rounded-bl-2xl rounded-br-2xl mr-auto max-w-[85%]">
+                    <div className="mb-1 font-bold text-sm">Today's Word: Serendipity</div>
+                    <div className="text-xs mb-2">The occurrence of events by chance in a happy or beneficial way</div>
+                    <div className="text-xs italic border-l-2 border-vocab-teal pl-2 mt-2">
+                      "Meeting my business partner at a random coffee shop was pure serendipity."
+                    </div>
+                    <div className="text-[10px] text-gray-500 text-right mt-1">10:30 AM</div>
+                  </div>
+                  
+                  <div className="whatsapp-message p-4 rounded-tr-md rounded-tl-2xl rounded-bl-2xl rounded-br-2xl mr-auto max-w-[85%]">
+                    <div className="mb-1 font-bold text-sm">Word #2: Eloquent</div>
+                    <div className="text-xs mb-2">Fluent or persuasive in speaking or writing</div>
+                    <div className="text-xs italic border-l-2 border-vocab-teal pl-2 mt-2">
+                      "Her eloquent presentation convinced the investors to fund the project."
+                    </div>
+                    <div className="text-[10px] text-gray-500 text-right mt-1">10:31 AM</div>
+                  </div>
+                  
+                  <div className="bg-gray-100 p-3 rounded-tl-md rounded-tr-2xl rounded-br-2xl rounded-bl-2xl ml-auto max-w-[70%] text-xs">
+                    These are great! I love the examples.
+                  </div>
+
+                  <div className="whatsapp-message p-4 rounded-tr-md rounded-tl-2xl rounded-bl-2xl rounded-br-2xl mr-auto max-w-[85%]">
+                    <div className="text-xs">
+                      Thanks! 3 more words coming up...
+                    </div>
+                    <div className="text-[10px] text-gray-500 text-right mt-1">10:33 AM</div>
+                  </div>
+                  
+                  <div className="flex">
+                    <div className="mx-auto text-xs text-gray-400 my-1">
+                      <span className="inline-block w-1 h-1 bg-gray-400 rounded-full animate-pulse mr-1"></span>
+                      <span className="inline-block w-1 h-1 bg-gray-400 rounded-full animate-pulse mr-1" style={{animationDelay: '0.2s'}}></span>
+                      <span className="inline-block w-1 h-1 bg-gray-400 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="bg-whatsapp-light p-4 rounded-2xl relative mb-4">
-                <div className="absolute top-4 right-4 text-xs text-gray-500">10:30 AM</div>
-                <p className="font-bold mb-2 pr-16">Today's Word: Serendipity</p>
-                <p className="text-sm mb-2">The occurrence of events by chance in a happy or beneficial way</p>
-                <p className="text-sm italic border-l-2 border-vocab-teal/30 pl-3 mt-3">It was pure serendipity that I met my business partner at a random coffee shop.</p>
-              </div>
-              <div className="text-center text-sm text-gray-500 mt-4">
-                <p>+ 4 more words daily</p>
+                
+                <div className="border-t border-gray-100 mt-3 pt-3 flex items-center gap-2">
+                  <div className="bg-gray-100 rounded-full flex-1 h-10 flex items-center px-4 text-sm text-gray-400">
+                    Type a message
+                  </div>
+                  <button className="w-10 h-10 rounded-full bg-vocab-teal flex items-center justify-center text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
