@@ -72,9 +72,17 @@
     @apply border-border;
   }
 
+  html {
+    @apply scroll-smooth;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight;
   }
 }
 
@@ -90,11 +98,12 @@
   }
   
   .vocab-card {
-    @apply rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl;
+    @apply rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl border border-gray-100;
   }
   
   .pricing-card {
-    @apply border border-border rounded-xl shadow-md p-6 transition-all duration-300 hover:shadow-xl hover:border-vocab-teal;
+    @apply rounded-2xl bg-white shadow-xl p-8 transition-all duration-300 
+    hover:shadow-2xl border border-gray-100 hover:border-vocab-teal/30;
   }
   
   .vocab-btn {
@@ -108,6 +117,23 @@
   }
   
   .feature-icon {
-    @apply bg-vocab-teal/10 p-3 rounded-full text-vocab-teal mb-4 inline-block;
+    @apply bg-vocab-teal/10 p-4 rounded-full text-vocab-teal mb-4 inline-flex items-center justify-center;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-vocab-teal to-vocab-purple bg-clip-text text-transparent;
+  }
+  
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+  }
+  
+  .border-glow {
+    @apply border border-gray-200 hover:border-vocab-teal/30 transition-colors duration-300;
+  }
+  
+  .border-gradient {
+    border-image: linear-gradient(to right, #0FB5B5, #9381FF) 1;
   }
 }
+

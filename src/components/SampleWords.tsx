@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, MessageSquare, Sparkles } from 'lucide-react';
 
 const SampleWords = () => {
   const words = [
@@ -25,73 +25,80 @@ const SampleWords = () => {
   ];
 
   return (
-    <section id="samples" className="py-20 bg-gradient-to-r from-vocab-teal/5 to-vocab-purple/5">
+    <section id="samples" className="py-24 bg-gradient-to-r from-vocab-teal/5 to-vocab-purple/5">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <div className="inline-block mb-4 p-3 bg-vocab-teal/10 rounded-full">
+        <div className="text-center mb-16">
+          <div className="inline-block mb-5 p-3 bg-vocab-teal/10 rounded-full">
             <BookOpen className="w-8 h-8 text-vocab-teal" />
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-800">Sample Word Drop</h2>
+          <h2 className="text-4xl md:text-5xl font-bold mb-5 text-gray-800 tracking-tight">
+            Sample Word Drop
+            <Sparkles className="w-6 h-6 text-vocab-yellow inline-block ml-2 animate-pulse-light" />
+          </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Discover words that transform your language, delivered with wit and wisdom.
           </p>
         </div>
         
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 relative overflow-hidden">
-            {/* WhatsApp-style header */}
-            <div className="absolute -top-4 -left-4 w-16 h-16 rounded-full bg-whatsapp-green flex items-center justify-center shadow-lg">
+          <div className="bg-white rounded-3xl shadow-xl p-8 md:p-10 relative overflow-hidden border border-gray-100 hover:shadow-2xl transition-all duration-300">
+            {/* WhatsApp-style indicator */}
+            <div className="absolute -top-4 -left-4 w-16 h-16 rounded-full bg-whatsapp-green flex items-center justify-center shadow-lg animate-pulse-light">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white">
                 <path d="M19.3547 4.55156C17.3906 2.58281 14.7547 1.5 11.9953 1.5C6.25781 1.5 1.58906 6.16875 1.58906 11.9062C1.58906 13.8094 2.10469 15.6656 3.07031 17.2875L1.5 22.5L6.84375 20.9578C8.40937 21.8391 10.1812 22.3078 11.9906 22.3078H11.9953C17.7281 22.3078 22.5 17.6391 22.5 11.9016C22.5 9.14219 21.3188 6.52031 19.3547 4.55156Z"/>
               </svg>
             </div>
             
             {/* Chat Header */}
-            <div className="flex items-center border-b border-gray-100 pb-4 mb-6">
-              <div className="w-12 h-12 rounded-full bg-vocab-teal/20 flex items-center justify-center">
+            <div className="flex items-center border-b border-gray-100 pb-5 mb-8">
+              <div className="w-12 h-12 rounded-full bg-vocab-teal/30 flex items-center justify-center">
                 <span className="text-vocab-teal font-bold text-lg">VS</span>
               </div>
               <div className="ml-4">
-                <h4 className="font-bold text-lg">VocabSpark</h4>
+                <h4 className="font-bold text-xl text-gray-800">VocabSpark</h4>
                 <p className="text-sm text-gray-500">Your Daily Vocabulary Boost</p>
               </div>
+              <MessageSquare className="ml-auto text-vocab-teal/70 w-6 h-6" />
             </div>
             
             {/* Words Container */}
-            <div className="space-y-6">
+            <div className="space-y-8">
               {words.map((wordItem, index) => (
                 <div 
                   key={index} 
-                  className="bg-gray-50 p-5 rounded-xl transform transition-all hover:translate-y-[-2px] hover:shadow-md"
+                  className="bg-gray-50 p-6 rounded-2xl transform transition-all duration-300 hover:translate-y-[-4px] hover:shadow-md hover:bg-gray-50/80 border border-gray-100/50"
                 >
-                  <div className="mb-3">
-                    <span className="text-xl font-bold text-vocab-teal">{wordItem.word}</span>
+                  <div className="mb-4 flex items-center">
+                    <span className="text-2xl font-bold text-vocab-teal">{wordItem.word}</span>
+                    <span className="ml-auto text-xs font-medium bg-vocab-teal/10 text-vocab-teal/80 px-3 py-1 rounded-full">
+                      Word {index + 1}/5
+                    </span>
                   </div>
-                  <p className="text-sm font-medium text-gray-700 mb-3">{wordItem.meaning}</p>
-                  <div className="space-y-2">
-                    <div className="text-sm text-gray-600">
-                      <span className="text-xs font-medium uppercase text-gray-400 tracking-wider">Example:</span><br />
+                  <p className="text-base font-medium text-gray-700 mb-4">{wordItem.meaning}</p>
+                  <div className="space-y-3">
+                    <div className="text-sm text-gray-600 bg-white p-3 rounded-xl border border-gray-100/80">
+                      <span className="text-xs font-semibold uppercase text-gray-400 tracking-wider block mb-1">Example:</span>
                       {wordItem.example}
                     </div>
-                    <div className="text-sm text-gray-600 italic border-l-2 border-vocab-purple/40 pl-3">
-                      <span className="text-xs font-medium uppercase text-gray-400 tracking-wider">Witty Use:</span><br />
+                    <div className="text-sm text-gray-600 italic border-l-3 border-vocab-purple/40 pl-4 bg-white p-3 rounded-xl border border-gray-100/80">
+                      <span className="text-xs font-semibold uppercase text-gray-400 tracking-wider block mb-1">Witty Use:</span>
                       {wordItem.wittyExample}
                     </div>
                   </div>
                 </div>
               ))}
               
-              <div className="text-center mt-6 text-gray-500">
-                <p>+ 2 more words daily</p>
+              <div className="text-center mt-8 text-gray-500">
+                <p className="text-sm font-medium">+ 2 more words daily</p>
               </div>
             </div>
           </div>
           
           {/* CTA */}
-          <div className="text-center mt-10">
+          <div className="text-center mt-12">
             <a 
               href="#signup" 
-              className="inline-flex items-center px-8 py-4 bg-vocab-teal text-white font-medium rounded-full transition-all hover:bg-vocab-teal/90 hover:shadow-lg"
+              className="inline-flex items-center px-8 py-4 bg-vocab-teal text-white font-medium rounded-full transition-all hover:bg-vocab-teal/90 hover:shadow-lg hover:scale-105 active:scale-100"
             >
               Get Your First Words Today
             </a>
