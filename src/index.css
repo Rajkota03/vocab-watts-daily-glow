@@ -29,6 +29,9 @@
     /* Custom Brand Colors */
     --vocab-teal: 174 69% 45%;
     --vocab-purple: 262 83% 58%;
+    --vocab-yellow: 42 96% 59%;
+    --whatsapp-green: 142 70% 49%;
+    --whatsapp-light: 142 70% 96%;
   }
 
   .dark {

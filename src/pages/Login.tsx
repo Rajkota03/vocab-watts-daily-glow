@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Brain, LockIcon, MailIcon } from 'lucide-react';
+import { Brain, LockIcon, MailIcon, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -21,7 +21,9 @@ const Login = () => {
     // Check if user is already logged in
     const checkUser = async () => {
       const { data } = await supabase.auth.getSession();
+      console.log("Session check on login page:", data.session);
       if (data.session) {
+        console.log("User already logged in, redirecting to dashboard");
         navigate('/dashboard');
       }
     };
@@ -30,6 +32,7 @@ const Login = () => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log("Auth state change:", event, session);
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           navigate('/dashboard');
         }
@@ -51,6 +54,12 @@ const Login = () => {
         const { error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              is_pro: true,
+              category: 'business' // Default category for Pro users
+            }
+          }
         });
 
         if (error) throw error;
@@ -64,7 +73,7 @@ const Login = () => {
         setIsSignUp(false);
       } else {
         // Sign in
-        const { error, data } = await supabase.auth.signInWithPassword({
+        const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
@@ -77,8 +86,7 @@ const Login = () => {
           description: "Welcome back!",
         });
 
-        // Navigate to dashboard
-        navigate('/dashboard');
+        // Navigate to dashboard happens in the onAuthStateChange handler
       }
     } catch (error: any) {
       toast({
@@ -101,12 +109,12 @@ const Login = () => {
             </div>
           </div>
           <CardTitle className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-vocab-teal to-vocab-purple">
-            {isSignUp ? 'Create an account' : 'Welcome back'}
+            {isSignUp ? 'Create Pro Account' : 'Pro Login'}
           </CardTitle>
           <CardDescription className="text-gray-500 text-base">
             {isSignUp 
-              ? 'Sign up for VocabSpark to start your vocabulary journey' 
-              : 'Login to access your VocabSpark dashboard'}
+              ? 'Sign up for VocabSpark Pro to access premium features' 
+              : 'Login to access your VocabSpark Pro dashboard'}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -149,10 +157,17 @@ const Login = () => {
           <CardFooter className="flex flex-col space-y-4 pt-2">
             <Button 
               type="submit" 
-              className="w-full py-6 text-base font-medium shadow-md transition-all hover:scale-[1.01]" 
+              className="w-full py-6 text-base font-medium shadow-md transition-all hover:scale-[1.01] bg-gradient-to-r from-vocab-purple to-violet-500 hover:from-vocab-purple/90 hover:to-violet-500/90" 
               disabled={isLoading}
             >
-              {isLoading ? 'Processing...' : isSignUp ? 'Create Account' : 'Sign In'}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                isSignUp ? 'Create Pro Account' : 'Sign In'
+              )}
             </Button>
             <div className="text-center text-sm">
               <span className="text-gray-500">
@@ -163,7 +178,7 @@ const Login = () => {
                 className="text-vocab-teal hover:text-vocab-purple font-medium transition-colors"
                 onClick={() => setIsSignUp(!isSignUp)}
               >
-                {isSignUp ? 'Sign In' : 'Create Account'}
+                {isSignUp ? 'Sign In' : 'Create Pro Account'}
               </button>
             </div>
           </CardFooter>
