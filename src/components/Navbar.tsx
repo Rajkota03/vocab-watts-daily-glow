@@ -1,11 +1,45 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Brain, Menu, X, LogIn } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { 
+  Brain, 
+  Menu, 
+  X, 
+  LogIn, 
+  ChevronDown,
+  Sparkles,
+  BookOpen,
+  DollarSign,
+  MessageSquare 
+} from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      setIsLoggedIn(!!data.session);
+    };
+    
+    checkAuth();
+
+    const handleScroll = () => {
+      if (window.scrollY > 20) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   
@@ -17,17 +51,24 @@ const Navbar = () => {
     }
   };
 
+  // Don't show navbar on login page
+  if (location.pathname === '/login') return null;
+
   return (
-    <nav className="fixed top-0 w-full bg-white bg-opacity-95 backdrop-blur-lg z-50 shadow-sm border-b border-gray-100">
+    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+      isScrolled ? 'bg-white/95 shadow-md backdrop-blur-md' : 'bg-transparent'
+    }`}>
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <Brain className="h-8 w-8 text-vocab-teal" />
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-vocab-teal to-vocab-purple">
+            <Brain className="h-6 w-6 text-white" />
+          </div>
           <span className="font-bold text-xl text-gray-800 font-poppins tracking-tight">VocabSpark</span>
         </div>
         
         {/* Mobile menu button */}
         <button 
-          className="md:hidden p-2 text-gray-600 hover:text-vocab-teal focus:outline-none"
+          className="md:hidden p-2 text-gray-600 hover:text-vocab-teal focus:outline-none transition-colors"
           onClick={toggleMenu}
           aria-label="Toggle menu"
         >
@@ -36,72 +77,100 @@ const Navbar = () => {
         
         {/* Desktop navigation */}
         <div className="hidden md:flex items-center gap-6">
-          <a href="#how-it-works" className="text-gray-700 hover:text-vocab-teal transition-colors font-medium font-inter text-sm">
+          <a href="#how-it-works" className="text-gray-700 hover:text-vocab-teal transition-colors font-medium font-inter text-sm flex items-center group">
+            <BookOpen className="h-4 w-4 mr-1 group-hover:text-vocab-teal" />
             How It Works
           </a>
-          <a href="#samples" className="text-gray-700 hover:text-vocab-teal transition-colors font-medium font-inter text-sm">
+          <a href="#samples" className="text-gray-700 hover:text-vocab-teal transition-colors font-medium font-inter text-sm flex items-center group">
+            <MessageSquare className="h-4 w-4 mr-1 group-hover:text-vocab-teal" />
             Sample Words
           </a>
-          <a href="#pricing" className="text-gray-700 hover:text-vocab-teal transition-colors font-medium font-inter text-sm">
+          <a href="#pricing" className="text-gray-700 hover:text-vocab-teal transition-colors font-medium font-inter text-sm flex items-center group">
+            <DollarSign className="h-4 w-4 mr-1 group-hover:text-vocab-teal" />
             Pricing
           </a>
-          <Link to="/login" className="text-gray-700 hover:text-vocab-teal transition-colors font-medium font-inter text-sm flex items-center gap-1">
-            <LogIn className="h-4 w-4" />
-            Login
-          </Link>
-          <div className="flex gap-3">
-            <Button className="vocab-btn-secondary" onClick={scrollToSignup}>
-              Start Free Trial
-            </Button>
-            <Button className="vocab-btn" onClick={() => {
-              scrollToSignup();
-              // Set Pro mode in signup form by triggering a click on the "Switch to Pro" button after a delay
-              setTimeout(() => {
-                const switchToProButton = document.querySelector('button.text-xs.text-vocab-teal.underline');
-                if (switchToProButton) {
-                  (switchToProButton as HTMLButtonElement).click();
-                }
-              }, 100);
-            }}>
-              Go Pro
-            </Button>
-          </div>
+          
+          {isLoggedIn ? (
+            <Link to="/dashboard" className="text-white bg-gradient-to-r from-vocab-teal to-vocab-purple px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-1">
+              <Sparkles className="h-4 w-4" />
+              Dashboard
+            </Link>
+          ) : (
+            <Link to="/login" className="text-gray-700 hover:text-vocab-teal transition-colors font-medium font-inter text-sm flex items-center gap-1">
+              <LogIn className="h-4 w-4" />
+              Login
+            </Link>
+          )}
+          
+          {!isLoggedIn && (
+            <div className="flex gap-3">
+              <Button className="bg-white border border-vocab-teal text-vocab-teal hover:bg-vocab-teal/10 shadow-sm" onClick={scrollToSignup}>
+                Start Free Trial
+              </Button>
+              <Button className="bg-gradient-to-r from-vocab-purple to-purple-500 hover:from-vocab-purple/90 hover:to-purple-500/90 text-white shadow-md" onClick={() => {
+                scrollToSignup();
+                // Set Pro mode in signup form by triggering a click on the "Switch to Pro" button after a delay
+                setTimeout(() => {
+                  const switchToProButton = document.querySelector('button.text-xs.text-vocab-teal.underline');
+                  if (switchToProButton) {
+                    (switchToProButton as HTMLButtonElement).click();
+                  }
+                }, 100);
+              }}>
+                Go Pro
+              </Button>
+            </div>
+          )}
         </div>
         
         {/* Mobile menu */}
         {isMenuOpen && (
           <div className="absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-100 md:hidden animate-fade-in">
             <div className="flex flex-col p-4 space-y-3">
-              <a href="#how-it-works" className="py-2 px-4 text-gray-700 hover:bg-gray-50 rounded-lg font-medium font-inter" onClick={toggleMenu}>
+              <a href="#how-it-works" className="py-2 px-4 text-gray-700 hover:bg-gray-50 rounded-lg font-medium font-inter flex items-center" onClick={toggleMenu}>
+                <BookOpen className="h-4 w-4 mr-2 text-vocab-teal" />
                 How It Works
               </a>
-              <a href="#samples" className="py-2 px-4 text-gray-700 hover:bg-gray-50 rounded-lg font-medium font-inter" onClick={toggleMenu}>
+              <a href="#samples" className="py-2 px-4 text-gray-700 hover:bg-gray-50 rounded-lg font-medium font-inter flex items-center" onClick={toggleMenu}>
+                <MessageSquare className="h-4 w-4 mr-2 text-vocab-teal" />
                 Sample Words
               </a>
-              <a href="#pricing" className="py-2 px-4 text-gray-700 hover:bg-gray-50 rounded-lg font-medium font-inter" onClick={toggleMenu}>
+              <a href="#pricing" className="py-2 px-4 text-gray-700 hover:bg-gray-50 rounded-lg font-medium font-inter flex items-center" onClick={toggleMenu}>
+                <DollarSign className="h-4 w-4 mr-2 text-vocab-teal" />
                 Pricing
               </a>
-              <Link to="/login" className="py-2 px-4 text-gray-700 hover:bg-gray-50 rounded-lg font-medium font-inter flex items-center gap-2" onClick={toggleMenu}>
-                <LogIn className="h-4 w-4" />
-                Login
-              </Link>
-              <div className="pt-2 space-y-2">
-                <Button className="vocab-btn-secondary w-full justify-center" onClick={scrollToSignup}>
-                  Start Free Trial
-                </Button>
-                <Button className="vocab-btn w-full justify-center" onClick={() => {
-                  scrollToSignup();
-                  // Set Pro mode in signup form by triggering a click on the "Switch to Pro" button after a delay
-                  setTimeout(() => {
-                    const switchToProButton = document.querySelector('button.text-xs.text-vocab-teal.underline');
-                    if (switchToProButton) {
-                      (switchToProButton as HTMLButtonElement).click();
-                    }
-                  }, 100);
-                }}>
-                  Go Pro
-                </Button>
-              </div>
+              
+              {isLoggedIn ? (
+                <Link to="/dashboard" className="py-2 px-4 bg-gradient-to-r from-vocab-teal to-vocab-purple text-white rounded-lg font-medium font-inter flex items-center gap-2" onClick={toggleMenu}>
+                  <Sparkles className="h-4 w-4" />
+                  Dashboard
+                </Link>
+              ) : (
+                <Link to="/login" className="py-2 px-4 text-gray-700 hover:bg-gray-50 rounded-lg font-medium font-inter flex items-center gap-2" onClick={toggleMenu}>
+                  <LogIn className="h-4 w-4" />
+                  Login
+                </Link>
+              )}
+              
+              {!isLoggedIn && (
+                <div className="pt-2 space-y-2">
+                  <Button className="bg-white border border-vocab-teal text-vocab-teal hover:bg-vocab-teal/10 w-full justify-center" onClick={scrollToSignup}>
+                    Start Free Trial
+                  </Button>
+                  <Button className="bg-gradient-to-r from-vocab-purple to-purple-500 hover:from-vocab-purple/90 hover:to-purple-500/90 text-white w-full justify-center" onClick={() => {
+                    scrollToSignup();
+                    // Set Pro mode in signup form by triggering a click on the "Switch to Pro" button after a delay
+                    setTimeout(() => {
+                      const switchToProButton = document.querySelector('button.text-xs.text-vocab-teal.underline');
+                      if (switchToProButton) {
+                        (switchToProButton as HTMLButtonElement).click();
+                      }
+                    }, 100);
+                  }}>
+                    Go Pro
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         )}

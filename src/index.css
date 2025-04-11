@@ -64,15 +64,35 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-poppins;
   }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 @layer components {
   .vocab-btn {
-    @apply bg-gradient-to-r from-vocab-purple to-violet-500 hover:from-vocab-purple/90 hover:to-violet-500/90 text-white font-medium rounded-lg transition-all;
+    @apply bg-gradient-to-r from-vocab-purple to-violet-500 hover:from-vocab-purple/90 hover:to-violet-500/90 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg;
   }
   
   .vocab-btn-secondary {
-    @apply bg-gradient-to-r from-vocab-teal to-teal-500 hover:from-vocab-teal/90 hover:to-teal-500/90 text-white font-medium rounded-lg transition-all;
+    @apply bg-gradient-to-r from-vocab-teal to-teal-500 hover:from-vocab-teal/90 hover:to-teal-500/90 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg;
+  }
+  
+  /* Card styles */
+  .pricing-card {
+    @apply bg-white rounded-xl shadow-md hover:shadow-xl p-6 border-2 border-transparent transition-all duration-300;
+  }
+  
+  /* Feature icon */
+  .feature-icon {
+    @apply w-12 h-12 bg-gradient-to-br from-vocab-teal/20 to-vocab-purple/20 rounded-lg flex items-center justify-center mb-4 text-vocab-teal;
+  }
+  
+  /* WhatsApp message bubble */
+  .whatsapp-message {
+    @apply bg-whatsapp-light/50 p-3 rounded-lg rounded-tl-none shadow-sm mb-2;
   }
 }
 
@@ -93,6 +113,14 @@
     animation: spin 10s linear infinite;
   }
   
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .animate-pulse-light {
+    animation: pulseLight 2s ease-in-out infinite;
+  }
+  
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -111,5 +139,34 @@
   @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  @keyframes pulseLight {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+  
+  /* Glassmorphism effect */
+  .glass {
+    @apply bg-white/20 backdrop-blur-md border border-white/30 shadow-lg;
+  }
+  
+  /* Gradient text */
+  .text-gradient {
+    @apply bg-gradient-to-r from-vocab-teal to-vocab-purple bg-clip-text text-transparent;
+  }
+  
+  /* Hover effects */
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+  }
+  
+  .hover-glow {
+    @apply transition-all duration-300 hover:shadow-[0_0_15px_rgba(0,0,0,0.1)];
   }
 }

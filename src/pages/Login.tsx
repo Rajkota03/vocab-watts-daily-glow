@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Brain } from 'lucide-react';
+import { Brain, LockIcon, MailIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -93,61 +93,77 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-12">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+      <Card className="w-full max-w-md border border-gray-200 shadow-xl">
+        <CardHeader className="text-center space-y-1">
           <div className="flex justify-center mb-4">
-            <Brain className="h-10 w-10 text-vocab-teal" />
+            <div className="w-16 h-16 bg-gradient-to-br from-vocab-teal to-vocab-purple rounded-full flex items-center justify-center shadow-md">
+              <Brain className="h-8 w-8 text-white" />
+            </div>
           </div>
-          <CardTitle className="text-2xl font-bold">
+          <CardTitle className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-vocab-teal to-vocab-purple">
             {isSignUp ? 'Create an account' : 'Welcome back'}
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-gray-500 text-base">
             {isSignUp 
               ? 'Sign up for VocabSpark to start your vocabulary journey' 
               : 'Login to access your VocabSpark dashboard'}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6 pt-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="your@email.com" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+              <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <MailIcon className="h-5 w-5 text-gray-400" />
+                </div>
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="your@email.com" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="pl-10 bg-gray-50 border border-gray-200 focus:border-vocab-teal"
+                />
+              </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                placeholder="••••••••" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <LockIcon className="h-5 w-5 text-gray-400" />
+                </div>
+                <Input 
+                  id="password" 
+                  type="password" 
+                  placeholder="••••••••" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="pl-10 bg-gray-50 border border-gray-200 focus:border-vocab-teal"
+                />
+              </div>
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
+          <CardFooter className="flex flex-col space-y-4 pt-2">
             <Button 
               type="submit" 
-              className="vocab-btn w-full" 
+              className="w-full py-6 text-base font-medium shadow-md transition-all hover:scale-[1.01]" 
               disabled={isLoading}
             >
-              {isLoading ? 'Processing...' : isSignUp ? 'Sign Up' : 'Login'}
+              {isLoading ? 'Processing...' : isSignUp ? 'Create Account' : 'Sign In'}
             </Button>
             <div className="text-center text-sm">
-              {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+              <span className="text-gray-500">
+                {isSignUp ? 'Already have an account?' : "Don't have an account?"}
+              </span>{' '}
               <button
                 type="button"
-                className="text-vocab-teal hover:underline font-medium"
+                className="text-vocab-teal hover:text-vocab-purple font-medium transition-colors"
                 onClick={() => setIsSignUp(!isSignUp)}
               >
-                {isSignUp ? 'Login' : 'Sign Up'}
+                {isSignUp ? 'Sign In' : 'Create Account'}
               </button>
             </div>
           </CardFooter>
