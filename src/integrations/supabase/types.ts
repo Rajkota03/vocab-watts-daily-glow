@@ -9,6 +9,41 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      sent_words: {
+        Row: {
+          category: string
+          id: string
+          phone_number: string | null
+          sent_at: string
+          user_id: string | null
+          word_id: string
+        }
+        Insert: {
+          category: string
+          id?: string
+          phone_number?: string | null
+          sent_at?: string
+          user_id?: string | null
+          word_id: string
+        }
+        Update: {
+          category?: string
+          id?: string
+          phone_number?: string | null
+          sent_at?: string
+          user_id?: string | null
+          word_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sent_words_word_id_fkey"
+            columns: ["word_id"]
+            isOneToOne: false
+            referencedRelation: "vocabulary_words"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_subscriptions: {
         Row: {
           category: string | null
@@ -74,7 +109,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      current_user_phone_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

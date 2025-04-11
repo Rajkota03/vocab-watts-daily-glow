@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getVocabWordsByCategory } from '@/services/subscriptionService';
 import { format } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, Lock, BookOpen, Volume2, Check, AlignLeft } from 'lucide-react';
+import { ChevronDown, Lock, BookOpen, Volume2, Check, AlignLeft, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -27,27 +27,113 @@ const WordHistory: React.FC<WordHistoryProps> = ({
   const [loading, setLoading] = useState(true);
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    const loadWords = async () => {
-      if (isTrialExpired && !isPro) {
+  const loadWords = async () => {
+    if (isTrialExpired && !isPro) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id;
+      
+      if (!userId) {
+        console.error('No authenticated user found in WordHistory');
         setLoading(false);
         return;
       }
-
-      try {
+      
+      // First try to get sent words for this user
+      const { data: userData } = await supabase
+        .from('user_subscriptions')
+        .select('phone_number')
+        .eq('user_id', userId)
+        .single();
+        
+      if (!userData?.phone_number) {
+        console.error('No phone number found for user');
+        setLoading(false);
+        return;
+      }
+      
+      // Get the most recent sent words for this user and category
+      const { data: sentWords, error: sentWordsError } = await supabase
+        .from('sent_words')
+        .select('word_id, sent_at')
+        .eq('phone_number', userData.phone_number)
+        .eq('category', category)
+        .order('sent_at', { ascending: false })
+        .limit(20);
+        
+      if (sentWordsError) {
+        console.error('Error fetching sent words:', sentWordsError);
+        // Fall back to the original method if there's an error
         const wordsData = await getVocabWordsByCategory(category);
         if (wordsData) {
           setWords(wordsData);
         }
-      } catch (error) {
-        console.error('Failed to fetch words:', error);
-      } finally {
-        setLoading(false);
+      } else if (sentWords && sentWords.length > 0) {
+        // Get the actual word data for the sent words
+        const wordIds = sentWords.map(sw => sw.word_id);
+        const { data: wordsData } = await supabase
+          .from('vocabulary_words')
+          .select('*')
+          .in('id', wordIds);
+          
+        if (wordsData && wordsData.length > 0) {
+          // Sort the words in the same order as sentWords
+          const sortedWords = wordIds.map(id => 
+            wordsData.find(word => word.id === id)
+          ).filter(Boolean) as VocabularyWord[];
+          
+          setWords(sortedWords);
+        } else {
+          // Fall back if no words were found
+          const fallbackWords = await getVocabWordsByCategory(category);
+          if (fallbackWords) {
+            setWords(fallbackWords);
+          }
+        }
+      } else {
+        // Fall back to the original method if no sent words
+        const wordsData = await getVocabWordsByCategory(category);
+        if (wordsData) {
+          setWords(wordsData);
+        }
       }
-    };
+    } catch (error) {
+      console.error('Failed to fetch words:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadWords();
   }, [isPro, isTrialExpired, category]);
+
+  // Add an observer on the parent element to detect refresh triggers
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && 
+            mutation.attributeName === 'class' && 
+            (mutation.target as HTMLElement).classList.contains('refresh-triggered')) {
+          loadWords();
+        }
+      });
+    });
+    
+    const parentElement = document.getElementById('word-history');
+    if (parentElement) {
+      observer.observe(parentElement, { attributes: true });
+    }
+    
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   const toggleItem = (id: string) => {
     setOpenItems(prev => ({
@@ -103,7 +189,7 @@ const WordHistory: React.FC<WordHistoryProps> = ({
         <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-4" />
         <h3 className="text-xl font-medium text-gray-700 mb-2">No Words Yet</h3>
         <p className="text-gray-500 max-w-md mx-auto">
-          Your vocabulary journey is about to begin! Check back tomorrow for your first word drop.
+          Your vocabulary journey is about to begin! Use the "New Batch" button to get your first word drop.
         </p>
       </div>
     );
@@ -121,6 +207,19 @@ const WordHistory: React.FC<WordHistoryProps> = ({
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end mb-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={loadWords}
+          disabled={loading}
+          className="text-vocab-teal border-vocab-teal/20 hover:bg-vocab-teal/10"
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
+    
       {Object.entries(wordsByDate).map(([dateStr, dateWords]) => (
         <div key={dateStr} className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
           <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 text-sm font-medium flex items-center">

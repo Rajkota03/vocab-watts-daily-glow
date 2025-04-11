@@ -10,6 +10,7 @@ import CategorySelection from '@/components/dashboard/CategorySelection';
 import WordHistory from '@/components/dashboard/WordHistory';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { generateNewWordBatch } from '@/services/wordService';
 
 const Dashboard = () => {
   // Pro user state
@@ -20,6 +21,7 @@ const Dashboard = () => {
   });
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -116,6 +118,40 @@ const Dashboard = () => {
     }
   };
 
+  const handleNewBatch = async () => {
+    if (isGeneratingBatch) return;
+    
+    setIsGeneratingBatch(true);
+    try {
+      const newWords = await generateNewWordBatch(subscription.category);
+      console.log("New batch generated:", newWords);
+      
+      // Force reload of word history
+      const wordHistoryElement = document.getElementById('word-history');
+      if (wordHistoryElement) {
+        // Trigger a re-render by adding and removing a class
+        wordHistoryElement.classList.add('refresh-triggered');
+        setTimeout(() => {
+          wordHistoryElement.classList.remove('refresh-triggered');
+        }, 100);
+      }
+      
+      toast({
+        title: "New words generated!",
+        description: `${newWords.length} new words have been added to your vocabulary.`,
+      });
+    } catch (error: any) {
+      console.error("Error generating new batch:", error);
+      toast({
+        title: "Error generating words",
+        description: error.message || "Failed to generate new words",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingBatch(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
@@ -183,6 +219,8 @@ const Dashboard = () => {
                   isPro={subscription.is_pro} 
                   currentCategory={subscription.category} 
                   onCategoryUpdate={handleCategoryUpdate}
+                  onNewBatch={handleNewBatch}
+                  isLoadingNewBatch={isGeneratingBatch}
                 />
               </CardContent>
             </Card>
@@ -223,7 +261,7 @@ const Dashboard = () => {
         </div>
 
         {/* Word History Section */}
-        <div className="mt-8">
+        <div className="mt-8" id="word-history">
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center text-vocab-teal">
