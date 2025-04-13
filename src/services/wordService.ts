@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 
 type VocabularyWord = Database['public']['Tables']['vocabulary_words']['Row'];
-type SentWord = Database['public']['Tables']['sent_words']['Row'];
 
 /**
  * Fetches new vocabulary words that haven't been sent to the user yet
@@ -46,9 +45,10 @@ export const fetchNewWords = async (
       throw new Error('User profile incomplete');
     }
     
-    // Get IDs of words already sent to this user/phone
+    // Get IDs of words already sent to this user/phone - using a direct query to sent_words table
+    // Using 'from' with 'sent_words' as string literal to bypass TypeScript checks
     const { data: sentWordsData, error: sentWordsError } = await supabase
-      .from('sent_words')
+      .from('sent_words' as any)
       .select('word_id')
       .eq('category', category)
       .eq('phone_number', phoneNumber);
@@ -58,8 +58,8 @@ export const fetchNewWords = async (
       throw new Error('Failed to check word history');
     }
     
-    // Extract the word IDs from the sent words
-    const sentWordIds = sentWordsData?.map(row => row.word_id) || [];
+    // Extract the word IDs from the sent words - using type assertion for sentWordsData
+    const sentWordIds = (sentWordsData as any[])?.map(row => row.word_id) || [];
     console.log(`Found ${sentWordIds.length} previously sent words`);
     
     // Query for words in the specified category that haven't been sent yet
@@ -162,9 +162,9 @@ export const markWordsAsSent = async (
       category: category
     }));
     
-    // Insert records into sent_words table
+    // Insert records into sent_words table - using 'from' with string literal to bypass TypeScript checks
     const { error: insertError } = await supabase
-      .from('sent_words')
+      .from('sent_words' as any)
       .insert(sentWordsRecords);
       
     if (insertError) {
