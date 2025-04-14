@@ -1,8 +1,10 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { Resend } from "npm:resend@2.0.0";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const resendApiKey = Deno.env.get('RESEND_API_KEY');
+const resend = new Resend(resendApiKey);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -139,19 +141,22 @@ serve(async (req) => {
       console.log(`Using ${vocabWords.length} fallback words for category: ${category}`);
     }
 
-    // Generate an HTML email with the words
-    const emailHtml = generateEmailHtml(vocabWords, category, isUsingFallback);
-    
-    // For this demo, we'll just return the generated words
-    // In a real implementation, you would integrate with an email service like Resend or SendGrid
-    console.log(`Would send email to ${email} with ${vocabWords.length} words`);
+    // Send email using Resend
+    const emailResult = await resend.emails.send({
+      from: 'VocabSpark <onboarding@resend.dev>',
+      to: [email],
+      subject: `Your VocabSpark ${category.charAt(0).toUpperCase() + category.slice(1)} Vocabulary Words`,
+      html: generateEmailHtml(vocabWords, category, isUsingFallback)
+    });
+
+    console.log('Email sent successfully:', emailResult);
 
     return new Response(JSON.stringify({ 
       success: true,
-      message: `Email with ${vocabWords.length} vocabulary words would be sent to ${email}`,
-      previewHtml: emailHtml,
+      message: `Email with ${vocabWords.length} vocabulary words sent to ${email}`,
       words: vocabWords,
-      isUsingFallback
+      isUsingFallback,
+      emailResult
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
