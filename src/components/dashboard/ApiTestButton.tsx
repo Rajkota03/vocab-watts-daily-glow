@@ -77,32 +77,16 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
       
       console.log('API test response:', data);
       
-      // Mark the words as sent so they appear in the history
-      if (data.words && Array.isArray(data.words) && data.words.length > 0) {
-        try {
-          // Convert the words to the format expected by markWordsAsSent
-          const wordsToMark = data.words.map(word => ({
-            id: word.id || crypto.randomUUID(),
-            word: word.word,
-            definition: word.definition,
-            example: word.example,
-            category: word.category,
-            created_at: new Date().toISOString()
-          }));
-          
-          await markWordsAsSent(wordsToMark, category);
-          
-          // Force refresh of word history
-          const wordHistoryElement = document.getElementById('word-history');
-          if (wordHistoryElement) {
-            wordHistoryElement.classList.add('refresh-triggered');
-            setTimeout(() => {
-              wordHistoryElement.classList.remove('refresh-triggered');
-            }, 100);
-          }
-        } catch (markError) {
-          console.error('Error marking test words as sent:', markError);
-        }
+      // No need to manually mark words as sent, since send-vocab-email function 
+      // should now handle recording words to user_word_history
+      
+      // Force refresh of word history
+      const wordHistoryElement = document.getElementById('word-history');
+      if (wordHistoryElement) {
+        wordHistoryElement.classList.add('refresh-triggered');
+        setTimeout(() => {
+          wordHistoryElement.classList.remove('refresh-triggered');
+        }, 100);
       }
       
       // Create a toast message based on whether we're using fallback words or not

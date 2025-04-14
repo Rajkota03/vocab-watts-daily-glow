@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getVocabWordsByCategory } from '@/services/subscriptionService';
@@ -48,7 +47,7 @@ const WordHistory: React.FC<WordHistoryProps> = ({
       
       // First try to get words from user_word_history
       const { data: userHistoryWords, error: historyError } = await supabase
-        .from('user_word_history')
+        .from('user_word_history' as any)
         .select('word_id, date_sent, word')
         .eq('user_id', userId)
         .eq('category', category)
@@ -124,7 +123,7 @@ const WordHistory: React.FC<WordHistoryProps> = ({
         }
       } else {
         // Use the new user_word_history to get the words
-        const wordIds = userHistoryWords.map(hw => hw.word_id);
+        const wordIds = (userHistoryWords as any[]).map(hw => hw.word_id);
         
         // Fetch the complete word data from vocabulary_words
         const { data: wordsData, error: wordsError } = await supabase
@@ -139,7 +138,7 @@ const WordHistory: React.FC<WordHistoryProps> = ({
         }
         
         // Sort the words in the same order as userHistoryWords (by date_sent, most recent first)
-        const sortedWords = userHistoryWords.map(historyWord => 
+        const sortedWords = (userHistoryWords as any[]).map(historyWord => 
           wordsData.find(word => word.id === historyWord.word_id)
         ).filter(Boolean) as VocabularyWord[];
         

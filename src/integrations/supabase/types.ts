@@ -77,6 +77,44 @@ export type Database = {
         }
         Relationships: []
       }
+      user_word_history: {
+        Row: {
+          category: string
+          date_sent: string
+          id: string
+          source: string | null
+          user_id: string
+          word: string
+          word_id: string
+        }
+        Insert: {
+          category: string
+          date_sent?: string
+          id?: string
+          source?: string | null
+          user_id: string
+          word: string
+          word_id: string
+        }
+        Update: {
+          category?: string
+          date_sent?: string
+          id?: string
+          source?: string | null
+          user_id?: string
+          word?: string
+          word_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_word_history_word_id_fkey"
+            columns: ["word_id"]
+            isOneToOne: false
+            referencedRelation: "vocabulary_words"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vocabulary_words: {
         Row: {
           category: string
