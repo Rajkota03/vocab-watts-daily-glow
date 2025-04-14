@@ -1,11 +1,11 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CalendarDays, Sparkles, Smartphone, CheckCircle } from 'lucide-react';
+import { ArrowRight, Calendar, Sparkles, Smartphone, CheckCircle } from 'lucide-react';
 
 const CTASection = () => {
   return (
-    <section className="py-20 bg-gradient-to-br from-vocab-teal to-vocab-teal/90 text-white relative overflow-hidden">
+    <section className="py-20 bg-gradient-to-br from-[#58CC02] to-[#46a302] text-white relative overflow-hidden">
       {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-full h-full opacity-10">
         <div className="absolute top-10 left-10 w-40 h-40 rounded-full bg-white"></div>
@@ -37,7 +37,7 @@ const CTASection = () => {
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-3xl mx-auto text-center">
           <div className="inline-flex items-center justify-center mb-6 bg-white/20 backdrop-blur-sm py-2 px-4 rounded-full shadow-lg">
-            <Sparkles className="h-5 w-5 mr-2 text-vocab-yellow" />
+            <Sparkles className="h-5 w-5 mr-2 text-[#FFC800]" />
             <span className="text-sm font-medium">Elevate your vocabulary with zero effort</span>
           </div>
           
@@ -50,13 +50,13 @@ const CTASection = () => {
           </p>
           
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-8">
-            <Button className="bg-white hover:bg-gray-50 text-vocab-teal text-base group px-8 py-6 rounded-full transition-all hover:scale-105 hover:shadow-xl w-full md:w-auto font-medium shadow-lg">
-              <CalendarDays className="mr-2 h-5 w-5" />
+            <Button className="bg-white hover:bg-gray-50 text-[#58CC02] text-base group px-8 py-6 rounded-full transition-all hover:scale-105 hover:shadow-xl w-full md:w-auto font-medium shadow-lg">
+              <Calendar className="mr-2 h-5 w-5" />
               Start 3-Day Free Trial
               <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Button>
             
-            <Button className="bg-gradient-to-r from-vocab-purple to-purple-500 hover:from-vocab-purple/90 hover:to-purple-500/90 text-white text-base group px-8 py-6 rounded-full transition-all hover:scale-105 hover:shadow-xl w-full md:w-auto font-medium shadow-lg">
+            <Button className="bg-[#7D41E1] hover:bg-[#6b35c7] text-white text-base group px-8 py-6 rounded-full transition-all hover:scale-105 hover:shadow-xl w-full md:w-auto font-medium shadow-lg">
               <Sparkles className="mr-2 h-5 w-5" />
               Go Pro – ₹149/month
               <Smartphone className="ml-2 h-5 w-5" />

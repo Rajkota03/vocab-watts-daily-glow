@@ -74,6 +74,16 @@ export default {
 				'vocab-red': '#FF6B6B',
 				'whatsapp-green': '#25D366',
 				'whatsapp-light': '#DCF8C6',
+				// Duolingo & Loom inspired colors
+				'duolingo-green': '#58CC02',
+				'duolingo-purple': '#7D41E1', 
+				'duolingo-blue': '#1CB0F6',
+				'duolingo-red': '#FF4B4B',
+				'duolingo-orange': '#FF9600',
+				'duolingo-yellow': '#FFC800',
+				'loom-purple': '#625DF5',
+				'loom-blue': '#00C9DF',
+				'loom-pink': '#F35FF3',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
