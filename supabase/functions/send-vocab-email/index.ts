@@ -98,9 +98,16 @@ serve(async (req) => {
     let isUsingFallback = false;
 
     try {
-      // If force_new_words is true, attempt to generate new words using OpenAI immediately
+      // Modify word generation logic to ensure uniqueness
       if (force_new_words) {
         console.log("Forcing generation of new words with OpenAI");
+        
+        // Fetch the IDs of words already sent in this category
+        const { data: sentWordIds } = await supabase
+          .from('sent_words')
+          .select('word_id')
+          .eq('category', category);
+        
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -112,20 +119,19 @@ serve(async (req) => {
             messages: [
               { 
                 role: 'system', 
-                content: `You are a vocabulary teaching assistant. Generate unique, interesting, and educational vocabulary words with clear definitions and helpful example sentences.` 
+                content: `You are a vocabulary teaching assistant. Generate unique vocabulary words.` 
               },
               { 
                 role: 'user', 
-                content: `Generate ${wordCount} vocabulary words for the category "${category}". Each word should be somewhat challenging but practical for everyday use.
+                content: `Generate ${wordCount} vocabulary words for the category "${category}". 
+                Ensure these words are completely different from the following word IDs: ${sentWordIds?.map(w => w.word_id).join(',')}
                 
                 For each word, provide:
                 1. The word itself
                 2. A clear, concise definition
                 3. A natural example sentence showing how to use it in context
                 
-                Format your response as a valid JSON array of objects with the properties: "word", "definition", "example", and "category".
-                The category should be "${category}" for all words.
-                Do not include any explanations or text outside the JSON array.` 
+                Do not generate any words that might be similar to previously sent words.` 
               }
             ],
             temperature: 0.7,
