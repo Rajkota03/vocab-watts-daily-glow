@@ -42,12 +42,13 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
         }
       }
       
-      // Call the edge function to send the email
+      // Call the edge function to send the email with force_new_words=true to generate fresh words
       const { data, error } = await supabase.functions.invoke('send-vocab-email', {
         body: {
           email: emailToUse,
           category: category,
-          wordCount: 5
+          wordCount: 5,
+          force_new_words: true // Force the generation of new words
         }
       });
       

@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
@@ -24,6 +23,7 @@ interface EmailRequestBody {
   email: string;
   category: string;
   wordCount?: number;
+  force_new_words?: boolean;
 }
 
 interface VocabularyWord {
@@ -86,36 +86,21 @@ serve(async (req) => {
   }
 
   try {
-    const { email, category, wordCount = 5 }: EmailRequestBody = await req.json();
+    const { email, category, wordCount = 5, force_new_words = false }: EmailRequestBody = await req.json();
     
     if (!email) {
       throw new Error('Email is required');
     }
 
-    console.log(`Generating ${wordCount} vocabulary words for category: ${category} to send to ${email}`);
+    console.log(`Generating ${wordCount} vocabulary words for category: ${category} to send to ${email} (force_new_words: ${force_new_words})`);
 
     let vocabWords: VocabularyWord[] = [];
     let isUsingFallback = false;
 
     try {
-      // First try to get existing words from the database
-      const { data: existingWords, error: existingWordsError } = await supabase
-        .from('vocabulary_words')
-        .select('*')
-        .eq('category', category)
-        .limit(wordCount);
-        
-      if (existingWordsError) {
-        console.error('Error fetching existing words:', existingWordsError);
-        throw new Error('Failed to fetch existing words');
-      }
-      
-      if (existingWords && existingWords.length >= wordCount) {
-        // Use existing words from the database
-        vocabWords = existingWords.slice(0, wordCount);
-        console.log(`Using ${vocabWords.length} existing words from the database`);
-      } else {
-        // Try to get words from OpenAI
+      // If force_new_words is true, attempt to generate new words using OpenAI immediately
+      if (force_new_words) {
+        console.log("Forcing generation of new words with OpenAI");
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -174,6 +159,84 @@ serve(async (req) => {
         
         vocabWords = parsedWords;
         console.log(`Successfully generated ${vocabWords.length} words from OpenAI`);
+      } else {
+        // Original behavior: first try to get existing words from the database
+        const { data: existingWords, error: existingWordsError } = await supabase
+          .from('vocabulary_words')
+          .select('*')
+          .eq('category', category)
+          .limit(wordCount);
+          
+        if (existingWordsError) {
+          console.error('Error fetching existing words:', existingWordsError);
+          throw new Error('Failed to fetch existing words');
+        }
+        
+        if (existingWords && existingWords.length >= wordCount) {
+          // Use existing words from the database
+          vocabWords = existingWords.slice(0, wordCount);
+          console.log(`Using ${vocabWords.length} existing words from the database`);
+        } else {
+          // Try to get words from OpenAI
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openAIApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-3.5-turbo',
+              messages: [
+                { 
+                  role: 'system', 
+                  content: `You are a vocabulary teaching assistant. Generate unique, interesting, and educational vocabulary words with clear definitions and helpful example sentences.` 
+                },
+                { 
+                  role: 'user', 
+                  content: `Generate ${wordCount} vocabulary words for the category "${category}". Each word should be somewhat challenging but practical for everyday use.
+                  
+                  For each word, provide:
+                  1. The word itself
+                  2. A clear, concise definition
+                  3. A natural example sentence showing how to use it in context
+      
+                  Format your response as a valid JSON array of objects with the properties: "word", "definition", "example", and "category".
+                  The category should be "${category}" for all words.
+                  Do not include any explanations or text outside the JSON array.` 
+                }
+              ],
+              temperature: 0.7,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`OpenAI API error: ${response.status}`);
+          }
+
+          const data = await response.json();
+          const content = data.choices[0].message.content;
+          
+          // Parse the JSON response from GPT
+          const parsedWords = JSON.parse(content);
+          
+          // Add UUIDs to the words to ensure they can be tracked in history
+          parsedWords.forEach((word: VocabularyWord) => {
+            word.id = crypto.randomUUID();
+            word.created_at = new Date().toISOString();
+          });
+          
+          // Insert the words into the database for future use
+          const { error: insertError } = await supabase
+            .from('vocabulary_words')
+            .insert(parsedWords);
+            
+          if (insertError) {
+            console.error('Error inserting words into database:', insertError);
+          }
+          
+          vocabWords = parsedWords;
+          console.log(`Successfully generated ${vocabWords.length} words from OpenAI`);
+        }
       }
     } catch (apiError) {
       console.error('API or database error:', apiError);

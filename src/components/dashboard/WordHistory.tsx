@@ -85,6 +85,8 @@ const WordHistory: React.FC<WordHistoryProps> = ({
       } else {
         // Get the actual word data for the sent words - casting sentWords to any[] to bypass type checking
         const wordIds = (sentWords as any[]).map(sw => sw.word_id);
+        
+        // Retrieve the words in order of most recently sent
         const { data: wordsData, error: wordsError } = await supabase
           .from('vocabulary_words')
           .select('*')
@@ -98,10 +100,13 @@ const WordHistory: React.FC<WordHistoryProps> = ({
             setWords(fallbackWords);
           }
         } else {
-          // Sort the words in the same order as sentWords
-          const sortedWords = wordIds.map(id => 
-            wordsData.find(word => word.id === id)
+          // Sort the words in the same order as sentWords (by sent_at, most recent first)
+          const sortedWords = (sentWords as any[]).map(sentWord => 
+            wordsData.find(word => word.id === sentWord.word_id)
           ).filter(Boolean) as VocabularyWord[];
+          
+          // Make sure we have the right order
+          console.log('Sorted sent words:', sortedWords.map(w => w.word));
           
           setWords(sortedWords);
         }
@@ -129,6 +134,7 @@ const WordHistory: React.FC<WordHistoryProps> = ({
         if (mutation.type === 'attributes' && 
             mutation.attributeName === 'class' && 
             (mutation.target as HTMLElement).classList.contains('refresh-triggered')) {
+          console.log('Word history refresh triggered');
           loadWords();
         }
       });
