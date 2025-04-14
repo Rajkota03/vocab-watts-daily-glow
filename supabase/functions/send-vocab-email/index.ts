@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
@@ -24,6 +25,7 @@ interface EmailRequestBody {
   category: string;
   wordCount?: number;
   force_new_words?: boolean;
+  user_id?: string;
 }
 
 interface VocabularyWord {
@@ -86,28 +88,82 @@ serve(async (req) => {
   }
 
   try {
-    const { email, category, wordCount = 5, force_new_words = false }: EmailRequestBody = await req.json();
+    const { email, category, wordCount = 5, force_new_words = false, user_id }: EmailRequestBody = await req.json();
     
     if (!email) {
       throw new Error('Email is required');
+    }
+
+    // Validate user_id
+    const currentUserId = user_id || (await (await supabase.auth.getSession()).data.session?.user?.id);
+    if (!currentUserId) {
+      throw new Error('User ID is required for word history tracking');
     }
 
     console.log(`Generating ${wordCount} vocabulary words for category: ${category} to send to ${email} (force_new_words: ${force_new_words})`);
 
     let vocabWords: VocabularyWord[] = [];
     let isUsingFallback = false;
+    let wordSource = 'database'; // Track the source of words for history
 
     try {
-      // Modify word generation logic to ensure uniqueness
-      if (force_new_words) {
-        console.log("Forcing generation of new words with OpenAI");
+      // STEP 1: Check Word History for this user
+      console.log("Step 1: Checking word history for user", currentUserId);
+      const { data: userWordHistory, error: historyError } = await supabase
+        .from('user_word_history')
+        .select('word')
+        .eq('user_id', currentUserId)
+        .eq('category', category);
+      
+      if (historyError) {
+        console.error("Error fetching user word history:", historyError);
+        throw historyError;
+      }
+      
+      const previousWords = userWordHistory?.map(entry => entry.word) || [];
+      console.log(`Found ${previousWords.length} previously sent words for this user`);
+      
+      // STEP 2: Try fetching from vocabulary_words Table
+      if (!force_new_words) {
+        console.log("Step 2: Fetching words from vocabulary_words table not in user history");
+        let query = supabase
+          .from('vocabulary_words')
+          .select('*')
+          .eq('category', category)
+          .limit(wordCount);
         
-        // Fetch the IDs of words already sent in this category
-        const { data: sentWordIds } = await supabase
-          .from('sent_words')
-          .select('word_id')
-          .eq('category', category);
+        // Exclude previously sent words if any exist
+        if (previousWords.length > 0) {
+          query = query.not('word', 'in', `(${previousWords.map(w => `'${w.replace(/'/g, "''")}'`).join(',')})`);
+        }
         
+        const { data: existingWords, error: existingWordsError } = await query;
+        
+        if (existingWordsError) {
+          console.error("Error fetching words from vocabulary_words:", existingWordsError);
+          throw existingWordsError;
+        }
+        
+        if (existingWords && existingWords.length >= wordCount) {
+          // Use existing words from the database
+          vocabWords = existingWords.slice(0, wordCount);
+          wordSource = 'database';
+          console.log(`Using ${vocabWords.length} existing words from the database`);
+        }
+      }
+      
+      // STEP 3: If not enough words or force_new_words is true, Call OpenAI
+      if (vocabWords.length < wordCount || force_new_words) {
+        console.log("Step 3: Generating new words with OpenAI");
+        wordSource = 'openai';
+        
+        // Calculate how many new words we need
+        const newWordsNeeded = force_new_words ? wordCount : (wordCount - vocabWords.length);
+        
+        // Create the list of words to avoid
+        const wordsToAvoid = previousWords.join(', ');
+        
+        // Call OpenAI to generate new words
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -123,15 +179,18 @@ serve(async (req) => {
               },
               { 
                 role: 'user', 
-                content: `Generate ${wordCount} vocabulary words for the category "${category}". 
-                Ensure these words are completely different from the following word IDs: ${sentWordIds?.map(w => w.word_id).join(',')}
+                content: `Generate ${newWordsNeeded} vocabulary words for the category "${category}".
+                
+                ${previousWords.length > 0 ? `IMPORTANT: Avoid using these words that the user has already seen: [${wordsToAvoid}]` : ''}
                 
                 For each word, provide:
                 1. The word itself
                 2. A clear, concise definition
                 3. A natural example sentence showing how to use it in context
                 
-                Do not generate any words that might be similar to previously sent words.` 
+                Format your response as a valid JSON array of objects with the properties: "word", "definition", "example", and "category".
+                The category should be "${category}" for all words.
+                Do not include any explanations or text outside the JSON array.` 
               }
             ],
             temperature: 0.7,
@@ -163,98 +222,52 @@ serve(async (req) => {
           console.error('Error inserting words into database:', insertError);
         }
         
-        vocabWords = parsedWords;
-        console.log(`Successfully generated ${vocabWords.length} words from OpenAI`);
-      } else {
-        // Original behavior: first try to get existing words from the database
-        const { data: existingWords, error: existingWordsError } = await supabase
-          .from('vocabulary_words')
-          .select('*')
-          .eq('category', category)
-          .limit(wordCount);
-          
-        if (existingWordsError) {
-          console.error('Error fetching existing words:', existingWordsError);
-          throw new Error('Failed to fetch existing words');
+        // Combine with any existing words if we're not forcing all new words
+        if (force_new_words) {
+          vocabWords = parsedWords;
+        } else {
+          vocabWords = [...vocabWords, ...parsedWords].slice(0, wordCount);
         }
         
-        if (existingWords && existingWords.length >= wordCount) {
-          // Use existing words from the database
-          vocabWords = existingWords.slice(0, wordCount);
-          console.log(`Using ${vocabWords.length} existing words from the database`);
-        } else {
-          // Try to get words from OpenAI
-          const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${openAIApiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'gpt-3.5-turbo',
-              messages: [
-                { 
-                  role: 'system', 
-                  content: `You are a vocabulary teaching assistant. Generate unique, interesting, and educational vocabulary words with clear definitions and helpful example sentences.` 
-                },
-                { 
-                  role: 'user', 
-                  content: `Generate ${wordCount} vocabulary words for the category "${category}". Each word should be somewhat challenging but practical for everyday use.
-                  
-                  For each word, provide:
-                  1. The word itself
-                  2. A clear, concise definition
-                  3. A natural example sentence showing how to use it in context
-      
-                  Format your response as a valid JSON array of objects with the properties: "word", "definition", "example", and "category".
-                  The category should be "${category}" for all words.
-                  Do not include any explanations or text outside the JSON array.` 
-                }
-              ],
-              temperature: 0.7,
-            }),
-          });
-
-          if (!response.ok) {
-            throw new Error(`OpenAI API error: ${response.status}`);
-          }
-
-          const data = await response.json();
-          const content = data.choices[0].message.content;
-          
-          // Parse the JSON response from GPT
-          const parsedWords = JSON.parse(content);
-          
-          // Add UUIDs to the words to ensure they can be tracked in history
-          parsedWords.forEach((word: VocabularyWord) => {
-            word.id = crypto.randomUUID();
-            word.created_at = new Date().toISOString();
-          });
-          
-          // Insert the words into the database for future use
-          const { error: insertError } = await supabase
-            .from('vocabulary_words')
-            .insert(parsedWords);
-            
-          if (insertError) {
-            console.error('Error inserting words into database:', insertError);
-          }
-          
-          vocabWords = parsedWords;
-          console.log(`Successfully generated ${vocabWords.length} words from OpenAI`);
-        }
+        console.log(`Successfully generated ${parsedWords.length} words from OpenAI`);
       }
     } catch (apiError) {
       console.error('API or database error:', apiError);
       
       // Use fallback words instead
       isUsingFallback = true;
+      wordSource = 'fallback';
       vocabWords = fallbackWords[category as keyof typeof fallbackWords] || fallbackWords.general;
       
       // Limit to requested word count
       vocabWords = vocabWords.slice(0, wordCount);
       
       console.log(`Using ${vocabWords.length} fallback words for category: ${category}`);
+    }
+
+    // STEP 4: Log Final Sent Words to user_word_history
+    try {
+      console.log("Step 4: Logging sent words to user_word_history");
+      const historyEntries = vocabWords.map(word => ({
+        user_id: currentUserId,
+        word: word.word,
+        date_sent: new Date().toISOString(),
+        category: category,
+        source: wordSource,
+        word_id: word.id
+      }));
+      
+      const { error: historyError } = await supabase
+        .from('user_word_history')
+        .insert(historyEntries);
+        
+      if (historyError) {
+        console.error('Error logging words to user history:', historyError);
+      } else {
+        console.log(`Successfully logged ${vocabWords.length} words to user history`);
+      }
+    } catch (historyError) {
+      console.error('Error in word history logging:', historyError);
     }
 
     // Send email using Resend
@@ -282,6 +295,7 @@ serve(async (req) => {
         message: `Email with ${vocabWords.length} vocabulary words sent to ${email}`,
         words: vocabWords,
         isUsingFallback,
+        wordSource,
         emailResult
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -295,10 +309,11 @@ serve(async (req) => {
         success: false,
         error: `Failed to send email: ${emailError.message}`,
         words: vocabWords,
-        isUsingFallback
+        isUsingFallback,
+        wordSource
       }), {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
   } catch (error: any) {

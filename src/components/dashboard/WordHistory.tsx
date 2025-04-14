@@ -46,44 +46,59 @@ const WordHistory: React.FC<WordHistoryProps> = ({
         return;
       }
       
-      // First try to get sent words for this user
-      const { data: userData, error: userError } = await supabase
-        .from('user_subscriptions')
-        .select('phone_number')
-        .eq('user_id', userId)
-        .single();
-        
-      if (userError) {
-        console.error('Error fetching user data:', userError);
-        // If we can't get the phone number, try to get words directly 
-        const wordsData = await getVocabWordsByCategory(category);
-        if (wordsData) {
-          setWords(wordsData);
-        }
-        setLoading(false);
-        return;
-      }
-      
-      const phoneNumber = userData?.phone_number;
-        
-      // Get the most recent sent words for this user and category - using string literal to bypass TypeScript checks
-      const { data: sentWords, error: sentWordsError } = await supabase
-        .from('sent_words' as any)
-        .select('word_id, sent_at')
+      // First try to get words from user_word_history
+      const { data: userHistoryWords, error: historyError } = await supabase
+        .from('user_word_history')
+        .select('word_id, date_sent, word')
         .eq('user_id', userId)
         .eq('category', category)
-        .order('sent_at', { ascending: false })
+        .order('date_sent', { ascending: false })
         .limit(20);
         
-      if (sentWordsError || !sentWords || (sentWords as any[]).length === 0) {
-        console.log('No sent words found or error fetching sent words. Trying to get vocab words directly.');
-        // If no sent words are found or there's an error, fall back to getting words directly
-        const wordsData = await getVocabWordsByCategory(category);
-        if (wordsData) {
-          setWords(wordsData);
+      if (historyError || !userHistoryWords || userHistoryWords.length === 0) {
+        console.log('No user history found or error. Trying sent_words table.');
+        
+        // Fall back to the old sent_words table
+        const { data: userData, error: userError } = await supabase
+          .from('user_subscriptions')
+          .select('phone_number')
+          .eq('user_id', userId)
+          .single();
+          
+        if (userError) {
+          console.error('Error fetching user data:', userError);
+          // If we can't get the phone number, try to get words directly 
+          const wordsData = await getVocabWordsByCategory(category);
+          if (wordsData) {
+            setWords(wordsData);
+          }
+          setLoading(false);
+          return;
         }
-      } else {
-        // Get the actual word data for the sent words - casting sentWords to any[] to bypass type checking
+        
+        const phoneNumber = userData?.phone_number;
+          
+        // Get the most recent sent words for this user and category
+        const { data: sentWords, error: sentWordsError } = await supabase
+          .from('sent_words' as any)
+          .select('word_id, sent_at')
+          .eq('user_id', userId)
+          .eq('category', category)
+          .order('sent_at', { ascending: false })
+          .limit(20);
+          
+        if (sentWordsError || !sentWords || (sentWords as any[]).length === 0) {
+          console.log('No sent words found or error fetching sent words. Trying to get vocab words directly.');
+          // If no sent words are found or there's an error, fall back to getting words directly
+          const wordsData = await getVocabWordsByCategory(category);
+          if (wordsData) {
+            setWords(wordsData);
+          }
+          setLoading(false);
+          return;
+        }
+        
+        // Get the actual word data for the sent words
         const wordIds = (sentWords as any[]).map(sw => sw.word_id);
         
         // Retrieve the words in order of most recently sent
@@ -105,11 +120,31 @@ const WordHistory: React.FC<WordHistoryProps> = ({
             wordsData.find(word => word.id === sentWord.word_id)
           ).filter(Boolean) as VocabularyWord[];
           
-          // Make sure we have the right order
-          console.log('Sorted sent words:', sortedWords.map(w => w.word));
-          
           setWords(sortedWords);
         }
+      } else {
+        // Use the new user_word_history to get the words
+        const wordIds = userHistoryWords.map(hw => hw.word_id);
+        
+        // Fetch the complete word data from vocabulary_words
+        const { data: wordsData, error: wordsError } = await supabase
+          .from('vocabulary_words')
+          .select('*')
+          .in('id', wordIds);
+          
+        if (wordsError || !wordsData || wordsData.length === 0) {
+          console.error('Error fetching vocabulary words:', wordsError);
+          setLoading(false);
+          return;
+        }
+        
+        // Sort the words in the same order as userHistoryWords (by date_sent, most recent first)
+        const sortedWords = userHistoryWords.map(historyWord => 
+          wordsData.find(word => word.id === historyWord.word_id)
+        ).filter(Boolean) as VocabularyWord[];
+        
+        console.log('Sorted words from user history:', sortedWords.map(w => w.word));
+        setWords(sortedWords);
       }
     } catch (error) {
       console.error('Failed to fetch words:', error);

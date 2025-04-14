@@ -42,13 +42,28 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
         }
       }
       
+      // Get current user ID for word history tracking
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id;
+      
+      if (!userId) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to use this feature.",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+      
       // Call the edge function to send the email with force_new_words=true to generate fresh words
       const { data, error } = await supabase.functions.invoke('send-vocab-email', {
         body: {
           email: emailToUse,
           category: category,
           wordCount: 5,
-          force_new_words: true // Force the generation of new words
+          force_new_words: true, // Force the generation of new words
+          user_id: userId // Pass the user ID for word history tracking
         }
       });
       
@@ -94,14 +109,12 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
       if (data.isUsingFallback) {
         toast({
           title: "Test completed with fallback words",
-          description: `Generated ${data.words.length} sample words for category "${category}". The AI service is temporarily unavailable, so we're using sample words instead. Check your email at ${emailToUse}.`,
-          variant: "default"
+          description: `Generated ${data.words.length} sample words for category "${category}". The AI service is temporarily unavailable, so we're using sample words instead. Check your email at ${emailToUse}.`
         });
       } else {
         toast({
           title: "Test completed successfully!",
-          description: `Generated ${data.words.length} words for category "${category}". Check your email at ${emailToUse}.`,
-          variant: "default"
+          description: `Generated ${data.words.length} new words for category "${category}" using ${data.wordSource || 'AI'}. Check your email at ${emailToUse}.`
         });
       }
       
