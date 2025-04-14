@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Send } from "lucide-react";
+import { Send, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 
@@ -55,12 +55,33 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
       
       console.log('API test response:', data);
       
-      // Use default variant since duration is not a valid prop
-      toast({
-        title: "Test completed successfully!",
-        description: `Generated ${data.words.length} words for category "${category}". Check your email at ${emailToUse}.`,
-        variant: "default"
-      });
+      // Create a toast message based on whether we're using fallback words or not
+      if (data.isUsingFallback) {
+        toast({
+          title: "Test completed with fallback words",
+          description: (
+            <div className="flex flex-col space-y-2">
+              <div className="flex items-start">
+                <AlertTriangle className="h-4 w-4 text-yellow-500 mr-2 mt-0.5" />
+                <span>
+                  Generated {data.words.length} sample words for category "{category}". 
+                  <br />
+                  The AI service is temporarily unavailable, so we're using sample words instead.
+                  <br />
+                  Check your email at {emailToUse}.
+                </span>
+              </div>
+            </div>
+          ),
+          variant: "default"
+        });
+      } else {
+        toast({
+          title: "Test completed successfully!",
+          description: `Generated ${data.words.length} words for category "${category}". Check your email at ${emailToUse}.`,
+          variant: "default"
+        });
+      }
       
       // Reset state
       setShowEmailInput(false);

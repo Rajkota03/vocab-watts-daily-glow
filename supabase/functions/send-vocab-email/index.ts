@@ -15,6 +15,38 @@ interface EmailRequestBody {
   wordCount?: number;
 }
 
+// Fallback vocabulary words for when the API fails
+const fallbackWords = {
+  business: [
+    { word: "leverage", definition: "Use (something) to maximum advantage", example: "We need to leverage our network to expand into new markets.", category: "business" },
+    { word: "scalable", definition: "Able to be changed in size or scale", example: "We need a scalable solution that can grow with our business.", category: "business" },
+    { word: "paradigm", definition: "A typical example or pattern of something", example: "This represents a new paradigm in customer service.", category: "business" },
+    { word: "synergy", definition: "The interaction of elements that when combined produce a total effect greater than the sum of the individual elements", example: "The merger created synergy between the two companies.", category: "business" },
+    { word: "strategic", definition: "Relating to the identification of long-term or overall aims and interests and the means of achieving them", example: "We need to make strategic investments in emerging markets.", category: "business" },
+  ],
+  exam: [
+    { word: "juxtapose", definition: "Place or deal with close together for contrasting effect", example: "The director juxtaposed scenes of wealth and poverty to highlight social inequality.", category: "exam" },
+    { word: "ubiquitous", definition: "Present, appearing, or found everywhere", example: "Smartphones have become ubiquitous in modern society.", category: "exam" },
+    { word: "ephemeral", definition: "Lasting for a very short time", example: "The ephemeral nature of fame in the digital age concerns many celebrities.", category: "exam" },
+    { word: "esoteric", definition: "Intended for or likely to be understood by only a small number of people with specialized knowledge", example: "The professor's lecture contained esoteric terms that confused many students.", category: "exam" },
+    { word: "pragmatic", definition: "Dealing with things sensibly and realistically in a way that is based on practical considerations", example: "We need a pragmatic approach to solving this complex problem.", category: "exam" },
+  ],
+  slang: [
+    { word: "ghosting", definition: "Abruptly cutting off all contact with someone", example: "He was ghosting her after their third date.", category: "slang" },
+    { word: "slay", definition: "To do something exceptionally well", example: "She absolutely slayed that presentation yesterday.", category: "slang" },
+    { word: "cap", definition: "To lie or exaggerate about something", example: "No cap, this is the best pizza I've ever had.", category: "slang" },
+    { word: "vibe check", definition: "An assessment of someone's mood or attitude", example: "Just doing a quick vibe check before I ask him for a favor.", category: "slang" },
+    { word: "sus", definition: "Suspicious or questionable", example: "That guy looking at our bags seems kinda sus.", category: "slang" },
+  ],
+  general: [
+    { word: "serendipity", definition: "The occurrence and development of events by chance in a happy or beneficial way", example: "It was serendipity that we met at the conference.", category: "general" },
+    { word: "eloquent", definition: "Fluent or persuasive in speaking or writing", example: "She gave an eloquent speech that moved the entire audience.", category: "general" },
+    { word: "resilience", definition: "The capacity to recover quickly from difficulties; toughness", example: "The resilience of the human spirit never ceases to amaze me.", category: "general" },
+    { word: "meticulous", definition: "Showing great attention to detail; very careful and precise", example: "His meticulous planning ensured the event went smoothly.", category: "general" },
+    { word: "ambivalent", definition: "Having mixed feelings or contradictory ideas about something or someone", example: "I'm ambivalent about moving to a new city.", category: "general" },
+  ]
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -30,76 +62,85 @@ serve(async (req) => {
 
     console.log(`Generating ${wordCount} vocabulary words for category: ${category} to send to ${email}`);
 
-    let categoryPrompt = "";
-    switch (category) {
-      case "business":
-        categoryPrompt = "professional business vocabulary that would be useful in a corporate environment";
-        break;
-      case "exam":
-        categoryPrompt = "advanced academic vocabulary that would appear in standardized tests like SAT, GRE, or TOEFL";
-        break;
-      case "slang":
-        categoryPrompt = "modern English slang and idioms used in casual conversation";
-        break;
-      case "general":
-      default:
-        categoryPrompt = "useful general vocabulary that would enhance everyday conversation";
-        break;
-    }
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { 
-            role: 'system', 
-            content: `You are a vocabulary teaching assistant. Generate unique, interesting, and educational vocabulary words with clear definitions and helpful example sentences.` 
-          },
-          { 
-            role: 'user', 
-            content: `Generate ${wordCount} ${categoryPrompt}. Each word should be somewhat challenging but practical for everyday use.
-            
-            For each word, provide:
-            1. The word itself
-            2. A clear, concise definition
-            3. A natural example sentence showing how to use it in context
-            
-            Format your response as a valid JSON array of objects with the properties: "word", "definition", "example", and "category".
-            The category should be "${category}" for all words.
-            Do not include any explanations or text outside the JSON array.` 
-          }
-        ],
-        temperature: 0.7,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const content = data.choices[0].message.content;
-    
-    // Parse the JSON response from GPT
     let vocabWords;
+    let isUsingFallback = false;
+
     try {
+      // Try to get words from OpenAI
+      let categoryPrompt = "";
+      switch (category) {
+        case "business":
+          categoryPrompt = "professional business vocabulary that would be useful in a corporate environment";
+          break;
+        case "exam":
+          categoryPrompt = "advanced academic vocabulary that would appear in standardized tests like SAT, GRE, or TOEFL";
+          break;
+        case "slang":
+          categoryPrompt = "modern English slang and idioms used in casual conversation";
+          break;
+        case "general":
+        default:
+          categoryPrompt = "useful general vocabulary that would enhance everyday conversation";
+          break;
+      }
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { 
+              role: 'system', 
+              content: `You are a vocabulary teaching assistant. Generate unique, interesting, and educational vocabulary words with clear definitions and helpful example sentences.` 
+            },
+            { 
+              role: 'user', 
+              content: `Generate ${wordCount} ${categoryPrompt}. Each word should be somewhat challenging but practical for everyday use.
+              
+              For each word, provide:
+              1. The word itself
+              2. A clear, concise definition
+              3. A natural example sentence showing how to use it in context
+              
+              Format your response as a valid JSON array of objects with the properties: "word", "definition", "example", and "category".
+              The category should be "${category}" for all words.
+              Do not include any explanations or text outside the JSON array.` 
+            }
+          ],
+          temperature: 0.7,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+      
+      // Parse the JSON response from GPT
       vocabWords = JSON.parse(content);
-      console.log(`Successfully generated ${vocabWords.length} words`);
-    } catch (parseError) {
-      console.error('Error parsing OpenAI response:', parseError);
-      console.log('Raw content:', content);
-      throw new Error('Failed to parse vocabulary words from OpenAI response');
+      console.log(`Successfully generated ${vocabWords.length} words from OpenAI`);
+      
+    } catch (apiError) {
+      console.error('OpenAI API error:', apiError);
+      
+      // Use fallback words instead
+      isUsingFallback = true;
+      vocabWords = fallbackWords[category as keyof typeof fallbackWords] || fallbackWords.general;
+      
+      // Limit to requested word count
+      vocabWords = vocabWords.slice(0, wordCount);
+      
+      console.log(`Using ${vocabWords.length} fallback words for category: ${category}`);
     }
 
     // Generate an HTML email with the words
-    const emailHtml = generateEmailHtml(vocabWords, category);
+    const emailHtml = generateEmailHtml(vocabWords, category, isUsingFallback);
     
     // For this demo, we'll just return the generated words
     // In a real implementation, you would integrate with an email service like Resend or SendGrid
@@ -109,7 +150,8 @@ serve(async (req) => {
       success: true,
       message: `Email with ${vocabWords.length} vocabulary words would be sent to ${email}`,
       previewHtml: emailHtml,
-      words: vocabWords 
+      words: vocabWords,
+      isUsingFallback
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -122,7 +164,7 @@ serve(async (req) => {
   }
 });
 
-function generateEmailHtml(words: any[], category: string): string {
+function generateEmailHtml(words: any[], category: string, isUsingFallback: boolean): string {
   const categoryTitle = category.charAt(0).toUpperCase() + category.slice(1);
   
   let wordsHtml = '';
@@ -135,6 +177,11 @@ function generateEmailHtml(words: any[], category: string): string {
       </div>
     `;
   });
+  
+  const fallbackNotice = isUsingFallback ? 
+    `<div style="padding: 10px; background-color: #fff9e5; border-left: 4px solid #ffc107; margin-bottom: 20px;">
+      <p style="margin: 0; color: #856404;">Note: These are sample vocabulary words provided while we're working on our AI service. They are not personalized.</p>
+    </div>` : '';
   
   return `
     <!DOCTYPE html>
@@ -149,6 +196,8 @@ function generateEmailHtml(words: any[], category: string): string {
         <h1 style="color: #3F3D56; margin-bottom: 10px;">VocabSpark</h1>
         <p style="color: #666; font-size: 16px;">Here are your ${categoryTitle} vocabulary words</p>
       </div>
+      
+      ${fallbackNotice}
       
       <div style="margin-bottom: 30px;">
         ${wordsHtml}
