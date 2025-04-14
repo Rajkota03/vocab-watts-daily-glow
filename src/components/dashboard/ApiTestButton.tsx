@@ -93,20 +93,7 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
       if (data.isUsingFallback) {
         toast({
           title: "Test completed with fallback words",
-          description: (
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-start">
-                <AlertTriangle className="h-4 w-4 text-yellow-500 mr-2 mt-0.5" />
-                <span>
-                  Generated {data.words.length} sample words for category "{category}". 
-                  <br />
-                  The AI service is temporarily unavailable, so we're using sample words instead.
-                  <br />
-                  Check your email at {emailToUse}.
-                </span>
-              </div>
-            </div>
-          ),
+          description: `Generated ${data.words.length} sample words for category "${category}". The AI service is temporarily unavailable, so we're using sample words instead. Check your email at ${emailToUse}.`,
           variant: "default"
         });
       } else {
