@@ -3,3 +3,6 @@ project_id = "pbpmtqcffhqwzboviqfw"
 
 [functions.generate-vocab-words]
 verify_jwt = true
+
+[functions.send-vocab-email]
+verify_jwt = true
