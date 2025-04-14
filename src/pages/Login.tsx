@@ -5,17 +5,56 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Brain, LockIcon, MailIcon, Loader2 } from 'lucide-react';
+import { Brain, LockIcon, MailIcon, UserIcon, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+// Login form schema
+const loginSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters")
+});
+
+// Registration form schema with first and last name
+const registerSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters")
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
+type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Login form
+  const loginForm = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: ''
+    }
+  });
+
+  // Registration form
+  const registerForm = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: ''
+    }
+  });
 
   useEffect(() => {
     // Check if user is already logged in
@@ -44,53 +83,65 @@ const Login = () => {
     };
   }, [navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async (values: LoginFormValues) => {
     setIsLoading(true);
 
     try {
-      if (isSignUp) {
-        // Sign up
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              is_pro: true,
-              category: 'business' // Default category for Pro users
-            }
-          }
-        });
+      const { error } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        toast({
-          title: "Account created successfully",
-          description: "Please check your email for a confirmation link or proceed to login.",
-        });
-        
-        // Automatically switch to login mode after signup
-        setIsSignUp(false);
-      } else {
-        // Sign in
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) throw error;
-
-        // Successfully logged in
-        toast({
-          title: "Login successful",
-          description: "Welcome back!",
-        });
-
-        // Navigate to dashboard happens in the onAuthStateChange handler
-      }
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      });
+      
+      // Navigate to dashboard happens in the onAuthStateChange handler
     } catch (error: any) {
       toast({
         title: "Error",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegister = async (values: RegisterFormValues) => {
+    setIsLoading(true);
+
+    try {
+      // Sign up
+      const { error } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.password,
+        options: {
+          data: {
+            first_name: values.firstName,
+            last_name: values.lastName,
+            is_pro: true,
+            category: 'business' // Default category for Pro users
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Account created successfully",
+        description: "Please check your email for a confirmation link or proceed to login.",
+      });
+      
+      // Automatically switch to login mode after signup
+      setIsSignUp(false);
+      loginForm.reset({ email: values.email, password: '' });
+    } catch (error: any) {
+      toast({
+        title: "Registration Error",
         description: error.message || "An error occurred",
         variant: "destructive",
       });
@@ -117,72 +168,202 @@ const Login = () => {
               : 'Login to access your VocabSpark Pro dashboard'}
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-6 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">Email</Label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <MailIcon className="h-5 w-5 text-gray-400" />
+        
+        <CardContent className="space-y-6 pt-4">
+          {isSignUp ? (
+            <Form {...registerForm}>
+              <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={registerForm.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>First Name</FormLabel>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <UserIcon className="h-5 w-5 text-gray-400" />
+                          </div>
+                          <FormControl>
+                            <Input 
+                              placeholder="John" 
+                              className="pl-10 bg-gray-50 border border-gray-200 focus:border-vocab-teal"
+                              {...field}
+                            />
+                          </FormControl>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={registerForm.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last Name</FormLabel>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <UserIcon className="h-5 w-5 text-gray-400" />
+                          </div>
+                          <FormControl>
+                            <Input 
+                              placeholder="Doe" 
+                              className="pl-10 bg-gray-50 border border-gray-200 focus:border-vocab-teal"
+                              {...field}
+                            />
+                          </FormControl>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
                 </div>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="your@email.com" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="pl-10 bg-gray-50 border border-gray-200 focus:border-vocab-teal"
+                
+                <FormField
+                  control={registerForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <MailIcon className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <FormControl>
+                          <Input 
+                            type="email" 
+                            placeholder="your@email.com" 
+                            className="pl-10 bg-gray-50 border border-gray-200 focus:border-vocab-teal"
+                            {...field}
+                          />
+                        </FormControl>
+                      </div>
+                    </FormItem>
+                  )}
                 />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <LockIcon className="h-5 w-5 text-gray-400" />
-                </div>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  placeholder="••••••••" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="pl-10 bg-gray-50 border border-gray-200 focus:border-vocab-teal"
+                
+                <FormField
+                  control={registerForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <LockIcon className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <FormControl>
+                          <Input 
+                            type="password" 
+                            placeholder="••••••••" 
+                            className="pl-10 bg-gray-50 border border-gray-200 focus:border-vocab-teal"
+                            {...field}
+                          />
+                        </FormControl>
+                      </div>
+                    </FormItem>
+                  )}
                 />
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4 pt-2">
-            <Button 
-              type="submit" 
-              className="w-full py-6 text-base font-medium shadow-md transition-all hover:scale-[1.01] bg-gradient-to-r from-vocab-purple to-violet-500 hover:from-vocab-purple/90 hover:to-violet-500/90" 
-              disabled={isLoading}
+                
+                <Button 
+                  type="submit" 
+                  className="w-full py-6 text-base font-medium shadow-md transition-all hover:scale-[1.01] bg-gradient-to-r from-vocab-purple to-violet-500 hover:from-vocab-purple/90 hover:to-violet-500/90" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : 'Create Pro Account'}
+                </Button>
+              </form>
+            </Form>
+          ) : (
+            <Form {...loginForm}>
+              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
+                <FormField
+                  control={loginForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <MailIcon className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <FormControl>
+                          <Input 
+                            type="email" 
+                            placeholder="your@email.com" 
+                            className="pl-10 bg-gray-50 border border-gray-200 focus:border-vocab-teal"
+                            {...field}
+                          />
+                        </FormControl>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={loginForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <LockIcon className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <FormControl>
+                          <Input 
+                            type="password" 
+                            placeholder="••••••••" 
+                            className="pl-10 bg-gray-50 border border-gray-200 focus:border-vocab-teal"
+                            {...field}
+                          />
+                        </FormControl>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                
+                <Button 
+                  type="submit" 
+                  className="w-full py-6 text-base font-medium shadow-md transition-all hover:scale-[1.01] bg-gradient-to-r from-vocab-purple to-violet-500 hover:from-vocab-purple/90 hover:to-violet-500/90" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : 'Sign In'}
+                </Button>
+              </form>
+            </Form>
+          )}
+        </CardContent>
+        
+        <CardFooter className="flex flex-col space-y-4 pt-2">
+          <div className="text-center text-sm">
+            <span className="text-gray-500">
+              {isSignUp ? 'Already have an account?' : "Don't have an account?"}
+            </span>{' '}
+            <button
+              type="button"
+              className="text-vocab-teal hover:text-vocab-purple font-medium transition-colors"
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                // Reset the forms when toggling
+                loginForm.reset();
+                registerForm.reset();
+              }}
             >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                isSignUp ? 'Create Pro Account' : 'Sign In'
-              )}
-            </Button>
-            <div className="text-center text-sm">
-              <span className="text-gray-500">
-                {isSignUp ? 'Already have an account?' : "Don't have an account?"}
-              </span>{' '}
-              <button
-                type="button"
-                className="text-vocab-teal hover:text-vocab-purple font-medium transition-colors"
-                onClick={() => setIsSignUp(!isSignUp)}
-              >
-                {isSignUp ? 'Sign In' : 'Create Pro Account'}
-              </button>
-            </div>
-          </CardFooter>
-        </form>
+              {isSignUp ? 'Sign In' : 'Create Pro Account'}
+            </button>
+          </div>
+        </CardFooter>
       </Card>
     </div>
   );
