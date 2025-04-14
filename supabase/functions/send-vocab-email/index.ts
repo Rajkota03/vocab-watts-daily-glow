@@ -2,10 +2,18 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const resendApiKey = Deno.env.get('RESEND_API_KEY');
-const resend = new Resend(resendApiKey);
+const supabaseUrl = Deno.env.get('SUPABASE_URL');
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+
+// Initialize Resend only if API key is available
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
+
+// Initialize Supabase client
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,6 +24,15 @@ interface EmailRequestBody {
   email: string;
   category: string;
   wordCount?: number;
+}
+
+interface VocabularyWord {
+  id?: string;
+  word: string;
+  definition: string;
+  example: string;
+  category: string;
+  created_at?: string;
 }
 
 // Fallback vocabulary words for when the API fails
@@ -50,6 +67,18 @@ const fallbackWords = {
   ]
 };
 
+// Add UUIDs to fallback words to ensure they can be tracked in history
+for (const category in fallbackWords) {
+  fallbackWords[category as keyof typeof fallbackWords].forEach(word => {
+    if (!word.id) {
+      word.id = crypto.randomUUID();
+    }
+    if (!word.created_at) {
+      word.created_at = new Date().toISOString();
+    }
+  });
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -65,72 +94,89 @@ serve(async (req) => {
 
     console.log(`Generating ${wordCount} vocabulary words for category: ${category} to send to ${email}`);
 
-    let vocabWords;
+    let vocabWords: VocabularyWord[] = [];
     let isUsingFallback = false;
 
     try {
-      // Try to get words from OpenAI
-      let categoryPrompt = "";
-      switch (category) {
-        case "business":
-          categoryPrompt = "professional business vocabulary that would be useful in a corporate environment";
-          break;
-        case "exam":
-          categoryPrompt = "advanced academic vocabulary that would appear in standardized tests like SAT, GRE, or TOEFL";
-          break;
-        case "slang":
-          categoryPrompt = "modern English slang and idioms used in casual conversation";
-          break;
-        case "general":
-        default:
-          categoryPrompt = "useful general vocabulary that would enhance everyday conversation";
-          break;
+      // First try to get existing words from the database
+      const { data: existingWords, error: existingWordsError } = await supabase
+        .from('vocabulary_words')
+        .select('*')
+        .eq('category', category)
+        .limit(wordCount);
+        
+      if (existingWordsError) {
+        console.error('Error fetching existing words:', existingWordsError);
+        throw new Error('Failed to fetch existing words');
       }
+      
+      if (existingWords && existingWords.length >= wordCount) {
+        // Use existing words from the database
+        vocabWords = existingWords.slice(0, wordCount);
+        console.log(`Using ${vocabWords.length} existing words from the database`);
+      } else {
+        // Try to get words from OpenAI
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAIApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-3.5-turbo',
+            messages: [
+              { 
+                role: 'system', 
+                content: `You are a vocabulary teaching assistant. Generate unique, interesting, and educational vocabulary words with clear definitions and helpful example sentences.` 
+              },
+              { 
+                role: 'user', 
+                content: `Generate ${wordCount} vocabulary words for the category "${category}". Each word should be somewhat challenging but practical for everyday use.
+                
+                For each word, provide:
+                1. The word itself
+                2. A clear, concise definition
+                3. A natural example sentence showing how to use it in context
+                
+                Format your response as a valid JSON array of objects with the properties: "word", "definition", "example", and "category".
+                The category should be "${category}" for all words.
+                Do not include any explanations or text outside the JSON array.` 
+              }
+            ],
+            temperature: 0.7,
+          }),
+        });
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: [
-            { 
-              role: 'system', 
-              content: `You are a vocabulary teaching assistant. Generate unique, interesting, and educational vocabulary words with clear definitions and helpful example sentences.` 
-            },
-            { 
-              role: 'user', 
-              content: `Generate ${wordCount} ${categoryPrompt}. Each word should be somewhat challenging but practical for everyday use.
-              
-              For each word, provide:
-              1. The word itself
-              2. A clear, concise definition
-              3. A natural example sentence showing how to use it in context
-              
-              Format your response as a valid JSON array of objects with the properties: "word", "definition", "example", and "category".
-              The category should be "${category}" for all words.
-              Do not include any explanations or text outside the JSON array.` 
-            }
-          ],
-          temperature: 0.7,
-        }),
-      });
+        if (!response.ok) {
+          throw new Error(`OpenAI API error: ${response.status}`);
+        }
 
-      if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
+        const data = await response.json();
+        const content = data.choices[0].message.content;
+        
+        // Parse the JSON response from GPT
+        const parsedWords = JSON.parse(content);
+        
+        // Add UUIDs to the words to ensure they can be tracked in history
+        parsedWords.forEach((word: VocabularyWord) => {
+          word.id = crypto.randomUUID();
+          word.created_at = new Date().toISOString();
+        });
+        
+        // Insert the words into the database for future use
+        const { error: insertError } = await supabase
+          .from('vocabulary_words')
+          .insert(parsedWords);
+          
+        if (insertError) {
+          console.error('Error inserting words into database:', insertError);
+        }
+        
+        vocabWords = parsedWords;
+        console.log(`Successfully generated ${vocabWords.length} words from OpenAI`);
       }
-
-      const data = await response.json();
-      const content = data.choices[0].message.content;
-      
-      // Parse the JSON response from GPT
-      vocabWords = JSON.parse(content);
-      console.log(`Successfully generated ${vocabWords.length} words from OpenAI`);
-      
     } catch (apiError) {
-      console.error('OpenAI API error:', apiError);
+      console.error('API or database error:', apiError);
       
       // Use fallback words instead
       isUsingFallback = true;
@@ -144,6 +190,10 @@ serve(async (req) => {
 
     // Send email using Resend
     try {
+      if (!resend) {
+        throw new Error('Resend API key is not configured');
+      }
+      
       const emailResult = await resend.emails.send({
         from: 'VocabSpark <onboarding@resend.dev>',
         to: [email],
@@ -170,7 +220,8 @@ serve(async (req) => {
     } catch (emailError) {
       console.error('Email sending error:', emailError);
       
-      // Return a more specific error for email sending failures
+      // Return a more specific error for email sending failures, but still include the words
+      // so they can be displayed in the history
       return new Response(JSON.stringify({ 
         success: false,
         error: `Failed to send email: ${emailError.message}`,
@@ -181,7 +232,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in send-vocab-email function:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
@@ -190,7 +241,7 @@ serve(async (req) => {
   }
 });
 
-function generateEmailHtml(words: any[], category: string, isUsingFallback: boolean): string {
+function generateEmailHtml(words: VocabularyWord[], category: string, isUsingFallback: boolean): string {
   const categoryTitle = category.charAt(0).toUpperCase() + category.slice(1);
   
   let wordsHtml = '';

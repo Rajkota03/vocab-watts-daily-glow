@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getVocabWordsByCategory } from '@/services/subscriptionService';
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Database } from '@/integrations/supabase/types';
+import { useToast } from '@/components/ui/use-toast';
 
 type VocabularyWord = Database['public']['Tables']['vocabulary_words']['Row'];
 
@@ -25,6 +27,7 @@ const WordHistory: React.FC<WordHistoryProps> = ({
   const [words, setWords] = useState<VocabularyWord[]>([]);
   const [loading, setLoading] = useState(true);
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
+  const { toast } = useToast();
 
   const loadWords = async () => {
     if (isTrialExpired && !isPro) {
@@ -44,65 +47,72 @@ const WordHistory: React.FC<WordHistoryProps> = ({
       }
       
       // First try to get sent words for this user
-      const { data: userData } = await supabase
+      const { data: userData, error: userError } = await supabase
         .from('user_subscriptions')
         .select('phone_number')
         .eq('user_id', userId)
         .single();
         
-      if (!userData?.phone_number) {
-        console.error('No phone number found for user');
-        setLoading(false);
-        return;
-      }
-      
-      // Get the most recent sent words for this user and category - using string literal to bypass TypeScript checks
-      const { data: sentWords, error: sentWordsError } = await supabase
-        .from('sent_words' as any)
-        .select('word_id, sent_at')
-        .eq('phone_number', userData.phone_number)
-        .eq('category', category)
-        .order('sent_at', { ascending: false })
-        .limit(20);
-        
-      if (sentWordsError) {
-        console.error('Error fetching sent words:', sentWordsError);
-        // Fall back to the original method if there's an error
+      if (userError) {
+        console.error('Error fetching user data:', userError);
+        // If we can't get the phone number, try to get words directly 
         const wordsData = await getVocabWordsByCategory(category);
         if (wordsData) {
           setWords(wordsData);
         }
-      } else if (sentWords && (sentWords as any[]).length > 0) {
+        setLoading(false);
+        return;
+      }
+      
+      const phoneNumber = userData?.phone_number;
+        
+      // Get the most recent sent words for this user and category - using string literal to bypass TypeScript checks
+      const { data: sentWords, error: sentWordsError } = await supabase
+        .from('sent_words' as any)
+        .select('word_id, sent_at')
+        .eq('user_id', userId)
+        .eq('category', category)
+        .order('sent_at', { ascending: false })
+        .limit(20);
+        
+      if (sentWordsError || !sentWords || (sentWords as any[]).length === 0) {
+        console.log('No sent words found or error fetching sent words. Trying to get vocab words directly.');
+        // If no sent words are found or there's an error, fall back to getting words directly
+        const wordsData = await getVocabWordsByCategory(category);
+        if (wordsData) {
+          setWords(wordsData);
+        }
+      } else {
         // Get the actual word data for the sent words - casting sentWords to any[] to bypass type checking
         const wordIds = (sentWords as any[]).map(sw => sw.word_id);
-        const { data: wordsData } = await supabase
+        const { data: wordsData, error: wordsError } = await supabase
           .from('vocabulary_words')
           .select('*')
           .in('id', wordIds);
           
-        if (wordsData && wordsData.length > 0) {
+        if (wordsError || !wordsData || wordsData.length === 0) {
+          console.error('Error fetching words or no words found:', wordsError);
+          // Fall back if no words were found
+          const fallbackWords = await getVocabWordsByCategory(category);
+          if (fallbackWords) {
+            setWords(fallbackWords);
+          }
+        } else {
           // Sort the words in the same order as sentWords
           const sortedWords = wordIds.map(id => 
             wordsData.find(word => word.id === id)
           ).filter(Boolean) as VocabularyWord[];
           
           setWords(sortedWords);
-        } else {
-          // Fall back if no words were found
-          const fallbackWords = await getVocabWordsByCategory(category);
-          if (fallbackWords) {
-            setWords(fallbackWords);
-          }
-        }
-      } else {
-        // Fall back to the original method if no sent words
-        const wordsData = await getVocabWordsByCategory(category);
-        if (wordsData) {
-          setWords(wordsData);
         }
       }
     } catch (error) {
       console.error('Failed to fetch words:', error);
+      toast({
+        title: "Error loading words",
+        description: "There was a problem loading your vocabulary history. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -139,6 +149,10 @@ const WordHistory: React.FC<WordHistoryProps> = ({
       ...prev,
       [id]: !prev[id]
     }));
+  };
+
+  const handleRefresh = () => {
+    loadWords();
   };
 
   if (isTrialExpired && !isPro) {
@@ -188,7 +202,7 @@ const WordHistory: React.FC<WordHistoryProps> = ({
         <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-4" />
         <h3 className="text-xl font-medium text-gray-700 mb-2">No Words Yet</h3>
         <p className="text-gray-500 max-w-md mx-auto">
-          Your vocabulary journey is about to begin! Use the "New Batch" button to get your first word drop.
+          Your vocabulary journey is about to begin! Use the "New Batch" button to get your first word drop or try the "API Test" button.
         </p>
       </div>
     );
@@ -210,7 +224,7 @@ const WordHistory: React.FC<WordHistoryProps> = ({
         <Button
           variant="outline"
           size="sm"
-          onClick={loadWords}
+          onClick={handleRefresh}
           disabled={loading}
           className="text-vocab-teal border-vocab-teal/20 hover:bg-vocab-teal/10"
         >

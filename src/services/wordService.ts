@@ -179,14 +179,55 @@ export const markWordsAsSent = async (
       
     if (userError) {
       console.error('Error fetching user data:', userError);
-      throw new Error('Failed to retrieve user information');
+      
+      // Create a user subscription if it doesn't exist yet
+      const { data: newUserData, error: createError } = await supabase
+        .from('user_subscriptions')
+        .insert({
+          user_id: userId,
+          phone_number: `+${Math.floor(Math.random() * 10000000000)}`, // Generate a random phone number as placeholder
+          is_pro: true,
+          category: category
+        })
+        .select()
+        .single();
+        
+      if (createError) {
+        console.error('Error creating user subscription:', createError);
+        throw new Error('Failed to create user profile');
+      }
+      
+      // If we successfully created the subscription, proceed with the new phone number
+      var phoneNumber = newUserData.phone_number;
+    } else {
+      var phoneNumber = userData?.phone_number;
     }
     
-    const phoneNumber = userData?.phone_number;
-    
+    // Make sure we now have a phone number to work with
     if (!phoneNumber) {
       console.error('No phone number found for user');
       throw new Error('User profile incomplete');
+    }
+    
+    // For any words that don't exist in the vocabulary_words table yet, insert them first
+    const wordsToInsert = words.filter(word => !word.id.includes('-')); // Assume UUIDs have hyphens
+    
+    if (wordsToInsert.length > 0) {
+      // Add proper UUIDs to the words
+      wordsToInsert.forEach(word => {
+        if (!word.id) {
+          word.id = crypto.randomUUID();
+        }
+      });
+      
+      const { error: insertError } = await supabase
+        .from('vocabulary_words')
+        .insert(wordsToInsert);
+        
+      if (insertError) {
+        console.error('Error inserting new vocabulary words:', insertError);
+        // Continue anyway to try to mark the existing words as sent
+      }
     }
     
     // Prepare records to insert into sent_words table

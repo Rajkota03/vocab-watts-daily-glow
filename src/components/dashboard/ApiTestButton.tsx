@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Send, AlertTriangle } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
+import { markWordsAsSent } from '@/services/wordService';
 
 interface ApiTestButtonProps {
   category: string;
@@ -13,6 +14,7 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [showEmailInput, setShowEmailInput] = useState(false);
+  const { toast } = useToast();
 
   const handleTestApi = async () => {
     if (showEmailInput && !email) {
@@ -59,6 +61,34 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
       
       console.log('API test response:', data);
       
+      // Mark the words as sent so they appear in the history
+      if (data.words && Array.isArray(data.words) && data.words.length > 0) {
+        try {
+          // Convert the words to the format expected by markWordsAsSent
+          const wordsToMark = data.words.map(word => ({
+            id: word.id || crypto.randomUUID(),
+            word: word.word,
+            definition: word.definition,
+            example: word.example,
+            category: word.category,
+            created_at: new Date().toISOString()
+          }));
+          
+          await markWordsAsSent(wordsToMark, category);
+          
+          // Force refresh of word history
+          const wordHistoryElement = document.getElementById('word-history');
+          if (wordHistoryElement) {
+            wordHistoryElement.classList.add('refresh-triggered');
+            setTimeout(() => {
+              wordHistoryElement.classList.remove('refresh-triggered');
+            }, 100);
+          }
+        } catch (markError) {
+          console.error('Error marking test words as sent:', markError);
+        }
+      }
+      
       // Create a toast message based on whether we're using fallback words or not
       if (data.isUsingFallback) {
         toast({
@@ -76,7 +106,7 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
                 </span>
               </div>
             </div>
-          ) as unknown as string,
+          ),
           variant: "default"
         });
       } else {
