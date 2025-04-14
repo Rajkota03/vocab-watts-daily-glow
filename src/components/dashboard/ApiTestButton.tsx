@@ -55,12 +55,11 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
       
       console.log('API test response:', data);
       
-      // Show words in a fancy toast
+      // Use default variant since duration is not a valid prop
       toast({
         title: "Test completed successfully!",
         description: `Generated ${data.words.length} words for category "${category}". Check your email at ${emailToUse}.`,
-        variant: "default",
-        duration: 5000,
+        variant: "default"
       });
       
       // Reset state
