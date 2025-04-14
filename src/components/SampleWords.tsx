@@ -25,14 +25,14 @@ const SampleWords = () => {
   ];
 
   return (
-    <section id="samples" className="py-20 bg-gradient-to-r from-vocab-teal/5 to-vocab-purple/5">
+    <section id="samples" className="py-20 bg-gradient-to-r from-vuilder-bg to-vuilder-mint/5">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <div className="inline-block mb-4 p-3 bg-vocab-teal/10 rounded-full">
-            <BookOpen className="w-8 h-8 text-vocab-teal" />
+          <div className="inline-block mb-4 p-3 bg-vuilder-mint/10 rounded-full">
+            <BookOpen className="w-8 h-8 text-vuilder-mint" />
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-800">Sample Word Drop</h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-vuilder-indigo">Sample Word Drop</h2>
+          <p className="text-xl text-vuilder-text max-w-2xl mx-auto">
             Discover words that transform your language, delivered with wit and wisdom.
           </p>
         </div>
@@ -48,11 +48,11 @@ const SampleWords = () => {
             
             {/* Chat Header */}
             <div className="flex items-center border-b border-gray-100 pb-4 mb-6">
-              <div className="w-12 h-12 rounded-full bg-vocab-teal/20 flex items-center justify-center">
-                <span className="text-vocab-teal font-bold text-lg">VS</span>
+              <div className="w-12 h-12 rounded-full bg-vuilder-indigo/10 flex items-center justify-center">
+                <span className="text-vuilder-indigo font-bold text-lg">V</span>
               </div>
               <div className="ml-4">
-                <h4 className="font-bold text-lg">VocabSpark</h4>
+                <h4 className="font-bold text-lg text-vuilder-indigo">VUILDER</h4>
                 <p className="text-sm text-gray-500">Your Daily Vocabulary Boost</p>
               </div>
             </div>
@@ -62,10 +62,10 @@ const SampleWords = () => {
               {words.map((wordItem, index) => (
                 <div 
                   key={index} 
-                  className="bg-gray-50 p-5 rounded-xl transform transition-all hover:translate-y-[-2px] hover:shadow-md"
+                  className="bg-vuilder-bg p-5 rounded-xl transform transition-all hover:translate-y-[-2px] hover:shadow-md"
                 >
                   <div className="mb-3">
-                    <span className="text-xl font-bold text-vocab-teal">{wordItem.word}</span>
+                    <span className="text-xl font-bold text-vuilder-indigo">{wordItem.word}</span>
                   </div>
                   <p className="text-sm font-medium text-gray-700 mb-3">{wordItem.meaning}</p>
                   <div className="space-y-2">
@@ -73,7 +73,7 @@ const SampleWords = () => {
                       <span className="text-xs font-medium uppercase text-gray-400 tracking-wider">Example:</span><br />
                       {wordItem.example}
                     </div>
-                    <div className="text-sm text-gray-600 italic border-l-2 border-vocab-purple/40 pl-3">
+                    <div className="text-sm text-gray-600 italic border-l-2 border-vuilder-mint pl-3">
                       <span className="text-xs font-medium uppercase text-gray-400 tracking-wider">Witty Use:</span><br />
                       {wordItem.wittyExample}
                     </div>
@@ -91,7 +91,7 @@ const SampleWords = () => {
           <div className="text-center mt-10">
             <a 
               href="#signup" 
-              className="inline-flex items-center px-8 py-4 bg-vocab-teal text-white font-medium rounded-full transition-all hover:bg-vocab-teal/90 hover:shadow-lg"
+              className="inline-flex items-center px-8 py-4 bg-vuilder-mint text-white font-medium rounded-full transition-all hover:bg-vuilder-mint/90 hover:shadow-lg"
             >
               Get Your First Words Today
             </a>

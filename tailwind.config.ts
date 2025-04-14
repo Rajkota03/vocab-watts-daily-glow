@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -67,7 +66,14 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// VocabSpark Custom Colors
+				// New VUILDER Theme Colors
+				'vuilder-indigo': '#3F3D56', // Primary Brand Color
+				'vuilder-yellow': '#FFD60A', // Accent / Energizer
+				'vuilder-mint': '#2DCDA5',   // Secondary Support Color
+				'vuilder-coral': '#FF6B6B',  // CTA / Emotional Accent
+				'vuilder-bg': '#F9FAFB',     // Background
+				'vuilder-text': '#2F2F2F',   // Text Primary
+				// Keeping other colors for backward compatibility
 				'vocab-teal': '#0FB5B5',
 				'vocab-yellow': '#FFD166',
 				'vocab-purple': '#9381FF',

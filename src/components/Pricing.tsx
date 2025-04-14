@@ -9,7 +9,7 @@ const Pricing = () => {
       name: 'Free Trial',
       price: '₹0',
       headline: 'Test drive your daily dose of smartness — no app, no pressure.',
-      description: 'Try VocabSpark without any commitment',
+      description: 'Try VUILDER without any commitment',
       features: [
         { text: '5 daily words', icon: BookOpen },
         { text: 'WhatsApp delivery', icon: MessageSquare },
@@ -24,7 +24,9 @@ const Pricing = () => {
         { text: 'Unlimited access', icon: X },
       ],
       buttonText: 'Start Free Trial',
-      buttonVariant: 'outline'
+      buttonVariant: 'outline',
+      color: 'border-vuilder-yellow',
+      badgeColor: 'bg-vuilder-yellow'
     },
     {
       name: 'Pro',
@@ -46,31 +48,33 @@ const Pricing = () => {
       notIncluded: [],
       buttonText: 'Go Pro – ₹149/month',
       buttonVariant: 'default',
-      popular: true
+      popular: true,
+      color: 'border-vuilder-mint',
+      badgeColor: 'bg-vuilder-mint'
     }
   ];
 
   return (
-    <section id="pricing" className="py-20 bg-gray-50">
+    <section id="pricing" className="py-20 bg-vuilder-bg">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold mb-4 font-poppins">Plans & Pricing</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto font-inter">
+          <h2 className="text-3xl md:text-5xl font-bold mb-4 font-poppins text-vuilder-indigo">Plans & Pricing</h2>
+          <p className="text-lg text-vuilder-text max-w-2xl mx-auto font-inter">
             No boring word lists. 5 words a day that actually stick. Choose the plan that works for you.
           </p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {plans.map((plan, index) => (
-            <div key={index} className={`pricing-card relative ${plan.popular ? 'border-vocab-teal' : ''}`}>
+            <div key={index} className={`pricing-card relative ${plan.popular ? plan.color : ''}`}>
               {plan.popular && (
-                <div className="absolute -top-4 inset-x-0 mx-auto w-max px-4 py-1 rounded-full bg-vocab-teal text-white text-sm font-medium">
+                <div className={`absolute -top-4 inset-x-0 mx-auto w-max px-4 py-1 rounded-full ${plan.badgeColor} text-white text-sm font-medium`}>
                   Most Popular
                 </div>
               )}
-              <h3 className="text-2xl font-bold mb-2 font-poppins">{plan.name}</h3>
+              <h3 className="text-2xl font-bold mb-2 font-poppins text-vuilder-indigo">{plan.name}</h3>
               <div className="mb-4">
-                <span className="text-3xl font-bold font-poppins">{plan.price}</span>
+                <span className="text-3xl font-bold font-poppins text-vuilder-indigo">{plan.price}</span>
                 <span className="text-gray-500">/{plan.period}</span>
                 {plan.priceYearly && (
                   <div className="mt-1 text-sm text-gray-500">
@@ -78,16 +82,16 @@ const Pricing = () => {
                   </div>
                 )}
               </div>
-              <p className="text-gray-800 font-medium mb-2 italic">{plan.headline}</p>
+              <p className="text-vuilder-text font-medium mb-2 italic">{plan.headline}</p>
               <p className="text-gray-600 mb-6">{plan.description}</p>
               
               <div className="space-y-3 mb-8">
                 {plan.features.map((feature, i) => (
                   <div key={i} className="flex items-start">
                     {feature.icon === Check ? (
-                      <Check className="h-5 w-5 text-whatsapp-green mr-2 flex-shrink-0 mt-0.5" />
+                      <Check className="h-5 w-5 text-vuilder-mint mr-2 flex-shrink-0 mt-0.5" />
                     ) : (
-                      <feature.icon className="h-5 w-5 text-vocab-teal mr-2 flex-shrink-0 mt-0.5" />
+                      <feature.icon className="h-5 w-5 text-vuilder-mint mr-2 flex-shrink-0 mt-0.5" />
                     )}
                     <span>{feature.text}</span>
                   </div>
@@ -103,7 +107,7 @@ const Pricing = () => {
               </div>
               
               <Button 
-                className={plan.buttonVariant === 'default' ? 'vocab-btn w-full' : 'vocab-btn-secondary w-full'}
+                className={plan.buttonVariant === 'default' ? 'bg-vuilder-mint hover:bg-vuilder-mint/90 text-white w-full' : 'bg-white border border-vuilder-indigo text-vuilder-indigo hover:bg-vuilder-indigo/5 w-full'}
               >
                 {plan.buttonText}
               </Button>

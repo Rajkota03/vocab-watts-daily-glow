@@ -60,7 +60,7 @@ const Navbar = () => {
     }`}>
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black relative">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-vuilder-indigo relative">
             {/* Custom VUILDER Logo with flexing arms */}
             <span className="text-white font-bold text-lg">V</span>
             <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3">
@@ -70,12 +70,12 @@ const Navbar = () => {
               <Dumbbell className="h-3 w-3 text-white transform rotate-90" />
             </div>
           </div>
-          <span className="font-bold text-xl text-gray-800 font-poppins tracking-tight">VUILDER</span>
+          <span className="font-bold text-xl text-vuilder-indigo font-poppins tracking-tight">VUILDER</span>
         </div>
         
         {/* Mobile menu button */}
         <button 
-          className="md:hidden p-2 text-gray-600 hover:text-vocab-teal focus:outline-none transition-colors"
+          className="md:hidden p-2 text-vuilder-indigo hover:text-vuilder-mint focus:outline-none transition-colors"
           onClick={toggleMenu}
           aria-label="Toggle menu"
         >
@@ -84,26 +84,26 @@ const Navbar = () => {
         
         {/* Desktop navigation */}
         <div className="hidden md:flex items-center gap-6">
-          <a href="#how-it-works" className="text-gray-700 hover:text-vocab-teal transition-colors font-medium font-inter text-sm flex items-center group">
-            <BookOpen className="h-4 w-4 mr-1 group-hover:text-vocab-teal" />
+          <a href="#how-it-works" className="text-vuilder-text hover:text-vuilder-mint transition-colors font-medium font-inter text-sm flex items-center group">
+            <BookOpen className="h-4 w-4 mr-1 group-hover:text-vuilder-mint" />
             How It Works
           </a>
-          <a href="#samples" className="text-gray-700 hover:text-vocab-teal transition-colors font-medium font-inter text-sm flex items-center group">
-            <MessageSquare className="h-4 w-4 mr-1 group-hover:text-vocab-teal" />
+          <a href="#samples" className="text-vuilder-text hover:text-vuilder-mint transition-colors font-medium font-inter text-sm flex items-center group">
+            <MessageSquare className="h-4 w-4 mr-1 group-hover:text-vuilder-mint" />
             Sample Words
           </a>
-          <a href="#pricing" className="text-gray-700 hover:text-vocab-teal transition-colors font-medium font-inter text-sm flex items-center group">
-            <DollarSign className="h-4 w-4 mr-1 group-hover:text-vocab-teal" />
+          <a href="#pricing" className="text-vuilder-text hover:text-vuilder-mint transition-colors font-medium font-inter text-sm flex items-center group">
+            <DollarSign className="h-4 w-4 mr-1 group-hover:text-vuilder-mint" />
             Pricing
           </a>
           
           {isLoggedIn ? (
-            <Link to="/dashboard" className="text-white bg-gradient-to-r from-vocab-teal to-vocab-purple px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-1">
+            <Link to="/dashboard" className="text-white bg-vuilder-mint px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-1">
               <Sparkles className="h-4 w-4" />
               Dashboard
             </Link>
           ) : (
-            <Link to="/login" className="text-gray-700 hover:text-vocab-teal transition-colors font-medium font-inter text-sm flex items-center gap-1">
+            <Link to="/login" className="text-vuilder-text hover:text-vuilder-mint transition-colors font-medium font-inter text-sm flex items-center gap-1">
               <LogIn className="h-4 w-4" />
               Login
             </Link>
@@ -111,14 +111,14 @@ const Navbar = () => {
           
           {!isLoggedIn && (
             <div className="flex gap-3">
-              <Button className="bg-white border border-vocab-teal text-vocab-teal hover:bg-vocab-teal/10 shadow-sm" onClick={scrollToSignup}>
+              <Button className="bg-white border border-vuilder-indigo text-vuilder-indigo hover:bg-vuilder-indigo/10 shadow-sm" onClick={scrollToSignup}>
                 Start Free Trial
               </Button>
-              <Button className="bg-gradient-to-r from-vocab-purple to-purple-500 hover:from-vocab-purple/90 hover:to-purple-500/90 text-white shadow-md" onClick={() => {
+              <Button className="bg-vuilder-coral hover:bg-vuilder-coral/90 text-white shadow-md" onClick={() => {
                 scrollToSignup();
                 // Set Pro mode in signup form by triggering a click on the "Switch to Pro" button after a delay
                 setTimeout(() => {
-                  const switchToProButton = document.querySelector('button.text-xs.text-vocab-teal.underline');
+                  const switchToProButton = document.querySelector('button.text-xs.text-vuilder-mint.underline');
                   if (switchToProButton) {
                     (switchToProButton as HTMLButtonElement).click();
                   }
@@ -134,26 +134,26 @@ const Navbar = () => {
         {isMenuOpen && (
           <div className="absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-100 md:hidden animate-fade-in">
             <div className="flex flex-col p-4 space-y-3">
-              <a href="#how-it-works" className="py-2 px-4 text-gray-700 hover:bg-gray-50 rounded-lg font-medium font-inter flex items-center" onClick={toggleMenu}>
-                <BookOpen className="h-4 w-4 mr-2 text-vocab-teal" />
+              <a href="#how-it-works" className="py-2 px-4 text-vuilder-text hover:bg-gray-50 rounded-lg font-medium font-inter flex items-center" onClick={toggleMenu}>
+                <BookOpen className="h-4 w-4 mr-2 text-vuilder-mint" />
                 How It Works
               </a>
-              <a href="#samples" className="py-2 px-4 text-gray-700 hover:bg-gray-50 rounded-lg font-medium font-inter flex items-center" onClick={toggleMenu}>
-                <MessageSquare className="h-4 w-4 mr-2 text-vocab-teal" />
+              <a href="#samples" className="py-2 px-4 text-vuilder-text hover:bg-gray-50 rounded-lg font-medium font-inter flex items-center" onClick={toggleMenu}>
+                <MessageSquare className="h-4 w-4 mr-2 text-vuilder-mint" />
                 Sample Words
               </a>
-              <a href="#pricing" className="py-2 px-4 text-gray-700 hover:bg-gray-50 rounded-lg font-medium font-inter flex items-center" onClick={toggleMenu}>
-                <DollarSign className="h-4 w-4 mr-2 text-vocab-teal" />
+              <a href="#pricing" className="py-2 px-4 text-vuilder-text hover:bg-gray-50 rounded-lg font-medium font-inter flex items-center" onClick={toggleMenu}>
+                <DollarSign className="h-4 w-4 mr-2 text-vuilder-mint" />
                 Pricing
               </a>
               
               {isLoggedIn ? (
-                <Link to="/dashboard" className="py-2 px-4 bg-gradient-to-r from-vocab-teal to-vocab-purple text-white rounded-lg font-medium font-inter flex items-center gap-2" onClick={toggleMenu}>
+                <Link to="/dashboard" className="py-2 px-4 bg-vuilder-mint text-white rounded-lg font-medium font-inter flex items-center gap-2" onClick={toggleMenu}>
                   <Sparkles className="h-4 w-4" />
                   Dashboard
                 </Link>
               ) : (
-                <Link to="/login" className="py-2 px-4 text-gray-700 hover:bg-gray-50 rounded-lg font-medium font-inter flex items-center gap-2" onClick={toggleMenu}>
+                <Link to="/login" className="py-2 px-4 text-vuilder-text hover:bg-gray-50 rounded-lg font-medium font-inter flex items-center gap-2" onClick={toggleMenu}>
                   <LogIn className="h-4 w-4" />
                   Login
                 </Link>
@@ -161,14 +161,13 @@ const Navbar = () => {
               
               {!isLoggedIn && (
                 <div className="pt-2 space-y-2">
-                  <Button className="bg-white border border-vocab-teal text-vocab-teal hover:bg-vocab-teal/10 w-full justify-center" onClick={scrollToSignup}>
+                  <Button className="bg-white border border-vuilder-indigo text-vuilder-indigo hover:bg-vuilder-indigo/10 w-full justify-center" onClick={scrollToSignup}>
                     Start Free Trial
                   </Button>
-                  <Button className="bg-gradient-to-r from-vocab-purple to-purple-500 hover:from-vocab-purple/90 hover:to-purple-500/90 text-white w-full justify-center" onClick={() => {
+                  <Button className="bg-vuilder-coral hover:bg-vuilder-coral/90 text-white w-full justify-center" onClick={() => {
                     scrollToSignup();
-                    // Set Pro mode in signup form by triggering a click on the "Switch to Pro" button after a delay
                     setTimeout(() => {
-                      const switchToProButton = document.querySelector('button.text-xs.text-vocab-teal.underline');
+                      const switchToProButton = document.querySelector('button.text-xs.text-vuilder-mint.underline');
                       if (switchToProButton) {
                         (switchToProButton as HTMLButtonElement).click();
                       }

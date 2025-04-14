@@ -1,37 +1,29 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --background: 0 0% 98%;
+    --foreground: 215 25% 27%;
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 215 25% 27%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
+    --popover-foreground: 215 25% 27%;
+    --primary: 242 2% 29%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --secondary: 154 64% 49%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215 25% 46%;
+    --accent: 48 100% 52%;
+    --accent-foreground: 215 25% 27%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 242 2% 29%;
     --radius: 0.75rem;
-
-    /* Custom Brand Colors */
-    --vocab-teal: 174 69% 45%;
-    --vocab-purple: 262 83% 58%;
-    --vocab-yellow: 42 96% 59%;
-    --whatsapp-green: 142 70% 49%;
-    --whatsapp-light: 142 70% 96%;
   }
 
   .dark {
@@ -62,10 +54,10 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-inter;
+    @apply bg-vuilder-bg text-vuilder-text font-inter;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-poppins;
+    @apply font-poppins font-bold;
   }
   
   /* Smooth scrolling */
@@ -75,31 +67,69 @@
 }
 
 @layer components {
-  .vocab-btn {
-    @apply bg-gradient-to-r from-vocab-purple to-violet-500 hover:from-vocab-purple/90 hover:to-violet-500/90 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg;
+  .vuilder-btn-primary {
+    @apply bg-vuilder-mint hover:bg-vuilder-mint/90 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg;
   }
   
-  .vocab-btn-secondary {
-    @apply bg-gradient-to-r from-vocab-teal to-teal-500 hover:from-vocab-teal/90 hover:to-teal-500/90 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg;
+  .vuilder-btn-secondary {
+    @apply bg-white border border-vuilder-indigo text-vuilder-indigo hover:bg-vuilder-indigo/5 font-semibold rounded-lg transition-all shadow-sm hover:shadow-md;
+  }
+  
+  .vuilder-btn-accent {
+    @apply bg-vuilder-yellow hover:bg-vuilder-yellow/90 text-vuilder-indigo font-semibold rounded-lg transition-all shadow-md hover:shadow-lg;
+  }
+  
+  .vuilder-btn-cta {
+    @apply bg-vuilder-coral hover:bg-vuilder-coral/90 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg;
   }
   
   /* Card styles */
-  .pricing-card {
+  .vuilder-card {
     @apply bg-white rounded-xl shadow-md hover:shadow-xl p-6 border-2 border-transparent transition-all duration-300;
   }
   
   /* Feature icon */
-  .feature-icon {
-    @apply w-12 h-12 bg-gradient-to-br from-vocab-teal/20 to-vocab-purple/20 rounded-lg flex items-center justify-center mb-4 text-vocab-teal;
+  .vuilder-feature-icon {
+    @apply w-12 h-12 bg-gradient-to-br from-vuilder-mint/20 to-vuilder-indigo/20 rounded-lg flex items-center justify-center mb-4;
+  }
+  
+  /* Free trial badge */
+  .vuilder-free-badge {
+    @apply bg-vuilder-yellow/20 text-vuilder-indigo px-3 py-1 rounded-full text-sm font-medium;
+  }
+  
+  /* Pro badge */
+  .vuilder-pro-badge {
+    @apply bg-vuilder-mint/20 text-vuilder-mint px-3 py-1 rounded-full text-sm font-medium;
   }
   
   /* WhatsApp message bubble */
   .whatsapp-message {
     @apply bg-whatsapp-light/50 p-3 rounded-lg rounded-tl-none shadow-sm mb-2;
   }
+  
+  /* Keep existing components */
+  .vocab-btn {
+    @apply bg-vuilder-mint hover:bg-vuilder-mint/90 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg;
+  }
+  
+  .vocab-btn-secondary {
+    @apply bg-vuilder-indigo hover:bg-vuilder-indigo/90 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg;
+  }
+  
+  /* Keep existing pricing-card */
+  .pricing-card {
+    @apply bg-white rounded-xl shadow-md hover:shadow-xl p-6 border-2 border-transparent transition-all duration-300;
+  }
+  
+  /* Keep existing feature-icon but updated colors */
+  .feature-icon {
+    @apply w-12 h-12 bg-gradient-to-br from-vuilder-mint/20 to-vuilder-indigo/20 rounded-lg flex items-center justify-center mb-4 text-vuilder-mint;
+  }
 }
 
 @layer utilities {
+  /* Keep existing utilities */
   .animate-fade-in {
     animation: fadeIn 0.3s ease-in-out;
   }
@@ -154,17 +184,30 @@
     50% { opacity: 0.6; }
   }
   
-  /* Glassmorphism effect */
-  .glass {
+  /* Glass effect */
+  .vuilder-glass {
     @apply bg-white/20 backdrop-blur-md border border-white/30 shadow-lg;
   }
   
   /* Gradient text */
-  .text-gradient {
-    @apply bg-gradient-to-r from-vocab-teal to-vocab-purple bg-clip-text text-transparent;
+  .vuilder-text-gradient {
+    @apply bg-gradient-to-r from-vuilder-indigo to-vuilder-mint bg-clip-text text-transparent;
   }
   
   /* Hover effects */
+  .vuilder-hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+  }
+  
+  .vuilder-hover-glow {
+    @apply transition-all duration-300 hover:shadow-[0_0_15px_rgba(0,0,0,0.1)];
+  }
+
+  /* Keep additional existing utilities */
+  .text-gradient {
+    @apply bg-gradient-to-r from-vuilder-mint to-vuilder-indigo bg-clip-text text-transparent;
+  }
+  
   .hover-lift {
     @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
   }
