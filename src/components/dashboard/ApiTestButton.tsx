@@ -72,7 +72,7 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
                 </span>
               </div>
             </div>
-          ),
+          ) as unknown as string,
           variant: "default"
         });
       } else {
