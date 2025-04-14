@@ -81,11 +81,46 @@ export const fetchNewWords = async (
       throw new Error('Failed to fetch vocabulary words');
     }
     
-    console.log(`Retrieved ${words?.length || 0} new words`);
+    console.log(`Retrieved ${words?.length || 0} new words from database`);
     
-    // If not enough words found (because user has seen most/all words)
+    // If not enough words found in the database, generate new ones with OpenAI
     if (!words || words.length < limit) {
-      console.log('Not enough new words, fetching some previously sent words');
+      console.log('Not enough words in database, generating with OpenAI');
+      const newWordsNeeded = limit - (words?.length || 0);
+      
+      // Call the OpenAI function to generate new words
+      const { data: generatedData, error: generatedError } = await supabase.functions.invoke('generate-vocab-words', {
+        body: { 
+          category: category,
+          count: newWordsNeeded
+        }
+      });
+      
+      if (generatedError) {
+        console.error('Error generating words with OpenAI:', generatedError);
+        // If generating fails, fallback to existing words or previously sent words
+      } else if (generatedData && generatedData.words) {
+        console.log(`Successfully generated ${generatedData.words.length} new words with OpenAI`);
+        
+        // Insert the generated words into the database
+        const { data: insertedWords, error: insertError } = await supabase
+          .from('vocabulary_words')
+          .insert(generatedData.words)
+          .select();
+          
+        if (insertError) {
+          console.error('Error inserting generated words:', insertError);
+        } else if (insertedWords) {
+          console.log(`Inserted ${insertedWords.length} generated words into database`);
+          // Combine existing words with new generated words
+          return [...(words || []), ...insertedWords];
+        }
+      }
+    }
+    
+    // If we still don't have enough words (generation failed or insertion failed)
+    if (!words || words.length < limit) {
+      console.log('Still not enough words, fetching some previously sent words');
       
       // Get some previously sent words as fallback
       const { data: fallbackWords, error: fallbackError } = await supabase
@@ -205,6 +240,53 @@ export const generateNewWordBatch = async (
     return newWords;
   } catch (error) {
     console.error('Error generating new word batch:', error);
+    throw error;
+  }
+};
+
+/**
+ * Generates new vocabulary words using OpenAI API
+ * @param category The category of words to generate
+ * @param count The number of words to generate
+ * @returns The newly generated vocabulary words
+ */
+export const generateWordsWithAI = async (
+  category: string,
+  count: number = 5
+): Promise<VocabularyWord[]> => {
+  try {
+    console.log(`Generating ${count} words for ${category} using OpenAI`);
+    
+    const { data, error } = await supabase.functions.invoke('generate-vocab-words', {
+      body: { category, count }
+    });
+    
+    if (error) {
+      console.error('Error calling OpenAI generation function:', error);
+      throw new Error('Failed to generate words with AI');
+    }
+    
+    if (!data || !data.words || !Array.isArray(data.words)) {
+      console.error('Invalid response from OpenAI function:', data);
+      throw new Error('Invalid response from AI word generation');
+    }
+    
+    console.log(`Successfully generated ${data.words.length} words with OpenAI`);
+    
+    // Insert the new words into the database
+    const { data: insertedWords, error: insertError } = await supabase
+      .from('vocabulary_words')
+      .insert(data.words)
+      .select();
+      
+    if (insertError) {
+      console.error('Error inserting AI-generated words:', insertError);
+      throw new Error('Failed to save generated words');
+    }
+    
+    return insertedWords || [];
+  } catch (error) {
+    console.error('Error in generateWordsWithAI:', error);
     throw error;
   }
 };

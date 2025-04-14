@@ -1,11 +1,12 @@
 
-import React from 'react';
-import { Briefcase, GraduationCap, Smile, Brain, Zap, RefreshCw } from 'lucide-react';
+import React, { useState } from 'react';
+import { Briefcase, GraduationCap, Smile, Brain, Zap, RefreshCw, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { generateWordsWithAI } from '@/services/wordService';
 
 interface CategorySelectionProps {
   isPro: boolean;
@@ -31,6 +32,8 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   onNewBatch,
   isLoadingNewBatch = false
 }) => {
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  
   const categories: CategoryOption[] = [
     {
       id: 'business',
@@ -84,21 +87,69 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
       }
     }
   };
+  
+  const handleGenerateAI = async () => {
+    if (!isPro) {
+      toast({
+        title: "Pro feature",
+        description: "AI-generated vocabulary is only available for Pro users.",
+        variant: "default"
+      });
+      return;
+    }
+    
+    setIsGeneratingAI(true);
+    try {
+      const words = await generateWordsWithAI(currentCategory, 5);
+      toast({
+        title: "AI-generated words added!",
+        description: `${words.length} new vocabulary words were created with AI.`,
+      });
+      
+      // Trigger refresh of the word history component
+      const wordHistoryEl = document.getElementById('word-history');
+      if (wordHistoryEl) {
+        wordHistoryEl.classList.add('refresh-triggered');
+        setTimeout(() => wordHistoryEl.classList.remove('refresh-triggered'), 100);
+      }
+    } catch (error) {
+      console.error('Error generating AI words:', error);
+      toast({
+        title: "AI generation failed",
+        description: "Could not generate words with AI. Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-medium">Select Your Word Category</h3>
-        {isPro && onNewBatch && (
-          <Button 
-            onClick={handleNewBatchClick}
-            disabled={isLoadingNewBatch}
-            className="bg-vocab-purple hover:bg-vocab-purple/90 text-white"
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoadingNewBatch ? 'animate-spin' : ''}`} />
-            {isLoadingNewBatch ? 'Generating...' : 'New Batch'}
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {isPro && (
+            <Button 
+              onClick={handleGenerateAI}
+              disabled={isGeneratingAI}
+              className="bg-duolingo-purple hover:bg-duolingo-purple/90 text-white"
+            >
+              <Sparkles className={`mr-2 h-4 w-4 ${isGeneratingAI ? 'animate-pulse' : ''}`} />
+              {isGeneratingAI ? 'Generating...' : 'Generate with AI'}
+            </Button>
+          )}
+          {isPro && onNewBatch && (
+            <Button 
+              onClick={handleNewBatchClick}
+              disabled={isLoadingNewBatch}
+              className="bg-vocab-purple hover:bg-vocab-purple/90 text-white"
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${isLoadingNewBatch ? 'animate-spin' : ''}`} />
+              {isLoadingNewBatch ? 'Generating...' : 'New Batch'}
+            </Button>
+          )}
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

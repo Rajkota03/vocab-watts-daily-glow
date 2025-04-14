@@ -1,1 +1,5 @@
+
 project_id = "pbpmtqcffhqwzboviqfw"
+
+[functions.generate-vocab-words]
+verify_jwt = true
