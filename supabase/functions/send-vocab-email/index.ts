@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
@@ -142,24 +143,44 @@ serve(async (req) => {
     }
 
     // Send email using Resend
-    const emailResult = await resend.emails.send({
-      from: 'VocabSpark <onboarding@resend.dev>',
-      to: [email],
-      subject: `Your VocabSpark ${category.charAt(0).toUpperCase() + category.slice(1)} Vocabulary Words`,
-      html: generateEmailHtml(vocabWords, category, isUsingFallback)
-    });
+    try {
+      const emailResult = await resend.emails.send({
+        from: 'VocabSpark <onboarding@resend.dev>',
+        to: [email],
+        subject: `Your VocabSpark ${category.charAt(0).toUpperCase() + category.slice(1)} Vocabulary Words`,
+        html: generateEmailHtml(vocabWords, category, isUsingFallback)
+      });
 
-    console.log('Email sent successfully:', emailResult);
+      console.log('Email sent successfully:', emailResult);
 
-    return new Response(JSON.stringify({ 
-      success: true,
-      message: `Email with ${vocabWords.length} vocabulary words sent to ${email}`,
-      words: vocabWords,
-      isUsingFallback,
-      emailResult
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+      // Check if there was an error in the response
+      if (emailResult.error) {
+        throw new Error(`Resend API error: ${emailResult.error.message || JSON.stringify(emailResult.error)}`);
+      }
+
+      return new Response(JSON.stringify({ 
+        success: true,
+        message: `Email with ${vocabWords.length} vocabulary words sent to ${email}`,
+        words: vocabWords,
+        isUsingFallback,
+        emailResult
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (emailError) {
+      console.error('Email sending error:', emailError);
+      
+      // Return a more specific error for email sending failures
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: `Failed to send email: ${emailError.message}`,
+        words: vocabWords,
+        isUsingFallback
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
   } catch (error) {
     console.error('Error in send-vocab-email function:', error);
     return new Response(JSON.stringify({ error: error.message }), {

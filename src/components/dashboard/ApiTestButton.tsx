@@ -53,6 +53,10 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
         throw error;
       }
       
+      if (!data || data.error) {
+        throw new Error(data?.error || 'Failed to send email');
+      }
+      
       console.log('API test response:', data);
       
       // Create a toast message based on whether we're using fallback words or not
