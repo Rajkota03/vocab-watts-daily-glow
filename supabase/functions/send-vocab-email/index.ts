@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
@@ -37,14 +36,19 @@ interface VocabularyWord {
   created_at?: string;
 }
 
-// Fallback vocabulary words for when the API fails
-const fallbackWords = {
+// Create a pool of fallback vocabulary words so we can rotate them
+const fallbackWordsPool = {
   business: [
     { word: "leverage", definition: "Use (something) to maximum advantage", example: "We need to leverage our network to expand into new markets.", category: "business" },
     { word: "scalable", definition: "Able to be changed in size or scale", example: "We need a scalable solution that can grow with our business.", category: "business" },
     { word: "paradigm", definition: "A typical example or pattern of something", example: "This represents a new paradigm in customer service.", category: "business" },
     { word: "synergy", definition: "The interaction of elements that when combined produce a total effect greater than the sum of the individual elements", example: "The merger created synergy between the two companies.", category: "business" },
     { word: "strategic", definition: "Relating to the identification of long-term or overall aims and interests and the means of achieving them", example: "We need to make strategic investments in emerging markets.", category: "business" },
+    { word: "disruptive", definition: "Causing or tending to cause disruption", example: "Their disruptive business model revolutionized the industry.", category: "business" },
+    { word: "innovative", definition: "Featuring new methods; advanced and original", example: "We need innovative solutions to stay competitive.", category: "business" },
+    { word: "streamline", definition: "Make (an organization or system) more efficient and effective", example: "We need to streamline our operations to reduce costs.", category: "business" },
+    { word: "agile", definition: "Able to move quickly and easily; relating to or denoting a method of project management", example: "Our agile development process allows us to respond quickly to market changes.", category: "business" },
+    { word: "optimize", definition: "Make the best or most effective use of (a situation, opportunity, or resource)", example: "We need to optimize our resources to maximize profit.", category: "business" }
   ],
   exam: [
     { word: "juxtapose", definition: "Place or deal with close together for contrasting effect", example: "The director juxtaposed scenes of wealth and poverty to highlight social inequality.", category: "exam" },
@@ -52,6 +56,11 @@ const fallbackWords = {
     { word: "ephemeral", definition: "Lasting for a very short time", example: "The ephemeral nature of fame in the digital age concerns many celebrities.", category: "exam" },
     { word: "esoteric", definition: "Intended for or likely to be understood by only a small number of people with specialized knowledge", example: "The professor's lecture contained esoteric terms that confused many students.", category: "exam" },
     { word: "pragmatic", definition: "Dealing with things sensibly and realistically in a way that is based on practical considerations", example: "We need a pragmatic approach to solving this complex problem.", category: "exam" },
+    { word: "loquacious", definition: "Tending to talk a great deal; garrulous", example: "The loquacious presenter made the seminar run over time.", category: "exam" },
+    { word: "perfunctory", definition: "Carried out with a minimum of effort or reflection", example: "The inspector gave the building a perfunctory examination.", category: "exam" },
+    { word: "circumlocution", definition: "The use of many words where fewer would do", example: "His circumlocution confused rather than clarified the issue.", category: "exam" },
+    { word: "pontificate", definition: "Express one's opinions in a pompous or dogmatic way", example: "He was pontificating about the economy without having all the facts.", category: "exam" },
+    { word: "sycophant", definition: "A person who acts obsequiously toward someone important in order to gain advantage", example: "The politician surrounded himself with sycophants who never questioned his decisions.", category: "exam" }
   ],
   slang: [
     { word: "ghosting", definition: "Abruptly cutting off all contact with someone", example: "He was ghosting her after their third date.", category: "slang" },
@@ -59,6 +68,11 @@ const fallbackWords = {
     { word: "cap", definition: "To lie or exaggerate about something", example: "No cap, this is the best pizza I've ever had.", category: "slang" },
     { word: "vibe check", definition: "An assessment of someone's mood or attitude", example: "Just doing a quick vibe check before I ask him for a favor.", category: "slang" },
     { word: "sus", definition: "Suspicious or questionable", example: "That guy looking at our bags seems kinda sus.", category: "slang" },
+    { word: "low-key", definition: "Somewhat or secretly", example: "I'm low-key excited about the concert tomorrow.", category: "slang" },
+    { word: "high-key", definition: "Very obviously or openly", example: "I'm high-key obsessed with this new song.", category: "slang" },
+    { word: "clout", definition: "Influence or power, especially in social media", example: "He's just doing it for the clout.", category: "slang" },
+    { word: "flex", definition: "To show off or boast about something", example: "She's always flexing her new car on Instagram.", category: "slang" },
+    { word: "stan", definition: "To be an overly enthusiastic and devoted fan", example: "I stan that artist so much, I have all their albums.", category: "slang" }
   ],
   general: [
     { word: "serendipity", definition: "The occurrence and development of events by chance in a happy or beneficial way", example: "It was serendipity that we met at the conference.", category: "general" },
@@ -66,12 +80,17 @@ const fallbackWords = {
     { word: "resilience", definition: "The capacity to recover quickly from difficulties; toughness", example: "The resilience of the human spirit never ceases to amaze me.", category: "general" },
     { word: "meticulous", definition: "Showing great attention to detail; very careful and precise", example: "His meticulous planning ensured the event went smoothly.", category: "general" },
     { word: "ambivalent", definition: "Having mixed feelings or contradictory ideas about something or someone", example: "I'm ambivalent about moving to a new city.", category: "general" },
+    { word: "quintessential", definition: "Representing the most perfect or typical example of a quality or class", example: "This restaurant offers the quintessential Italian dining experience.", category: "general" },
+    { word: "mellifluous", definition: "Sweet or musical; pleasant to hear", example: "She has a mellifluous voice that captivates listeners.", category: "general" },
+    { word: "cacophony", definition: "A harsh, discordant mixture of sounds", example: "The cacophony of the construction site made it difficult to concentrate.", category: "general" },
+    { word: "perspicacious", definition: "Having a ready insight into and understanding of things", example: "Her perspicacious analysis identified the root of the problem.", category: "general" },
+    { word: "sanguine", definition: "Optimistic or positive, especially in an apparently bad or difficult situation", example: "Despite the challenges, he remained sanguine about the project's success.", category: "general" }
   ]
 };
 
 // Add UUIDs to fallback words to ensure they can be tracked in history
-for (const category in fallbackWords) {
-  fallbackWords[category as keyof typeof fallbackWords].forEach(word => {
+for (const category in fallbackWordsPool) {
+  fallbackWordsPool[category as keyof typeof fallbackWordsPool].forEach(word => {
     if (!word.id) {
       word.id = crypto.randomUUID();
     }
@@ -234,13 +253,59 @@ serve(async (req) => {
     } catch (apiError) {
       console.error('API or database error:', apiError);
       
-      // Use fallback words instead
+      // Use fallback words instead but avoid previously sent words
       isUsingFallback = true;
       wordSource = 'fallback';
-      vocabWords = fallbackWords[category as keyof typeof fallbackWords] || fallbackWords.general;
+      
+      // Get available fallback words for the category
+      let availableFallbackWords = fallbackWordsPool[category as keyof typeof fallbackWordsPool] || fallbackWordsPool.general;
+      
+      // Check user history to avoid sending the same words again
+      try {
+        const { data: userWordHistory } = await supabase
+          .from('user_word_history')
+          .select('word')
+          .eq('user_id', currentUserId)
+          .eq('category', category);
+        
+        const previousWords = userWordHistory?.map(entry => entry.word) || [];
+        
+        // Filter out words that have already been sent to this user
+        if (previousWords.length > 0) {
+          availableFallbackWords = availableFallbackWords.filter(word => 
+            !previousWords.includes(word.word)
+          );
+        }
+        
+        // If we've used all fallback words, reset with some randomness by shuffling
+        if (availableFallbackWords.length < wordCount) {
+          console.log("All fallback words have been used, adding some shuffled ones");
+          // Shuffle the full array to get random words
+          const allFallbacks = [...fallbackWordsPool[category as keyof typeof fallbackWordsPool] || fallbackWordsPool.general];
+          for (let i = allFallbacks.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [allFallbacks[i], allFallbacks[j]] = [allFallbacks[j], allFallbacks[i]];
+          }
+          
+          // Use the shuffled array but give each word a new ID to track separately
+          const shuffledWords = allFallbacks.slice(0, wordCount).map(word => ({
+            ...word,
+            id: crypto.randomUUID(),
+            created_at: new Date().toISOString()
+          }));
+          
+          availableFallbackWords = shuffledWords;
+        }
+      } catch (historyError) {
+        console.error("Error checking user history for fallback words:", historyError);
+        // If we can't check history, just shuffle the fallback words to add randomness
+        availableFallbackWords = [...availableFallbackWords]
+          .sort(() => Math.random() - 0.5)
+          .slice(0, wordCount);
+      }
       
       // Limit to requested word count
-      vocabWords = vocabWords.slice(0, wordCount);
+      vocabWords = availableFallbackWords.slice(0, wordCount);
       
       console.log(`Using ${vocabWords.length} fallback words for category: ${category}`);
     }
