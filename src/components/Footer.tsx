@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Brain } from 'lucide-react';
+import { Dumbbell } from 'lucide-react';
 
 const Footer = () => {
   return (
@@ -9,8 +9,16 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <Brain className="h-8 w-8 text-vocab-teal" />
-              <span className="font-bold text-xl">VocabSpark</span>
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black relative">
+                <span className="text-white font-bold text-lg">V</span>
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3">
+                  <Dumbbell className="h-3 w-3 text-white transform rotate-90" />
+                </div>
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3">
+                  <Dumbbell className="h-3 w-3 text-white transform rotate-90" />
+                </div>
+              </div>
+              <span className="font-bold text-xl">VUILDER</span>
             </div>
             <p className="text-gray-400 mb-4">
               Expanding your vocabulary effortlessly, one word at a time.
@@ -66,7 +74,7 @@ const Footer = () => {
         </div>
         
         <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400 text-sm">
-          <p>© {new Date().getFullYear()} VocabSpark. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} VUILDER. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Smartphone, Calendar, Brain, BarChart, MessageSquare, Sparkles, Zap, Flame } from 'lucide-react';
+import { Smartphone, Calendar, Brain, BarChart, MessageSquare, Sparkles, Zap, Flame, Dumbbell } from 'lucide-react';
 
 const FeatureCards = () => {
   const features = [
@@ -41,10 +41,10 @@ const FeatureCards = () => {
       animation: "hover:-translate-y-1"
     },
     {
-      title: "Pro Customization",
-      description: "Pro subscribers can choose specialized vocabulary categories tailored to their needs.",
-      icon: <Sparkles className="h-12 w-12 text-[#FFC800]" />,
-      color: "from-[#FFF8E0] to-[#FFFDF5]",
+      title: "Build Vocabulary Muscle",
+      description: "Strengthen your communication skills with our specially designed word training.",
+      icon: <Dumbbell className="h-12 w-12 text-black" />,
+      color: "from-[#f0f0f0] to-[#fafafa]",
       animation: "hover:-translate-y-1"
     }
   ];
@@ -74,7 +74,7 @@ const FeatureCards = () => {
             
             {index === 5 && (
               <div className="absolute bottom-3 right-3">
-                <Zap className="h-5 w-5 text-[#FFC800] animate-pulse" />
+                <Zap className="h-5 w-5 text-black animate-pulse" />
               </div>
             )}
           </CardContent>

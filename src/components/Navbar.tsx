@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { 
-  Brain, 
   Menu, 
   X, 
   LogIn, 
@@ -10,7 +9,8 @@ import {
   Sparkles,
   BookOpen,
   DollarSign,
-  MessageSquare 
+  MessageSquare,
+  Dumbbell
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -60,10 +60,17 @@ const Navbar = () => {
     }`}>
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-vocab-teal to-vocab-purple">
-            <Brain className="h-6 w-6 text-white" />
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black relative">
+            {/* Custom VUILDER Logo with flexing arms */}
+            <span className="text-white font-bold text-lg">V</span>
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3">
+              <Dumbbell className="h-3 w-3 text-white transform rotate-90" />
+            </div>
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3">
+              <Dumbbell className="h-3 w-3 text-white transform rotate-90" />
+            </div>
           </div>
-          <span className="font-bold text-xl text-gray-800 font-poppins tracking-tight">VocabSpark</span>
+          <span className="font-bold text-xl text-gray-800 font-poppins tracking-tight">VUILDER</span>
         </div>
         
         {/* Mobile menu button */}
