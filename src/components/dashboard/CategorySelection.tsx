@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Brain, Briefcase, Target, Smile, Sparkles, Heart, GraduationCap, 
@@ -9,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from '@/components/ui/use-toast';
 import { generateWordsWithAI } from '@/services/wordService';
+import { useIsMobile } from '@/hooks/use-mobile';
+import MobileCategorySelector from './MobileCategorySelector';
+import ApiTestButton from './ApiTestButton';
 
 interface CategorySelectionProps {
   isPro: boolean;
@@ -18,7 +20,6 @@ interface CategorySelectionProps {
   isLoadingNewBatch?: boolean;
 }
 
-// Define the primary category type
 interface PrimaryCategory {
   id: string;
   name: string;
@@ -28,7 +29,6 @@ interface PrimaryCategory {
   gradient: string;
 }
 
-// Define subcategory type
 interface Subcategory {
   id: string;
   name: string;
@@ -43,12 +43,12 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   onNewBatch,
   isLoadingNewBatch = false
 }) => {
+  const isMobile = useIsMobile();
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [selectedPrimaryCategory, setSelectedPrimaryCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState(1);
 
-  // Parse current category to set initial selections
   useEffect(() => {
     if (currentCategory) {
       const parts = currentCategory.split('-');
@@ -56,13 +56,11 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
         setSelectedPrimaryCategory(parts[0]);
         setSelectedSubcategory(parts[1]);
         
-        // Set active step to 2 if both primary and subcategory are selected
         if (parts[0] && parts[1]) {
           setActiveStep(2);
         }
       } else if (currentCategory === 'business' || currentCategory === 'exam' || 
                 currentCategory === 'slang' || currentCategory === 'general') {
-        // Handle legacy categories
         const mapping: { [key: string]: { primary: string, sub: string } } = {
           'business': { primary: 'business', sub: 'intermediate' },
           'exam': { primary: 'exam', sub: 'gre' },
@@ -79,7 +77,6 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
     }
   }, [currentCategory]);
   
-  // Primary categories
   const primaryCategories: PrimaryCategory[] = [
     {
       id: 'daily',
@@ -139,7 +136,6 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
     }
   ];
 
-  // Difficulty levels (subcategories for most primary categories)
   const difficultyLevels: Subcategory[] = [
     {
       id: 'beginner',
@@ -161,7 +157,6 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
     }
   ];
 
-  // Exam types (subcategories for Exam Prep)
   const examTypes: Subcategory[] = [
     {
       id: 'gre',
@@ -242,14 +237,12 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
         description: `${words.length} new vocabulary words were created with AI.`,
       });
       
-      // Trigger refresh of the word history component
       const wordHistoryEl = document.getElementById('word-history');
       if (wordHistoryEl) {
         wordHistoryEl.classList.add('refresh-triggered');
         setTimeout(() => wordHistoryEl.classList.remove('refresh-triggered'), 100);
       }
       
-      // Dispatch the refresh event for better compatibility
       const refreshEvent = new CustomEvent('refresh-word-history', {
         detail: { category: fullCategory, force: true }
       });
@@ -270,8 +263,8 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
     if (!isPro) return;
     
     setSelectedPrimaryCategory(categoryId);
-    setSelectedSubcategory(null); // Reset subcategory when primary changes
-    setActiveStep(2); // Move to step 2
+    setSelectedSubcategory(null);
+    setActiveStep(2);
   };
   
   const handleSubcategoryClick = (subcategoryId: string) => {
@@ -286,6 +279,49 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   };
   
   const isFullySelected = selectedPrimaryCategory && selectedSubcategory;
+
+  if (isMobile) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-medium text-gray-800">Word Category</h3>
+          
+          {isPro && isFullySelected && (
+            <Button 
+              onClick={handleGenerateAI}
+              disabled={isGeneratingAI || !isFullySelected}
+              className="bg-duolingo-purple hover:bg-duolingo-purple/90 text-white"
+              size="sm"
+            >
+              <Sparkles className={`mr-2 h-4 w-4 ${isGeneratingAI ? 'animate-pulse' : ''}`} />
+              {isGeneratingAI ? 'AI...' : 'Gen AI'}
+            </Button>
+          )}
+        </div>
+        
+        <MobileCategorySelector
+          isPro={isPro}
+          currentCategory={currentCategory}
+          selectedPrimary={selectedPrimaryCategory}
+          selectedSubcategory={selectedSubcategory}
+          onPrimarySelect={handlePrimaryCategoryClick}
+          onSubcategorySelect={handleSubcategoryClick}
+          onApplySelection={handleNewBatchClick}
+          isLoadingNewBatch={isLoadingNewBatch}
+        />
+
+        {isPro && isFullySelected && (
+          <div className="pt-6 mt-6 border-t border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">API Testing</h3>
+            <p className="text-gray-600 mb-3">
+              Test the vocabulary generation API by sending a sample set of words to your email.
+            </p>
+            <ApiTestButton category={`${selectedPrimaryCategory}-${selectedSubcategory}`} />
+          </div>
+        )}
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -320,7 +356,6 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
         </div>
       </div>
       
-      {/* Progress Indicator */}
       <div className="w-full flex items-center mb-6">
         <div className={`h-1 rounded-full ${activeStep >= 1 ? 'bg-vocab-purple' : 'bg-gray-200'} flex-1`}></div>
         <div className={`h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold ${
@@ -333,7 +368,6 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
         <div className={`h-1 rounded-full ${activeStep >= 3 ? 'bg-vocab-purple' : 'bg-gray-200'} flex-1`}></div>
       </div>
       
-      {/* Step 1: Primary Category Selection */}
       <div className={`space-y-4 ${activeStep === 1 ? 'block' : activeStep > 1 ? 'hidden sm:block' : 'hidden'}`}>
         <h4 className="text-sm font-medium mb-3 text-gray-600">Step 1: Choose a Category</h4>
         
@@ -391,7 +425,6 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
         </div>
       </div>
       
-      {/* Step 2: Subcategory Selection */}
       {selectedPrimaryCategory && isPro && (
         <div className={`space-y-4 animate-fade-in ${activeStep === 2 ? 'block' : 'hidden sm:block'}`}>
           <h4 className="text-sm font-medium mb-3 text-gray-600">
@@ -437,7 +470,6 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
         </div>
       )}
       
-      {/* Selection Summary and Apply Button */}
       {selectedPrimaryCategory && selectedSubcategory && isPro && (
         <div className="mt-8 pt-4 border-t border-gray-200 animate-fade-in">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -464,6 +496,16 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
               Apply Selection
             </Button>
           </div>
+        </div>
+      )}
+      
+      {isPro && isFullySelected && (
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">API Testing</h3>
+          <p className="text-gray-600 mb-3">
+            Test the vocabulary generation API by sending a sample set of words to your email.
+          </p>
+          <ApiTestButton category={`${selectedPrimaryCategory}-${selectedSubcategory}`} />
         </div>
       )}
     </div>
