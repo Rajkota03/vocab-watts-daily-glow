@@ -102,14 +102,12 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
       if (data.isUsingFallback) {
         toast({
           title: "Test completed with fallback words",
-          description: `Generated ${data.words.length} sample words for category "${category}". The AI service is temporarily unavailable, so we're using sample words instead. Check your email at ${emailToUse}.`,
-          duration: 6000
+          description: `Generated ${data.words.length} sample words for category "${category}". The AI service is temporarily unavailable, so we're using sample words instead. Check your email at ${emailToUse}.`
         });
       } else {
         toast({
           title: "Test completed successfully!",
-          description: `Generated ${data.words.length} new words for category "${category}" using ${data.wordSource || 'AI'}. Check your email at ${emailToUse}.`,
-          duration: 6000
+          description: `Generated ${data.words.length} new words for category "${category}" using ${data.wordSource || 'AI'}. Check your email at ${emailToUse}.`
         });
       }
       
@@ -122,8 +120,7 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
       toast({
         title: "API Test Failed",
         description: error.message || "An error occurred while testing the API",
-        variant: "destructive",
-        duration: 6000
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
