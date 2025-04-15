@@ -22,9 +22,9 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   onNewBatch,
   isLoadingNewBatch = false
 }) => {
-  const [step, setStep] = useState(1);
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   
   // Initialize from current category if available
   useEffect(() => {
@@ -33,7 +33,6 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
       if (parts.length === 2) {
         setSelectedPrimary(parts[0]);
         setSelectedSubcategory(parts[1]);
-        setStep(3); // Go to confirmation step
       }
     }
   }, [currentCategory]);
@@ -183,20 +182,20 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   
   const handlePrimarySelect = (categoryId: string) => {
     setSelectedPrimary(categoryId);
-    setStep(2);
+    setSelectedSubcategory(null); // Reset subcategory when primary changes
+    setShowConfirmation(false); // Hide confirmation when primary changes
   };
   
   const handleSubcategorySelect = (subcategoryId: string) => {
     setSelectedSubcategory(subcategoryId);
-    setStep(3);
+    setShowConfirmation(true); // Show confirmation when subcategory is selected
   };
   
   const handleBack = () => {
-    if (step === 2) {
-      setStep(1);
+    if (showConfirmation) {
+      setShowConfirmation(false);
+    } else {
       setSelectedPrimary(null);
-    } else if (step === 3) {
-      setStep(2);
       setSelectedSubcategory(null);
     }
   };
@@ -214,102 +213,39 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   const selectedCategoryData = primaryCategories.find(c => c.id === selectedPrimary);
   const selectedSubcategoryData = getSubcategories().find(s => s.id === selectedSubcategory);
 
+  // Calculate progress percentage for the progress bar
+  const progressPercentage = !selectedPrimary ? 33 : !selectedSubcategory ? 66 : 100;
+
   return (
     <div className="font-inter min-h-[80vh] flex flex-col">
       {/* Progress bar */}
-      <div className="flex justify-center mb-6 px-2">
-        <div className="flex gap-2">
-          <div className={`w-2.5 h-2.5 rounded-full ${step >= 1 ? 'bg-[#FF6B6B]' : 'bg-gray-200'}`}></div>
-          <div className={`w-2.5 h-2.5 rounded-full ${step >= 2 ? 'bg-[#FF6B6B]' : 'bg-gray-200'}`}></div>
-          <div className={`w-2.5 h-2.5 rounded-full ${step >= 3 ? 'bg-[#FF6B6B]' : 'bg-gray-200'}`}></div>
-        </div>
+      <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden mb-4">
+        <div 
+          className="bg-[#FF6B6B] h-full rounded-full transition-all duration-300 ease-out"
+          style={{ width: `${progressPercentage}%` }}
+        />
       </div>
       
-      {/* Step 1: Category Selection */}
-      {step === 1 && (
-        <div className="animate-fade-in p-2 flex-1 flex flex-col">
-          <div className="text-center mb-6">
-            <h2 className="text-xl font-semibold">Select Your Word Category</h2>
-            <p className="text-gray-500 text-sm mt-1">Step 1 of 3</p>
-          </div>
-          
-          <div className="grid grid-cols-1 gap-3.5 flex-1">
-            {primaryCategories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => handlePrimarySelect(category.id)}
-                className={`flex items-center px-4 py-3.5 rounded-xl text-left transition-all ${category.color} border border-transparent hover:border-gray-200 active:scale-[0.98]`}
-              >
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm mr-3">
-                  <span className="text-xl" aria-hidden="true">{category.emoji}</span>
-                </div>
-                <div className="flex-1">
-                  <h3 className={`font-medium ${category.textColor}`}>{category.name}</h3>
-                  <p className="text-gray-600 text-sm mt-0.5 line-clamp-1">{category.description}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      
-      {/* Step 2: Subcategory Selection */}
-      {step === 2 && selectedPrimary && (
-        <div className="animate-fade-in p-2 flex-1 flex flex-col">
-          <div className="mb-6">
-            <button 
-              onClick={handleBack}
-              className="p-1 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
-            >
-              <ArrowLeft className="h-5 w-5 text-gray-600" />
-            </button>
-            
-            <div className="text-center mt-2">
-              <h2 className="text-xl font-semibold">
-                {selectedPrimary === 'exam' ? 'Select Exam Type' : 'Choose Difficulty Level'}
-              </h2>
-              <p className="text-gray-500 text-sm mt-1">Step 2 of 3</p>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 gap-3.5 flex-1">
-            {getSubcategories().map((subcategory) => (
-              <button
-                key={subcategory.id}
-                onClick={() => handleSubcategorySelect(subcategory.id)}
-                className={`flex items-center px-4 py-3.5 rounded-xl text-left transition-all ${subcategory.color} border border-transparent hover:border-gray-200 active:scale-[0.98]`}
-              >
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm mr-3">
-                  <span className="text-xl" aria-hidden="true">{subcategory.emoji}</span>
-                </div>
-                <div className="flex-1">
-                  <h3 className={`font-medium ${subcategory.textColor}`}>{subcategory.name}</h3>
-                  <p className="text-gray-600 text-sm mt-0.5 line-clamp-1">{subcategory.description}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      
-      {/* Step 3: Confirmation */}
-      {step === 3 && selectedPrimary && selectedSubcategory && (
-        <div className="animate-fade-in p-2 flex-1 flex flex-col">
-          <div className="mb-6">
-            <button 
-              onClick={handleBack}
-              className="p-1 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
-            >
-              <ArrowLeft className="h-5 w-5 text-gray-600" />
-            </button>
-            
-            <div className="text-center mt-2">
+      {/* Content section */}
+      <div className="flex-1 flex flex-col">
+        {/* Back button (shown when a category is selected) */}
+        {(selectedPrimary || showConfirmation) && (
+          <button 
+            onClick={handleBack}
+            className="self-start p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors mb-4"
+          >
+            <ArrowLeft className="h-5 w-5 text-gray-600" />
+          </button>
+        )}
+        
+        {/* Step 3: Confirmation Screen (shown after selecting both category and subcategory) */}
+        {showConfirmation && selectedPrimary && selectedSubcategory && (
+          <div className="animate-fade-in flex-1 flex flex-col">
+            <div className="text-center mb-6">
               <h2 className="text-xl font-semibold">Confirm Your Word Path</h2>
-              <p className="text-gray-500 text-sm mt-1">Step 3 of 3</p>
+              <p className="text-gray-500 text-sm mt-1">Final Step</p>
             </div>
-          </div>
-          
-          <div className="flex-1 flex flex-col">
+            
             <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
               <div className="flex items-center mb-5">
                 <div className={cn(
@@ -367,8 +303,73 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
               )}
             </Button>
           </div>
-        </div>
-      )}
+        )}
+        
+        {/* Main selection area */}
+        {!showConfirmation && (
+          <>
+            {/* Title changes based on selection state */}
+            <div className="text-center mb-6">
+              {!selectedPrimary ? (
+                <>
+                  <h2 className="text-xl font-semibold">Select Your Word Category</h2>
+                  <p className="text-gray-500 text-sm mt-1">Step 1 of 3</p>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-xl font-semibold">
+                    {selectedPrimary === 'exam' ? 'Select Exam Type' : 'Choose Difficulty Level'}
+                  </h2>
+                  <p className="text-gray-500 text-sm mt-1">Step 2 of 3</p>
+                </>
+              )}
+            </div>
+            
+            {/* Rendering both sections in the same view, but conditionally showing one or both */}
+            <div className="grid grid-cols-1 gap-6">
+              {/* Primary Category Selection */}
+              <div className={`grid grid-cols-1 gap-3.5 ${selectedPrimary ? 'animate-fade-out hidden' : 'animate-fade-in'}`}>
+                {primaryCategories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => handlePrimarySelect(category.id)}
+                    className={`flex items-center px-4 py-3.5 rounded-xl text-left transition-all ${category.color} border ${selectedPrimary === category.id ? 'border-gray-300' : 'border-transparent'} hover:border-gray-200 active:scale-[0.98]`}
+                  >
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm mr-3">
+                      <span className="text-xl" aria-hidden="true">{category.emoji}</span>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className={`font-medium ${category.textColor}`}>{category.name}</h3>
+                      <p className="text-gray-600 text-sm mt-0.5 line-clamp-1">{category.description}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              
+              {/* Subcategory Selection (only shown when a primary category is selected) */}
+              {selectedPrimary && (
+                <div className="grid grid-cols-1 gap-3.5 animate-fade-in">
+                  {getSubcategories().map((subcategory) => (
+                    <button
+                      key={subcategory.id}
+                      onClick={() => handleSubcategorySelect(subcategory.id)}
+                      className={`flex items-center px-4 py-3.5 rounded-xl text-left transition-all ${subcategory.color} border ${selectedSubcategory === subcategory.id ? 'border-gray-300' : 'border-transparent'} hover:border-gray-200 active:scale-[0.98]`}
+                    >
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm mr-3">
+                        <span className="text-xl" aria-hidden="true">{subcategory.emoji}</span>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className={`font-medium ${subcategory.textColor}`}>{subcategory.name}</h3>
+                        <p className="text-gray-600 text-sm mt-0.5 line-clamp-1">{subcategory.description}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 };
