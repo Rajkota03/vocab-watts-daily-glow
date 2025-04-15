@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getVocabWordsByCategory } from '@/services/subscriptionService';
 import { format } from 'date-fns';
@@ -28,7 +29,8 @@ const WordHistory: React.FC<WordHistoryProps> = ({
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
-  const loadWords = async () => {
+  // Use useCallback to memoize the loadWords function
+  const loadWords = useCallback(async () => {
     if (isTrialExpired && !isPro) {
       setLoading(false);
       return;
@@ -46,9 +48,9 @@ const WordHistory: React.FC<WordHistoryProps> = ({
         return;
       }
       
-      // First try to get words from user_word_history
+      // First try to get words from user_word_history - this is the most reliable source
       const { data: userHistoryWords, error: historyError } = await supabase
-        .from('user_word_history' as any)
+        .from('user_word_history')
         .select('word_id, date_sent, word')
         .eq('user_id', userId)
         .eq('category', category)
@@ -57,13 +59,18 @@ const WordHistory: React.FC<WordHistoryProps> = ({
         
       if (historyError) {
         console.error('Error fetching user word history:', historyError);
+        toast({
+          title: "Error loading word history",
+          description: historyError.message,
+          variant: "destructive"
+        });
       }
       
       if (userHistoryWords && userHistoryWords.length > 0) {
-        console.log(`Found ${userHistoryWords.length} words in user_word_history`);
+        console.log(`Found ${userHistoryWords.length} words in user_word_history for category ${category}`);
         
         // Use the user_word_history to get the words
-        const wordIds = (userHistoryWords as any[]).map(hw => hw.word_id);
+        const wordIds = userHistoryWords.map(hw => hw.word_id);
         
         // Fetch the complete word data from vocabulary_words
         const { data: wordsData, error: wordsError } = await supabase
@@ -73,20 +80,29 @@ const WordHistory: React.FC<WordHistoryProps> = ({
           
         if (wordsError) {
           console.error('Error fetching vocabulary words:', wordsError);
+          toast({
+            title: "Error retrieving vocabulary words",
+            description: wordsError.message,
+            variant: "destructive"
+          });
         } else if (wordsData && wordsData.length > 0) {
           // Sort the words in the same order as userHistoryWords (by date_sent, most recent first)
-          const sortedWords = (userHistoryWords as any[]).map(historyWord => 
+          const sortedWords = userHistoryWords.map(historyWord => 
             wordsData.find(word => word.id === historyWord.word_id)
           ).filter(Boolean) as VocabularyWord[];
           
-          console.log('Sorted words from user history:', sortedWords.map(w => w.word));
+          console.log('Retrieved and sorted words from user history:', sortedWords.map(w => w.word));
           setWords(sortedWords);
           setLoading(false);
           return;
+        } else {
+          console.log('No vocabulary data found for word IDs:', wordIds);
         }
+      } else {
+        console.log('No user history found for category:', category);
       }
       
-      console.log('No user history found or error. Trying sent_words table.');
+      console.log('Falling back to sent_words table');
       
       // Fall back to the old sent_words table
       const { data: userData, error: userError } = await supabase
@@ -100,6 +116,7 @@ const WordHistory: React.FC<WordHistoryProps> = ({
         // If we can't get the phone number, try to get words directly
         const wordsData = await getVocabWordsByCategory(category);
         if (wordsData) {
+          console.log(`Retrieved ${wordsData.length} words directly from vocabulary_words via service`);
           setWords(wordsData);
         }
         setLoading(false);
@@ -110,7 +127,7 @@ const WordHistory: React.FC<WordHistoryProps> = ({
       
       // Get the most recent sent words for this user
       const { data: sentWords, error: sentWordsError } = await supabase
-        .from('sent_words' as any)
+        .from('sent_words')
         .select('word_id, sent_at')
         .eq('user_id', userId)
         .eq('category', category)
@@ -119,13 +136,18 @@ const WordHistory: React.FC<WordHistoryProps> = ({
         
       if (sentWordsError) {
         console.error('Error fetching sent words:', sentWordsError);
+        toast({
+          title: "Error loading sent words",
+          description: sentWordsError.message,
+          variant: "destructive"
+        });
       }
       
-      if (sentWords && (sentWords as any[]).length > 0) {
-        console.log(`Found ${(sentWords as any[]).length} words in sent_words table`);
+      if (sentWords && sentWords.length > 0) {
+        console.log(`Found ${sentWords.length} words in sent_words table for category ${category}`);
         
         // Get the actual word data for the sent words
-        const wordIds = (sentWords as any[]).map(sw => sw.word_id);
+        const wordIds = sentWords.map(sw => sw.word_id);
         
         // Retrieve the words in order of most recently sent
         const { data: wordsData, error: wordsError } = await supabase
@@ -135,20 +157,29 @@ const WordHistory: React.FC<WordHistoryProps> = ({
           
         if (wordsError) {
           console.error('Error fetching words:', wordsError);
+          toast({
+            title: "Error retrieving vocabulary words",
+            description: wordsError.message,
+            variant: "destructive"
+          });
         } else if (wordsData && wordsData.length > 0) {
           // Sort the words in the same order as sentWords (by sent_at, most recent first)
-          const sortedWords = (sentWords as any[]).map(sentWord => 
+          const sortedWords = sentWords.map(sentWord => 
             wordsData.find(word => word.id === sentWord.word_id)
           ).filter(Boolean) as VocabularyWord[];
           
-          console.log('Sorted words from sent words:', sortedWords.map(w => w.word));
+          console.log('Retrieved and sorted words from sent words:', sortedWords.map(w => w.word));
           setWords(sortedWords);
           setLoading(false);
           return;
+        } else {
+          console.log('No vocabulary data found for sent word IDs:', wordIds);
         }
+      } else {
+        console.log('No sent words found for category:', category);
       }
       
-      console.log('No sent words found or error. Trying to get vocab words directly.');
+      console.log('No word history found, fetching vocabulary words directly');
       // If no words were found in either table, fall back to getting vocabulary words directly
       const wordsData = await getVocabWordsByCategory(category);
       if (wordsData) {
@@ -167,17 +198,28 @@ const WordHistory: React.FC<WordHistoryProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [isPro, isTrialExpired, category, toast]);
 
+  // Load words when component mounts or dependencies change
   useEffect(() => {
     loadWords();
-  }, [isPro, isTrialExpired, category]);
+  }, [loadWords]);
 
   // Listen for refresh events from ApiTestButton
   useEffect(() => {
     const handleRefreshEvent = (event: Event) => {
-      console.log('Received refresh-word-history event');
-      loadWords();
+      const customEvent = event as CustomEvent;
+      const eventCategory = customEvent.detail?.category;
+      
+      console.log('Received refresh-word-history event with category:', eventCategory);
+      
+      // Only refresh if event is for current category or no category specified
+      if (!eventCategory || eventCategory === category) {
+        console.log('Refreshing word history based on event');
+        loadWords();
+      } else {
+        console.log('Ignoring refresh event for different category:', eventCategory);
+      }
     };
     
     document.addEventListener('refresh-word-history', handleRefreshEvent);
@@ -185,7 +227,7 @@ const WordHistory: React.FC<WordHistoryProps> = ({
     return () => {
       document.removeEventListener('refresh-word-history', handleRefreshEvent);
     };
-  }, [category]); // Re-add listener if category changes
+  }, [category, loadWords]);
 
   const toggleItem = (id: string) => {
     setOpenItems(prev => ({
@@ -195,7 +237,7 @@ const WordHistory: React.FC<WordHistoryProps> = ({
   };
 
   const handleRefresh = () => {
-    console.log('Manual refresh triggered');
+    console.log('Manual refresh triggered for category:', category);
     loadWords();
   };
 

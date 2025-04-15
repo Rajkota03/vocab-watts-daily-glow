@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
@@ -47,6 +46,13 @@ interface DebugInfo {
   wordSource: string;
   previouslySentWords?: string[];
   apiKey?: string;
+  dbOperations?: {
+    insertWordsSuccess?: boolean;
+    insertWordsError?: string;
+    userHistorySuccess?: boolean;
+    userHistoryError?: string;
+    userHistoryEntries?: number;
+  };
 }
 
 // Create a pool of fallback vocabulary words so we can rotate them
@@ -77,7 +83,7 @@ const fallbackWordsPool = {
   ],
   slang: [
     { word: "ghosting", definition: "Abruptly cutting off all contact with someone", example: "He was ghosting her after their third date.", category: "slang" },
-    { word: "slay", definition: "To do something exceptionally well", example: "She absolutely slayed that presentation yesterday.", category: "slang" },
+    { word: "slay", definition: "To do something exceptionally well", example: "She absolutely slayed that presentation yesterday.", category: "slay" },
     { word: "cap", definition: "To lie or exaggerate about something", example: "No cap, this is the best pizza I've ever had.", category: "slang" },
     { word: "vibe check", definition: "An assessment of someone's mood or attitude", example: "Just doing a quick vibe check before I ask him for a favor.", category: "slang" },
     { word: "sus", definition: "Suspicious or questionable", example: "That guy looking at our bags seems kinda sus.", category: "slang" },
@@ -127,7 +133,8 @@ serve(async (req) => {
       wordHistoryCount: 0,
       databaseWordsCount: 0,
       wordSource: 'unknown',
-      apiKey: openAIApiKey ? `${openAIApiKey.substring(0, 3)}...${openAIApiKey.substring(openAIApiKey.length - 3)}` : 'not set'
+      apiKey: openAIApiKey ? `${openAIApiKey.substring(0, 3)}...${openAIApiKey.substring(openAIApiKey.length - 3)}` : 'not set',
+      dbOperations: {}
     };
     
     if (!email) {
@@ -367,6 +374,14 @@ serve(async (req) => {
     // STEP 4: Log Final Sent Words to user_word_history
     try {
       console.log("Step 4: Logging sent words to user_word_history");
+      
+      // Make sure all words have valid IDs
+      vocabWords.forEach(word => {
+        if (!word.id) {
+          word.id = crypto.randomUUID();
+        }
+      });
+      
       const historyEntries = vocabWords.map(word => ({
         user_id: currentUserId,
         word: word.word,
@@ -376,17 +391,26 @@ serve(async (req) => {
         word_id: word.id
       }));
       
+      console.log(`Preparing to log ${historyEntries.length} entries to user_word_history`);
+      console.log('Sample entry:', JSON.stringify(historyEntries[0]));
+      
       const { error: historyError } = await supabase
         .from('user_word_history')
         .insert(historyEntries);
         
       if (historyError) {
         console.error('Error logging words to user history:', historyError);
+        debugInfo.dbOperations!.userHistorySuccess = false;
+        debugInfo.dbOperations!.userHistoryError = historyError.message;
       } else {
         console.log(`Successfully logged ${vocabWords.length} words to user history`);
+        debugInfo.dbOperations!.userHistorySuccess = true;
+        debugInfo.dbOperations!.userHistoryEntries = historyEntries.length;
       }
     } catch (historyError) {
       console.error('Error in word history logging:', historyError);
+      debugInfo.dbOperations!.userHistorySuccess = false;
+      debugInfo.dbOperations!.userHistoryError = (historyError as Error).message;
     }
 
     // Send email using Resend
@@ -409,14 +433,13 @@ serve(async (req) => {
         throw new Error(`Resend API error: ${emailResult.error.message || JSON.stringify(emailResult.error)}`);
       }
 
-      // Return response with limited debug info if requested
+      // Return response with comprehensive debug info
       return new Response(JSON.stringify({ 
         success: true,
         message: `Email with ${vocabWords.length} vocabulary words sent to ${email}`,
         words: vocabWords,
         isUsingFallback,
         wordSource,
-        emailResult,
         debugInfo: debug ? debugInfo : undefined
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

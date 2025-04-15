@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Send, AlertTriangle } from "lucide-react";
@@ -88,13 +89,12 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
         setDebugInfo(JSON.stringify(data.debugInfo, null, 2));
       }
       
-      // Force refresh of word history by triggering a custom event instead
-      // of directly manipulating the DOM
+      // Force refresh of word history by triggering a custom event
       const refreshEvent = new CustomEvent('refresh-word-history', {
         detail: { category: category }
       });
       document.dispatchEvent(refreshEvent);
-      console.log('Dispatched refresh-word-history event');
+      console.log('Dispatched refresh-word-history event with category:', category);
       
       // Create a toast message based on whether we're using fallback words or not
       if (data.isUsingFallback) {
