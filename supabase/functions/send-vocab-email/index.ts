@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
@@ -25,6 +26,7 @@ interface EmailRequestBody {
   wordCount?: number;
   force_new_words?: boolean;
   user_id?: string;
+  debug?: boolean;
 }
 
 interface VocabularyWord {
@@ -34,6 +36,17 @@ interface VocabularyWord {
   example: string;
   category: string;
   created_at?: string;
+}
+
+interface DebugInfo {
+  openAIAvailable: boolean;
+  wordHistoryCount: number;
+  databaseWordsCount: number;
+  openAIResponse?: any;
+  openAIError?: string;
+  wordSource: string;
+  previouslySentWords?: string[];
+  apiKey?: string;
 }
 
 // Create a pool of fallback vocabulary words so we can rotate them
@@ -107,7 +120,15 @@ serve(async (req) => {
   }
 
   try {
-    const { email, category, wordCount = 5, force_new_words = false, user_id }: EmailRequestBody = await req.json();
+    const { email, category, wordCount = 5, force_new_words = false, user_id, debug = false }: EmailRequestBody = await req.json();
+    
+    const debugInfo: DebugInfo = {
+      openAIAvailable: !!openAIApiKey,
+      wordHistoryCount: 0,
+      databaseWordsCount: 0,
+      wordSource: 'unknown',
+      apiKey: openAIApiKey ? `${openAIApiKey.substring(0, 3)}...${openAIApiKey.substring(openAIApiKey.length - 3)}` : 'not set'
+    };
     
     if (!email) {
       throw new Error('Email is required');
@@ -140,9 +161,12 @@ serve(async (req) => {
       }
       
       const previousWords = userWordHistory?.map(entry => entry.word) || [];
+      debugInfo.wordHistoryCount = previousWords.length;
+      debugInfo.previouslySentWords = previousWords;
+      
       console.log(`Found ${previousWords.length} previously sent words for this user`);
       
-      // STEP 2: Try fetching from vocabulary_words Table
+      // STEP 2: Try fetching from vocabulary_words Table (if not forcing new words)
       if (!force_new_words) {
         console.log("Step 2: Fetching words from vocabulary_words table not in user history");
         let query = supabase
@@ -163,10 +187,15 @@ serve(async (req) => {
           throw existingWordsError;
         }
         
+        if (existingWords) {
+          debugInfo.databaseWordsCount = existingWords.length;
+        }
+        
         if (existingWords && existingWords.length >= wordCount) {
           // Use existing words from the database
           vocabWords = existingWords.slice(0, wordCount);
           wordSource = 'database';
+          debugInfo.wordSource = 'database';
           console.log(`Using ${vocabWords.length} existing words from the database`);
         }
       }
@@ -174,7 +203,16 @@ serve(async (req) => {
       // STEP 3: If not enough words or force_new_words is true, Call OpenAI
       if (vocabWords.length < wordCount || force_new_words) {
         console.log("Step 3: Generating new words with OpenAI");
+        
+        // Check if OpenAI API key is available
+        if (!openAIApiKey) {
+          console.error("OpenAI API key is not configured");
+          debugInfo.openAIError = "OpenAI API key is not configured";
+          throw new Error("OpenAI API key is not configured");
+        }
+        
         wordSource = 'openai';
+        debugInfo.wordSource = 'openai';
         
         // Calculate how many new words we need
         const newWordsNeeded = force_new_words ? wordCount : (wordCount - vocabWords.length);
@@ -183,72 +221,85 @@ serve(async (req) => {
         const wordsToAvoid = previousWords.join(', ');
         
         // Call OpenAI to generate new words
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${openAIApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'gpt-3.5-turbo',
-            messages: [
-              { 
-                role: 'system', 
-                content: `You are a vocabulary teaching assistant. Generate unique vocabulary words.` 
-              },
-              { 
-                role: 'user', 
-                content: `Generate ${newWordsNeeded} vocabulary words for the category "${category}".
-                
-                ${previousWords.length > 0 ? `IMPORTANT: Avoid using these words that the user has already seen: [${wordsToAvoid}]` : ''}
-                
-                For each word, provide:
-                1. The word itself
-                2. A clear, concise definition
-                3. A natural example sentence showing how to use it in context
-                
-                Format your response as a valid JSON array of objects with the properties: "word", "definition", "example", and "category".
-                The category should be "${category}" for all words.
-                Do not include any explanations or text outside the JSON array.` 
-              }
-            ],
-            temperature: 0.7,
-          }),
-        });
+        try {
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openAIApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-3.5-turbo',
+              messages: [
+                { 
+                  role: 'system', 
+                  content: `You are a vocabulary teaching assistant. Generate unique vocabulary words.` 
+                },
+                { 
+                  role: 'user', 
+                  content: `Generate ${newWordsNeeded} vocabulary words for the category "${category}".
+                  
+                  ${previousWords.length > 0 ? `IMPORTANT: Avoid using these words that the user has already seen: [${wordsToAvoid}]` : ''}
+                  
+                  For each word, provide:
+                  1. The word itself
+                  2. A clear, concise definition
+                  3. A natural example sentence showing how to use it in context
+                  
+                  Format your response as a valid JSON array of objects with the properties: "word", "definition", "example", and "category".
+                  The category should be "${category}" for all words.
+                  Do not include any explanations or text outside the JSON array.` 
+                }
+              ],
+              temperature: 0.7,
+            }),
+          });
 
-        if (!response.ok) {
-          throw new Error(`OpenAI API error: ${response.status}`);
-        }
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`OpenAI API error (${response.status}):`, errorText);
+            debugInfo.openAIError = `Status ${response.status}: ${errorText}`;
+            throw new Error(`OpenAI API error: ${response.status}`);
+          }
 
-        const data = await response.json();
-        const content = data.choices[0].message.content;
-        
-        // Parse the JSON response from GPT
-        const parsedWords = JSON.parse(content);
-        
-        // Add UUIDs to the words to ensure they can be tracked in history
-        parsedWords.forEach((word: VocabularyWord) => {
-          word.id = crypto.randomUUID();
-          word.created_at = new Date().toISOString();
-        });
-        
-        // Insert the words into the database for future use
-        const { error: insertError } = await supabase
-          .from('vocabulary_words')
-          .insert(parsedWords);
+          const data = await response.json();
+          debugInfo.openAIResponse = data;
           
-        if (insertError) {
-          console.error('Error inserting words into database:', insertError);
+          const content = data.choices[0].message.content;
+          
+          // Parse the JSON response from GPT
+          const parsedWords = JSON.parse(content);
+          
+          // Add UUIDs to the words to ensure they can be tracked in history
+          parsedWords.forEach((word: VocabularyWord) => {
+            word.id = crypto.randomUUID();
+            word.created_at = new Date().toISOString();
+          });
+          
+          // Insert the words into the database for future use
+          const { error: insertError } = await supabase
+            .from('vocabulary_words')
+            .insert(parsedWords);
+            
+          if (insertError) {
+            console.error('Error inserting words into database:', insertError);
+          }
+          
+          // Combine with any existing words if we're not forcing all new words
+          if (force_new_words) {
+            vocabWords = parsedWords;
+          } else {
+            vocabWords = [...vocabWords, ...parsedWords].slice(0, wordCount);
+          }
+          
+          console.log(`Successfully generated ${parsedWords.length} words from OpenAI`);
+        } catch (openAIError) {
+          console.error('OpenAI API error:', openAIError);
+          if (!debugInfo.openAIError) {
+            debugInfo.openAIError = openAIError.message || 'Unknown OpenAI error';
+          }
+          throw openAIError;
         }
-        
-        // Combine with any existing words if we're not forcing all new words
-        if (force_new_words) {
-          vocabWords = parsedWords;
-        } else {
-          vocabWords = [...vocabWords, ...parsedWords].slice(0, wordCount);
-        }
-        
-        console.log(`Successfully generated ${parsedWords.length} words from OpenAI`);
       }
     } catch (apiError) {
       console.error('API or database error:', apiError);
@@ -256,6 +307,7 @@ serve(async (req) => {
       // Use fallback words instead but avoid previously sent words
       isUsingFallback = true;
       wordSource = 'fallback';
+      debugInfo.wordSource = 'fallback';
       
       // Get available fallback words for the category
       let availableFallbackWords = fallbackWordsPool[category as keyof typeof fallbackWordsPool] || fallbackWordsPool.general;
@@ -272,9 +324,11 @@ serve(async (req) => {
         
         // Filter out words that have already been sent to this user
         if (previousWords.length > 0) {
+          const beforeFilter = availableFallbackWords.length;
           availableFallbackWords = availableFallbackWords.filter(word => 
             !previousWords.includes(word.word)
           );
+          console.log(`Filtered fallback words: ${beforeFilter} -> ${availableFallbackWords.length}`);
         }
         
         // If we've used all fallback words, reset with some randomness by shuffling
@@ -355,13 +409,15 @@ serve(async (req) => {
         throw new Error(`Resend API error: ${emailResult.error.message || JSON.stringify(emailResult.error)}`);
       }
 
+      // Return response with limited debug info if requested
       return new Response(JSON.stringify({ 
         success: true,
         message: `Email with ${vocabWords.length} vocabulary words sent to ${email}`,
         words: vocabWords,
         isUsingFallback,
         wordSource,
-        emailResult
+        emailResult,
+        debugInfo: debug ? debugInfo : undefined
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -375,7 +431,8 @@ serve(async (req) => {
         error: `Failed to send email: ${emailError.message}`,
         words: vocabWords,
         isUsingFallback,
-        wordSource
+        wordSource,
+        debugInfo: debug ? debugInfo : undefined
       }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
