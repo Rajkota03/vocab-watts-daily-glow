@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, LogOut, Settings, User, Send } from 'lucide-react';
+import { CheckCircle, LogOut } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -181,9 +180,6 @@ const Dashboard = () => {
     );
   }
 
-  // Extract primary category and subcategory from combined format
-  const [primaryCategory, subcategory] = subscription.category.split('-');
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       {/* Header */}
@@ -226,72 +222,26 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8">
           {/* Category Section */}
-          <div className="md:col-span-2">
-            <Card className="h-full shadow-md hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center text-vocab-purple">
-                  Customize Your Word Category
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CategorySelection 
-                  isPro={subscription.is_pro} 
-                  currentCategory={subscription.category} 
-                  onCategoryUpdate={handleCategoryUpdate}
-                  onNewBatch={handleNewBatch}
-                  isLoadingNewBatch={isGeneratingBatch}
-                />
-                
-                {/* API Test Button */}
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">API Testing</h3>
-                  <p className="text-gray-600 mb-3">
-                    Test the vocabulary generation API by sending a sample set of words to your email.
-                  </p>
-                  <ApiTestButton category={subscription.category} />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card className="shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center text-vocab-purple">
+                Customize Your Word Category
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CategorySelection 
+                isPro={subscription.is_pro} 
+                currentCategory={subscription.category} 
+                onCategoryUpdate={handleCategoryUpdate}
+                onNewBatch={handleNewBatch}
+                isLoadingNewBatch={isGeneratingBatch}
+              />
+            </CardContent>
+          </Card>
 
-          {/* Pro Benefits Info */}
-          <div>
-            <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200 h-full shadow-md hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle className="text-vocab-purple">Pro Benefits Active</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3">
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-vocab-purple mr-2 shrink-0 mt-0.5" />
-                    <span>Premium vocabulary selections</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-vocab-purple mr-2 shrink-0 mt-0.5" />
-                    <span>Custom category selection</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-vocab-purple mr-2 shrink-0 mt-0.5" />
-                    <span>Professional example sentences</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-vocab-purple mr-2 shrink-0 mt-0.5" />
-                    <span>Priority word delivery</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-vocab-purple mr-2 shrink-0 mt-0.5" />
-                    <span>Full word history access</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Word History Section */}
-        <div className="mt-8" id="word-history">
+          {/* Word History Section */}
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center text-vocab-teal">
