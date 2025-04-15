@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, LogOut } from 'lucide-react';
@@ -229,8 +228,9 @@ const Dashboard = () => {
           {/* Category Section */}
           <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl overflow-hidden">
             <CardHeader className={`bg-white border-b border-gray-50 ${isMobile ? 'p-4' : 'p-6'}`}>
-              <CardTitle className="text-gray-800 text-xl">
+              <CardTitle className="text-gray-800 text-xl flex items-center justify-between">
                 {isMobile ? "Category Selection" : "Customize Your Word Category"}
+                <ApiTestButton category={subscription.category} />
               </CardTitle>
             </CardHeader>
             <CardContent className={isMobile ? "p-3" : "p-6"}>

@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Send, AlertTriangle, RefreshCw } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 
 interface ApiTestButtonProps {
@@ -173,7 +172,7 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {showEmailInput ? (
         <div className="flex flex-col space-y-2">
           <input
@@ -181,13 +180,13 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your email"
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-vocab-purple"
+            className="px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-vuilder-indigo transition-all duration-300"
           />
           <div className="flex space-x-2">
             <Button
               onClick={handleTestApi}
               variant="default"
-              className="bg-vuilder-mint hover:bg-vuilder-mint/90 text-white"
+              className="bg-gradient-to-r from-vuilder-indigo to-vuilder-indigo/90 hover:from-vuilder-indigo/90 hover:to-vuilder-indigo/80 text-white rounded-full transition-all shadow-sm"
               disabled={loading}
               size="sm"
             >
@@ -197,6 +196,7 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
             <Button
               onClick={() => setShowEmailInput(false)}
               variant="outline"
+              className="rounded-full border-gray-300 hover:bg-gray-50"
               size="sm"
             >
               Cancel
@@ -207,7 +207,7 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
         <Button
           onClick={handleTestApi}
           variant="default"
-          className="bg-vuilder-mint hover:bg-vuilder-mint/90 text-white" 
+          className="bg-gradient-to-r from-vuilder-indigo to-vuilder-indigo/90 hover:from-vuilder-indigo/90 hover:to-vuilder-indigo/80 text-white rounded-full transition-all shadow-sm" 
           disabled={loading}
         >
           {loading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
@@ -216,9 +216,9 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
       )}
       
       {debugInfo && (
-        <div className="mt-4 p-3 bg-gray-100 rounded text-xs overflow-x-auto">
-          <h4 className="text-sm font-medium mb-1">Debug Info:</h4>
-          <pre className="whitespace-pre-wrap">{debugInfo}</pre>
+        <div className="mt-4 p-3 bg-gray-50 rounded-xl text-xs overflow-x-auto border border-gray-200 shadow-sm">
+          <h4 className="text-sm font-medium mb-1 text-gray-700">Debug Info:</h4>
+          <pre className="whitespace-pre-wrap text-gray-600">{debugInfo}</pre>
         </div>
       )}
     </div>
