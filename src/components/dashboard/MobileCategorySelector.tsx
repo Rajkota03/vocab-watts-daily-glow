@@ -1,13 +1,14 @@
 
 import React, { useState } from 'react';
 import { 
-  ArrowLeft, Brain, Briefcase, Target, Smile, Sparkles, 
-  Heart, GraduationCap, CheckCircle, Zap, RefreshCw
+  ArrowLeft, BookOpen, Briefcase, MessageSquare, Smile, Sparkle, 
+  Heart, GraduationCap, Check, Zap, RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface MobileCategorySelectorProps {
   isPro: boolean;
@@ -38,51 +39,51 @@ const MobileCategorySelector: React.FC<MobileCategorySelectorProps> = ({
     {
       id: 'daily',
       name: 'Daily English',
-      description: 'Everyday vocabulary for casual conversation',
-      icon: <Brain className="h-5 w-5" />,
-      color: 'bg-blue-100 text-blue-600',
+      description: 'Everyday vocabulary',
+      icon: <BookOpen className="h-5 w-5" />,
+      color: 'bg-blue-50 text-blue-600 border-blue-100',
     },
     {
       id: 'business',
       name: 'Business English',
-      description: 'Professional vocabulary for work',
+      description: 'Professional vocabulary',
       icon: <Briefcase className="h-5 w-5" />,
-      color: 'bg-purple-100 text-purple-600',
+      color: 'bg-purple-50 text-purple-600 border-purple-100',
     },
     {
       id: 'interview',
       name: 'Interview Power Words',
-      description: 'Impress in your next interview',
-      icon: <Target className="h-5 w-5" />,
-      color: 'bg-green-100 text-green-600',
-    },
-    {
-      id: 'slang',
-      name: 'Slang & Modern Lingo',
-      description: 'Contemporary expressions and casual language',
-      icon: <Smile className="h-5 w-5" />,
-      color: 'bg-amber-100 text-amber-600',
+      description: 'Impress in interviews',
+      icon: <MessageSquare className="h-5 w-5" />,
+      color: 'bg-green-50 text-green-600 border-green-100',
     },
     {
       id: 'rare',
       name: 'Beautiful & Rare Words',
-      description: 'Elegant and uncommon vocabulary',
-      icon: <Sparkles className="h-5 w-5" />,
-      color: 'bg-pink-100 text-pink-600',
+      description: 'Uncommon vocabulary',
+      icon: <Sparkle className="h-5 w-5" />,
+      color: 'bg-pink-50 text-pink-600 border-pink-100',
+    },
+    {
+      id: 'slang',
+      name: 'Slang & Modern Lingo',
+      description: 'Contemporary expressions',
+      icon: <Smile className="h-5 w-5" />,
+      color: 'bg-amber-50 text-amber-600 border-amber-100',
     },
     {
       id: 'expression',
       name: 'Self-Expression',
-      description: 'Words to express thoughts and feelings',
+      description: 'Express your thoughts',
       icon: <Heart className="h-5 w-5" />,
-      color: 'bg-red-100 text-red-600',
+      color: 'bg-red-50 text-red-600 border-red-100',
     },
     {
       id: 'exam',
       name: 'Exam Prep',
-      description: 'Advanced words for tests and exams',
+      description: 'Academic vocabulary',
       icon: <GraduationCap className="h-5 w-5" />,
-      color: 'bg-teal-100 text-teal-600',
+      color: 'bg-indigo-50 text-indigo-600 border-indigo-100',
     }
   ];
 
@@ -91,20 +92,20 @@ const MobileCategorySelector: React.FC<MobileCategorySelectorProps> = ({
     {
       id: 'beginner',
       name: 'Beginner',
-      description: 'Easy and common words',
-      color: 'bg-green-100 text-green-600',
+      description: 'Basic everyday vocabulary',
+      color: 'bg-green-50 text-green-600 border-green-100',
     },
     {
       id: 'intermediate',
       name: 'Intermediate',
-      description: 'Moderately challenging vocabulary',
-      color: 'bg-blue-100 text-blue-600',
+      description: 'Challenging vocabulary',
+      color: 'bg-blue-50 text-blue-600 border-blue-100',
     },
     {
       id: 'professional',
       name: 'Professional',
-      description: 'Advanced and formal vocabulary',
-      color: 'bg-purple-100 text-purple-600',
+      description: 'Advanced terminology',
+      color: 'bg-purple-50 text-purple-600 border-purple-100',
     }
   ];
 
@@ -113,32 +114,32 @@ const MobileCategorySelector: React.FC<MobileCategorySelectorProps> = ({
     {
       id: 'gre',
       name: 'GRE',
-      description: 'Complex, high-difficulty words',
-      color: 'bg-red-100 text-red-600',
+      description: 'Graduate Record Examination',
+      color: 'bg-red-50 text-red-600 border-red-100',
     },
     {
       id: 'ielts',
       name: 'IELTS',
-      description: 'Academic/formal tone',
-      color: 'bg-blue-100 text-blue-600',
+      description: 'International English Testing',
+      color: 'bg-blue-50 text-blue-600 border-blue-100',
     },
     {
       id: 'toefl',
       name: 'TOEFL',
-      description: 'Clarity + comprehension focus',
-      color: 'bg-green-100 text-green-600',
+      description: 'Test of English as Foreign Language',
+      color: 'bg-green-50 text-green-600 border-green-100',
     },
     {
       id: 'cat',
       name: 'CAT',
-      description: 'Analytical English, often abstract',
-      color: 'bg-amber-100 text-amber-600',
+      description: 'Common Admission Test',
+      color: 'bg-amber-50 text-amber-600 border-amber-100',
     },
     {
       id: 'gmat',
       name: 'GMAT',
-      description: 'Business + formal professional vocab',
-      color: 'bg-purple-100 text-purple-600',
+      description: 'Graduate Management Admission Test',
+      color: 'bg-indigo-50 text-indigo-600 border-indigo-100',
     }
   ];
   
@@ -175,21 +176,21 @@ const MobileCategorySelector: React.FC<MobileCategorySelectorProps> = ({
       <div className="mb-6 px-4">
         <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
           <div 
-            className="bg-vocab-purple h-full rounded-full transition-all duration-300 ease-out"
+            className="bg-gradient-to-r from-vocab-purple to-indigo-500 h-full rounded-full transition-all duration-300 ease-out"
             style={{ width: step === 1 ? '33%' : step === 2 ? '66%' : '100%' }}
           />
         </div>
-        <div className="flex justify-between mt-2 text-xs text-gray-500">
-          <span className={step >= 1 ? "text-vocab-purple font-medium" : ""}>Category</span>
-          <span className={step >= 2 ? "text-vocab-purple font-medium" : ""}>Level</span>
-          <span className={step >= 3 ? "text-vocab-purple font-medium" : ""}>Apply</span>
+        <div className="flex justify-between mt-2 text-xs font-medium">
+          <span className={step >= 1 ? "text-vocab-purple" : "text-gray-400"}>Category</span>
+          <span className={step >= 2 ? "text-vocab-purple" : "text-gray-400"}>Level</span>
+          <span className={step >= 3 ? "text-vocab-purple" : "text-gray-400"}>Apply</span>
         </div>
       </div>
       
       {/* Step 1: Primary Category Selection */}
       {step === 1 && (
         <div className="animate-fade-in px-4 flex-1">
-          <h3 className="text-xl font-medium mb-6 text-center">What would you like to learn?</h3>
+          <h3 className="text-xl font-bold mb-6 text-center text-gray-800">What would you like to learn?</h3>
           
           <div className="grid grid-cols-1 gap-3">
             {primaryCategories.map((category) => (
@@ -197,14 +198,14 @@ const MobileCategorySelector: React.FC<MobileCategorySelectorProps> = ({
                 key={category.id}
                 onClick={() => isPro && handlePrimarySelect(category.id)}
                 className={cn(
-                  "border-0 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden",
-                  selectedPrimary === category.id && "ring-2 ring-vocab-purple shadow-md"
+                  "border-0 shadow-sm hover:shadow transition-all duration-200 cursor-pointer overflow-hidden bg-white",
+                  selectedPrimary === category.id && "ring-1 ring-vocab-purple shadow"
                 )}
               >
                 <div className="flex items-center p-4">
                   <div className={cn(
                     "w-12 h-12 rounded-full flex items-center justify-center mr-4",
-                    category.color
+                    category.color.split(' ')[0]
                   )}>
                     {category.icon}
                   </div>
@@ -213,6 +214,12 @@ const MobileCategorySelector: React.FC<MobileCategorySelectorProps> = ({
                     <h4 className="font-medium text-base">{category.name}</h4>
                     <p className="text-sm text-gray-600 mt-1">{category.description}</p>
                   </div>
+                  
+                  {selectedPrimary === category.id && (
+                    <div className="ml-2 rounded-full bg-vocab-purple h-6 w-6 flex items-center justify-center">
+                      <Check className="h-4 w-4 text-white" />
+                    </div>
+                  )}
                 </div>
               </Card>
             ))}
@@ -232,38 +239,42 @@ const MobileCategorySelector: React.FC<MobileCategorySelectorProps> = ({
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h3 className="text-xl font-medium">Choose your level</h3>
+            <h3 className="text-xl font-bold text-gray-800">Choose your level</h3>
           </div>
           
-          <div className="grid grid-cols-1 gap-3">
+          <RadioGroup 
+            value={selectedSubcategory || ""}
+            onValueChange={(value) => handleSubcategorySelect(value)}
+            className="grid grid-cols-1 gap-3"
+          >
             {getSubcategories().map((level) => (
               <Card 
                 key={level.id}
-                onClick={() => handleSubcategorySelect(level.id)}
                 className={cn(
-                  "border-0 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden",
-                  selectedSubcategory === level.id && "ring-2 ring-vocab-purple shadow-md"
+                  "border-0 shadow-sm hover:shadow transition-all duration-200 overflow-hidden",
+                  selectedSubcategory === level.id && "ring-1 ring-vocab-purple shadow"
                 )}
               >
                 <div className="flex items-center p-4">
-                  <div className={cn(
-                    "w-12 h-12 rounded-full flex items-center justify-center mr-4",
-                    level.color
-                  )}>
-                    <CheckCircle className={cn(
-                      "h-5 w-5",
-                      selectedSubcategory === level.id ? "opacity-100" : "opacity-0"
-                    )} />
-                  </div>
+                  <RadioGroupItem
+                    value={level.id}
+                    id={`step2-${level.id}`}
+                    className="mr-4"
+                  />
                   
                   <div className="flex-1">
-                    <h4 className="font-medium text-base">{level.name}</h4>
+                    <label 
+                      htmlFor={`step2-${level.id}`} 
+                      className="font-medium text-base cursor-pointer"
+                    >
+                      {level.name}
+                    </label>
                     <p className="text-sm text-gray-600 mt-1">{level.description}</p>
                   </div>
                 </div>
               </Card>
             ))}
-          </div>
+          </RadioGroup>
         </div>
       )}
       
@@ -279,17 +290,17 @@ const MobileCategorySelector: React.FC<MobileCategorySelectorProps> = ({
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h3 className="text-xl font-medium">Confirm selection</h3>
+            <h3 className="text-xl font-bold text-gray-800">Confirm selection</h3>
           </div>
           
           <div className="flex-1">
-            <Card className="border-0 shadow-md p-6 mb-6">
-              <h4 className="text-gray-600 mb-4">Your selection</h4>
+            <Card className="border-0 shadow p-6 mb-6 bg-white">
+              <h4 className="text-sm font-medium text-gray-500 mb-4">Your selection</h4>
               
               <div className="flex items-center mb-4">
                 <div className={cn(
                   "w-12 h-12 rounded-full flex items-center justify-center mr-4",
-                  selectedCategory?.color
+                  selectedCategory?.color.split(' ')[0]
                 )}>
                   {selectedCategory?.icon}
                 </div>
@@ -304,9 +315,9 @@ const MobileCategorySelector: React.FC<MobileCategorySelectorProps> = ({
               <div className="flex items-center">
                 <div className={cn(
                   "w-12 h-12 rounded-full flex items-center justify-center mr-4",
-                  selectedSubcategoryData?.color
+                  selectedSubcategoryData?.color.split(' ')[0]
                 )}>
-                  <CheckCircle className="h-5 w-5" />
+                  <Check className="h-5 w-5" />
                 </div>
                 <div>
                   <h3 className="font-medium text-base">{selectedSubcategoryData?.name}</h3>
@@ -323,7 +334,7 @@ const MobileCategorySelector: React.FC<MobileCategorySelectorProps> = ({
           <Button
             onClick={onApplySelection}
             disabled={!isFullySelected || isLoadingNewBatch}
-            className="w-full bg-vocab-purple hover:bg-vocab-purple/90 text-white h-14 rounded-xl shadow-md mt-auto"
+            className="w-full bg-gradient-to-r from-vocab-purple to-indigo-500 hover:from-vocab-purple/90 hover:to-indigo-500/90 text-white h-14 rounded-xl shadow-md mt-auto"
           >
             {isLoadingNewBatch ? (
               <>
