@@ -119,7 +119,7 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
       console.log('API test full response:', data);
 
       // Set debug info if available
-      if (data.debugInfo) {
+      if (data.debugInfo || generateData) {
         setDebugInfo(JSON.stringify({
           generateResponse: generateData,
           emailResponse: data,
@@ -127,14 +127,12 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
         }, null, 2));
       }
       
-      // Force refresh of word history by triggering a custom event
-      setTimeout(() => {
-        const refreshEvent = new CustomEvent('refresh-word-history', {
-          detail: { category: category }
-        });
-        document.dispatchEvent(refreshEvent);
-        console.log('Dispatched refresh-word-history event with category:', category);
-      }, 1000); // Small delay to ensure the database has been updated
+      // Force refresh of word history by triggering a custom event - immediately
+      const refreshEvent = new CustomEvent('refresh-word-history', {
+        detail: { category: category, force: true }
+      });
+      document.dispatchEvent(refreshEvent);
+      console.log('Dispatched refresh-word-history event with force flag');
       
       // Create a toast message based on whether we're using fallback words or not
       if (data.isUsingFallback) {
@@ -156,7 +154,7 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
         });
         document.dispatchEvent(secondRefreshEvent);
         console.log('Dispatched second refresh-word-history event with force flag');
-      }, 3000);
+      }, 2000);
       
       // Reset state
       setShowEmailInput(false);

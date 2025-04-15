@@ -96,9 +96,17 @@ serve(async (req) => {
               2. A clear, concise definition
               3. A natural example sentence showing how to use it in context
               
-              Format your response as a valid JSON array of objects with the properties: "word", "definition", "example", and "category".
-              The category should be "${categoryLower}" for all words.
-              Do not include any explanations or text outside the JSON array.` 
+              Format your response as a valid JSON array with this exact structure:
+              [
+                {
+                  "word": "example",
+                  "definition": "definition here",
+                  "example": "example sentence here",
+                  "category": "${categoryLower}"
+                }
+              ]
+              
+              Do not include code blocks, markdown formatting, or any text outside the JSON array. The response must be a plain valid JSON array and nothing else.` 
             }
           ],
           temperature: 0.7,
@@ -127,7 +135,13 @@ serve(async (req) => {
       // Parse the JSON response from GPT
       let vocabWords: VocabWord[];
       try {
-        vocabWords = JSON.parse(content);
+        // Clean up any markdown code blocks or backticks that might be in the response
+        const cleanedContent = content
+          .replace(/```json/g, '')
+          .replace(/```/g, '')
+          .trim();
+        
+        vocabWords = JSON.parse(cleanedContent);
         
         if (!Array.isArray(vocabWords)) {
           console.error('OpenAI response is not an array:', vocabWords);
@@ -155,7 +169,21 @@ serve(async (req) => {
       } catch (parseError) {
         console.error('Error parsing OpenAI response:', parseError);
         console.log('Raw content that failed to parse:', content);
-        throw new Error('Failed to parse vocabulary words from OpenAI response');
+        
+        // Attempt to extract an array from the content if it's wrapped in other text
+        try {
+          const possibleJsonMatch = content.match(/\[\s*\{.*\}\s*\]/s);
+          if (possibleJsonMatch) {
+            const extractedJson = possibleJsonMatch[0];
+            vocabWords = JSON.parse(extractedJson);
+            console.log('Successfully extracted and parsed JSON from content');
+          } else {
+            throw new Error('Could not extract JSON from response');
+          }
+        } catch (extractError) {
+          console.error('Failed to extract JSON:', extractError);
+          throw new Error('Failed to parse vocabulary words from OpenAI response');
+        }
       }
 
       // Return the generated words
