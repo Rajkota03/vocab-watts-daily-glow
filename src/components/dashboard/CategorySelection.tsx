@@ -101,17 +101,21 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
     );
   }
   
-  // Desktop version
+  // Desktop version with Apple-inspired design
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div>
-        <h3 className="text-sm font-medium mb-3">Word Category</h3>
+        <h3 className="text-sm font-medium mb-4 text-gray-700">Word Category</h3>
         <div className="flex flex-wrap gap-2">
           {categories.map((category) => (
             <Badge
               key={category.id}
-              variant={selectedPrimary === category.id ? "default" : "outline"}
-              className={`py-2 px-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${selectedPrimary === category.id ? 'bg-vocab-purple hover:bg-vocab-purple/90 text-white' : ''}`}
+              variant="outline"
+              className={`py-2 px-3 cursor-pointer transition-all duration-200 ${
+                selectedPrimary === category.id 
+                  ? 'bg-vuilder-indigo text-white shadow-sm scale-105' 
+                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+              } rounded-full`}
               onClick={() => handleDesktopCategorySelect(category.id)}
             >
               <span className="flex items-center gap-1.5">
@@ -124,20 +128,26 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
       </div>
       
       {selectedPrimary && (
-        <div>
-          <h3 className="text-sm font-medium mb-3">
+        <div className="animate-fade-in">
+          <h3 className="text-sm font-medium mb-4 text-gray-700">
             {selectedPrimary === 'exam' ? 'Exam Type' : 'Difficulty Level'}
           </h3>
           <div className="flex flex-wrap gap-2">
             {subcategories.map((subcategory) => (
               <Badge
                 key={subcategory.id}
-                variant={selectedSubcategory === subcategory.id ? "default" : "outline"}
-                className={`py-2 px-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${selectedSubcategory === subcategory.id ? 'bg-vocab-teal hover:bg-vocab-teal/90 text-white' : ''}`}
+                variant="outline"
+                className={`py-2 px-3 cursor-pointer transition-all duration-200 ${
+                  selectedSubcategory === subcategory.id 
+                    ? 'bg-vuilder-mint text-white shadow-sm scale-105' 
+                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                } rounded-full`}
                 onClick={() => handleDesktopSubcategorySelect(subcategory.id)}
               >
                 <span className="flex items-center gap-1.5">
-                  {selectedSubcategory === subcategory.id && <CheckCircle className="h-3 w-3" />}
+                  {selectedSubcategory === subcategory.id && (
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                  )}
                   {subcategory.name}
                 </span>
               </Badge>
@@ -150,7 +160,7 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
         <Button
           disabled={!selectedPrimary || !selectedSubcategory || isLoadingNewBatch}
           onClick={handleApplyDesktop}
-          className={isPro ? "" : "opacity-60 cursor-not-allowed"}
+          className={`${isPro ? "" : "opacity-60 cursor-not-allowed"} bg-gradient-to-r from-vuilder-indigo to-vuilder-indigo/90 hover:from-vuilder-indigo hover:to-vuilder-indigo/80 text-white rounded-full transition-all shadow-sm px-5 py-2`}
         >
           {isLoadingNewBatch ? (
             <>

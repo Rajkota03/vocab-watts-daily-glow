@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, LogOut } from 'lucide-react';
@@ -173,29 +174,29 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-t-vocab-purple border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your dashboard...</p>
+          <div className="w-16 h-16 border-4 border-t-vuilder-mint border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 font-inter">
+    <div className="min-h-screen bg-white font-inter">
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-6">
+      <header className="bg-white border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-6 py-6">
           <div className="flex flex-wrap items-center justify-between">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-semibold">
+            <div className="animate-fade-in">
+              <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
                 Welcome, {userEmail ? userEmail.split('@')[0] : 'Pro User'} 👋
               </h1>
-              <p className="text-gray-600">Your VocabSpark Pro dashboard</p>
+              <p className="text-gray-500 mt-1">Your VocabSpark Pro dashboard</p>
             </div>
-            <div className="flex items-center gap-3 mt-3 md:mt-0">
-              <Badge className="text-sm bg-gradient-to-r from-vocab-purple to-violet-500 hover:from-vocab-purple/90 hover:to-violet-500/90 px-3 py-1.5">
+            <div className="flex items-center gap-3 mt-3 md:mt-0 animate-fade-in">
+              <Badge className="text-sm bg-gradient-to-r from-vuilder-mint to-vuilder-mint/80 hover:from-vuilder-mint/90 hover:to-vuilder-mint/70 px-3 py-1.5 rounded-full shadow-sm">
                 <CheckCircle className="mr-1 h-4 w-4" />
                 Pro Plan – Active
               </Badge>
@@ -206,10 +207,10 @@ const Dashboard = () => {
                     <Button 
                       variant="outline" 
                       size="icon" 
-                      className="rounded-full h-9 w-9 border-gray-200"
+                      className="rounded-full h-9 w-9 border-gray-200 shadow-sm hover:bg-gray-50 transition-all"
                       onClick={handleSignOut}
                     >
-                      <LogOut className="h-4 w-4" />
+                      <LogOut className="h-4 w-4 text-gray-600" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -223,12 +224,12 @@ const Dashboard = () => {
       </header>
 
       {/* Main Content */}
-      <main className={`container mx-auto px-4 py-8 ${isMobile ? 'max-w-md' : ''}`}>
+      <main className={`max-w-5xl mx-auto px-6 py-8 ${isMobile ? 'max-w-md' : ''}`}>
         <div className="grid grid-cols-1 gap-8">
           {/* Category Section */}
-          <Card className="shadow-md hover:shadow-lg transition-shadow overflow-hidden">
-            <CardHeader className={`bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-100 ${isMobile ? 'p-4' : ''}`}>
-              <CardTitle className="text-vocab-purple">
+          <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl overflow-hidden">
+            <CardHeader className={`bg-white border-b border-gray-50 ${isMobile ? 'p-4' : 'p-6'}`}>
+              <CardTitle className="text-gray-800 text-xl">
                 {isMobile ? "Category Selection" : "Customize Your Word Category"}
               </CardTitle>
             </CardHeader>
@@ -244,9 +245,9 @@ const Dashboard = () => {
           </Card>
 
           {/* Word History Section */}
-          <Card className="shadow-md hover:shadow-lg transition-shadow overflow-hidden">
-            <CardHeader className={`bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-100 ${isMobile ? 'p-4' : ''}`}>
-              <CardTitle className="text-vocab-teal">
+          <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl overflow-hidden">
+            <CardHeader className={`bg-white border-b border-gray-50 ${isMobile ? 'p-4' : 'p-6'}`}>
+              <CardTitle className="text-vuilder-mint text-xl">
                 Your Vocabulary History
               </CardTitle>
             </CardHeader>
