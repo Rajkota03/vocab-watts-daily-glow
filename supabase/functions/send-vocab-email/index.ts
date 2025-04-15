@@ -7,11 +7,15 @@ const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const resendApiKey = Deno.env.get('RESEND_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
 const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
 // Initialize Resend only if API key is available
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
-// Initialize Supabase client
+// Initialize Supabase client with SERVICE ROLE KEY for admin access (bypassing RLS)
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey || '');
+
+// Initialize regular Supabase client for user-level operations
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const corsHeaders = {
@@ -156,7 +160,8 @@ serve(async (req) => {
     try {
       // STEP 1: Check Word History for this user
       console.log("Step 1: Checking word history for user", currentUserId);
-      const { data: userWordHistory, error: historyError } = await supabase
+      // Using supabaseAdmin to bypass RLS policies
+      const { data: userWordHistory, error: historyError } = await supabaseAdmin
         .from('user_word_history')
         .select('word')
         .eq('user_id', currentUserId)
@@ -176,7 +181,8 @@ serve(async (req) => {
       // STEP 2: Try fetching from vocabulary_words Table (if not forcing new words)
       if (!force_new_words) {
         console.log("Step 2: Fetching words from vocabulary_words table not in user history");
-        let query = supabase
+        // Using supabaseAdmin to bypass RLS policies
+        let query = supabaseAdmin
           .from('vocabulary_words')
           .select('*')
           .eq('category', category)
@@ -274,32 +280,45 @@ serve(async (req) => {
           
           const content = data.choices[0].message.content;
           
-          // Parse the JSON response from GPT
-          const parsedWords = JSON.parse(content);
-          
-          // Add UUIDs to the words to ensure they can be tracked in history
-          parsedWords.forEach((word: VocabularyWord) => {
-            word.id = crypto.randomUUID();
-            word.created_at = new Date().toISOString();
-          });
-          
-          // Insert the words into the database for future use
-          const { error: insertError } = await supabase
-            .from('vocabulary_words')
-            .insert(parsedWords);
+          try {
+            // Parse the JSON response from GPT
+            const parsedWords = JSON.parse(content);
             
-          if (insertError) {
-            console.error('Error inserting words into database:', insertError);
+            // Add UUIDs to the words to ensure they can be tracked in history
+            parsedWords.forEach((word: VocabularyWord) => {
+              word.id = crypto.randomUUID();
+              word.created_at = new Date().toISOString();
+            });
+            
+            console.log('Successfully parsed OpenAI response:', parsedWords.length, 'words');
+            
+            // Insert the words into the database for future use - using supabaseAdmin to bypass RLS
+            const { data: insertedWords, error: insertError } = await supabaseAdmin
+              .from('vocabulary_words')
+              .insert(parsedWords)
+              .select();
+              
+            if (insertError) {
+              console.error('Error inserting words into database:', insertError);
+              debugInfo.dbOperations!.insertWordsSuccess = false;
+              debugInfo.dbOperations!.insertWordsError = insertError.message;
+            } else {
+              console.log(`Successfully inserted ${insertedWords?.length || 0} words into vocabulary_words table`);
+              debugInfo.dbOperations!.insertWordsSuccess = true;
+            }
+            
+            // Combine with any existing words if we're not forcing all new words
+            if (force_new_words) {
+              vocabWords = parsedWords;
+            } else {
+              vocabWords = [...vocabWords, ...parsedWords].slice(0, wordCount);
+            }
+            
+            console.log(`Successfully generated ${parsedWords.length} words from OpenAI`);
+          } catch (parseError) {
+            console.error('Error parsing OpenAI response:', parseError, 'Content:', content);
+            throw new Error(`Failed to parse OpenAI response: ${parseError.message}`);
           }
-          
-          // Combine with any existing words if we're not forcing all new words
-          if (force_new_words) {
-            vocabWords = parsedWords;
-          } else {
-            vocabWords = [...vocabWords, ...parsedWords].slice(0, wordCount);
-          }
-          
-          console.log(`Successfully generated ${parsedWords.length} words from OpenAI`);
         } catch (openAIError) {
           console.error('OpenAI API error:', openAIError);
           if (!debugInfo.openAIError) {
@@ -321,7 +340,7 @@ serve(async (req) => {
       
       // Check user history to avoid sending the same words again
       try {
-        const { data: userWordHistory } = await supabase
+        const { data: userWordHistory } = await supabaseAdmin
           .from('user_word_history')
           .select('word')
           .eq('user_id', currentUserId)
@@ -371,7 +390,7 @@ serve(async (req) => {
       console.log(`Using ${vocabWords.length} fallback words for category: ${category}`);
     }
 
-    // STEP 4: Log Final Sent Words to user_word_history
+    // STEP 4: Log Final Sent Words to user_word_history using supabaseAdmin to bypass RLS
     try {
       console.log("Step 4: Logging sent words to user_word_history");
       
@@ -394,7 +413,8 @@ serve(async (req) => {
       console.log(`Preparing to log ${historyEntries.length} entries to user_word_history`);
       console.log('Sample entry:', JSON.stringify(historyEntries[0]));
       
-      const { error: historyError } = await supabase
+      // Using supabaseAdmin to bypass RLS policies
+      const { error: historyError } = await supabaseAdmin
         .from('user_word_history')
         .insert(historyEntries);
         

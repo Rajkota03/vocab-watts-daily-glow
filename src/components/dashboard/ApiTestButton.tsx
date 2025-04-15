@@ -90,11 +90,13 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
       }
       
       // Force refresh of word history by triggering a custom event
-      const refreshEvent = new CustomEvent('refresh-word-history', {
-        detail: { category: category }
-      });
-      document.dispatchEvent(refreshEvent);
-      console.log('Dispatched refresh-word-history event with category:', category);
+      setTimeout(() => {
+        const refreshEvent = new CustomEvent('refresh-word-history', {
+          detail: { category: category }
+        });
+        document.dispatchEvent(refreshEvent);
+        console.log('Dispatched refresh-word-history event with category:', category);
+      }, 1000); // Small delay to ensure the database has been updated
       
       // Create a toast message based on whether we're using fallback words or not
       if (data.isUsingFallback) {
@@ -105,7 +107,7 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
       } else {
         toast({
           title: "Test completed successfully!",
-          description: `Generated ${data.words.length} new words for category "${category}" using ${data.wordSource || 'AI'}. Check your email at ${emailToUse}.`
+          description: `Generated ${data.words.length} new words for category "${category}" using ${data.wordSource || 'AI'}. Check your email at ${emailToUse}.`,
         });
       }
       
