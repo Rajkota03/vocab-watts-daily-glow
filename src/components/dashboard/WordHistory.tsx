@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getVocabWordsByCategory } from '@/services/subscriptionService';
@@ -29,8 +28,7 @@ const WordHistory: React.FC<WordHistoryProps> = ({
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
-  // Use useCallback to memoize the loadWords function
-  const loadWords = useCallback(async () => {
+  const loadWords = useCallback(async (forceRefresh = false) => {
     if (isTrialExpired && !isPro) {
       setLoading(false);
       return;
@@ -38,7 +36,7 @@ const WordHistory: React.FC<WordHistoryProps> = ({
 
     setLoading(true);
     try {
-      console.log('Loading words for category:', category);
+      console.log('Loading words for category:', category, forceRefresh ? '(forced refresh)' : '');
       const { data: sessionData } = await supabase.auth.getSession();
       const userId = sessionData.session?.user?.id;
       
@@ -48,7 +46,6 @@ const WordHistory: React.FC<WordHistoryProps> = ({
         return;
       }
       
-      // First try to get words from user_word_history - this is the most reliable source
       const { data: userHistoryWords, error: historyError } = await supabase
         .from('user_word_history')
         .select('word_id, date_sent, word')
@@ -69,10 +66,8 @@ const WordHistory: React.FC<WordHistoryProps> = ({
       if (userHistoryWords && userHistoryWords.length > 0) {
         console.log(`Found ${userHistoryWords.length} words in user_word_history for category ${category}`);
         
-        // Use the user_word_history to get the words
         const wordIds = userHistoryWords.map(hw => hw.word_id);
         
-        // Fetch the complete word data from vocabulary_words
         const { data: wordsData, error: wordsError } = await supabase
           .from('vocabulary_words')
           .select('*')
@@ -86,7 +81,6 @@ const WordHistory: React.FC<WordHistoryProps> = ({
             variant: "destructive"
           });
         } else if (wordsData && wordsData.length > 0) {
-          // Sort the words in the same order as userHistoryWords (by date_sent, most recent first)
           const sortedWords = userHistoryWords.map(historyWord => 
             wordsData.find(word => word.id === historyWord.word_id)
           ).filter(Boolean) as VocabularyWord[];
@@ -104,7 +98,6 @@ const WordHistory: React.FC<WordHistoryProps> = ({
       
       console.log('Falling back to sent_words table');
       
-      // Fall back to the old sent_words table
       const { data: userData, error: userError } = await supabase
         .from('user_subscriptions')
         .select('phone_number')
@@ -113,7 +106,6 @@ const WordHistory: React.FC<WordHistoryProps> = ({
         
       if (userError) {
         console.error('Error fetching user data:', userError);
-        // If we can't get the phone number, try to get words directly
         const wordsData = await getVocabWordsByCategory(category);
         if (wordsData) {
           console.log(`Retrieved ${wordsData.length} words directly from vocabulary_words via service`);
@@ -125,7 +117,6 @@ const WordHistory: React.FC<WordHistoryProps> = ({
       
       const phoneNumber = userData?.phone_number;
       
-      // Get the most recent sent words for this user
       const { data: sentWords, error: sentWordsError } = await supabase
         .from('sent_words')
         .select('word_id, sent_at')
@@ -146,10 +137,8 @@ const WordHistory: React.FC<WordHistoryProps> = ({
       if (sentWords && sentWords.length > 0) {
         console.log(`Found ${sentWords.length} words in sent_words table for category ${category}`);
         
-        // Get the actual word data for the sent words
         const wordIds = sentWords.map(sw => sw.word_id);
         
-        // Retrieve the words in order of most recently sent
         const { data: wordsData, error: wordsError } = await supabase
           .from('vocabulary_words')
           .select('*')
@@ -163,7 +152,6 @@ const WordHistory: React.FC<WordHistoryProps> = ({
             variant: "destructive"
           });
         } else if (wordsData && wordsData.length > 0) {
-          // Sort the words in the same order as sentWords (by sent_at, most recent first)
           const sortedWords = sentWords.map(sentWord => 
             wordsData.find(word => word.id === sentWord.word_id)
           ).filter(Boolean) as VocabularyWord[];
@@ -180,7 +168,6 @@ const WordHistory: React.FC<WordHistoryProps> = ({
       }
       
       console.log('No word history found, fetching vocabulary words directly');
-      // If no words were found in either table, fall back to getting vocabulary words directly
       const wordsData = await getVocabWordsByCategory(category);
       if (wordsData) {
         console.log(`Found ${wordsData.length} words directly from vocabulary_words`);
@@ -200,23 +187,21 @@ const WordHistory: React.FC<WordHistoryProps> = ({
     }
   }, [isPro, isTrialExpired, category, toast]);
 
-  // Load words when component mounts or dependencies change
   useEffect(() => {
     loadWords();
   }, [loadWords]);
 
-  // Listen for refresh events from ApiTestButton
   useEffect(() => {
     const handleRefreshEvent = (event: Event) => {
       const customEvent = event as CustomEvent;
       const eventCategory = customEvent.detail?.category;
+      const forceRefresh = customEvent.detail?.force === true;
       
-      console.log('Received refresh-word-history event with category:', eventCategory);
+      console.log('Received refresh-word-history event with category:', eventCategory, 'force:', forceRefresh);
       
-      // Only refresh if event is for current category or no category specified
       if (!eventCategory || eventCategory === category) {
         console.log('Refreshing word history based on event');
-        loadWords();
+        loadWords(forceRefresh);
       } else {
         console.log('Ignoring refresh event for different category:', eventCategory);
       }
@@ -294,7 +279,6 @@ const WordHistory: React.FC<WordHistoryProps> = ({
     );
   }
 
-  // Group words by date
   const wordsByDate: Record<string, VocabularyWord[]> = {};
   words.forEach(word => {
     const dateStr = format(new Date(word.created_at), 'yyyy-MM-dd');
@@ -382,7 +366,6 @@ const WordHistory: React.FC<WordHistoryProps> = ({
   );
 };
 
-// Helper component for calendar date display
 const Calendar = ({ date }: { date: string }) => {
   const dateObj = new Date(date);
   const day = dateObj.getDate();

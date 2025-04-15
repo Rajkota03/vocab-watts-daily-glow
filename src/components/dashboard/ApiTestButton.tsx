@@ -88,6 +88,11 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
         throw new Error(generateData?.error || "Failed to generate vocabulary words");
       }
       
+      // Log the first word for debugging
+      if (generateData.words.length > 0) {
+        console.log(`First generated word: ${JSON.stringify(generateData.words[0])}`);
+      }
+      
       // If generate-vocab-words succeeded, call send-vocab-email
       const { data, error } = await supabase.functions.invoke('send-vocab-email', {
         body: {
@@ -143,6 +148,15 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
           description: `Generated ${data.words.length} new words for category "${category}" using ${data.wordSource || 'AI'}. Check your email at ${emailToUse}.`,
         });
       }
+      
+      // Explicitly trigger another refresh after a longer delay to ensure updated data
+      setTimeout(() => {
+        const secondRefreshEvent = new CustomEvent('refresh-word-history', {
+          detail: { category: category, force: true }
+        });
+        document.dispatchEvent(secondRefreshEvent);
+        console.log('Dispatched second refresh-word-history event with force flag');
+      }, 3000);
       
       // Reset state
       setShowEmailInput(false);
@@ -206,7 +220,7 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
       {debugInfo && (
         <div className="mt-4 p-3 bg-gray-100 rounded text-xs overflow-x-auto">
           <h4 className="text-sm font-medium mb-1">Debug Info:</h4>
-          <pre>{debugInfo}</pre>
+          <pre className="whitespace-pre-wrap">{debugInfo}</pre>
         </div>
       )}
     </div>
