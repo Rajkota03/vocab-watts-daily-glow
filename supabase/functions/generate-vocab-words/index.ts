@@ -36,8 +36,11 @@ serve(async (req) => {
 
     console.log(`Generating ${count} vocabulary words for category: ${category}`);
 
+    // Ensure category is lowercase for consistency
+    const categoryLower = category.toLowerCase();
+    
     let categoryPrompt = "";
-    switch (category) {
+    switch (categoryLower) {
       case "business":
         categoryPrompt = "professional business vocabulary that would be useful in a corporate environment";
         break;
@@ -48,8 +51,11 @@ serve(async (req) => {
         categoryPrompt = "modern English slang and idioms used in casual conversation";
         break;
       case "general":
-      default:
         categoryPrompt = "useful general vocabulary that would enhance everyday conversation";
+        break;
+      default:
+        // For any other category, create a sensible prompt
+        categoryPrompt = `useful vocabulary related to ${category} that would enhance knowledge in that area`;
         break;
     }
 

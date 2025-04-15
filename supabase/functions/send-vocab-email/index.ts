@@ -132,6 +132,9 @@ serve(async (req) => {
   try {
     const { email, category, wordCount = 5, force_new_words = false, user_id, debug = false }: EmailRequestBody = await req.json();
     
+    // Normalize category to lowercase
+    const normalizedCategory = category.toLowerCase();
+    
     const debugInfo: DebugInfo = {
       openAIAvailable: !!openAIApiKey,
       wordHistoryCount: 0,
@@ -151,7 +154,7 @@ serve(async (req) => {
       throw new Error('User ID is required for word history tracking');
     }
 
-    console.log(`Generating ${wordCount} vocabulary words for category: ${category} to send to ${email} (force_new_words: ${force_new_words})`);
+    console.log(`Generating ${wordCount} vocabulary words for category: ${normalizedCategory} to send to ${email} (force_new_words: ${force_new_words})`);
 
     let vocabWords: VocabularyWord[] = [];
     let isUsingFallback = false;
@@ -163,9 +166,10 @@ serve(async (req) => {
       // Using supabaseAdmin to bypass RLS policies
       const { data: userWordHistory, error: historyError } = await supabaseAdmin
         .from('user_word_history')
-        .select('word')
+        .select('word_id, date_sent, word')
         .eq('user_id', currentUserId)
-        .eq('category', category);
+        .eq('category', normalizedCategory)
+        .order('date_sent', { ascending: false });
       
       if (historyError) {
         console.error("Error fetching user word history:", historyError);
@@ -176,7 +180,7 @@ serve(async (req) => {
       debugInfo.wordHistoryCount = previousWords.length;
       debugInfo.previouslySentWords = previousWords;
       
-      console.log(`Found ${previousWords.length} previously sent words for this user`);
+      console.log(`Found ${previousWords.length} previously sent words for this user in category ${normalizedCategory}`);
       
       // STEP 2: Try fetching from vocabulary_words Table (if not forcing new words)
       if (!force_new_words) {
@@ -185,7 +189,7 @@ serve(async (req) => {
         let query = supabaseAdmin
           .from('vocabulary_words')
           .select('*')
-          .eq('category', category)
+          .eq('category', normalizedCategory)
           .limit(wordCount);
         
         // Exclude previously sent words if any exist
@@ -209,13 +213,13 @@ serve(async (req) => {
           vocabWords = existingWords.slice(0, wordCount);
           wordSource = 'database';
           debugInfo.wordSource = 'database';
-          console.log(`Using ${vocabWords.length} existing words from the database`);
+          console.log(`Using ${vocabWords.length} existing words from the database for category ${normalizedCategory}`);
         }
       }
       
       // STEP 3: If not enough words or force_new_words is true, Call OpenAI
       if (vocabWords.length < wordCount || force_new_words) {
-        console.log("Step 3: Generating new words with OpenAI");
+        console.log(`Step 3: Generating new words with OpenAI for category ${normalizedCategory}`);
         
         // Check if OpenAI API key is available
         if (!openAIApiKey) {
@@ -233,98 +237,62 @@ serve(async (req) => {
         // Create the list of words to avoid
         const wordsToAvoid = previousWords.join(', ');
         
-        // Call OpenAI to generate new words
+        // Call the generate-vocab-words edge function instead of directly calling OpenAI
+        // This centralizes the word generation logic
         try {
-          const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${openAIApiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'gpt-3.5-turbo',
-              messages: [
-                { 
-                  role: 'system', 
-                  content: `You are a vocabulary teaching assistant. Generate unique vocabulary words.` 
-                },
-                { 
-                  role: 'user', 
-                  content: `Generate ${newWordsNeeded} vocabulary words for the category "${category}".
-                  
-                  ${previousWords.length > 0 ? `IMPORTANT: Avoid using these words that the user has already seen: [${wordsToAvoid}]` : ''}
-                  
-                  For each word, provide:
-                  1. The word itself
-                  2. A clear, concise definition
-                  3. A natural example sentence showing how to use it in context
-                  
-                  Format your response as a valid JSON array of objects with the properties: "word", "definition", "example", and "category".
-                  The category should be "${category}" for all words.
-                  Do not include any explanations or text outside the JSON array.` 
-                }
-              ],
-              temperature: 0.7,
-            }),
-          });
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`OpenAI API error (${response.status}):`, errorText);
-            debugInfo.openAIError = `Status ${response.status}: ${errorText}`;
-            throw new Error(`OpenAI API error: ${response.status}`);
-          }
-
-          const data = await response.json();
-          debugInfo.openAIResponse = data;
-          
-          const content = data.choices[0].message.content;
-          
-          try {
-            // Parse the JSON response from GPT
-            const parsedWords = JSON.parse(content);
-            
-            // Add UUIDs to the words to ensure they can be tracked in history
-            parsedWords.forEach((word: VocabularyWord) => {
-              word.id = crypto.randomUUID();
-              word.created_at = new Date().toISOString();
-            });
-            
-            console.log('Successfully parsed OpenAI response:', parsedWords.length, 'words');
-            
-            // Insert the words into the database for future use - using supabaseAdmin to bypass RLS
-            const { data: insertedWords, error: insertError } = await supabaseAdmin
-              .from('vocabulary_words')
-              .insert(parsedWords)
-              .select();
-              
-            if (insertError) {
-              console.error('Error inserting words into database:', insertError);
-              debugInfo.dbOperations!.insertWordsSuccess = false;
-              debugInfo.dbOperations!.insertWordsError = insertError.message;
-            } else {
-              console.log(`Successfully inserted ${insertedWords?.length || 0} words into vocabulary_words table`);
-              debugInfo.dbOperations!.insertWordsSuccess = true;
+          const { data: generatedData, error: generatedError } = await supabase.functions.invoke('generate-vocab-words', {
+            body: { 
+              category: normalizedCategory,
+              count: newWordsNeeded
             }
+          });
+          
+          if (generatedError) {
+            console.error('Error calling generate-vocab-words function:', generatedError);
+            throw new Error(`Failed to generate vocabulary words: ${generatedError.message}`);
+          }
+          
+          if (!generatedData || !generatedData.words) {
+            console.error('Invalid response from generate-vocab-words function:', generatedData);
+            throw new Error('Invalid response from word generation function');
+          }
+          
+          const parsedWords = generatedData.words;
+          
+          // Add UUIDs to the words to ensure they can be tracked in history
+          parsedWords.forEach((word: VocabularyWord) => {
+            word.id = crypto.randomUUID();
+            word.created_at = new Date().toISOString();
+            // Ensure the category is set correctly
+            word.category = normalizedCategory;
+          });
+          
+          console.log(`Successfully generated ${parsedWords.length} words for category ${normalizedCategory}`);
+          
+          // Insert the words into the database for future use - using supabaseAdmin to bypass RLS
+          const { data: insertedWords, error: insertError } = await supabaseAdmin
+            .from('vocabulary_words')
+            .insert(parsedWords)
+            .select();
+            
+          if (insertError) {
+            console.error('Error inserting words into database:', insertError);
+            debugInfo.dbOperations!.insertWordsSuccess = false;
+            debugInfo.dbOperations!.insertWordsError = insertError.message;
+          } else {
+            console.log(`Successfully inserted ${insertedWords?.length || 0} ${normalizedCategory} words into vocabulary_words table`);
+            debugInfo.dbOperations!.insertWordsSuccess = true;
             
             // Combine with any existing words if we're not forcing all new words
             if (force_new_words) {
-              vocabWords = parsedWords;
+              vocabWords = insertedWords || [];
             } else {
-              vocabWords = [...vocabWords, ...parsedWords].slice(0, wordCount);
+              vocabWords = [...vocabWords, ...(insertedWords || [])].slice(0, wordCount);
             }
-            
-            console.log(`Successfully generated ${parsedWords.length} words from OpenAI`);
-          } catch (parseError) {
-            console.error('Error parsing OpenAI response:', parseError, 'Content:', content);
-            throw new Error(`Failed to parse OpenAI response: ${parseError.message}`);
           }
-        } catch (openAIError) {
-          console.error('OpenAI API error:', openAIError);
-          if (!debugInfo.openAIError) {
-            debugInfo.openAIError = openAIError.message || 'Unknown OpenAI error';
-          }
-          throw openAIError;
+        } catch (generateError) {
+          console.error('Error generating words:', generateError);
+          throw generateError;
         }
       }
     } catch (apiError) {
@@ -335,8 +303,13 @@ serve(async (req) => {
       wordSource = 'fallback';
       debugInfo.wordSource = 'fallback';
       
-      // Get available fallback words for the category
-      let availableFallbackWords = fallbackWordsPool[category as keyof typeof fallbackWordsPool] || fallbackWordsPool.general;
+      // Get available fallback words for the category, defaulting to general if category not found
+      const fallbackCategory = (normalizedCategory in fallbackWordsPool) ? 
+        normalizedCategory as keyof typeof fallbackWordsPool : 
+        'general';
+        
+      console.log(`Using fallback words from category: ${fallbackCategory}`);
+      let availableFallbackWords = fallbackWordsPool[fallbackCategory];
       
       // Check user history to avoid sending the same words again
       try {
@@ -344,7 +317,7 @@ serve(async (req) => {
           .from('user_word_history')
           .select('word')
           .eq('user_id', currentUserId)
-          .eq('category', category);
+          .eq('category', normalizedCategory);
         
         const previousWords = userWordHistory?.map(entry => entry.word) || [];
         
@@ -360,8 +333,10 @@ serve(async (req) => {
         // If we've used all fallback words, reset with some randomness by shuffling
         if (availableFallbackWords.length < wordCount) {
           console.log("All fallback words have been used, adding some shuffled ones");
-          // Shuffle the full array to get random words
-          const allFallbacks = [...fallbackWordsPool[category as keyof typeof fallbackWordsPool] || fallbackWordsPool.general];
+          // Get fallback words from the original pool
+          const allFallbacks = [...fallbackWordsPool[fallbackCategory]];
+          
+          // Shuffle the array for randomness
           for (let i = allFallbacks.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [allFallbacks[i], allFallbacks[j]] = [allFallbacks[j], allFallbacks[i]];
@@ -371,7 +346,8 @@ serve(async (req) => {
           const shuffledWords = allFallbacks.slice(0, wordCount).map(word => ({
             ...word,
             id: crypto.randomUUID(),
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            category: normalizedCategory // Ensure correct category is set
           }));
           
           availableFallbackWords = shuffledWords;
@@ -381,36 +357,56 @@ serve(async (req) => {
         // If we can't check history, just shuffle the fallback words to add randomness
         availableFallbackWords = [...availableFallbackWords]
           .sort(() => Math.random() - 0.5)
-          .slice(0, wordCount);
+          .slice(0, wordCount)
+          .map(word => ({
+            ...word,
+            category: normalizedCategory // Ensure correct category is set
+          }));
       }
       
       // Limit to requested word count
       vocabWords = availableFallbackWords.slice(0, wordCount);
       
-      console.log(`Using ${vocabWords.length} fallback words for category: ${category}`);
+      console.log(`Using ${vocabWords.length} fallback words for category: ${normalizedCategory}`);
     }
 
     // STEP 4: Log Final Sent Words to user_word_history using supabaseAdmin to bypass RLS
     try {
       console.log("Step 4: Logging sent words to user_word_history");
       
-      // Make sure all words have valid IDs
+      // Make sure all words have valid IDs and correct category
       vocabWords.forEach(word => {
         if (!word.id) {
           word.id = crypto.randomUUID();
         }
+        // Ensure category is consistently set
+        word.category = normalizedCategory;
       });
+      
+      // First, insert words into vocabulary_words table if they don't exist there yet
+      const wordsToInsert = vocabWords.filter(word => !word.id.includes('-')); // Assuming UUIDs have hyphens
+      
+      if (wordsToInsert.length > 0) {
+        console.log(`Inserting ${wordsToInsert.length} new words into vocabulary_words table`);
+        const { error: insertVocabError } = await supabaseAdmin
+          .from('vocabulary_words')
+          .insert(wordsToInsert);
+          
+        if (insertVocabError) {
+          console.error('Error inserting into vocabulary_words:', insertVocabError);
+        }
+      }
       
       const historyEntries = vocabWords.map(word => ({
         user_id: currentUserId,
         word: word.word,
         date_sent: new Date().toISOString(),
-        category: category,
+        category: normalizedCategory,
         source: wordSource,
         word_id: word.id
       }));
       
-      console.log(`Preparing to log ${historyEntries.length} entries to user_word_history`);
+      console.log(`Preparing to log ${historyEntries.length} entries to user_word_history for category ${normalizedCategory}`);
       console.log('Sample entry:', JSON.stringify(historyEntries[0]));
       
       // Using supabaseAdmin to bypass RLS policies
@@ -423,7 +419,7 @@ serve(async (req) => {
         debugInfo.dbOperations!.userHistorySuccess = false;
         debugInfo.dbOperations!.userHistoryError = historyError.message;
       } else {
-        console.log(`Successfully logged ${vocabWords.length} words to user history`);
+        console.log(`Successfully logged ${vocabWords.length} words to user history for category ${normalizedCategory}`);
         debugInfo.dbOperations!.userHistorySuccess = true;
         debugInfo.dbOperations!.userHistoryEntries = historyEntries.length;
       }
@@ -442,8 +438,8 @@ serve(async (req) => {
       const emailResult = await resend.emails.send({
         from: 'VocabSpark <onboarding@resend.dev>',
         to: [email],
-        subject: `Your VocabSpark ${category.charAt(0).toUpperCase() + category.slice(1)} Vocabulary Words`,
-        html: generateEmailHtml(vocabWords, category, isUsingFallback)
+        subject: `Your VocabSpark ${normalizedCategory.charAt(0).toUpperCase() + normalizedCategory.slice(1)} Vocabulary Words`,
+        html: generateEmailHtml(vocabWords, normalizedCategory, isUsingFallback)
       });
 
       console.log('Email sent successfully:', emailResult);
