@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, LogOut } from 'lucide-react';
@@ -224,13 +225,13 @@ const Dashboard = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 gap-8">
           {/* Category Section */}
-          <Card className="shadow-md hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center text-vocab-purple">
+          <Card className="shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-100">
+              <CardTitle className="text-vocab-purple">
                 Customize Your Word Category
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <CategorySelection 
                 isPro={subscription.is_pro} 
                 currentCategory={subscription.category} 
@@ -251,13 +252,13 @@ const Dashboard = () => {
           </Card>
 
           {/* Word History Section */}
-          <Card className="shadow-md hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center text-vocab-teal">
+          <Card className="shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-100">
+              <CardTitle className="text-vocab-teal">
                 Your Vocabulary History
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <WordHistory
                 isPro={subscription.is_pro}
                 isTrialExpired={false}
