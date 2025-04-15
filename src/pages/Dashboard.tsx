@@ -17,7 +17,7 @@ const Dashboard = () => {
   // Pro user state
   const [subscription, setSubscription] = useState({
     is_pro: true,
-    category: 'business',
+    category: 'business-intermediate',
     phone_number: '+1234567890'
   });
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -51,10 +51,24 @@ const Dashboard = () => {
       
       // Update subscription info from metadata if available
       if (userMetadata) {
+        // Check if we have the new format (primary-subcategory) or need to convert from legacy
+        let category = userMetadata.category || 'business-intermediate';
+        
+        // Convert legacy categories to new format if needed
+        if (category && !category.includes('-')) {
+          const mapping: { [key: string]: string } = {
+            'business': 'business-intermediate',
+            'exam': 'exam-gre',
+            'slang': 'slang-intermediate',
+            'general': 'daily-intermediate'
+          };
+          category = mapping[category] || 'business-intermediate';
+        }
+        
         setSubscription(prev => ({
           ...prev,
           is_pro: userMetadata.is_pro || true,
-          category: userMetadata.category || 'business'
+          category: category
         }));
       }
       
@@ -78,11 +92,14 @@ const Dashboard = () => {
     };
   }, [navigate, toast]);
 
-  const handleCategoryUpdate = async (category: string) => {
+  const handleCategoryUpdate = async (primary: string, subcategory: string) => {
     try {
+      const combinedCategory = `${primary}-${subcategory}`;
+      console.log("Updating category to:", combinedCategory);
+      
       // Update user metadata
       const { error } = await supabase.auth.updateUser({
-        data: { category }
+        data: { category: combinedCategory }
       });
       
       if (error) throw error;
@@ -90,12 +107,12 @@ const Dashboard = () => {
       // Update local state
       setSubscription({
         ...subscription,
-        category
+        category: combinedCategory
       });
       
       toast({
         title: 'Category Updated',
-        description: `Your word category is now set to ${category}`,
+        description: `Your word category is now set to ${combinedCategory}`,
       });
     } catch (error: any) {
       toast({
@@ -163,6 +180,9 @@ const Dashboard = () => {
       </div>
     );
   }
+
+  // Extract primary category and subcategory from combined format
+  const [primaryCategory, subcategory] = subscription.category.split('-');
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">

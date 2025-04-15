@@ -42,30 +42,79 @@ serve(async (req) => {
 
     console.log(`Generating ${count} vocabulary words for category: ${category}`);
 
-    // Ensure category is lowercase for consistency
-    const categoryLower = category.toLowerCase();
+    // Parse the category (support both old format and new primary-subcategory format)
+    let primaryCategory = category;
+    let subcategory = 'intermediate';
     
+    if (category.includes('-')) {
+      const parts = category.split('-');
+      primaryCategory = parts[0];
+      subcategory = parts[1];
+    }
+    
+    // Ensure lowercase for consistency
+    primaryCategory = primaryCategory.toLowerCase();
+    subcategory = subcategory.toLowerCase();
+    
+    console.log(`Parsed category: primary=${primaryCategory}, subcategory=${subcategory}`);
+    
+    // Determine the prompt based on category and subcategory
     let categoryPrompt = "";
-    switch (categoryLower) {
+    let difficultyLevel = "";
+    
+    // Set difficulty level based on subcategory
+    if (subcategory === 'beginner') {
+      difficultyLevel = "basic, easy-to-understand";
+    } else if (subcategory === 'professional') {
+      difficultyLevel = "advanced, sophisticated";
+    } else {
+      // Default to intermediate
+      difficultyLevel = "moderate, practical";
+    }
+    
+    // Build prompt based on primary category and subcategory
+    switch (primaryCategory) {
       case "business":
-        categoryPrompt = "professional business vocabulary that would be useful in a corporate environment";
+        categoryPrompt = `${difficultyLevel} professional business vocabulary that would be useful in a corporate environment`;
         break;
       case "exam":
-        categoryPrompt = "advanced academic vocabulary that would appear in standardized tests like SAT, GRE, or TOEFL";
+        // For exam category, subcategory is the exam type not difficulty
+        if (subcategory === 'gre') {
+          categoryPrompt = "complex, high-difficulty words commonly found in GRE exams";
+        } else if (subcategory === 'ielts') {
+          categoryPrompt = "academic and formal vocabulary suitable for IELTS exams";
+        } else if (subcategory === 'toefl') {
+          categoryPrompt = "clear, comprehension-focused vocabulary ideal for TOEFL exams";
+        } else if (subcategory === 'cat') {
+          categoryPrompt = "analytical, often abstract English vocabulary for CAT exams";
+        } else if (subcategory === 'gmat') {
+          categoryPrompt = "business and formal professional vocabulary useful for GMAT exams";
+        } else {
+          categoryPrompt = "advanced academic vocabulary that would appear in standardized tests";
+        }
         break;
       case "slang":
-        categoryPrompt = "modern English slang and idioms used in casual conversation";
+        categoryPrompt = `${difficultyLevel} modern English slang and idioms used in casual conversation`;
         break;
-      case "general":
-        categoryPrompt = "useful general vocabulary that would enhance everyday conversation";
+      case "daily":
+        categoryPrompt = `${difficultyLevel} everyday vocabulary that enhances daily communication`;
+        break;
+      case "interview":
+        categoryPrompt = `${difficultyLevel} impressive vocabulary that would stand out in job interviews`;
+        break;
+      case "rare":
+        categoryPrompt = `${difficultyLevel} beautiful and uncommon words that enhance eloquence`;
+        break;
+      case "expression":
+        categoryPrompt = `${difficultyLevel} vocabulary focused on expressing thoughts and emotions effectively`;
         break;
       default:
         // For any other category, create a sensible prompt
-        categoryPrompt = `useful vocabulary related to ${category} that would enhance knowledge in that area`;
+        categoryPrompt = `${difficultyLevel} vocabulary related to ${primaryCategory} that would enhance knowledge in that area`;
         break;
     }
 
-    console.log(`Using OpenAI to generate words for category: ${categoryLower} with prompt: ${categoryPrompt}`);
+    console.log(`Using OpenAI to generate words with prompt: ${categoryPrompt}`);
 
     // Log the API key format (first 3 and last 3 chars) for debugging
     const apiKeyDebug = openAIApiKey ? 
@@ -102,7 +151,7 @@ serve(async (req) => {
                   "word": "example",
                   "definition": "definition here",
                   "example": "example sentence here",
-                  "category": "${categoryLower}"
+                  "category": "${category}"
                 }
               ]
               
@@ -160,11 +209,11 @@ serve(async (req) => {
             word: word.word,
             definition: word.definition,
             example: word.example,
-            category: categoryLower // Ensure consistent category casing
+            category: category // Use the full category (including subcategory)
           };
         });
         
-        console.log(`Successfully generated ${vocabWords.length} words for category ${categoryLower}`);
+        console.log(`Successfully generated ${vocabWords.length} words for category ${category}`);
         console.log('Sample word:', JSON.stringify(vocabWords[0]));
       } catch (parseError) {
         console.error('Error parsing OpenAI response:', parseError);
@@ -189,7 +238,9 @@ serve(async (req) => {
       // Return the generated words
       return new Response(JSON.stringify({ 
         words: vocabWords,
-        category: categoryLower, 
+        category: category, 
+        primaryCategory,
+        subcategory,
         source: 'openai',
         timestamp: new Date().toISOString()
       }), {
