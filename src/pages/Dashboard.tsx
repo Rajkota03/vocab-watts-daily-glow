@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, LogOut } from 'lucide-react';
@@ -12,6 +11,7 @@ import ApiTestButton from '@/components/dashboard/ApiTestButton';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { generateNewWordBatch } from '@/services/wordService';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Dashboard = () => {
   // Pro user state
@@ -25,6 +25,7 @@ const Dashboard = () => {
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   // Check if user is authenticated and load their data
   useEffect(() => {
@@ -182,7 +183,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 font-inter">
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-6">
@@ -222,16 +223,16 @@ const Dashboard = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className={`container mx-auto px-4 py-8 ${isMobile ? 'max-w-md' : ''}`}>
         <div className="grid grid-cols-1 gap-8">
           {/* Category Section */}
           <Card className="shadow-md hover:shadow-lg transition-shadow overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-100">
+            <CardHeader className={`bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-100 ${isMobile ? 'p-4' : ''}`}>
               <CardTitle className="text-vocab-purple">
-                Customize Your Word Category
+                {isMobile ? "Category Selection" : "Customize Your Word Category"}
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className={isMobile ? "p-3" : "p-6"}>
               <CategorySelection 
                 isPro={subscription.is_pro} 
                 currentCategory={subscription.category} 
@@ -239,26 +240,17 @@ const Dashboard = () => {
                 onNewBatch={handleNewBatch}
                 isLoadingNewBatch={isGeneratingBatch}
               />
-              
-              {/* API Test Button */}
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">API Testing</h3>
-                <p className="text-gray-600 mb-3">
-                  Test the vocabulary generation API by sending a sample set of words to your email.
-                </p>
-                <ApiTestButton category={subscription.category} />
-              </div>
             </CardContent>
           </Card>
 
           {/* Word History Section */}
           <Card className="shadow-md hover:shadow-lg transition-shadow overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-100">
+            <CardHeader className={`bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-100 ${isMobile ? 'p-4' : ''}`}>
               <CardTitle className="text-vocab-teal">
                 Your Vocabulary History
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className={isMobile ? "p-3" : "p-6"}>
               <WordHistory
                 isPro={subscription.is_pro}
                 isTrialExpired={false}

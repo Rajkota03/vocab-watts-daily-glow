@@ -9,7 +9,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from '@/components/ui/use-toast';
 import { generateWordsWithAI } from '@/services/wordService';
 import { useIsMobile } from '@/hooks/use-mobile';
-import MobileCategorySelector from './MobileCategorySelector';
+import MobileCategorySelection from './MobileCategorySelection';
 import ApiTestButton from './ApiTestButton';
 
 interface CategorySelectionProps {
@@ -299,14 +299,11 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
           )}
         </div>
         
-        <MobileCategorySelector
+        <MobileCategorySelection
           isPro={isPro}
           currentCategory={currentCategory}
-          selectedPrimary={selectedPrimaryCategory}
-          selectedSubcategory={selectedSubcategory}
-          onPrimarySelect={handlePrimaryCategoryClick}
-          onSubcategorySelect={handleSubcategoryClick}
-          onApplySelection={handleNewBatchClick}
+          onCategoryUpdate={onCategoryUpdate}
+          onNewBatch={onNewBatch}
           isLoadingNewBatch={isLoadingNewBatch}
         />
 
