@@ -238,6 +238,15 @@ const Dashboard = () => {
                 onNewBatch={handleNewBatch}
                 isLoadingNewBatch={isGeneratingBatch}
               />
+              
+              {/* API Test Button */}
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">API Testing</h3>
+                <p className="text-gray-600 mb-3">
+                  Test the vocabulary generation API by sending a sample set of words to your email.
+                </p>
+                <ApiTestButton category={subscription.category} />
+              </div>
             </CardContent>
           </Card>
 
