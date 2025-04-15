@@ -34,6 +34,12 @@ serve(async (req) => {
       throw new Error('Category is required');
     }
 
+    // Check if OpenAI API key is configured
+    if (!openAIApiKey) {
+      console.error("OpenAI API key is not configured");
+      throw new Error("OpenAI API key is not configured");
+    }
+
     console.log(`Generating ${count} vocabulary words for category: ${category}`);
 
     // Ensure category is lowercase for consistency
@@ -59,6 +65,8 @@ serve(async (req) => {
         break;
     }
 
+    console.log(`Using OpenAI to generate words for category: ${categoryLower} with prompt: ${categoryPrompt}`);
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -82,7 +90,7 @@ serve(async (req) => {
             3. A natural example sentence showing how to use it in context
             
             Format your response as a valid JSON array of objects with the properties: "word", "definition", "example", and "category".
-            The category should be "${category}" for all words.
+            The category should be "${categoryLower}" for all words.
             Do not include any explanations or text outside the JSON array.` 
           }
         ],
@@ -93,11 +101,19 @@ serve(async (req) => {
     if (!response.ok) {
       const errorData = await response.text();
       console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
     }
 
     const data = await response.json();
+    console.log('OpenAI response received:', data);
+    
+    if (!data.choices || data.choices.length === 0) {
+      console.error('Invalid OpenAI response format:', data);
+      throw new Error('Invalid response format from OpenAI');
+    }
+    
     const content = data.choices[0].message.content;
+    console.log('OpenAI raw content:', content);
     
     // Parse the JSON response from GPT
     let vocabWords: VocabWord[];
@@ -109,22 +125,29 @@ serve(async (req) => {
         word: word.word,
         definition: word.definition,
         example: word.example,
-        category: category
+        category: categoryLower // Ensure consistent category casing
       }));
       
-      console.log(`Successfully generated ${vocabWords.length} words`);
+      console.log(`Successfully generated ${vocabWords.length} words for category ${categoryLower}`);
     } catch (parseError) {
       console.error('Error parsing OpenAI response:', parseError);
-      console.log('Raw content:', content);
+      console.log('Raw content that failed to parse:', content);
       throw new Error('Failed to parse vocabulary words from OpenAI response');
     }
 
+    // Return the generated words
     return new Response(JSON.stringify({ words: vocabWords }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('Error in generate-vocab-words function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    
+    // Provide a detailed error response
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      timestamp: new Date().toISOString(),
+      details: error.stack
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

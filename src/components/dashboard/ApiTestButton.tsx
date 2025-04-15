@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Send, AlertTriangle } from "lucide-react";
+import { Send, AlertTriangle, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 
@@ -59,7 +59,36 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
 
       console.log(`Starting API test for category: ${category}, email: ${emailToUse}, user: ${userId}`);
       
-      // Call the edge function to send the email with force_new_words=true to generate fresh words
+      // First, call the generate-vocab-words function directly to test it
+      console.log(`Testing generate-vocab-words for category: ${category}`);
+      const { data: generateData, error: generateError } = await supabase.functions.invoke('generate-vocab-words', {
+        body: {
+          category: category,
+          count: 5
+        }
+      });
+      
+      if (generateError) {
+        console.error("Error calling generate-vocab-words:", generateError);
+        setDebugInfo(JSON.stringify({
+          generateError: generateError,
+          timestamp: new Date().toISOString()
+        }, null, 2));
+        throw new Error(`Failed to generate words: ${generateError.message}`);
+      }
+      
+      console.log("Generate vocab words response:", generateData);
+      
+      if (!generateData || !generateData.words || generateData.error) {
+        console.error("Invalid response from generate-vocab-words:", generateData);
+        setDebugInfo(JSON.stringify({
+          generateResponse: generateData,
+          timestamp: new Date().toISOString()
+        }, null, 2));
+        throw new Error(generateData?.error || "Failed to generate vocabulary words");
+      }
+      
+      // If generate-vocab-words succeeded, call send-vocab-email
       const { data, error } = await supabase.functions.invoke('send-vocab-email', {
         body: {
           email: emailToUse,
@@ -86,7 +115,11 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
 
       // Set debug info if available
       if (data.debugInfo) {
-        setDebugInfo(JSON.stringify(data.debugInfo, null, 2));
+        setDebugInfo(JSON.stringify({
+          generateResponse: generateData,
+          emailResponse: data,
+          timestamp: new Date().toISOString()
+        }, null, 2));
       }
       
       // Force refresh of word history by triggering a custom event
@@ -165,8 +198,8 @@ const ApiTestButton: React.FC<ApiTestButtonProps> = ({ category }) => {
           className="bg-vuilder-mint hover:bg-vuilder-mint/90 text-white" 
           disabled={loading}
         >
-          {loading ? "Testing API..." : "API Test"}
-          {!loading && <Send className="ml-2 h-4 w-4" />}
+          {loading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+          {loading ? "Testing API..." : `Test ${category.charAt(0).toUpperCase() + category.slice(1)} API`}
         </Button>
       )}
       
