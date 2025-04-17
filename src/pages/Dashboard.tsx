@@ -290,8 +290,30 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Main Content with Tabs */}
-      <main className="max-w-5xl mx-auto px-6 py-6">
+      {/* Main Content */}
+      <main className="max-w-5xl mx-auto px-6 py-6 space-y-6">
+        {/* Category Selection (Pro Users) - Moved to top */}
+        {subscription.is_pro && (
+          <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl overflow-hidden">
+            <CardHeader className="bg-white border-b border-gray-50 p-4">
+              <CardTitle className="text-xl font-semibold text-gray-800 flex items-center justify-between">
+                Customize Your Word Category
+                <ApiTestButton category={subscription.category} />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <CategorySelection 
+                isPro={subscription.is_pro} 
+                currentCategory={subscription.category} 
+                onCategoryUpdate={handleCategoryUpdate}
+                onNewBatch={handleNewBatch}
+                isLoadingNewBatch={isGeneratingBatch}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Tabs Section */}
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="bg-gray-100/80 p-1 rounded-xl">
             <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
@@ -505,30 +527,9 @@ const Dashboard = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Category Selection (Pro Users) */}
-        {subscription.is_pro && (
-          <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl overflow-hidden mt-6">
-            <CardHeader className="bg-white border-b border-gray-50 p-4">
-              <CardTitle className="text-xl font-semibold text-gray-800 flex items-center justify-between">
-                Customize Your Word Category
-                <ApiTestButton category={subscription.category} />
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <CategorySelection 
-                isPro={subscription.is_pro} 
-                currentCategory={subscription.category} 
-                onCategoryUpdate={handleCategoryUpdate}
-                onNewBatch={handleNewBatch}
-                isLoadingNewBatch={isGeneratingBatch}
-              />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Upgrade Prompt (Free Users) */}
+        {/* Upgrade Prompt (Free Users) - Moved to bottom */}
         {!subscription.is_pro && (
-          <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl overflow-hidden mt-6 bg-gradient-to-r from-indigo-50 to-purple-50">
+          <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl overflow-hidden bg-gradient-to-r from-indigo-50 to-purple-50">
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row items-center">
                 <div className="mb-4 md:mb-0 md:mr-6">
