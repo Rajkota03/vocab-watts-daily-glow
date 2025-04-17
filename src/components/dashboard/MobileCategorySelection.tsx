@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   BookOpen, Briefcase, MessageSquare, 
@@ -25,7 +24,6 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   
-  // Categories with visual styling
   const categories = [
     {
       id: 'daily',
@@ -86,9 +84,9 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   ];
 
   const difficultyLevels = [
-    { id: 'beginner', name: 'Beginner', emoji: '🟢' },
-    { id: 'intermediate', name: 'Intermediate', emoji: '🟡' },
-    { id: 'professional', name: 'Professional', emoji: '🔴' }
+    { id: 'beginner', name: 'Beginner' },
+    { id: 'intermediate', name: 'Intermediate' },
+    { id: 'professional', name: 'Professional' }
   ];
 
   const examTypes = [
@@ -102,7 +100,7 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   const handlePrimarySelect = (categoryId: string) => {
     if (!isPro) return;
     setSelectedPrimary(prevSelected => prevSelected === categoryId ? null : categoryId);
-    setSelectedSubcategory(null); // Reset subcategory when changing primary
+    setSelectedSubcategory(null);
   };
 
   const handleSubcategorySelect = (subcategoryId: string) => {
@@ -120,7 +118,6 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
 
   return (
     <div className="flex flex-col space-y-4">
-      {/* Category Grid */}
       <div>
         <h3 className="text-base font-medium mb-3 text-gray-800">Choose Your Category</h3>
         <div className="grid grid-cols-3 gap-2.5">
@@ -153,7 +150,6 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
         </div>
       </div>
 
-      {/* Conditional Difficulty/Exam Type Selection */}
       {selectedPrimary && (
         <div className="animate-fade-in">
           <h3 className="text-sm font-medium mb-2.5 text-gray-700">
@@ -171,14 +167,13 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 )}
               >
-                {level.name} {('emoji' in level) && level.emoji}
+                {level.name}
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Apply Button - Only show when both category and difficulty are selected */}
       {selectedPrimary && selectedSubcategory && (
         <Button
           onClick={handleApply}
