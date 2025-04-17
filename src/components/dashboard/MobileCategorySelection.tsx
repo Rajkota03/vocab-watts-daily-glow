@@ -117,82 +117,96 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   };
 
   return (
-    <div className="flex flex-col space-y-4">
-      <div>
-        <h3 className="text-base font-medium mb-3 text-gray-800">Choose Your Category</h3>
-        <div className="grid grid-cols-3 gap-2.5">
+    <div className="space-y-4">
+      <div className="bg-white rounded-xl p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-semibold text-gray-800">Category Selection</h3>
+          {selectedPrimary && (
+            <span className="text-sm text-gray-500">
+              Choose difficulty below
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
           {categories.map((category) => (
             <button
               key={category.id}
               onClick={() => handlePrimarySelect(category.id)}
               className={cn(
-                "relative flex flex-col items-center justify-center p-2.5 rounded-xl transition-all duration-200",
+                "relative flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200",
                 "bg-gradient-to-br shadow-sm",
+                "hover:shadow-md",
                 category.color,
                 category.hoverColor,
                 selectedPrimary === category.id && [
                   "ring-2 ring-offset-2",
                   category.activeColor
                 ],
-                !isPro && "opacity-50"
+                !isPro && "opacity-50 cursor-not-allowed"
               )}
             >
-              <div className="mb-1.5">{category.icon}</div>
-              <span className="text-xs font-medium">{category.name}</span>
+              <div className="mb-2">{category.icon}</div>
+              <span className="text-xs font-medium text-center leading-tight">
+                {category.name}
+              </span>
               
               {selectedPrimary === category.id && (
-                <div className="absolute -top-1 -right-1 rounded-full bg-white h-4 w-4 flex items-center justify-center shadow-sm">
-                  <Check className="h-2.5 w-2.5 text-vocab-purple" />
+                <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full shadow-sm p-0.5">
+                  <Check className="h-3 w-3 text-vocab-purple" />
                 </div>
               )}
             </button>
           ))}
         </div>
-      </div>
 
-      {selectedPrimary && (
-        <div className="animate-fade-in">
-          <h3 className="text-sm font-medium mb-2.5 text-gray-700">
-            {selectedPrimary === 'exam' ? 'Select Exam Type' : 'Choose Difficulty'}
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {(selectedPrimary === 'exam' ? examTypes : difficultyLevels).map((level) => (
-              <button
-                key={level.id}
-                onClick={() => handleSubcategorySelect(level.id)}
-                className={cn(
-                  "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
-                  selectedSubcategory === level.id
-                    ? "bg-vocab-purple text-white shadow-sm"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                )}
-              >
-                {level.name}
-              </button>
-            ))}
+        {selectedPrimary && (
+          <div className="mt-4 pt-4 border-t border-gray-100 animate-fade-in">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-medium text-gray-700">
+                {selectedPrimary === 'exam' ? 'Select Exam Type' : 'Choose Difficulty'}
+              </h4>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {(selectedPrimary === 'exam' ? examTypes : difficultyLevels).map((level) => (
+                <button
+                  key={level.id}
+                  onClick={() => handleSubcategorySelect(level.id)}
+                  className={cn(
+                    "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                    selectedSubcategory === level.id
+                      ? "bg-vocab-purple text-white shadow-sm"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  )}
+                >
+                  {level.name}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {selectedPrimary && selectedSubcategory && (
-        <Button
-          onClick={handleApply}
-          disabled={isLoadingNewBatch || !isPro}
-          className="w-full bg-gradient-to-r from-vocab-purple to-indigo-500 hover:from-vocab-purple/90 hover:to-indigo-500/90 text-white h-11 rounded-xl shadow-sm mt-2"
-        >
-          {isLoadingNewBatch ? (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Zap className="mr-2 h-4 w-4" />
-              Apply & Generate Words
-            </>
-          )}
-        </Button>
-      )}
+        {selectedPrimary && selectedSubcategory && (
+          <Button
+            onClick={handleApply}
+            disabled={isLoadingNewBatch || !isPro}
+            className="w-full bg-gradient-to-r from-vocab-purple to-indigo-500 hover:from-vocab-purple/90 hover:to-indigo-500/90 text-white h-11 rounded-xl shadow-sm mt-4"
+          >
+            {isLoadingNewBatch ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Zap className="mr-2 h-4 w-4" />
+                Apply & Generate Words
+              </>
+            )}
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
