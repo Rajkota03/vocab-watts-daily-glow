@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
-  RefreshCw, Brain, Briefcase, Smile, Sparkles, 
-  Heart, GraduationCap, Target, 
+  RefreshCw, BookOpen, Briefcase, Smile, Sparkles, 
+  Heart, GraduationCap, Target, MessageSquare,
   CheckCircle 
 } from 'lucide-react';
 import MobileCategorySelection from './MobileCategorySelection';
@@ -40,55 +40,86 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
     }
   }, [currentCategory]);
   
-  // For desktop version
+  // Categories with cute icons and pastel colors
   const categories = [
-    { name: 'Daily', id: 'daily', icon: <Brain className="h-4 w-4" /> },
-    { name: 'Business', id: 'business', icon: <Briefcase className="h-4 w-4" /> },
-    { name: 'Interview', id: 'interview', icon: <Target className="h-4 w-4" /> },
-    { name: 'Slang', id: 'slang', icon: <Smile className="h-4 w-4" /> },
-    { name: 'Rare Words', id: 'rare', icon: <Sparkles className="h-4 w-4" /> },
-    { name: 'Self-Expression', id: 'expression', icon: <Heart className="h-4 w-4" /> },
-    { name: 'Exam Prep', id: 'exam', icon: <GraduationCap className="h-4 w-4" /> }
+    { 
+      name: 'Daily', 
+      id: 'daily', 
+      icon: <BookOpen className="h-4 w-4" />,
+      color: 'bg-blue-50 text-blue-600'
+    },
+    { 
+      name: 'Business', 
+      id: 'business', 
+      icon: <Briefcase className="h-4 w-4" />,
+      color: 'bg-purple-50 text-purple-600'
+    },
+    { 
+      name: 'Interview', 
+      id: 'interview', 
+      icon: <MessageSquare className="h-4 w-4" />,
+      color: 'bg-green-50 text-green-600'
+    },
+    { 
+      name: 'Slang', 
+      id: 'slang', 
+      icon: <Smile className="h-4 w-4" />,
+      color: 'bg-amber-50 text-amber-600'
+    },
+    { 
+      name: 'Rare', 
+      id: 'rare', 
+      icon: <Sparkles className="h-4 w-4" />,
+      color: 'bg-pink-50 text-pink-600'
+    },
+    { 
+      name: 'Expression', 
+      id: 'expression', 
+      icon: <Heart className="h-4 w-4" />,
+      color: 'bg-red-50 text-red-600'
+    },
+    { 
+      name: 'Exam', 
+      id: 'exam', 
+      icon: <GraduationCap className="h-4 w-4" />,
+      color: 'bg-indigo-50 text-indigo-600'
+    }
   ];
   
   const subcategories = selectedPrimary === 'exam' ? 
     [
-      { name: 'GRE', id: 'gre' },
-      { name: 'IELTS', id: 'ielts' },
-      { name: 'TOEFL', id: 'toefl' },
-      { name: 'CAT', id: 'cat' },
-      { name: 'GMAT', id: 'gmat' }
+      { name: 'GRE', id: 'gre', description: 'Graduate Record Examination' },
+      { name: 'IELTS', id: 'ielts', description: 'English Language Testing' },
+      { name: 'TOEFL', id: 'toefl', description: 'Test of English as Foreign Language' },
+      { name: 'CAT', id: 'cat', description: 'Common Admission Test' },
+      { name: 'GMAT', id: 'gmat', description: 'Graduate Management Test' }
     ] : 
     [
-      { name: 'Beginner', id: 'beginner' },
-      { name: 'Intermediate', id: 'intermediate' },
-      { name: 'Professional', id: 'professional' }
+      { name: 'Beginner', id: 'beginner', description: 'Basic everyday vocabulary' },
+      { name: 'Intermediate', id: 'intermediate', description: 'Challenging vocabulary' },
+      { name: 'Professional', id: 'professional', description: 'Advanced terminology' }
     ];
   
-  const handleDesktopCategorySelect = (primary: string) => {
+  const handlePrimarySelect = (primary: string) => {
     setSelectedPrimary(primary);
-    
-    // If they're changing categories, reset subcategory
     if (primary !== selectedPrimary) {
       setSelectedSubcategory(null);
     }
   };
   
-  const handleDesktopSubcategorySelect = (subcategory: string) => {
+  const handleSubcategorySelect = (subcategory: string) => {
     setSelectedSubcategory(subcategory);
   };
   
-  const handleApplyDesktop = async () => {
+  const handleApply = async () => {
     if (selectedPrimary && selectedSubcategory) {
       onCategoryUpdate(selectedPrimary, selectedSubcategory);
-      
       if (onNewBatch) {
         await onNewBatch();
       }
     }
   };
 
-  // Mobile version
   if (isMobile) {
     return (
       <MobileCategorySelection
@@ -101,74 +132,83 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
     );
   }
   
-  // Desktop version with Apple-inspired design
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
+      {/* Categories Grid */}
       <div>
         <h3 className="text-sm font-medium mb-4 text-gray-700">Word Category</h3>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-4 lg:grid-cols-7 gap-3">
           {categories.map((category) => (
-            <Badge
+            <button
               key={category.id}
-              variant="outline"
-              className={`py-2 px-3 cursor-pointer transition-all duration-200 ${
+              onClick={() => handlePrimarySelect(category.id)}
+              className={`relative flex flex-col items-center justify-center p-4 rounded-2xl transition-all duration-200 ${
                 selectedPrimary === category.id 
-                  ? 'bg-vuilder-indigo text-white shadow-sm scale-105' 
-                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-              } rounded-full`}
-              onClick={() => handleDesktopCategorySelect(category.id)}
+                  ? `${category.color} shadow-sm ring-2 ring-vuilder-indigo/20` 
+                  : 'bg-gray-50 hover:bg-gray-100 text-gray-600'
+              }`}
             >
-              <span className="flex items-center gap-1.5">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 ${
+                selectedPrimary === category.id ? category.color : 'bg-white shadow-sm'
+              }`}>
                 {category.icon}
-                {category.name}
-              </span>
-            </Badge>
+              </div>
+              <span className="text-xs font-medium">{category.name}</span>
+              
+              {selectedPrimary === category.id && (
+                <div className="absolute -top-1 -right-1 rounded-full bg-vuilder-indigo h-5 w-5 flex items-center justify-center shadow-sm">
+                  <CheckCircle className="h-3 w-3 text-white" />
+                </div>
+              )}
+            </button>
           ))}
         </div>
       </div>
       
+      {/* Subcategories */}
       {selectedPrimary && (
         <div className="animate-fade-in">
           <h3 className="text-sm font-medium mb-4 text-gray-700">
             {selectedPrimary === 'exam' ? 'Exam Type' : 'Difficulty Level'}
           </h3>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {subcategories.map((subcategory) => (
-              <Badge
+              <button
                 key={subcategory.id}
-                variant="outline"
-                className={`py-2 px-3 cursor-pointer transition-all duration-200 ${
+                onClick={() => handleSubcategorySelect(subcategory.id)}
+                className={`flex items-center p-4 rounded-xl transition-all duration-200 ${
                   selectedSubcategory === subcategory.id 
-                    ? 'bg-vuilder-mint text-white shadow-sm scale-105' 
-                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                } rounded-full`}
-                onClick={() => handleDesktopSubcategorySelect(subcategory.id)}
+                    ? 'bg-vuilder-mint/10 ring-2 ring-vuilder-mint text-vuilder-mint shadow-sm' 
+                    : 'bg-gray-50 hover:bg-gray-100 text-gray-600'
+                }`}
               >
-                <span className="flex items-center gap-1.5">
-                  {selectedSubcategory === subcategory.id && (
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                  )}
-                  {subcategory.name}
-                </span>
-              </Badge>
+                <div className="flex-1 text-left">
+                  <h4 className="font-medium">{subcategory.name}</h4>
+                  <p className="text-xs text-gray-500 mt-1">{subcategory.description}</p>
+                </div>
+                {selectedSubcategory === subcategory.id && (
+                  <CheckCircle className="h-5 w-5 ml-2 flex-shrink-0" />
+                )}
+              </button>
             ))}
           </div>
         </div>
       )}
       
-      <div className="pt-2">
+      {/* Apply Button */}
+      <div>
         <Button
           disabled={!selectedPrimary || !selectedSubcategory || isLoadingNewBatch}
-          onClick={handleApplyDesktop}
-          className={`${isPro ? "" : "opacity-60 cursor-not-allowed"} bg-gradient-to-r from-vuilder-indigo to-vuilder-indigo/90 hover:from-vuilder-indigo hover:to-vuilder-indigo/80 text-white rounded-full transition-all shadow-sm px-5 py-2`}
+          onClick={handleApply}
+          className="w-full bg-gradient-to-r from-vuilder-indigo to-vuilder-indigo/90 hover:from-vuilder-indigo/90 hover:to-vuilder-indigo/80 text-white rounded-xl py-6 h-auto font-medium shadow-sm"
         >
           {isLoadingNewBatch ? (
             <>
-              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
               Generating...
             </>
           ) : (
-            <>Apply Selection & Generate Words</>
+            'Apply Selection & Generate Words'
           )}
         </Button>
       </div>
@@ -177,3 +217,4 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
 };
 
 export default CategorySelection;
+
