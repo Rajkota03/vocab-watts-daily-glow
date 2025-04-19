@@ -1,11 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Brain, LockIcon, MailIcon, UserIcon, Loader2 } from 'lucide-react';
+import { Brain, LockIcon, MailIcon, UserIcon, Loader2, Home, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
@@ -151,21 +150,30 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-12">
-      <Card className="w-full max-w-md border border-gray-200 shadow-xl">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#9b87f5]/10 to-[#7E69AB]/10 px-4 py-12 relative">
+      {/* Back to Home Button */}
+      <Link
+        to="/"
+        className="absolute top-4 left-4 inline-flex items-center text-[#9b87f5] hover:text-[#7E69AB] transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Home
+      </Link>
+      
+      <Card className="w-full max-w-md border border-gray-100/50 shadow-xl bg-white/95 backdrop-blur-sm">
         <CardHeader className="text-center space-y-1">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-vocab-teal to-vocab-purple rounded-full flex items-center justify-center shadow-md">
+            <div className="w-16 h-16 bg-gradient-to-br from-[#9b87f5] to-[#7E69AB] rounded-full flex items-center justify-center shadow-lg">
               <Brain className="h-8 w-8 text-white" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-vocab-teal to-vocab-purple">
-            {isSignUp ? 'Create Pro Account' : 'Pro Login'}
+          <CardTitle className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#9b87f5] to-[#7E69AB]">
+            {isSignUp ? 'Join GLINTUP' : 'Welcome Back'}
           </CardTitle>
           <CardDescription className="text-gray-500 text-base">
             {isSignUp 
-              ? 'Sign up for VocabSpark Pro to access premium features' 
-              : 'Login to access your VocabSpark Pro dashboard'}
+              ? 'Create your account to get started' 
+              : 'Sign in to access your GLINTUP dashboard'}
           </CardDescription>
         </CardHeader>
         
@@ -174,6 +182,7 @@ const Login = () => {
             <Form {...registerForm}>
               <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
+                  {/* First Name Field */}
                   <FormField
                     control={registerForm.control}
                     name="firstName"
@@ -187,7 +196,7 @@ const Login = () => {
                           <FormControl>
                             <Input 
                               placeholder="John" 
-                              className="pl-10 bg-gray-50 border border-gray-200 focus:border-vocab-teal"
+                              className="pl-10 bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
                               {...field}
                             />
                           </FormControl>
@@ -196,6 +205,7 @@ const Login = () => {
                     )}
                   />
                   
+                  {/* Last Name Field */}
                   <FormField
                     control={registerForm.control}
                     name="lastName"
@@ -209,7 +219,7 @@ const Login = () => {
                           <FormControl>
                             <Input 
                               placeholder="Doe" 
-                              className="pl-10 bg-gray-50 border border-gray-200 focus:border-vocab-teal"
+                              className="pl-10 bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
                               {...field}
                             />
                           </FormControl>
@@ -219,6 +229,7 @@ const Login = () => {
                   />
                 </div>
                 
+                {/* Email and Password Fields */}
                 <FormField
                   control={registerForm.control}
                   name="email"
@@ -233,7 +244,7 @@ const Login = () => {
                           <Input 
                             type="email" 
                             placeholder="your@email.com" 
-                            className="pl-10 bg-gray-50 border border-gray-200 focus:border-vocab-teal"
+                            className="pl-10 bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
                             {...field}
                           />
                         </FormControl>
@@ -256,7 +267,7 @@ const Login = () => {
                           <Input 
                             type="password" 
                             placeholder="••••••••" 
-                            className="pl-10 bg-gray-50 border border-gray-200 focus:border-vocab-teal"
+                            className="pl-10 bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
                             {...field}
                           />
                         </FormControl>
@@ -267,15 +278,15 @@ const Login = () => {
                 
                 <Button 
                   type="submit" 
-                  className="w-full py-6 text-base font-medium shadow-md transition-all hover:scale-[1.01] bg-gradient-to-r from-vocab-purple to-violet-500 hover:from-vocab-purple/90 hover:to-violet-500/90" 
+                  className="w-full py-6 text-base font-medium shadow-md transition-all hover:scale-[1.01] bg-gradient-to-r from-[#9b87f5] to-[#7E69AB]" 
                   disabled={isLoading}
                 >
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
+                      Creating Account...
                     </>
-                  ) : 'Create Pro Account'}
+                  ) : 'Create Account'}
                 </Button>
               </form>
             </Form>
@@ -296,7 +307,7 @@ const Login = () => {
                           <Input 
                             type="email" 
                             placeholder="your@email.com" 
-                            className="pl-10 bg-gray-50 border border-gray-200 focus:border-vocab-teal"
+                            className="pl-10 bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
                             {...field}
                           />
                         </FormControl>
@@ -319,7 +330,7 @@ const Login = () => {
                           <Input 
                             type="password" 
                             placeholder="••••••••" 
-                            className="pl-10 bg-gray-50 border border-gray-200 focus:border-vocab-teal"
+                            className="pl-10 bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
                             {...field}
                           />
                         </FormControl>
@@ -330,13 +341,13 @@ const Login = () => {
                 
                 <Button 
                   type="submit" 
-                  className="w-full py-6 text-base font-medium shadow-md transition-all hover:scale-[1.01] bg-gradient-to-r from-vocab-purple to-violet-500 hover:from-vocab-purple/90 hover:to-violet-500/90" 
+                  className="w-full py-6 text-base font-medium shadow-md transition-all hover:scale-[1.01] bg-gradient-to-r from-[#9b87f5] to-[#7E69AB]" 
                   disabled={isLoading}
                 >
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
+                      Signing In...
                     </>
                   ) : 'Sign In'}
                 </Button>
@@ -352,15 +363,14 @@ const Login = () => {
             </span>{' '}
             <button
               type="button"
-              className="text-vocab-teal hover:text-vocab-purple font-medium transition-colors"
+              className="text-[#9b87f5] hover:text-[#7E69AB] font-medium transition-colors"
               onClick={() => {
                 setIsSignUp(!isSignUp);
-                // Reset the forms when toggling
                 loginForm.reset();
                 registerForm.reset();
               }}
             >
-              {isSignUp ? 'Sign In' : 'Create Pro Account'}
+              {isSignUp ? 'Sign In' : 'Create Account'}
             </button>
           </div>
         </CardFooter>
