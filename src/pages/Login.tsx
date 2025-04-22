@@ -188,6 +188,7 @@ const Login = () => {
                           </div>
                           <FormControl>
                             <Input 
+                              type="text"
                               placeholder="John" 
                               className="pl-10 bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
                               {...field}
@@ -211,6 +212,7 @@ const Login = () => {
                           </div>
                           <FormControl>
                             <Input 
+                              type="text"
                               placeholder="Doe" 
                               className="pl-10 bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
                               {...field}
