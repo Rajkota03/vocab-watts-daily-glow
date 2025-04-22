@@ -1,8 +1,23 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock } from 'lucide-react';
+import { 
+  Calendar, 
+  Clock, 
+  BookOpen, 
+  Briefcase, 
+  MessageSquare, 
+  Smile, 
+  Sparkles, 
+  Heart, 
+  GraduationCap, 
+  CheckCircle,
+  RefreshCw
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
+import MobileCategorySelection from './MobileCategorySelection';
 
 interface CategorySelectionProps {
   isPro: boolean;
