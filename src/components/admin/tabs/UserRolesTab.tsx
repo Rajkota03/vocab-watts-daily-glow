@@ -18,6 +18,9 @@ type UserWithRoles = {
   roles: string[];
 };
 
+// Define a type for the app_role enum
+type AppRole = "admin" | "moderator" | "user";
+
 const UserRolesTab = () => {
   const [users, setUsers] = useState<UserWithRoles[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,7 +76,7 @@ const UserRolesTab = () => {
     }
   };
 
-  const updateUserRole = async (userId: string, role: string, action: 'add' | 'remove') => {
+  const updateUserRole = async (userId: string, role: AppRole, action: 'add' | 'remove') => {
     try {
       if (action === 'add') {
         // Add role
@@ -81,7 +84,7 @@ const UserRolesTab = () => {
           .from('user_roles')
           .insert({
             user_id: userId,
-            role: role as any
+            role: role
           });
         
         if (error) throw error;
@@ -204,8 +207,10 @@ const UserRolesTab = () => {
                         <div className="flex items-center justify-end gap-2">
                           <Select 
                             onValueChange={(value) => {
+                              // Cast the value to AppRole type
+                              const roleValue = value as AppRole;
                               const action = user.roles.includes(value) ? 'remove' : 'add';
-                              updateUserRole(user.id, value, action);
+                              updateUserRole(user.id, roleValue, action);
                             }}
                           >
                             <SelectTrigger className="w-[180px]">
