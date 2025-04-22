@@ -6,3 +6,6 @@ verify_jwt = true
 
 [functions.send-vocab-email]
 verify_jwt = true
+
+[functions.send-whatsapp]
+verify_jwt = true

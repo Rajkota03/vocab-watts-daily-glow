@@ -1,6 +1,6 @@
-
 import { createSubscription, getVocabWordsByCategory } from './subscriptionService';
 import { Database } from '@/integrations/supabase/types';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * WhatsApp Service
@@ -274,11 +274,11 @@ const formatWhatsAppMessage = (words: VocabWord[], isPro: boolean): string => {
  */
 export const sendVocabWords = async (request: SendWordsRequest): Promise<boolean> => {
   try {
-    console.log("[DEMO] Sending vocabulary words via WhatsApp", request);
+    console.log("[WhatsApp] Sending vocabulary words via WhatsApp", request);
     
     // Validate phone number (basic validation)
     if (!request.phoneNumber || request.phoneNumber.trim().length < 10) {
-      console.error("[DEMO] Invalid phone number:", request.phoneNumber);
+      console.error("[WhatsApp] Invalid phone number:", request.phoneNumber);
       return false;
     }
     
@@ -290,29 +290,35 @@ export const sendVocabWords = async (request: SendWordsRequest): Promise<boolean
     });
     
     if (!subscriptionCreated) {
-      console.error("[DEMO] Failed to create subscription");
+      console.error("[WhatsApp] Failed to create subscription");
       return false;
     }
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
     
     // Get words based on category (or default words)
     const words = await getSampleWords(request.category);
     
     // Format message for WhatsApp
-    const message = formatWhatsAppMessage(words, request.isPro);
+    const message = formatWhatsAppMessage(words || [], request.isPro);
     
-    console.log("[DEMO] Would send the following message:", message);
-    console.log("[DEMO] To phone number:", request.phoneNumber);
+    // Call our edge function to send the WhatsApp message
+    const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+      body: {
+        to: request.phoneNumber,
+        message: message,
+        category: request.category,
+        isPro: request.isPro
+      }
+    });
     
-    // In a real implementation, this would call the WhatsApp Business API
-    // Example: await whatsappBusinessApi.sendMessage(request.phoneNumber, message);
+    if (error) {
+      console.error("[WhatsApp] Error sending message:", error);
+      return false;
+    }
     
-    console.log("[DEMO] Successfully simulated sending message");
+    console.log("[WhatsApp] Successfully sent message:", data);
     return true;
   } catch (error) {
-    console.error("[DEMO] Failed to simulate WhatsApp message:", error);
+    console.error("[WhatsApp] Failed to send WhatsApp message:", error);
     return false;
   }
 };
