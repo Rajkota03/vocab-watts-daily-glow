@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -52,10 +51,6 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
-
-  // Disable JWT verification for testing
-  // This allows the function to be called without authentication
-  // We'll implement proper authentication later if needed
   
   try {
     const { to, message, category, isPro } = await req.json() as WhatsAppRequest;
@@ -63,14 +58,16 @@ serve(async (req) => {
     // Retrieve Twilio credentials from environment variables
     const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
     const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-    const twilioNumber = Deno.env.get('TWILIO_PHONE_NUMBER') || 'whatsapp:+14155238886'; // Use the sandbox number directly
+    
+    // Always use the specific WhatsApp sandbox number for sending
+    // This matches the working example you provided
+    const fromNumber = 'whatsapp:+14155238886';
 
     // Validate Twilio credentials
     if (!accountSid || !authToken) {
       console.error('Missing Twilio credentials:', { 
         hasSid: !!accountSid, 
-        hasToken: !!authToken, 
-        hasNumber: !!twilioNumber 
+        hasToken: !!authToken 
       });
       throw new Error('Missing Twilio credentials');
     }
@@ -78,22 +75,17 @@ serve(async (req) => {
     // Format the recipient's WhatsApp number
     const toNumber = formatWhatsAppNumber(to);
     
-    // Ensure Twilio number is properly formatted with whatsapp: prefix
-    const fromNumber = twilioNumber.startsWith('whatsapp:') ? twilioNumber : `whatsapp:${twilioNumber}`;
-
-    console.log(`Sending WhatsApp message to ${toNumber} from ${fromNumber}`);
+    console.log(`Sending WhatsApp message from ${fromNumber} to ${toNumber}`);
     console.log(`Message content: ${message.substring(0, 50)}...`);
-    console.log(`Using Twilio credentials: SID=${accountSid?.substring(0, 5)}..., Token=${authToken?.substring(0, 3)}...`);
+    console.log(`Using Twilio SID: ${accountSid.substring(0, 8)}...`);
 
     // Append instructions for first-time sandbox users
     let finalMessage = message;
     
-    // If this is the first message and we're using the sandbox number
-    if (fromNumber.includes('14155238886')) {
-      finalMessage += "\n\n---\nFirst time? You need to join the Twilio Sandbox first!\nSend 'join part-every' to +1 415 523 8886 on WhatsApp.";
-    }
+    // Always add sandbox joining instructions for new users
+    finalMessage += "\n\n---\nFirst time? You need to join the Twilio Sandbox first!\nSend 'join part-every' to +1 415 523 8886 on WhatsApp.";
 
-    // Make request to Twilio API
+    // Make request to Twilio API using the same structure as your working example
     const twilioResponse = await fetch(
       `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
       {
@@ -104,17 +96,30 @@ serve(async (req) => {
         },
         body: new URLSearchParams({
           To: toNumber,
-          From: fromNumber, // Always use the Twilio number as the sender
+          From: fromNumber,  // Always use the specific WhatsApp sandbox number
           Body: finalMessage,
         }).toString(),
       }
     );
 
     const twilioData = await twilioResponse.json();
+    console.log('Twilio response status:', twilioResponse.status);
+    console.log('Twilio response data:', JSON.stringify(twilioData).substring(0, 200) + '...');
 
     if (!twilioResponse.ok) {
       console.error('Twilio API error:', twilioData);
-      throw new Error(twilioData.message || 'Failed to send WhatsApp message');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: twilioData.message || 'Failed to send WhatsApp message',
+          details: twilioData,
+          status: twilioResponse.status
+        }),
+        {
+          status: twilioResponse.status || 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     console.log('WhatsApp message sent successfully:', twilioData.sid);
@@ -125,7 +130,9 @@ serve(async (req) => {
         messageId: twilioData.sid,
         status: twilioData.status,
         details: twilioData,
-        sandboxMode: fromNumber.includes('14155238886')
+        sandboxMode: true,  // Always true when using the WhatsApp sandbox
+        to: toNumber,
+        from: fromNumber
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
