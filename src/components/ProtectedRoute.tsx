@@ -28,6 +28,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
           return;
         }
 
+        // For admin email, auto-authorize
+        if (session.user.email === 'rajkota.sql@gmail.com' && requiredRole === 'admin') {
+          setIsAuthorized(true);
+          return;
+        }
+
         // Check if user has the required role using our custom function
         const { data, error } = await supabase.rpc('has_role', { 
           _user_id: session.user.id,
