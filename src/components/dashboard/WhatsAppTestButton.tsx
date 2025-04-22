@@ -26,6 +26,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
   const [twilioAuthError, setTwilioAuthError] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState("12:00");
+  const { toast } = useToast();
 
   const formatWhatsAppNumber = (number: string): string => {
     let cleaned = number.replace(/\D/g, '');
