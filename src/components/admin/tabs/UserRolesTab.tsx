@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -25,6 +24,7 @@ const UserRolesTab = () => {
   const [users, setUsers] = useState<UserWithRoles[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [adminUsers, setAdminUsers] = useState<UserWithRoles[]>([]);
 
   useEffect(() => {
     fetchUsers();
@@ -64,6 +64,10 @@ const UserRolesTab = () => {
       });
       
       setUsers(usersWithRoles || []);
+      
+      // Filter admin users
+      const adminUsersList = usersWithRoles?.filter(user => user.roles.includes('admin')) || [];
+      setAdminUsers(adminUsersList);
     } catch (error) {
       console.error('Error fetching users and roles:', error);
       toast({
@@ -129,115 +133,60 @@ const UserRolesTab = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">User Roles</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Users with Admin Roles</h2>
         <p className="text-muted-foreground">
-          Manage user roles and permissions.
+          Here are the users currently with admin permissions.
         </p>
       </div>
       
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle>User Roles Management</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search users..."
-                className="pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Button className="ml-4" onClick={fetchUsers}>
-              Refresh
-            </Button>
-          </div>
-          
-          {loading ? (
-            <div className="flex justify-center py-10">
-              <div className="animate-spin h-8 w-8 border-4 border-vuilder-indigo border-t-transparent rounded-full"></div>
-            </div>
-          ) : (
-            <div className="rounded-md border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Roles</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{user.first_name} {user.last_name}</div>
-                          <div className="text-xs text-gray-500">{user.email}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-2">
-                          {user.roles.includes('admin') && (
-                            <Badge className="bg-red-100 text-red-800 hover:bg-red-200 flex items-center gap-1">
-                              <Shield className="h-3 w-3" />
-                              Admin
-                            </Badge>
-                          )}
-                          {user.roles.includes('moderator') && (
-                            <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-200 flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              Moderator
-                            </Badge>
-                          )}
-                          {user.roles.includes('user') && (
-                            <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 flex items-center gap-1">
-                              <UserCheck className="h-3 w-3" />
-                              User
-                            </Badge>
-                          )}
-                          {user.roles.length === 0 && (
-                            <span className="text-gray-500 text-sm">No roles</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Select 
-                            onValueChange={(value) => {
-                              // Cast the value to AppRole type
-                              const roleValue = value as AppRole;
-                              const action = user.roles.includes(value) ? 'remove' : 'add';
-                              updateUserRole(user.id, roleValue, action);
-                            }}
-                          >
-                            <SelectTrigger className="w-[180px]">
-                              <span>Manage roles</span>
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="admin">
-                                {user.roles.includes('admin') ? 'Remove Admin Role' : 'Add Admin Role'}
-                              </SelectItem>
-                              <SelectItem value="moderator">
-                                {user.roles.includes('moderator') ? 'Remove Moderator Role' : 'Add Moderator Role'}
-                              </SelectItem>
-                              <SelectItem value="user">
-                                {user.roles.includes('user') ? 'Remove User Role' : 'Add User Role'}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </TableCell>
+      {loading ? (
+        <div className="flex justify-center py-10">
+          <div className="animate-spin h-8 w-8 border-4 border-vuilder-indigo border-t-transparent rounded-full"></div>
+        </div>
+      ) : (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle>Admin Users ({adminUsers.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {adminUsers.length > 0 ? (
+              <div className="rounded-md border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead className="text-right">Roles</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {adminUsers.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell>
+                          <div className="font-medium">{user.first_name} {user.last_name}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-gray-500">{user.email}</div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge className="bg-red-100 text-red-800 hover:bg-red-200 flex items-center gap-1">
+                            <Shield className="h-3 w-3" />
+                            Admin
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-center py-10 text-muted-foreground">
+                No admin users found.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
