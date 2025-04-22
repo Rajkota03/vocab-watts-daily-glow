@@ -60,11 +60,12 @@ serve(async (req) => {
   try {
     const { to, message, category, isPro } = await req.json() as WhatsAppRequest;
 
-    // Initialize Twilio client
+    // Retrieve Twilio credentials from environment variables
     const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
     const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
     const twilioNumber = Deno.env.get('TWILIO_PHONE_NUMBER') || 'whatsapp:+14155238886'; // Use the sandbox number directly
 
+    // Validate Twilio credentials
     if (!accountSid || !authToken) {
       console.error('Missing Twilio credentials:', { 
         hasSid: !!accountSid, 
@@ -82,6 +83,7 @@ serve(async (req) => {
 
     console.log(`Sending WhatsApp message to ${toNumber} from ${fromNumber}`);
     console.log(`Message content: ${message.substring(0, 50)}...`);
+    console.log(`Using Twilio credentials: SID=${accountSid?.substring(0, 5)}..., Token=${authToken?.substring(0, 3)}...`);
 
     // Append instructions for first-time sandbox users
     let finalMessage = message;
