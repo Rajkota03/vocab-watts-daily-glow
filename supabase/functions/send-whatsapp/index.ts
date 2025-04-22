@@ -13,9 +13,9 @@ interface WhatsAppRequest {
   isPro?: boolean;
   skipSubscriptionCheck?: boolean;
   userId?: string;
+  scheduledTime?: string;
 }
 
-// Function to format WhatsApp number properly
 function formatWhatsAppNumber(number: string): string {
   if (number.startsWith('whatsapp:+')) {
     return number;
@@ -46,7 +46,45 @@ serve(async (req) => {
   }
   
   try {
-    const { to, message, category, isPro, skipSubscriptionCheck, userId } = await req.json() as WhatsAppRequest;
+    const { to, message, category, isPro, skipSubscriptionCheck, userId, scheduledTime } = await req.json() as WhatsAppRequest;
+
+    if (scheduledTime) {
+      const scheduledDate = new Date(scheduledTime);
+      if (scheduledDate > new Date()) {
+        const supabaseClient = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        );
+
+        const { error: scheduleError } = await supabaseClient
+          .from('scheduled_messages')
+          .insert({
+            phone_number: to,
+            message,
+            category,
+            is_pro: isPro,
+            scheduled_time: scheduledTime,
+            user_id: userId
+          });
+
+        if (scheduleError) {
+          console.error('Error scheduling message:', scheduleError);
+          throw new Error('Failed to schedule message');
+        }
+
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            scheduled: true,
+            scheduledTime,
+            message: "Message scheduled successfully"
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    }
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',

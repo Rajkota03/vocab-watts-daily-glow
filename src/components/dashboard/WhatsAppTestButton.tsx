@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, AlertTriangle, RefreshCw, QrCode, Shield, BookOpen } from "lucide-react";
+import { Send, AlertTriangle, RefreshCw, QrCode, Shield, BookOpen, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { sendVocabWords } from '@/services/whatsappService';
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface WhatsAppTestButtonProps {
   category: string;
@@ -17,6 +25,8 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const [sandboxMode, setSandboxMode] = useState(false);
   const [twilioAuthError, setTwilioAuthError] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>();
+  const [selectedTime, setSelectedTime] = useState("12:00");
   const { toast } = useToast();
 
   const formatWhatsAppNumber = (number: string): string => {
@@ -54,13 +64,21 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
       setTwilioAuthError(false);
       
       const formattedNumber = formatWhatsAppNumber(phoneNumber.trim());
+
+      let scheduledTime: Date | undefined;
+      if (selectedDate) {
+        const [hours, minutes] = selectedTime.split(':').map(Number);
+        scheduledTime = new Date(selectedDate);
+        scheduledTime.setHours(hours, minutes);
+      }
       
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
         body: {
           to: formattedNumber,
           message: `🌟 *Test Message from VocabSpark* 🌟\n\nThis is a test message from VocabSpark for the "${category}" category. If you're seeing this, WhatsApp integration is working correctly!\n\nThank you for using VocabSpark!`,
           category: category,
-          isPro: true
+          isPro: true,
+          scheduledTime: scheduledTime?.toISOString()
         }
       });
       
@@ -79,14 +97,19 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
         response: data,
         requestDetails: {
           to: formattedNumber,
-          category: category
+          category: category,
+          scheduledTime: scheduledTime?.toISOString()
         },
         timestamp: new Date().toISOString()
       }, null, 2));
       
+      const scheduledText = scheduledTime 
+        ? ` scheduled for ${format(scheduledTime, 'PPpp')}`
+        : '';
+      
       toast({
         title: "WhatsApp test message sent!",
-        description: `A test message has been sent to ${phoneNumber}. Check your WhatsApp app.`,
+        description: `A test message has been${scheduledText} to ${phoneNumber}. Check your WhatsApp app.`,
       });
       
       setShowForm(false);
@@ -184,6 +207,50 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
             placeholder="Enter WhatsApp number (with country code)"
             className="px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-vuilder-indigo transition-all duration-300"
           />
+          
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Delivery Date
+              </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !selectedDate && "text-muted-foreground"
+                    )}
+                  >
+                    <Clock className="mr-2 h-4 w-4" />
+                    {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Delivery Time
+              </label>
+              <Input
+                type="time"
+                value={selectedTime}
+                onChange={(e) => setSelectedTime(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-vuilder-indigo transition-all duration-300"
+              />
+            </div>
+          </div>
+
           <div className="flex space-x-2">
             <Button
               onClick={handleTestWhatsApp}
