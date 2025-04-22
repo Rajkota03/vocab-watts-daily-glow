@@ -63,7 +63,7 @@ serve(async (req) => {
     // Initialize Twilio client
     const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
     const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-    const twilioNumber = Deno.env.get('TWILIO_PHONE_NUMBER') || '+14155238886'; // Default to sandbox number if not set
+    const twilioNumber = Deno.env.get('TWILIO_PHONE_NUMBER') || 'whatsapp:+14155238886'; // Use the sandbox number directly
 
     if (!accountSid || !authToken) {
       console.error('Missing Twilio credentials:', { 
@@ -74,12 +74,11 @@ serve(async (req) => {
       throw new Error('Missing Twilio credentials');
     }
 
-    // Format the WhatsApp numbers (ensure they start with whatsapp:+)
+    // Format the recipient's WhatsApp number
     const toNumber = formatWhatsAppNumber(to);
     
-    // In sandbox mode, always use the Twilio sandbox number
-    // The TWILIO_PHONE_NUMBER env var should contain the sandbox number for testing
-    const fromNumber = formatWhatsAppNumber(twilioNumber);
+    // Ensure Twilio number is properly formatted with whatsapp: prefix
+    const fromNumber = twilioNumber.startsWith('whatsapp:') ? twilioNumber : `whatsapp:${twilioNumber}`;
 
     console.log(`Sending WhatsApp message to ${toNumber} from ${fromNumber}`);
     console.log(`Message content: ${message.substring(0, 50)}...`);
@@ -88,7 +87,7 @@ serve(async (req) => {
     let finalMessage = message;
     
     // If this is the first message and we're using the sandbox number
-    if (twilioNumber === '+14155238886' || fromNumber === 'whatsapp:+14155238886') {
+    if (fromNumber.includes('14155238886')) {
       finalMessage += "\n\n---\nFirst time? You need to join the Twilio Sandbox first!\nSend 'join part-every' to +1 415 523 8886 on WhatsApp.";
     }
 
@@ -103,7 +102,7 @@ serve(async (req) => {
         },
         body: new URLSearchParams({
           To: toNumber,
-          From: fromNumber,
+          From: fromNumber, // Always use the Twilio number as the sender
           Body: finalMessage,
         }).toString(),
       }
@@ -124,7 +123,7 @@ serve(async (req) => {
         messageId: twilioData.sid,
         status: twilioData.status,
         details: twilioData,
-        sandboxMode: twilioNumber === '+14155238886' || fromNumber === 'whatsapp:+14155238886'
+        sandboxMode: fromNumber.includes('14155238886')
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,7 +81,6 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
           error: error,
           requestDetails: {
             to: whatsappNumber,
-            formattedFrom: phoneNumber.trim(),
             category: category
           },
           timestamp: new Date().toISOString()
@@ -102,7 +100,6 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
         response: data,
         requestDetails: {
           to: whatsappNumber,
-          formattedFrom: phoneNumber.trim(),
           category: category
         },
         timestamp: new Date().toISOString()
