@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -11,7 +10,8 @@ import {
   DollarSign,
   MessageSquare,
   Dumbbell,
-  Settings
+  Settings,
+  Shield
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -78,7 +78,6 @@ const Navbar = () => {
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <div className="flex items-center justify-center w-10 h-10 rounded-full bg-vuilder-indigo relative">
-            {/* Custom VUILDER Logo with flexing arms */}
             <span className="text-white font-bold text-lg">V</span>
             <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3">
               <Dumbbell className="h-3 w-3 text-white transform rotate-90" />
@@ -90,7 +89,6 @@ const Navbar = () => {
           <span className="font-bold text-xl text-vuilder-indigo font-poppins tracking-tight">VUILDER</span>
         </div>
         
-        {/* Mobile menu button */}
         <button 
           className="md:hidden p-2 text-vuilder-indigo hover:text-vuilder-mint focus:outline-none transition-colors"
           onClick={toggleMenu}
@@ -99,7 +97,6 @@ const Navbar = () => {
           {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
         
-        {/* Desktop navigation */}
         <div className="hidden md:flex items-center gap-6">
           <a href="#how-it-works" className="text-vuilder-text hover:text-vuilder-mint transition-colors font-medium font-inter text-sm flex items-center group">
             <BookOpen className="h-4 w-4 mr-1 group-hover:text-vuilder-mint" />
@@ -143,7 +140,6 @@ const Navbar = () => {
               </Button>
               <Button className="bg-vuilder-coral hover:bg-vuilder-coral/90 text-white shadow-md" onClick={() => {
                 scrollToSignup();
-                // Set Pro mode in signup form by triggering a click on the "Switch to Pro" button after a delay
                 setTimeout(() => {
                   const switchToProButton = document.querySelector('button.text-xs.text-vuilder-mint.underline');
                   if (switchToProButton) {
@@ -157,7 +153,6 @@ const Navbar = () => {
           )}
         </div>
         
-        {/* Mobile menu */}
         {isMenuOpen && (
           <div className="absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-100 md:hidden animate-fade-in">
             <div className="flex flex-col p-4 space-y-3">

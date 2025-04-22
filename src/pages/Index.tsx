@@ -18,8 +18,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from "@/components/ui/button";
 import { Shield } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
+  const navigate = useNavigate();
+  
   const assignAdminRole = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     
@@ -56,6 +59,9 @@ const Index = () => {
         title: "Success",
         description: "Admin role assigned successfully. You can now access the admin dashboard.",
       });
+      
+      // Redirect to dashboard with parameter to show admin role notification
+      navigate('/dashboard?adminAssigned=true');
     } catch (error: any) {
       console.error('Error assigning admin role:', error);
       toast({

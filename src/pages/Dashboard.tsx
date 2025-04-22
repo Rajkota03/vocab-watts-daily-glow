@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Unlock, Calendar, Sparkles, BookOpen, CheckCircle } from 'lucide-react';
+import { LogOut, Unlock, Calendar, Sparkles, BookOpen, CheckCircle, Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,6 @@ import ActivityTab from '@/components/dashboard/tabs/ActivityTab';
 import HistoryTab from '@/components/dashboard/tabs/HistoryTab';
 import ApiTestButton from '@/components/dashboard/ApiTestButton';
 import { Link } from 'react-router-dom';
-import { Shield } from 'lucide-react';
 
 const MOCK_TODAYS_QUIZ = {
   completed: true,
@@ -39,7 +38,6 @@ const MOCK_RECENT_DROPS = [
 ];
 
 const Dashboard = () => {
-  // Pro user state
   const [subscription, setSubscription] = useState({
     is_pro: true,
     category: 'business-intermediate',
@@ -53,13 +51,11 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
-  // Streak and progress data
   const [streak, setStreak] = useState(4);
   const [dayStatus, setDayStatus] = useState("Day 2 of 3");
   const [userNickname, setUserNickname] = useState<string>('');
   const [isAdmin, setIsAdmin] = useState(false);
   
-  // Check if user is authenticated and load their data
   useEffect(() => {
     const checkAuth = async () => {
       const { data } = await supabase.auth.getSession();
@@ -75,7 +71,6 @@ const Dashboard = () => {
         return;
       }
       
-      // Check if user is admin
       if (data.session.user.email === 'rajkota.sql@gmail.com') {
         try {
           const { data: hasAdminRole, error } = await supabase.rpc('has_role', { 
@@ -87,13 +82,21 @@ const Dashboard = () => {
             console.error('Error checking admin role:', error);
           } else {
             setIsAdmin(!!hasAdminRole);
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('adminAssigned') === 'true' && hasAdminRole) {
+              toast({
+                title: "Admin Access Granted",
+                description: "You now have access to the admin dashboard",
+              });
+              navigate('/dashboard', { replace: true });
+            }
           }
         } catch (error) {
           console.error('Failed to check admin role:', error);
         }
       }
       
-      // Get user's nickname
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('nick_name, first_name')
@@ -104,19 +107,14 @@ const Dashboard = () => {
         setUserNickname(profileData.nick_name || profileData.first_name || 'there');
       }
       
-      // Set user email
       setUserEmail(data.session.user.email);
       
-      // Get user metadata for pro status and preferences
       const userMetadata = data.session.user.user_metadata;
       console.log("User metadata:", userMetadata);
       
-      // Update subscription info from metadata if available
       if (userMetadata) {
-        // Check if we have the new format (primary-subcategory) or need to convert from legacy
         let category = userMetadata.category || 'business-intermediate';
         
-        // Convert legacy categories to new format if needed
         if (category && !category.includes('-')) {
           const mapping: { [key: string]: string } = {
             'business': 'business-intermediate',
@@ -139,7 +137,6 @@ const Dashboard = () => {
     
     checkAuth();
     
-    // Listen for auth changes
     const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log("Auth state change in dashboard:", event);
@@ -159,14 +156,12 @@ const Dashboard = () => {
       const combinedCategory = `${primary}-${subcategory}`;
       console.log("Updating category to:", combinedCategory);
       
-      // Update user metadata
       const { error } = await supabase.auth.updateUser({
         data: { category: combinedCategory }
       });
       
       if (error) throw error;
       
-      // Update local state
       setSubscription({
         ...subscription,
         category: combinedCategory
@@ -188,7 +183,7 @@ const Dashboard = () => {
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
-      // The onAuthStateChange listener will handle the navigation
+      navigate('/login');
     } catch (error: any) {
       toast({
         title: "Error signing out",
@@ -206,10 +201,8 @@ const Dashboard = () => {
       const newWords = await generateNewWordBatch(subscription.category);
       console.log("New batch generated:", newWords);
       
-      // Force reload of word history
       const wordHistoryElement = document.getElementById('word-history');
       if (wordHistoryElement) {
-        // Trigger a re-render by adding and removing a class
         wordHistoryElement.classList.add('refresh-triggered');
         setTimeout(() => {
           wordHistoryElement.classList.remove('refresh-triggered');
@@ -232,14 +225,12 @@ const Dashboard = () => {
     }
   };
 
-  // Get emoji based on score
   const getScoreEmoji = (score: number) => {
     if (score >= 4) return "👏";
     if (score >= 2) return "💪";
     return "😬";
   };
 
-  // Format the category display
   const formatCategory = (category: string) => {
     if (!category) return "General";
     
@@ -260,15 +251,12 @@ const Dashboard = () => {
     );
   }
 
-  // Get username from email
   const username = userEmail ? userEmail.split('@')[0] : 'User';
   
-  // Format category for display
   const displayCategory = formatCategory(subscription.category);
 
   return (
     <div className="min-h-screen bg-white font-inter pb-10">
-      {/* Header Section */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
         <div className="max-w-5xl mx-auto px-6 py-6">
           <div className="flex flex-wrap items-center justify-between">
@@ -321,9 +309,7 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-5xl mx-auto px-6 py-6 space-y-6">
-        {/* Category Selection (Pro Users) */}
         {subscription.is_pro && (
           <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl overflow-hidden">
             <CardHeader className="bg-white border-b border-gray-50 p-4">
@@ -344,7 +330,6 @@ const Dashboard = () => {
           </Card>
         )}
 
-        {/* Tabs Section */}
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="bg-gray-100/80 p-1 rounded-xl">
             <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
@@ -379,7 +364,6 @@ const Dashboard = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Upgrade Prompt (Free Users) */}
         {!subscription.is_pro && (
           <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl overflow-hidden bg-gradient-to-r from-indigo-50 to-purple-50">
             <CardContent className="p-6">
