@@ -53,6 +53,10 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Disable JWT verification for testing
+  // This allows the function to be called without authentication
+  // We'll implement proper authentication later if needed
+  
   try {
     const { to, message, category, isPro } = await req.json() as WhatsAppRequest;
 
