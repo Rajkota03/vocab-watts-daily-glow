@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, AlertTriangle, RefreshCw, QrCode } from "lucide-react";
+import { Send, AlertTriangle, RefreshCw, QrCode, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 
@@ -16,6 +16,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
   const [showForm, setShowForm] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const [sandboxMode, setSandboxMode] = useState(false);
+  const [twilioAuthError, setTwilioAuthError] = useState(false);
   const { toast } = useToast();
 
   const formatWhatsAppNumber = (number: string): string => {
@@ -55,6 +56,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
       setLoading(true);
       setDebugInfo(null);
       setSandboxMode(false);
+      setTwilioAuthError(false);
       
       // Format phone number for WhatsApp (ensure it has the country code)
       const formattedNumber = formatWhatsAppNumber(phoneNumber.trim());
@@ -86,6 +88,13 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
           },
           timestamp: new Date().toISOString()
         }, null, 2));
+        
+        // Check if it's an auth error
+        if (error.message && error.message.toLowerCase().includes('authentication')) {
+          setTwilioAuthError(true);
+          throw new Error("Twilio authentication failed. Please check your Twilio credentials in Supabase.");
+        }
+        
         throw error;
       }
       
@@ -94,6 +103,12 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
       // Check if we're in sandbox mode
       if (data.sandboxMode) {
         setSandboxMode(true);
+      }
+      
+      // Check for Twilio auth error in the data
+      if (data && !data.success && data.status === 401) {
+        setTwilioAuthError(true);
+        throw new Error("Twilio authentication failed. Please check your Twilio credentials in Supabase.");
       }
       
       // Set debug info
@@ -168,6 +183,24 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
           {loading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
           {loading ? "Testing WhatsApp..." : "Test WhatsApp Integration"}
         </Button>
+      )}
+      
+      {twilioAuthError && (
+        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800">
+          <h4 className="text-sm font-medium mb-2 flex items-center">
+            <Shield className="h-4 w-4 mr-2 text-red-500" />
+            Twilio Authentication Failed
+          </h4>
+          <p className="text-xs mb-3">
+            Your Twilio credentials appear to be invalid or missing. Please check:
+          </p>
+          <ol className="text-xs list-decimal pl-4 mb-3 space-y-1">
+            <li>TWILIO_ACCOUNT_SID is correctly set in Supabase</li>
+            <li>TWILIO_AUTH_TOKEN is correctly set in Supabase</li>
+            <li>TWILIO_PHONE_NUMBER is correctly set in Supabase (optional)</li>
+            <li>Twilio account is active and has proper permissions</li>
+          </ol>
+        </div>
       )}
       
       {sandboxMode && (
