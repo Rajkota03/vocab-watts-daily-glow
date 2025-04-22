@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Unlock } from 'lucide-react';
+import { LogOut, Unlock, Calendar, Sparkles, BookOpen, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -14,8 +14,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import OverviewTab from '@/components/dashboard/tabs/OverviewTab';
 import ActivityTab from '@/components/dashboard/tabs/ActivityTab';
 import HistoryTab from '@/components/dashboard/tabs/HistoryTab';
+import ApiTestButton from '@/components/dashboard/ApiTestButton';
 
-// Mock data
 const MOCK_TODAYS_QUIZ = {
   completed: true,
   score: 4,
