@@ -8,9 +8,10 @@ const corsHeaders = {
 
 interface WhatsAppRequest {
   to: string;
-  message: string;
+  message?: string;
   category?: string;
   isPro?: boolean;
+  skipSubscriptionCheck?: boolean;
 }
 
 // Function to format WhatsApp number properly
@@ -53,7 +54,7 @@ serve(async (req) => {
   }
   
   try {
-    const { to, message, category, isPro } = await req.json() as WhatsAppRequest;
+    const { to, message, category, isPro, skipSubscriptionCheck } = await req.json() as WhatsAppRequest;
 
     // Retrieve Twilio credentials from environment variables
     const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
@@ -94,12 +95,39 @@ serve(async (req) => {
     // Format the recipient's WhatsApp number
     const toNumber = formatWhatsAppNumber(to);
     
-    console.log(`Sending WhatsApp message from ${fromNumber} to ${toNumber}`);
-    console.log(`Message content: ${message.substring(0, 50)}...`);
+    // Generate message content if not provided
+    let finalMessage = message;
+    if (!finalMessage && category) {
+      // If message is not provided but category is, generate vocabulary words
+      const vocabWords = [
+        { word: "articulate", definition: "expressed, formulated, or presented with clarity", example: "She is known for her articulate explanations of complex topics." },
+        { word: "resilient", definition: "able to withstand or recover quickly from difficult conditions", example: "The resilient community rebuilt after the disaster." },
+        { word: "pragmatic", definition: "dealing with things sensibly and realistically", example: "We need a pragmatic approach to solve this issue." },
+        { word: "perspicacious", definition: "having keen insight or understanding", example: "His perspicacious observation helped solve the mystery." },
+        { word: "eloquent", definition: "fluent or persuasive in speaking or writing", example: "The politician gave an eloquent speech that moved the audience." }
+      ];
+      
+      // Format the message with vocabulary words
+      const header = `🌟 *Today's VocabSpark Words* 🌟\n\n`;
+      const wordsList = vocabWords.map((word, index) => 
+        `*${index + 1}. ${word.word}*\nDefinition: ${word.definition}\nExample: _"${word.example}"_\n\n`
+      ).join('');
+      const footer = isPro 
+        ? '\n🚀 *Pro Subscription Active* - Thank you for supporting VocabSpark!'
+        : '\n👉 Upgrade to Pro for custom word categories and more features!';
+      
+      finalMessage = header + wordsList + footer;
+    }
     
     // Append instructions for first-time sandbox users
-    let finalMessage = message;
-    finalMessage += "\n\n---\nFirst time? You need to join the Twilio Sandbox first!\nSend 'join part-every' to +1 415 523 8886 on WhatsApp.";
+    if (finalMessage) {
+      finalMessage += "\n\n---\nFirst time? You need to join the Twilio Sandbox first!\nSend 'join part-every' to +1 415 523 8886 on WhatsApp.";
+    } else {
+      finalMessage = "Hello from VocabSpark! This is a test message.\n\n---\nFirst time? You need to join the Twilio Sandbox first!\nSend 'join part-every' to +1 415 523 8886 on WhatsApp.";
+    }
+    
+    console.log(`Sending WhatsApp message from ${fromNumber} to ${toNumber}`);
+    console.log(`Message content (first 50 chars): ${finalMessage.substring(0, 50)}...`);
 
     // Make request to Twilio API using the same structure as the working example
     try {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, AlertTriangle, RefreshCw, QrCode, Shield } from "lucide-react";
+import { Send, AlertTriangle, RefreshCw, QrCode, Shield, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { sendVocabWords } from '@/services/whatsappService';
@@ -55,21 +55,41 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
       
       const formattedNumber = formatWhatsAppNumber(phoneNumber.trim());
       
-      const result = await sendVocabWords({
-        phoneNumber: formattedNumber,
-        category: category,
-        isPro: true
+      // Call the edge function directly to test sending a WhatsApp message
+      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+        body: {
+          to: formattedNumber,
+          message: `🌟 *Test Message from VocabSpark* 🌟\n\nThis is a test message from VocabSpark for the "${category}" category. If you're seeing this, WhatsApp integration is working correctly!\n\nThank you for using VocabSpark!`,
+          category: category,
+          isPro: true
+        }
       });
-
-      if (!result) {
-        throw new Error("Failed to send vocabulary words");
+      
+      if (error) {
+        console.error("Edge function error:", error);
+        throw new Error(`WhatsApp message failed: ${error.message}`);
       }
-
-      console.log('WhatsApp vocabulary words sent successfully');
+      
+      console.log('WhatsApp test response:', data);
+      
+      // Check if we're in sandbox mode
+      if (data.sandboxMode) {
+        setSandboxMode(true);
+      }
+      
+      // Set debug info
+      setDebugInfo(JSON.stringify({
+        response: data,
+        requestDetails: {
+          to: formattedNumber,
+          category: category
+        },
+        timestamp: new Date().toISOString()
+      }, null, 2));
       
       toast({
-        title: "Vocabulary words sent!",
-        description: `Check your WhatsApp for the vocabulary words. Make sure you've joined the sandbox by sending 'join part-every' to +1 415 523 8886`,
+        title: "WhatsApp test message sent!",
+        description: `A test message has been sent to ${phoneNumber}. Check your WhatsApp app.`,
       });
       
       setShowForm(false);
@@ -84,6 +104,69 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
       toast({
         title: "WhatsApp Test Failed",
         description: error.message || "An error occurred while testing WhatsApp integration",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendVocabWords = async () => {
+    if (showForm && !phoneNumber) {
+      toast({
+        title: "Phone number required",
+        description: "Please enter a WhatsApp phone number to receive vocabulary words.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setDebugInfo(null);
+      setSandboxMode(false);
+      setTwilioAuthError(false);
+      
+      const formattedNumber = formatWhatsAppNumber(phoneNumber.trim());
+      
+      // Try to directly use the send-whatsapp function to bypass subscription check
+      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+        body: {
+          to: formattedNumber,
+          category: category,
+          isPro: true,
+          skipSubscriptionCheck: true  // Add this flag to bypass subscription check
+        }
+      });
+      
+      if (error) {
+        console.error("Edge function error:", error);
+        throw new Error(`Failed to send vocabulary words: ${error.message}`);
+      }
+      
+      console.log('WhatsApp vocabulary words sent successfully:', data);
+      
+      if (data.sandboxMode) {
+        setSandboxMode(true);
+      }
+      
+      toast({
+        title: "Vocabulary words sent!",
+        description: `Check your WhatsApp for the vocabulary words. Make sure you've joined the sandbox by sending 'join part-every' to +1 415 523 8886`,
+      });
+      
+      setShowForm(false);
+      
+    } catch (error: any) {
+      console.error('WhatsApp vocab words error:', error);
+      setDebugInfo(JSON.stringify({
+        error: error.message,
+        timestamp: new Date().toISOString()
+      }, null, 2));
+      
+      toast({
+        title: "WhatsApp Vocab Words Failed",
+        description: error.message || "An error occurred while sending vocabulary words",
         variant: "destructive"
       });
     } finally {
@@ -112,6 +195,16 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
             >
               {loading ? "Sending..." : "Send Test Message"}
               {!loading && <Send className="ml-2 h-4 w-4" />}
+            </Button>
+            <Button
+              onClick={handleSendVocabWords}
+              variant="default"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full transition-all shadow-sm"
+              disabled={loading}
+              size="sm"
+            >
+              {loading ? "Sending..." : "Send Vocab Words"}
+              {!loading && <BookOpen className="ml-2 h-4 w-4" />}
             </Button>
             <Button
               onClick={() => setShowForm(false)}
