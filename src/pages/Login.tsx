@@ -4,25 +4,27 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Brain, LockIcon, MailIcon, UserIcon, Loader2, Home, ArrowLeft } from 'lucide-react';
+import { Brain, LockIcon, MailIcon, UserIcon, Loader2, ArrowLeft, Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-// Login form schema
+// Login form schema (email only)
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters")
 });
 
-// Registration form schema with first and last name
+// Registration form schema with all required fields
 const registerSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
+  nickName: z.string().optional(),
   email: z.string().email("Please enter a valid email address"),
+  whatsappNumber: z.string().min(10, "Please enter a valid WhatsApp number"),
   password: z.string().min(6, "Password must be at least 6 characters")
 });
 
@@ -50,7 +52,9 @@ const Login = () => {
     defaultValues: {
       firstName: '',
       lastName: '',
+      nickName: '',
       email: '',
+      whatsappNumber: '',
       password: ''
     }
   });
@@ -114,7 +118,6 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // Sign up
       const { error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
@@ -122,8 +125,8 @@ const Login = () => {
           data: {
             first_name: values.firstName,
             last_name: values.lastName,
-            is_pro: true,
-            category: 'business' // Default category for Pro users
+            nick_name: values.nickName || null,
+            whatsapp_number: values.whatsappNumber
           }
         }
       });
@@ -135,7 +138,7 @@ const Login = () => {
         description: "Please check your email for a confirmation link or proceed to login.",
       });
       
-      // Automatically switch to login mode after signup
+      // Switch to login mode after signup
       setIsSignUp(false);
       loginForm.reset({ email: values.email, password: '' });
     } catch (error: any) {
@@ -201,6 +204,7 @@ const Login = () => {
                             />
                           </FormControl>
                         </div>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -224,10 +228,60 @@ const Login = () => {
                             />
                           </FormControl>
                         </div>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
+
+                {/* Nick Name Field */}
+                <FormField
+                  control={registerForm.control}
+                  name="nickName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nick Name (Optional)</FormLabel>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <UserIcon className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <FormControl>
+                          <Input 
+                            placeholder="Johnny" 
+                            className="pl-10 bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
+                            {...field}
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* WhatsApp Number Field */}
+                <FormField
+                  control={registerForm.control}
+                  name="whatsappNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>WhatsApp Number</FormLabel>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <Phone className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <FormControl>
+                          <Input 
+                            type="tel"
+                            placeholder="+1234567890" 
+                            className="pl-10 bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
+                            {...field}
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
                 {/* Email and Password Fields */}
                 <FormField
@@ -249,6 +303,7 @@ const Login = () => {
                           />
                         </FormControl>
                       </div>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -272,6 +327,7 @@ const Login = () => {
                           />
                         </FormControl>
                       </div>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
