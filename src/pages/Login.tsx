@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -12,13 +11,11 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-// Login form schema (email only)
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters")
 });
 
-// Registration form schema with all required fields
 const registerSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
@@ -37,7 +34,6 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Login form
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -46,7 +42,6 @@ const Login = () => {
     }
   });
 
-  // Registration form
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -60,7 +55,6 @@ const Login = () => {
   });
 
   useEffect(() => {
-    // Check if user is already logged in
     const checkUser = async () => {
       const { data } = await supabase.auth.getSession();
       console.log("Session check on login page:", data.session);
@@ -71,7 +65,6 @@ const Login = () => {
     };
     checkUser();
 
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log("Auth state change:", event, session);
@@ -102,7 +95,6 @@ const Login = () => {
         description: "Welcome back!",
       });
       
-      // Navigate to dashboard happens in the onAuthStateChange handler
     } catch (error: any) {
       toast({
         title: "Error",
@@ -138,7 +130,6 @@ const Login = () => {
         description: "Please check your email for a confirmation link or proceed to login.",
       });
       
-      // Switch to login mode after signup
       setIsSignUp(false);
       loginForm.reset({ email: values.email, password: '' });
     } catch (error: any) {
@@ -154,7 +145,6 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#9b87f5]/10 to-[#7E69AB]/10 px-4 py-12 relative">
-      {/* Back to Home Button */}
       <Link
         to="/"
         className="absolute top-4 left-4 inline-flex items-center text-[#9b87f5] hover:text-[#7E69AB] transition-colors"
@@ -181,11 +171,10 @@ const Login = () => {
         </CardHeader>
         
         <CardContent className="space-y-6 pt-4">
-          {isSignUp ? (
+          {isSignUp && (
             <Form {...registerForm}>
               <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  {/* First Name Field */}
                   <FormField
                     control={registerForm.control}
                     name="firstName"
@@ -209,7 +198,6 @@ const Login = () => {
                     )}
                   />
                   
-                  {/* Last Name Field */}
                   <FormField
                     control={registerForm.control}
                     name="lastName"
@@ -234,31 +222,27 @@ const Login = () => {
                   />
                 </div>
 
-                {/* Nick Name Field */}
                 <FormField
                   control={registerForm.control}
                   name="nickName"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Nick Name (Optional)</FormLabel>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <UserIcon className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <FormControl>
-                          <Input 
-                            placeholder="Johnny" 
-                            className="pl-10 bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
-                            {...field}
-                          />
-                        </FormControl>
-                      </div>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter your nickname" 
+                          className="bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
+                          {...field}
+                        />
+                        <FormDescription>
+                          This will be used to personalize your experience (optional)
+                        </FormDescription>
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {/* WhatsApp Number Field */}
                 <FormField
                   control={registerForm.control}
                   name="whatsappNumber"
@@ -283,7 +267,6 @@ const Login = () => {
                   )}
                 />
                 
-                {/* Email and Password Fields */}
                 <FormField
                   control={registerForm.control}
                   name="email"
