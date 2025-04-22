@@ -14,6 +14,25 @@ interface WhatsAppRequest {
   isPro?: boolean;
 }
 
+// Function to format WhatsApp number properly
+function formatWhatsAppNumber(number: string): string {
+  // If it's already properly formatted, return it
+  if (number.startsWith('whatsapp:+')) {
+    return number;
+  }
+  
+  // Remove whatsapp: prefix if present
+  let cleaned = number.startsWith('whatsapp:') ? number.substring(9) : number;
+  
+  // Add + if missing
+  if (!cleaned.startsWith('+')) {
+    cleaned = '+' + cleaned;
+  }
+  
+  // Add whatsapp: prefix
+  return `whatsapp:${cleaned}`;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -29,14 +48,20 @@ serve(async (req) => {
     const twilioNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
 
     if (!accountSid || !authToken || !twilioNumber) {
+      console.error('Missing Twilio credentials:', { 
+        hasSid: !!accountSid, 
+        hasToken: !!authToken, 
+        hasNumber: !!twilioNumber 
+      });
       throw new Error('Missing Twilio credentials');
     }
 
-    // Format the WhatsApp number (ensure it starts with whatsapp:)
-    const toNumber = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`;
-    const fromNumber = twilioNumber.startsWith('whatsapp:') ? twilioNumber : `whatsapp:${twilioNumber}`;
+    // Format the WhatsApp numbers (ensure they start with whatsapp:+)
+    const toNumber = formatWhatsAppNumber(to);
+    const fromNumber = formatWhatsAppNumber(twilioNumber);
 
     console.log(`Sending WhatsApp message to ${toNumber} from ${fromNumber}`);
+    console.log(`Message content: ${message.substring(0, 50)}...`);
 
     // Make request to Twilio API
     const twilioResponse = await fetch(
@@ -68,7 +93,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         messageId: twilioData.sid,
-        status: twilioData.status
+        status: twilioData.status,
+        details: twilioData
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

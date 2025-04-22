@@ -17,6 +17,24 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const { toast } = useToast();
 
+  const formatWhatsAppNumber = (number: string): string => {
+    // Remove any non-digit characters
+    let cleaned = number.replace(/\D/g, '');
+    
+    // Ensure it has a country code
+    if (!cleaned.startsWith('1') && !cleaned.startsWith('91')) {
+      // Default to +1 (US) if no country code
+      cleaned = '1' + cleaned;
+    }
+    
+    // Add + at the beginning if not there
+    if (!cleaned.startsWith('+')) {
+      cleaned = '+' + cleaned;
+    }
+    
+    return cleaned;
+  };
+
   const handleTestWhatsApp = async () => {
     if (showForm && !phoneNumber) {
       toast({
@@ -32,10 +50,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
       setDebugInfo(null);
       
       // Format phone number for WhatsApp (ensure it has the country code)
-      let formattedNumber = phoneNumber.trim();
-      if (!formattedNumber.startsWith('+')) {
-        formattedNumber = '+' + formattedNumber;
-      }
+      const formattedNumber = formatWhatsAppNumber(phoneNumber.trim());
       
       // If it's not already in WhatsApp format, add it
       const whatsappNumber = formattedNumber.startsWith('whatsapp:') 
@@ -58,6 +73,11 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
         console.error("Edge function error:", error);
         setDebugInfo(JSON.stringify({
           error: error,
+          requestDetails: {
+            to: whatsappNumber,
+            formattedFrom: phoneNumber.trim(),
+            category: category
+          },
           timestamp: new Date().toISOString()
         }, null, 2));
         throw error;
@@ -68,6 +88,11 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
       // Set debug info
       setDebugInfo(JSON.stringify({
         response: data,
+        requestDetails: {
+          to: whatsappNumber,
+          formattedFrom: phoneNumber.trim(),
+          category: category
+        },
         timestamp: new Date().toISOString()
       }, null, 2));
       
