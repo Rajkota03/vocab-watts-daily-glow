@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { 
   Users, BarChart2, MessageSquare, Activity, 
-  Settings, Database, PieChart
+  Settings, Database, PieChart, Shield
 } from 'lucide-react';
 import { 
   Sheet, SheetContent, SheetTrigger 
@@ -19,6 +19,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { title: 'Overview', icon: PieChart, value: 'overview' },
   { title: 'User Management', icon: Users, value: 'users' },
+  { title: 'User Roles', icon: Shield, value: 'roles' },
   { title: 'Vocabulary', icon: Database, value: 'vocabulary' },
   { title: 'Subscriptions', icon: BarChart2, value: 'subscriptions' },
   { title: 'Messages', icon: MessageSquare, value: 'messages' },

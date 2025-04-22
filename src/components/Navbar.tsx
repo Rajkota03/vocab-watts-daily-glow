@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -10,7 +11,7 @@ import {
   DollarSign,
   MessageSquare,
   Dumbbell,
-  Settings // Add Settings icon for admin
+  Settings
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,10 +29,22 @@ const Navbar = () => {
       const session = data.session;
       setIsLoggedIn(!!session);
       
-      // Check if user is admin (replace with your actual admin check)
+      // Check if user has admin role using our DB function
       if (session) {
-        const adminEmails = ['admin@example.com']; // Replace with actual admin emails
-        setIsAdmin(adminEmails.includes(session.user.email || ''));
+        try {
+          const { data: hasAdminRole, error } = await supabase.rpc('has_role', { 
+            _user_id: session.user.id,
+            _role: 'admin'
+          });
+          
+          if (error) {
+            console.error('Error checking admin role:', error);
+          } else {
+            setIsAdmin(!!hasAdminRole);
+          }
+        } catch (error) {
+          console.error('Failed to check admin role:', error);
+        }
       }
     };
     

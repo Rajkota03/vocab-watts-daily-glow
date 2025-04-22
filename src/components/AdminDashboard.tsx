@@ -8,6 +8,7 @@ import SubscriptionsTab from './admin/tabs/SubscriptionsTab';
 import MessagesTab from './admin/tabs/MessagesTab';
 import ActivityTab from './admin/tabs/ActivityTab';
 import SettingsTab from './admin/tabs/SettingsTab';
+import UserRolesTab from './admin/tabs/UserRolesTab';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -29,6 +30,8 @@ const AdminDashboard = () => {
         return <ActivityTab />;
       case 'settings':
         return <SettingsTab />;
+      case 'roles':
+        return <UserRolesTab />;
       default:
         return <OverviewTab />;
     }
