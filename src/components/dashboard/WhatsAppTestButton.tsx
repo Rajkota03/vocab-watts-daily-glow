@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, AlertTriangle, RefreshCw } from "lucide-react";
+import { Send, AlertTriangle, RefreshCw, QrCode } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 
@@ -15,6 +15,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
   const [phoneNumber, setPhoneNumber] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
+  const [sandboxMode, setSandboxMode] = useState(false);
   const { toast } = useToast();
 
   const formatWhatsAppNumber = (number: string): string => {
@@ -23,8 +24,13 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
     
     // Ensure it has a country code
     if (!cleaned.startsWith('1') && !cleaned.startsWith('91')) {
-      // Default to +1 (US) if no country code
-      cleaned = '1' + cleaned;
+      // For Indian numbers that are 10 digits long, add 91 prefix
+      if (cleaned.length === 10) {
+        cleaned = '91' + cleaned;
+      } else {
+        // Default to +1 (US) if no country code
+        cleaned = '1' + cleaned;
+      }
     }
     
     // Add + at the beginning if not there
@@ -48,6 +54,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
     try {
       setLoading(true);
       setDebugInfo(null);
+      setSandboxMode(false);
       
       // Format phone number for WhatsApp (ensure it has the country code)
       const formattedNumber = formatWhatsAppNumber(phoneNumber.trim());
@@ -84,6 +91,11 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
       }
       
       console.log('WhatsApp test response:', data);
+      
+      // Check if we're in sandbox mode
+      if (data.sandboxMode) {
+        setSandboxMode(true);
+      }
       
       // Set debug info
       setDebugInfo(JSON.stringify({
@@ -158,6 +170,29 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
           {loading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
           {loading ? "Testing WhatsApp..." : "Test WhatsApp Integration"}
         </Button>
+      )}
+      
+      {sandboxMode && (
+        <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800">
+          <h4 className="text-sm font-medium mb-2 flex items-center">
+            <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
+            Twilio Sandbox Mode Detected
+          </h4>
+          <p className="text-xs mb-3">
+            Your Twilio account is in sandbox mode. Before you can receive messages, you need to:
+          </p>
+          <ol className="text-xs list-decimal pl-4 mb-3 space-y-1">
+            <li>Open WhatsApp on your phone</li>
+            <li>Send the message <strong>join part-every</strong> to <strong>+1 415 523 8886</strong></li>
+            <li>Wait for confirmation that you've joined the sandbox</li>
+            <li>Try the test message again</li>
+          </ol>
+          <div className="flex justify-center">
+            <div className="bg-white p-2 rounded border border-gray-200 inline-block">
+              <QrCode className="h-6 w-6 text-gray-500" />
+            </div>
+          </div>
+        </div>
       )}
       
       {debugInfo && (

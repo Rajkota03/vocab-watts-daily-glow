@@ -24,6 +24,20 @@ function formatWhatsAppNumber(number: string): string {
   // Remove whatsapp: prefix if present
   let cleaned = number.startsWith('whatsapp:') ? number.substring(9) : number;
   
+  // Remove any non-digit characters
+  cleaned = cleaned.replace(/\D/g, '');
+  
+  // Ensure it has a country code
+  if (!cleaned.startsWith('1') && !cleaned.startsWith('91')) {
+    // For Indian numbers that are 10 digits long, add 91 prefix
+    if (cleaned.length === 10) {
+      cleaned = '91' + cleaned;
+    } else {
+      // Default to +1 (US) if no country code
+      cleaned = '1' + cleaned;
+    }
+  }
+  
   // Add + if missing
   if (!cleaned.startsWith('+')) {
     cleaned = '+' + cleaned;
@@ -45,9 +59,9 @@ serve(async (req) => {
     // Initialize Twilio client
     const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
     const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-    const twilioNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
+    const twilioNumber = Deno.env.get('TWILIO_PHONE_NUMBER') || '+14155238886'; // Default to sandbox number if not set
 
-    if (!accountSid || !authToken || !twilioNumber) {
+    if (!accountSid || !authToken) {
       console.error('Missing Twilio credentials:', { 
         hasSid: !!accountSid, 
         hasToken: !!authToken, 
@@ -58,10 +72,21 @@ serve(async (req) => {
 
     // Format the WhatsApp numbers (ensure they start with whatsapp:+)
     const toNumber = formatWhatsAppNumber(to);
+    
+    // In sandbox mode, always use the Twilio sandbox number
+    // The TWILIO_PHONE_NUMBER env var should contain the sandbox number for testing
     const fromNumber = formatWhatsAppNumber(twilioNumber);
 
     console.log(`Sending WhatsApp message to ${toNumber} from ${fromNumber}`);
     console.log(`Message content: ${message.substring(0, 50)}...`);
+
+    // Append instructions for first-time sandbox users
+    let finalMessage = message;
+    
+    // If this is the first message and we're using the sandbox number
+    if (twilioNumber === '+14155238886' || fromNumber === 'whatsapp:+14155238886') {
+      finalMessage += "\n\n---\nFirst time? You need to join the Twilio Sandbox first!\nSend 'join part-every' to +1 415 523 8886 on WhatsApp.";
+    }
 
     // Make request to Twilio API
     const twilioResponse = await fetch(
@@ -75,7 +100,7 @@ serve(async (req) => {
         body: new URLSearchParams({
           To: toNumber,
           From: fromNumber,
-          Body: message,
+          Body: finalMessage,
         }).toString(),
       }
     );
@@ -94,7 +119,8 @@ serve(async (req) => {
         success: true, 
         messageId: twilioData.sid,
         status: twilioData.status,
-        details: twilioData
+        details: twilioData,
+        sandboxMode: twilioNumber === '+14155238886' || fromNumber === 'whatsapp:+14155238886'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
