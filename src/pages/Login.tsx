@@ -172,7 +172,7 @@ const Login = () => {
         </CardHeader>
         
         <CardContent className="space-y-6 pt-4">
-          {isSignUp && (
+          {isSignUp ? (
             <Form {...registerForm}>
               <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -235,6 +235,7 @@ const Login = () => {
                         </div>
                         <FormControl>
                           <Input 
+                            type="text" 
                             placeholder="Enter your nickname" 
                             className="pl-10 bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
                             {...field}
