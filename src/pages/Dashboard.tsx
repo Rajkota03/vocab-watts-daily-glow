@@ -15,6 +15,8 @@ import OverviewTab from '@/components/dashboard/tabs/OverviewTab';
 import ActivityTab from '@/components/dashboard/tabs/ActivityTab';
 import HistoryTab from '@/components/dashboard/tabs/HistoryTab';
 import ApiTestButton from '@/components/dashboard/ApiTestButton';
+import { Link } from 'react-router-dom';
+import { Shield } from 'lucide-react';
 
 const MOCK_TODAYS_QUIZ = {
   completed: true,
@@ -55,6 +57,7 @@ const Dashboard = () => {
   const [streak, setStreak] = useState(4);
   const [dayStatus, setDayStatus] = useState("Day 2 of 3");
   const [userNickname, setUserNickname] = useState<string>('');
+  const [isAdmin, setIsAdmin] = useState(false);
   
   // Check if user is authenticated and load their data
   useEffect(() => {
@@ -70,6 +73,24 @@ const Dashboard = () => {
           description: "Please login to access your dashboard",
         });
         return;
+      }
+      
+      // Check if user is admin
+      if (data.session.user.email === 'rajkota.sql@gmail.com') {
+        try {
+          const { data: hasAdminRole, error } = await supabase.rpc('has_role', { 
+            _user_id: data.session.user.id,
+            _role: 'admin'
+          });
+          
+          if (error) {
+            console.error('Error checking admin role:', error);
+          } else {
+            setIsAdmin(!!hasAdminRole);
+          }
+        } catch (error) {
+          console.error('Failed to check admin role:', error);
+        }
       }
       
       // Get user's nickname
@@ -335,6 +356,14 @@ const Dashboard = () => {
             <TabsTrigger value="history" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
               History
             </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="admin" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <Link to="/admin" className="flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Admin
+                </Link>
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="overview">

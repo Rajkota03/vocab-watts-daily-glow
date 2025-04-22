@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
@@ -26,6 +27,16 @@ const Index = () => {
       toast({
         title: "Error",
         description: "You must be logged in to assign admin role",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if the user has the allowed email
+    if (session.user.email !== 'rajkota.sql@gmail.com') {
+      toast({
+        title: "Error",
+        description: "You are not authorized to become an admin",
         variant: "destructive"
       });
       return;
