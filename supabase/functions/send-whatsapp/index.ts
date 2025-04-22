@@ -1,5 +1,5 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,64 +12,70 @@ interface WhatsAppRequest {
   category?: string;
   isPro?: boolean;
   skipSubscriptionCheck?: boolean;
+  userId?: string;
 }
 
 // Function to format WhatsApp number properly
 function formatWhatsAppNumber(number: string): string {
-  // If it's already properly formatted, return it
   if (number.startsWith('whatsapp:+')) {
     return number;
   }
   
-  // Remove whatsapp: prefix if present
   let cleaned = number.startsWith('whatsapp:') ? number.substring(9) : number;
   
-  // Remove any non-digit characters
   cleaned = cleaned.replace(/\D/g, '');
   
-  // Ensure it has a country code
   if (!cleaned.startsWith('1') && !cleaned.startsWith('91')) {
-    // For Indian numbers that are 10 digits long, add 91 prefix
     if (cleaned.length === 10) {
       cleaned = '91' + cleaned;
     } else {
-      // Default to +1 (US) if no country code
       cleaned = '1' + cleaned;
     }
   }
   
-  // Add + if missing
   if (!cleaned.startsWith('+')) {
     cleaned = '+' + cleaned;
   }
   
-  // Add whatsapp: prefix
   return `whatsapp:${cleaned}`;
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
   
   try {
-    const { to, message, category, isPro, skipSubscriptionCheck } = await req.json() as WhatsAppRequest;
+    const { to, message, category, isPro, skipSubscriptionCheck, userId } = await req.json() as WhatsAppRequest;
 
-    // Retrieve Twilio credentials from environment variables
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    let nickname = "there";
+    if (userId) {
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('nick_name, first_name')
+        .eq('id', userId)
+        .single();
+
+      if (profile) {
+        nickname = profile.nick_name || profile.first_name;
+      }
+    }
+
     const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
     const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
     
-    // Detailed logging of credentials availability (without exposing the actual values)
     console.log('Twilio credentials check:', { 
       accountSid: accountSid ? `${accountSid.substring(0, 5)}...${accountSid.substring(accountSid.length - 3)}` : 'missing',
       authToken: authToken ? 'present (hidden)' : 'missing'
     });
 
-    // Always use the specific WhatsApp sandbox number for sending
     const fromNumber = 'whatsapp:+14155238886';
 
-    // Validate Twilio credentials
     if (!accountSid || !authToken) {
       const errorMessage = 'Missing Twilio credentials';
       console.error(errorMessage, { 
@@ -92,13 +98,10 @@ serve(async (req) => {
       );
     }
 
-    // Format the recipient's WhatsApp number
     const toNumber = formatWhatsAppNumber(to);
     
-    // Generate message content if not provided
     let finalMessage = message;
     if (!finalMessage && category) {
-      // If message is not provided but category is, generate vocabulary words
       const vocabWords = [
         { word: "articulate", definition: "expressed, formulated, or presented with clarity", example: "She is known for her articulate explanations of complex topics." },
         { word: "resilient", definition: "able to withstand or recover quickly from difficult conditions", example: "The resilient community rebuilt after the disaster." },
@@ -107,29 +110,26 @@ serve(async (req) => {
         { word: "eloquent", definition: "fluent or persuasive in speaking or writing", example: "The politician gave an eloquent speech that moved the audience." }
       ];
       
-      // Format the message with vocabulary words
-      const header = `🌟 *Today's VocabSpark Words* 🌟\n\n`;
+      const header = `🌟 *Hi ${nickname}! Here are Your VocabSpark Words* 🌟\n\n`;
       const wordsList = vocabWords.map((word, index) => 
         `*${index + 1}. ${word.word}*\nDefinition: ${word.definition}\nExample: _"${word.example}"_\n\n`
       ).join('');
       const footer = isPro 
-        ? '\n🚀 *Pro Subscription Active* - Thank you for supporting VocabSpark!'
-        : '\n👉 Upgrade to Pro for custom word categories and more features!';
+        ? `\n🚀 *${nickname}, thank you for being a Pro subscriber!*`
+        : `\n👉 Hey ${nickname}, upgrade to Pro for custom word categories and more features!`;
       
       finalMessage = header + wordsList + footer;
     }
     
-    // Append instructions for first-time sandbox users
     if (finalMessage) {
-      finalMessage += "\n\n---\nFirst time? You need to join the Twilio Sandbox first!\nSend 'join part-every' to +1 415 523 8886 on WhatsApp.";
+      finalMessage += `\n\n---\nFirst time? You need to join the Twilio Sandbox first!\nSend 'join part-every' to +1 415 523 8886 on WhatsApp.`;
     } else {
-      finalMessage = "Hello from VocabSpark! This is a test message.\n\n---\nFirst time? You need to join the Twilio Sandbox first!\nSend 'join part-every' to +1 415 523 8886 on WhatsApp.";
+      finalMessage = `Hello ${nickname}! This is a test message from VocabSpark.\n\n---\nFirst time? You need to join the Twilio Sandbox first!\nSend 'join part-every' to +1 415 523 8886 on WhatsApp.`;
     }
     
     console.log(`Sending WhatsApp message from ${fromNumber} to ${toNumber}`);
     console.log(`Message content (first 50 chars): ${finalMessage.substring(0, 50)}...`);
 
-    // Make request to Twilio API using the same structure as the working example
     try {
       const twilioResponse = await fetch(
         `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
@@ -141,7 +141,7 @@ serve(async (req) => {
           },
           body: new URLSearchParams({
             To: toNumber,
-            From: fromNumber,  // Always use the specific WhatsApp sandbox number
+            From: fromNumber,
             Body: finalMessage,
           }).toString(),
         }
@@ -155,11 +155,9 @@ serve(async (req) => {
       if (!twilioResponse.ok) {
         console.error('Twilio API error:', JSON.stringify(twilioData));
         
-        // Handle specific Twilio error codes
         let errorMessage = twilioData.message || 'Failed to send WhatsApp message';
         let statusCode = twilioResponse.status || 500;
         
-        // Handle authentication errors specifically
         if (twilioData.code === 20003 || statusCode === 401) {
           errorMessage = "Authentication failed. Please verify your Twilio credentials.";
         }
@@ -187,7 +185,7 @@ serve(async (req) => {
           messageId: twilioData.sid,
           status: twilioData.status,
           details: twilioData,
-          sandboxMode: true,  // Always true when using the WhatsApp sandbox
+          sandboxMode: true,
           to: toNumber,
           from: fromNumber
         }),

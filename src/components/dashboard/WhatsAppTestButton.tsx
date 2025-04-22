@@ -55,7 +55,6 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
       
       const formattedNumber = formatWhatsAppNumber(phoneNumber.trim());
       
-      // Call the edge function directly to test sending a WhatsApp message
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
         body: {
           to: formattedNumber,
@@ -72,12 +71,10 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
       
       console.log('WhatsApp test response:', data);
       
-      // Check if we're in sandbox mode
       if (data.sandboxMode) {
         setSandboxMode(true);
       }
       
-      // Set debug info
       setDebugInfo(JSON.stringify({
         response: data,
         requestDetails: {
@@ -129,13 +126,15 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
       
       const formattedNumber = formatWhatsAppNumber(phoneNumber.trim());
       
-      // Try to directly use the send-whatsapp function to bypass subscription check
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
         body: {
           to: formattedNumber,
           category: category,
           isPro: true,
-          skipSubscriptionCheck: true  // Add this flag to bypass subscription check
+          skipSubscriptionCheck: true,
+          userId: user?.id
         }
       });
       
