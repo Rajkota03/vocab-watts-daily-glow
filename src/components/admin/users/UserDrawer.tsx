@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerClose } from '@/components/ui/drawer';
 import { Badge } from '@/components/ui/badge';
@@ -102,7 +101,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({ user, open, onClose }) =
     }
   };
 
-  const DrawerContent = () => (
+  const DrawerContentComponent = () => (
     <div className="space-y-6 p-0 md:p-4">
       {user && (
         <>
@@ -253,7 +252,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({ user, open, onClose }) =
             </SheetDescription>
           </SheetHeader>
           <div className="py-4">
-            <DrawerContent />
+            <DrawerContentComponent />
           </div>
           <SheetFooter>
             <SheetClose asChild>
@@ -276,7 +275,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({ user, open, onClose }) =
             </DrawerDescription>
           </DrawerHeader>
           <div className="px-4">
-            <DrawerContent />
+            <DrawerContentComponent />
           </div>
           <DrawerFooter>
             <DrawerClose asChild>
