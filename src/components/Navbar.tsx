@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -10,7 +9,8 @@ import {
   BookOpen,
   DollarSign,
   MessageSquare,
-  Dumbbell
+  Dumbbell,
+  Settings // Add Settings icon for admin
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,22 +19,26 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
     const checkAuth = async () => {
       const { data } = await supabase.auth.getSession();
-      setIsLoggedIn(!!data.session);
+      const session = data.session;
+      setIsLoggedIn(!!session);
+      
+      // Check if user is admin (replace with your actual admin check)
+      if (session) {
+        const adminEmails = ['admin@example.com']; // Replace with actual admin emails
+        setIsAdmin(adminEmails.includes(session.user.email || ''));
+      }
     };
     
     checkAuth();
 
     const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      setIsScrolled(window.scrollY > 20);
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -97,6 +101,16 @@ const Navbar = () => {
             Pricing
           </a>
           
+          {isLoggedIn && isAdmin && (
+            <Link 
+              to="/admin" 
+              className="text-vuilder-text hover:text-vuilder-mint transition-colors font-medium font-inter text-sm flex items-center gap-1"
+            >
+              <Settings className="h-4 w-4" />
+              Admin Dashboard
+            </Link>
+          )}
+
           {isLoggedIn ? (
             <Link to="/dashboard" className="text-white bg-vuilder-mint px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-1">
               <Sparkles className="h-4 w-4" />
@@ -147,6 +161,17 @@ const Navbar = () => {
                 Pricing
               </a>
               
+              {isLoggedIn && isAdmin && (
+                <Link 
+                  to="/admin" 
+                  className="py-2 px-4 text-vuilder-text hover:bg-gray-50 rounded-lg font-medium font-inter flex items-center gap-2" 
+                  onClick={toggleMenu}
+                >
+                  <Settings className="h-4 w-4" />
+                  Admin Dashboard
+                </Link>
+              )}
+
               {isLoggedIn ? (
                 <Link to="/dashboard" className="py-2 px-4 bg-vuilder-mint text-white rounded-lg font-medium font-inter flex items-center gap-2" onClick={toggleMenu}>
                   <Sparkles className="h-4 w-4" />
