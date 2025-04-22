@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Send, AlertTriangle, RefreshCw, QrCode, Shield, BookOpen, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
-import { sendVocabWords } from '@/services/whatsappService';
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
@@ -27,7 +26,6 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
   const [twilioAuthError, setTwilioAuthError] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState("12:00");
-  const { toast } = useToast();
 
   const formatWhatsAppNumber = (number: string): string => {
     let cleaned = number.replace(/\D/g, '');

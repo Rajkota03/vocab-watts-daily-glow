@@ -42,6 +42,42 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_messages: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          is_pro: boolean | null
+          message: string | null
+          phone_number: string
+          scheduled_time: string
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_pro?: boolean | null
+          message?: string | null
+          phone_number: string
+          scheduled_time: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_pro?: boolean | null
+          message?: string | null
+          phone_number?: string
+          scheduled_time?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       sent_words: {
         Row: {
           category: string
