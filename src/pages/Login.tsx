@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Brain, LockIcon, MailIcon, UserIcon, Loader2, ArrowLeft, Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -228,16 +229,21 @@ const Login = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Nick Name (Optional)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Enter your nickname" 
-                          className="bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
-                          {...field}
-                        />
-                        <FormDescription>
-                          This will be used to personalize your experience (optional)
-                        </FormDescription>
-                      </FormControl>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <UserIcon className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter your nickname" 
+                            className="pl-10 bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
+                            {...field}
+                          />
+                        </FormControl>
+                      </div>
+                      <FormDescription>
+                        This will be used to personalize your experience
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -351,6 +357,7 @@ const Login = () => {
                           />
                         </FormControl>
                       </div>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -374,6 +381,7 @@ const Login = () => {
                           />
                         </FormControl>
                       </div>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
