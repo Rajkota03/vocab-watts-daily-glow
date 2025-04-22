@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Unlock, Calendar, Sparkles, BookOpen, CheckCircle, Shield } from 'lucide-react';
@@ -71,7 +72,12 @@ const Dashboard = () => {
         return;
       }
       
+      // Check if the user email is the admin email
       if (data.session.user.email === 'rajkota.sql@gmail.com') {
+        console.log("Admin user detected");
+        setIsAdmin(true);
+        
+        // Also check admin role in database
         try {
           const { data: hasAdminRole, error } = await supabase.rpc('has_role', { 
             _user_id: data.session.user.id,
@@ -80,16 +86,20 @@ const Dashboard = () => {
           
           if (error) {
             console.error('Error checking admin role:', error);
-          } else {
-            setIsAdmin(!!hasAdminRole);
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('adminAssigned') === 'true' && hasAdminRole) {
-              toast({
-                title: "Admin Access Granted",
-                description: "You now have access to the admin dashboard",
+          } else if (!hasAdminRole) {
+            console.log("Admin email but no admin role found, adding admin role");
+            // Automatically assign admin role if it doesn't exist
+            const { error: roleError } = await supabase
+              .from('user_roles')
+              .insert({
+                user_id: data.session.user.id,
+                role: 'admin'
               });
-              navigate('/dashboard', { replace: true });
+              
+            if (roleError) {
+              console.error('Error adding admin role:', roleError);
+            } else {
+              console.log("Admin role added successfully");
             }
           }
         } catch (error) {
@@ -342,8 +352,8 @@ const Dashboard = () => {
               History
             </TabsTrigger>
             {isAdmin && (
-              <TabsTrigger value="admin" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                <Link to="/admin" className="flex items-center gap-2">
+              <TabsTrigger value="admin" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm flex items-center gap-1">
+                <Link to="/admin" className="flex items-center gap-1">
                   <Shield className="h-4 w-4" />
                   Admin
                 </Link>
