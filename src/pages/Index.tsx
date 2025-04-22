@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
@@ -14,17 +13,66 @@ import GamePreview from '@/components/GamePreview';
 import FeatureCards from '@/components/FeatureCards';
 import LearningProgress from '@/components/LearningProgress';
 import { Sparkles, BarChart, Zap } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from "@/components/ui/button";
+import { Shield } from 'lucide-react';
+import { toast } from "@/components/ui/use-toast";
 
 const Index = () => {
+  const assignAdminRole = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to assign admin role",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: session.user.id,
+          role: 'admin'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Admin role assigned successfully. You can now access the admin dashboard.",
+      });
+    } catch (error: any) {
+      console.error('Error assigning admin role:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to assign admin role",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-vuilder-bg font-inter">
       <Navbar />
       
-      {/* Main content */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <Button
+          onClick={assignAdminRole}
+          variant="outline"
+          className="bg-white shadow-lg"
+        >
+          <Shield className="mr-2 h-4 w-4" />
+          Assign Admin Role
+        </Button>
+      </div>
+      
       <main>
         <HeroSection />
         
-        {/* Game-like Preview Section */}
         <section className="py-16 md:py-20 bg-white relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-r from-vuilder-mint/5 to-vuilder-indigo/5"></div>
           <div className="absolute top-0 right-0 w-40 h-40 bg-vuilder-mint/10 rounded-full transform -translate-y-1/2"></div>
@@ -47,10 +95,8 @@ const Index = () => {
           </div>
         </section>
         
-        {/* How It Works with enhanced styling */}
         <HowItWorks />
         
-        {/* Feature Cards Section */}
         <section className="py-16 md:py-24 bg-white relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-r from-vuilder-indigo/5 to-vuilder-mint/5"></div>
           <div className="container mx-auto px-4 relative z-10">
@@ -67,7 +113,6 @@ const Index = () => {
           </div>
         </section>
         
-        {/* Sample Words */}
         <section className="py-16 md:py-24 bg-gradient-to-r from-vuilder-indigo/5 to-vuilder-mint/5 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-vuilder-yellow/20 rounded-full transform -translate-y-1/3"></div>
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-vuilder-mint/10 rounded-full transform translate-y-1/3"></div>
@@ -76,7 +121,6 @@ const Index = () => {
           </div>
         </section>
         
-        {/* Learning Progress Visualization */}
         <section className="py-16 md:py-24 bg-white relative overflow-hidden">
           <div className="absolute top-1/2 right-0 w-72 h-72 bg-vuilder-mint/5 rounded-full transform -translate-y-1/2"></div>
           <div className="container mx-auto px-4 relative z-10">
@@ -93,7 +137,6 @@ const Index = () => {
           </div>
         </section>
         
-        {/* WhatsApp Preview Section */}
         <section className="py-16 md:py-24 bg-gradient-to-r from-whatsapp-green/5 to-vuilder-mint/5 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-whatsapp-green to-vuilder-mint/30"></div>
           <div className="container mx-auto px-4 relative z-10">
@@ -101,7 +144,6 @@ const Index = () => {
           </div>
         </section>
         
-        {/* Pricing */}
         <section className="py-16 md:py-24 bg-white relative overflow-hidden">
           <div className="absolute bottom-0 right-0 w-80 h-80 bg-vuilder-indigo/5 rounded-full transform translate-y-1/3"></div>
           <div className="container mx-auto px-4 relative z-10">
@@ -109,7 +151,6 @@ const Index = () => {
           </div>
         </section>
         
-        {/* Testimonials */}
         <section className="py-16 md:py-24 bg-gradient-to-r from-vuilder-mint/5 to-vuilder-indigo/5 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-vuilder-mint to-vuilder-indigo/30"></div>
           <div className="container mx-auto px-4 relative z-10">
@@ -117,7 +158,6 @@ const Index = () => {
           </div>
         </section>
         
-        {/* Signup Form Section */}
         <section className="py-16 md:py-24 bg-white relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-full">
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-vuilder-mint/5 to-vuilder-indigo/5 rounded-3xl"></div>
