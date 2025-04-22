@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,8 +27,8 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   const isMobile = useIsMobile();
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+  const [wordCount, setWordCount] = useState(3);
   
-  // Extract from current category string if available
   useEffect(() => {
     if (currentCategory) {
       const parts = currentCategory.split('-');
@@ -40,7 +39,6 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
     }
   }, [currentCategory]);
   
-  // Categories with cute icons and pastel colors
   const categories = [
     { 
       name: 'Daily', 
@@ -99,6 +97,14 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
       { name: 'Intermediate', id: 'intermediate', description: 'Challenging vocabulary' },
       { name: 'Professional', id: 'professional', description: 'Advanced terminology' }
     ];
+  
+  const wordCountMotivation = {
+    1: "Perfect for focused, in-depth learning! Master one word at a time. 🎯",
+    2: "A balanced approach to expand your vocabulary steadily! 📚",
+    3: "Great choice! Build your vocabulary with confidence! 💪",
+    4: "Fantastic! You're taking your language skills to the next level! 🚀",
+    5: "Impressive commitment to rapid vocabulary growth! You're a language champion! 🏆"
+  };
   
   const handlePrimarySelect = (primary: string) => {
     setSelectedPrimary(primary);
@@ -195,6 +201,32 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
         </div>
       )}
       
+      {/* Word Count Selection */}
+      {selectedSubcategory && (
+        <div className="animate-fade-in space-y-4">
+          <h3 className="text-sm font-medium text-gray-700">Daily Word Count</h3>
+          <div className="grid grid-cols-5 gap-3">
+            {[1, 2, 3, 4, 5].map((count) => (
+              <button
+                key={count}
+                onClick={() => setWordCount(count)}
+                className={`flex flex-col items-center p-4 rounded-xl transition-all duration-200 ${
+                  wordCount === count 
+                    ? 'bg-vuilder-mint/10 ring-2 ring-vuilder-mint text-vuilder-mint shadow-sm' 
+                    : 'bg-gray-50 hover:bg-gray-100 text-gray-600'
+                }`}
+              >
+                <span className="text-2xl font-semibold">{count}</span>
+                <span className="text-xs mt-1">word{count > 1 ? 's' : ''}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-sm text-gray-600 italic">
+            {wordCountMotivation[wordCount as keyof typeof wordCountMotivation]}
+          </p>
+        </div>
+      )}
+      
       {/* Apply Button */}
       <div>
         <Button
@@ -217,4 +249,3 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
 };
 
 export default CategorySelection;
-

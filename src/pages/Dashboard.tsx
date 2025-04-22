@@ -56,6 +56,7 @@ const Dashboard = () => {
   // Streak and progress data
   const [streak, setStreak] = useState(4);
   const [dayStatus, setDayStatus] = useState("Day 2 of 3");
+  const [userNickname, setUserNickname] = useState<string>('');
   
   // Check if user is authenticated and load their data
   useEffect(() => {
@@ -71,6 +72,17 @@ const Dashboard = () => {
           description: "Please login to access your dashboard",
         });
         return;
+      }
+      
+      // Get user's nickname
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('nick_name, first_name')
+        .eq('id', data.session.user.id)
+        .single();
+      
+      if (profileData) {
+        setUserNickname(profileData.nick_name || profileData.first_name || 'there');
       }
       
       // Set user email
@@ -243,7 +255,7 @@ const Dashboard = () => {
           <div className="flex flex-wrap items-center justify-between">
             <div className="animate-fade-in">
               <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
-                Hi {username} 👋
+                Hi {userNickname} 👋
               </h1>
               <div className="flex flex-col mt-1 md:flex-row md:items-center md:space-x-3">
                 <Badge className="text-sm bg-gradient-to-r from-vuilder-mint to-vuilder-mint/80 hover:from-vuilder-mint/90 hover:to-vuilder-mint/70 px-3 py-1.5 my-1 md:my-0 rounded-full shadow-sm w-fit">
