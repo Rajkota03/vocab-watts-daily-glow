@@ -4,7 +4,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, Dr
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mail, Calendar, Activity, User, Clock } from 'lucide-react';
+import { Mail, Calendar, Activity, Clock } from 'lucide-react';
 import { type User } from '../UserManagementDashboard';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter, SheetClose } from '@/components/ui/sheet';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -111,7 +111,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({ user, open, onClose }) =
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <User className="h-5 w-5 text-[#3F3D56]" />
+                    <span className="h-5 w-5 text-[#3F3D56]">👤</span>
                     User Information
                   </CardTitle>
                 </CardHeader>

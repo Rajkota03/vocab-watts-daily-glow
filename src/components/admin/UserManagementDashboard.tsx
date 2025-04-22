@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { AdminLayout } from './AdminLayout';
+import AdminLayout from './AdminLayout';
 import { UserTable } from './users/UserTable';
 import { SearchFilterBar } from './users/SearchFilterBar';
 import { AddUserButton } from './users/AddUserButton';
@@ -215,7 +215,7 @@ const UserManagementDashboard = () => {
           last_name: userData.last_name,
           email: userData.email,
           whatsapp_number: '', // Required field
-          nick_name: `${userData.first_name.charAt(0)}${userData.last_name.charAt(0)}`,
+          nick_name: `${userData.first_name.charAt(0)}${userData.last_name.charAt(0)}`
         })
         .select()
         .single();
