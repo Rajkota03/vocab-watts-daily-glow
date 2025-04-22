@@ -207,9 +207,12 @@ const UserManagementDashboard = () => {
       // In a real implementation, you would call an API to create the user in auth system
       // For demo purposes, we'll just add to profiles
       
-      // First, we need to generate a UUID for the new user since 'id' is required
-      const { data: id_data } = await supabase.rpc('generate_uuid');
-      const new_id = id_data;
+      // Generate a UUID for the new user using our edge function
+      const { data: uuidResponse, error: uuidError } = await supabase.functions.invoke('generate_uuid');
+      
+      if (uuidError) throw uuidError;
+      
+      const new_id = uuidResponse.uuid;
       
       // Create a new profile
       const { data: newProfile, error: profileError } = await supabase
