@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, AlertTriangle, RefreshCw, QrCode, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
+import { sendVocabWords } from '@/services/whatsappService';
 
 interface WhatsAppTestButtonProps {
   category: string;
@@ -20,21 +20,16 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
   const { toast } = useToast();
 
   const formatWhatsAppNumber = (number: string): string => {
-    // Remove any non-digit characters
     let cleaned = number.replace(/\D/g, '');
     
-    // Ensure it has a country code
     if (!cleaned.startsWith('1') && !cleaned.startsWith('91')) {
-      // For Indian numbers that are 10 digits long, add 91 prefix
       if (cleaned.length === 10) {
         cleaned = '91' + cleaned;
       } else {
-        // Default to +1 (US) if no country code
         cleaned = '1' + cleaned;
       }
     }
     
-    // Add + at the beginning if not there
     if (!cleaned.startsWith('+')) {
       cleaned = '+' + cleaned;
     }
@@ -58,79 +53,34 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
       setSandboxMode(false);
       setTwilioAuthError(false);
       
-      // Format phone number for WhatsApp (ensure it has the country code)
       const formattedNumber = formatWhatsAppNumber(phoneNumber.trim());
       
-      // If it's not already in WhatsApp format, add it
-      const whatsappNumber = formattedNumber.startsWith('whatsapp:') 
-        ? formattedNumber 
-        : `whatsapp:${formattedNumber}`;
-      
-      console.log(`Testing WhatsApp for number: ${whatsappNumber}, category: ${category}`);
-      
-      // Call the edge function directly to test sending a WhatsApp message
-      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
-        body: {
-          to: whatsappNumber,
-          message: `🌟 *Test Message from VocabSpark* 🌟\n\nThis is a test message from VocabSpark for the "${category}" category. If you're seeing this, WhatsApp integration is working correctly!\n\nThank you for using VocabSpark!`,
-          category: category,
-          isPro: true
-        }
+      const result = await sendVocabWords({
+        phoneNumber: formattedNumber,
+        category: category,
+        isPro: true
       });
-      
-      if (error) {
-        console.error("Edge function error:", error);
-        setDebugInfo(JSON.stringify({
-          error: error,
-          requestDetails: {
-            to: whatsappNumber,
-            category: category
-          },
-          timestamp: new Date().toISOString()
-        }, null, 2));
-        
-        // Check if it's an auth error
-        if (error.message && error.message.toLowerCase().includes('authentication')) {
-          setTwilioAuthError(true);
-          throw new Error("Twilio authentication failed. Please check your Twilio credentials in Supabase.");
-        }
-        
-        throw error;
+
+      if (!result) {
+        throw new Error("Failed to send vocabulary words");
       }
-      
-      console.log('WhatsApp test response:', data);
-      
-      // Check if we're in sandbox mode
-      if (data.sandboxMode) {
-        setSandboxMode(true);
-      }
-      
-      // Check for Twilio auth error in the data
-      if (data && !data.success && data.status === 401) {
-        setTwilioAuthError(true);
-        throw new Error("Twilio authentication failed. Please check your Twilio credentials in Supabase.");
-      }
-      
-      // Set debug info
-      setDebugInfo(JSON.stringify({
-        response: data,
-        requestDetails: {
-          to: whatsappNumber,
-          category: category
-        },
-        timestamp: new Date().toISOString()
-      }, null, 2));
+
+      console.log('WhatsApp vocabulary words sent successfully');
       
       toast({
-        title: "WhatsApp test message sent!",
-        description: `A test message has been sent to ${phoneNumber}. Check your WhatsApp app.`,
+        title: "Vocabulary words sent!",
+        description: `Check your WhatsApp for the vocabulary words. Make sure you've joined the sandbox by sending 'join part-every' to +1 415 523 8886`,
       });
       
-      // Reset form
       setShowForm(false);
       
     } catch (error: any) {
       console.error('WhatsApp test error:', error);
+      setDebugInfo(JSON.stringify({
+        error: error.message,
+        timestamp: new Date().toISOString()
+      }, null, 2));
+      
       toast({
         title: "WhatsApp Test Failed",
         description: error.message || "An error occurred while testing WhatsApp integration",
