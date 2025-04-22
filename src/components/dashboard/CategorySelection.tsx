@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  RefreshCw, BookOpen, Briefcase, Smile, Sparkles, 
-  Heart, GraduationCap, Target, MessageSquare,
-  CheckCircle 
-} from 'lucide-react';
-import MobileCategorySelection from './MobileCategorySelection';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { Calendar, Clock } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 interface CategorySelectionProps {
   isPro: boolean;
@@ -28,7 +23,8 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [wordCount, setWordCount] = useState(3);
-  
+  const [scheduledTime, setScheduledTime] = useState<string>('');
+
   useEffect(() => {
     if (currentCategory) {
       const parts = currentCategory.split('-');
@@ -210,11 +206,12 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
               <button
                 key={count}
                 onClick={() => setWordCount(count)}
-                className={`flex flex-col items-center p-4 rounded-xl transition-all duration-200 ${
+                className={cn(
+                  "flex flex-col items-center p-4 rounded-xl transition-all duration-200",
                   wordCount === count 
                     ? 'bg-vuilder-mint/10 ring-2 ring-vuilder-mint text-vuilder-mint shadow-sm' 
                     : 'bg-gray-50 hover:bg-gray-100 text-gray-600'
-                }`}
+                )}
               >
                 <span className="text-2xl font-semibold">{count}</span>
                 <span className="text-xs mt-1">word{count > 1 ? 's' : ''}</span>
@@ -224,6 +221,34 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
           <p className="text-sm text-gray-600 italic">
             {wordCountMotivation[wordCount as keyof typeof wordCountMotivation]}
           </p>
+
+          {/* Scheduling Option */}
+          <div className="mt-4 space-y-2">
+            <h3 className="text-sm font-medium text-gray-700">Schedule Delivery</h3>
+            <div className="flex items-center space-x-2">
+              <div className="relative flex-1">
+                <Input 
+                  type="time" 
+                  value={scheduledTime}
+                  onChange={(e) => setScheduledTime(e.target.value)}
+                  className="pl-10 w-full"
+                />
+                <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              </div>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="border-gray-200 hover:bg-gray-50"
+              >
+                <Calendar className="h-4 w-4 text-gray-600" />
+              </Button>
+            </div>
+            {scheduledTime && (
+              <p className="text-xs text-gray-500 mt-1">
+                Words will be sent at {scheduledTime}
+              </p>
+            )}
+          </div>
         </div>
       )}
       
