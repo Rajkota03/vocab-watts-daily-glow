@@ -7,6 +7,14 @@ import { toast } from "@/components/ui/use-toast";
 import { Clock, CheckCircle, Info, Send, Loader2 } from 'lucide-react';
 import { sendVocabWords } from '@/services/whatsappService';
 import { supabase } from '@/integrations/supabase/client';
+import { createRazorpayOrder, completeSubscription } from '@/services/paymentService';
+
+// Declare Razorpay types
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 const SignupForm = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -15,6 +23,7 @@ const SignupForm = () => {
   const [step, setStep] = useState(1);
   const [success, setSuccess] = useState(false);
   const [user, setUser] = useState(null);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
 
   // Check for existing session on component mount
   useEffect(() => {
@@ -34,11 +43,73 @@ const SignupForm = () => {
 
     checkSession();
 
+    // Load Razorpay script
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => setRazorpayLoaded(true);
+    document.body.appendChild(script);
+
     // Cleanup
     return () => {
       subscription.unsubscribe();
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     };
   }, []);
+
+  const handlePayment = async (orderData) => {
+    if (!razorpayLoaded) {
+      toast({
+        title: "Payment system is loading",
+        description: "Please wait a moment and try again.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    // If it's a free trial signup (not pro), skip payment
+    if (orderData.freeSignup) {
+      return true;
+    }
+
+    return new Promise((resolve) => {
+      const options = {
+        key: 'rzp_test_YourTestKeyHere', // Replace with your Razorpay test key
+        amount: orderData.amount,
+        currency: 'INR',
+        name: 'GLINTUP',
+        description: 'Vocabulary Pro Subscription',
+        order_id: orderData.id,
+        prefill: {
+          contact: phoneNumber
+        },
+        theme: {
+          color: '#3F3D56'
+        },
+        handler: function(response) {
+          // Payment successful
+          console.log('Payment success:', response);
+          resolve({
+            success: true,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpayOrderId: response.razorpay_order_id
+          });
+        },
+        modal: {
+          ondismiss: function() {
+            // Payment canceled
+            console.log('Payment canceled');
+            resolve({ success: false, error: 'Payment canceled' });
+          }
+        }
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,40 +154,68 @@ const SignupForm = () => {
         }
       }
       
-      // Send vocabulary words via WhatsApp and store subscription
-      const result = await sendVocabWords({
+      // Default to free trial
+      const isPro = false;
+      
+      // Create Razorpay order
+      const orderResult = await createRazorpayOrder({
+        phoneNumber,
+        deliveryTime,
+        isPro
+      });
+      
+      if (!orderResult.success) {
+        throw new Error('Failed to create payment order');
+      }
+      
+      // Initialize payment if needed
+      const paymentResult = await handlePayment(orderResult.data);
+      
+      if (!paymentResult.success && !orderResult.data.freeSignup) {
+        throw new Error('Payment failed or was canceled');
+      }
+      
+      // Complete subscription process
+      const subscriptionResult = await completeSubscription({
+        phoneNumber,
+        deliveryTime,
+        isPro,
+        razorpayOrderId: paymentResult.razorpayOrderId,
+        razorpayPaymentId: paymentResult.razorpayPaymentId
+      });
+      
+      if (!subscriptionResult.success) {
+        throw new Error('Failed to create subscription');
+      }
+      
+      // Send vocabulary words via WhatsApp
+      const messageResult = await sendVocabWords({
         phoneNumber,
         deliveryTime
       });
       
-      console.log("Result from sendVocabWords:", result);
-      
-      if (result) {
-        setSuccess(true);
-        toast({
-          title: "You're all set!",
-          description: "You'll receive your first words shortly on WhatsApp.",
-        });
-        
-        // Reset form after success
-        setTimeout(() => {
-          setPhoneNumber('');
-          setDeliveryTime('');
-          setStep(1);
-          setSuccess(false);
-        }, 3000);
-      } else {
-        toast({
-          title: "Something went wrong",
-          description: "We couldn't process your request. Please try again later.",
-          variant: "destructive"
-        });
+      if (!messageResult) {
+        console.warn('WhatsApp message sending failed, but subscription was created');
       }
-    } catch (error) {
-      console.error('Error sending WhatsApp message:', error);
+      
+      setSuccess(true);
       toast({
-        title: "Service error",
-        description: "We encountered an error while processing your request. Please try again.",
+        title: "You're all set!",
+        description: "You'll receive your first words shortly on WhatsApp.",
+      });
+      
+      // Reset form after success
+      setTimeout(() => {
+        setPhoneNumber('');
+        setDeliveryTime('');
+        setStep(1);
+        setSuccess(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Error processing subscription:', error);
+      toast({
+        title: "Something went wrong",
+        description: error.message || "We couldn't process your request. Please try again later.",
         variant: "destructive"
       });
     } finally {
