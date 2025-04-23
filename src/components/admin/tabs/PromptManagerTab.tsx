@@ -164,7 +164,7 @@ const PromptManagerTab: React.FC = () => {
                   </div>
                 </form>
               </DialogContent>
-            </DialogTrigger>
+            </Dialog>
           </div>
           {loading ? (
             <div>Loading prompts...</div>
