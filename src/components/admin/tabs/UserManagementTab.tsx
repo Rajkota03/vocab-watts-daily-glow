@@ -209,16 +209,7 @@ const UserManagementTab = () => {
         
       </div>
 
-      <div className="flex gap-4 items-center mb-4">
-        <Button size="sm" variant="default" onClick={handleSendTestEmailAll} disabled={sending || users.length === 0} className="flex items-center gap-2 bg-vuilder-mint text-white">
-          <Mail className="h-4 w-4" />
-          Send Test Vocabulary Email to All
-        </Button>
-        <Button size="sm" variant="default" onClick={handleSendWhatsAppAll} disabled={sending || users.length === 0} className="flex items-center gap-2 bg-green-500 text-white">
-          <MessageSquare className="h-4 w-4" />
-          Send Test WhatsApp to All
-        </Button>
-      </div>
+      
 
       <Card>
         <CardHeader className="pb-2">
