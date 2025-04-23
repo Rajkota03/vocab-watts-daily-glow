@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, ChevronRight } from 'lucide-react';
@@ -54,13 +54,50 @@ const PricingPlans = () => {
     "10 vocabulary words daily"
   ];
 
-  const handleSubscribeFree = () => {
-    setCurrentPlan({ isPro: false });
-    setOpenDialog(true);
+  // Add an effect to check if Razorpay script is loaded
+  useEffect(() => {
+    // Check if we need to load the Razorpay script
+    if (typeof window.Razorpay === 'undefined') {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => console.log('Razorpay script loaded successfully');
+      script.onerror = () => console.error('Failed to load Razorpay script');
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  const handleSubscribeFree = async () => {
+    setIsProcessingPayment(true);
+
+    try {
+      // If not logged in, create an anonymous session
+      const { data: authData } = await supabase.auth.getSession();
+      if (!authData.session?.user) {
+        const { error } = await supabase.auth.signInAnonymously();
+        if (error) {
+          console.error("Error signing in anonymously:", error);
+          throw new Error("Authentication error");
+        }
+      }
+      
+      // For free trial, we'll directly show the WhatsApp number dialog
+      setCurrentPlan({ isPro: false });
+      setOpenDialog(true);
+      
+    } catch (error) {
+      console.error('Error processing free trial:', error);
+      toast({
+        title: "Error",
+        description: error.message || "We couldn't process your request. Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
 
   const handleSubscribePro = async () => {
-    setCurrentPlan({ isPro: true, category: 'business' });
     setIsProcessingPayment(true);
 
     try {
@@ -86,7 +123,14 @@ const PricingPlans = () => {
       });
       
       if (!orderResult.success) {
-        throw new Error('Failed to create payment order');
+        throw new Error(orderResult.error || 'Failed to create payment order');
+      }
+      
+      console.log('Razorpay order created:', orderResult.data);
+      
+      // Make sure Razorpay is available
+      if (typeof window.Razorpay === 'undefined') {
+        throw new Error('Razorpay is not loaded. Please try again or refresh the page.');
       }
       
       // Initialize Razorpay payment
@@ -103,7 +147,6 @@ const PricingPlans = () => {
         handler: function(response: any) {
           // After successful payment, open dialog to collect WhatsApp number
           setCurrentPlan({ isPro: true, category: 'business' });
-          setOpenDialog(true);
           
           // Store the payment IDs to be used when user submits phone number
           localStorage.setItem('razorpay_payment_id', response.razorpay_payment_id);
@@ -115,6 +158,7 @@ const PricingPlans = () => {
           });
           
           setIsProcessingPayment(false);
+          setOpenDialog(true);
         },
         modal: {
           ondismiss: function() {
@@ -125,9 +169,17 @@ const PricingPlans = () => {
             });
             setIsProcessingPayment(false);
           }
+        },
+        prefill: {
+          name: '',
+          email: '',
+          contact: ''
         }
       };
       
+      console.log('Creating new Razorpay instance with options:', options);
+      
+      // Create a new Razorpay instance and open the checkout
       const razorpay = new window.Razorpay(options);
       razorpay.open();
       
