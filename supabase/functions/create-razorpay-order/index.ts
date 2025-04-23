@@ -1,25 +1,16 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
-// Define CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 // Handle CORS preflight requests
-const handleCors = (req: Request) => {
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
-  return null;
-};
-
-// Handle payment creation
-serve(async (req) => {
-  // Handle CORS
-  const corsResponse = handleCors(req);
-  if (corsResponse) return corsResponse;
 
   try {
     const { phoneNumber, category, isPro } = await req.json();
@@ -37,17 +28,16 @@ serve(async (req) => {
     const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
     
     if (!razorpayKeyId || !razorpayKeySecret) {
+      console.error('Missing Razorpay credentials');
       return new Response(
         JSON.stringify({ error: 'Missing Razorpay credentials' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Calculate amount based on plan (in paise, 1 INR = 100 paise)
-    const amount = isPro ? 14900 : 0; // ₹149 for Pro, free for trial
-
     // If trial, create subscription without payment
     if (!isPro) {
+      console.log('Creating free trial subscription');
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -60,8 +50,12 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Calculate amount for pro subscription (₹149 = 14900 paise)
+    const amount = 14900;
     
     // Create an order in Razorpay
+    console.log('Creating Razorpay order for Pro subscription');
     const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
     const response = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
@@ -76,7 +70,7 @@ serve(async (req) => {
         notes: {
           phone_number: phoneNumber,
           category: category || 'general',
-          plan: isPro ? 'pro' : 'trial'
+          plan: 'pro'
         }
       })
     });
@@ -91,6 +85,7 @@ serve(async (req) => {
       );
     }
 
+    console.log('Razorpay order created successfully:', result);
     return new Response(
       JSON.stringify({ success: true, data: result }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

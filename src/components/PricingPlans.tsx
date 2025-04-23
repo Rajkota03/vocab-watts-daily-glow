@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, ChevronRight } from 'lucide-react';
+import { CheckCircle, ChevronRight, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createRazorpayOrder, completeSubscription } from '@/services/paymentService';
 import { toast } from '@/components/ui/use-toast';
@@ -17,19 +16,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
-// Declare Razorpay types
 declare global {
   interface Window {
     Razorpay: any;
   }
-}
-
-// Define the type for payment result
-interface PaymentResult {
-  success: boolean;
-  razorpayPaymentId?: string;
-  razorpayOrderId?: string;
-  error?: string;
 }
 
 const PricingPlans = () => {
@@ -38,7 +28,35 @@ const PricingPlans = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [currentPlan, setCurrentPlan] = useState<{isPro: boolean, category?: string} | null>(null);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   
+  useEffect(() => {
+    const loadRazorpay = async () => {
+      if (typeof window.Razorpay === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        script.onload = () => {
+          console.log('Razorpay script loaded successfully');
+          setRazorpayLoaded(true);
+        };
+        script.onerror = () => {
+          console.error('Failed to load Razorpay script');
+          toast({
+            title: "Payment System Error",
+            description: "Failed to load payment system. Please try again later.",
+            variant: "destructive"
+          });
+        };
+        document.body.appendChild(script);
+      } else {
+        setRazorpayLoaded(true);
+      }
+    };
+
+    loadRazorpay();
+  }, []);
+
   const features = [
     "5 vocabulary words daily",
     "WhatsApp delivery",
@@ -54,34 +72,16 @@ const PricingPlans = () => {
     "10 vocabulary words daily"
   ];
 
-  // Add an effect to check if Razorpay script is loaded
-  useEffect(() => {
-    // Check if we need to load the Razorpay script
-    if (typeof window.Razorpay === 'undefined') {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      script.onload = () => console.log('Razorpay script loaded successfully');
-      script.onerror = () => console.error('Failed to load Razorpay script');
-      document.body.appendChild(script);
-    }
-  }, []);
-
   const handleSubscribeFree = async () => {
     setIsProcessingPayment(true);
 
     try {
-      // If not logged in, create an anonymous session
       const { data: authData } = await supabase.auth.getSession();
       if (!authData.session?.user) {
         const { error } = await supabase.auth.signInAnonymously();
-        if (error) {
-          console.error("Error signing in anonymously:", error);
-          throw new Error("Authentication error");
-        }
+        if (error) throw error;
       }
       
-      // For free trial, we'll directly show the WhatsApp number dialog
       setCurrentPlan({ isPro: false });
       setOpenDialog(true);
       
@@ -89,7 +89,7 @@ const PricingPlans = () => {
       console.error('Error processing free trial:', error);
       toast({
         title: "Error",
-        description: error.message || "We couldn't process your request. Please try again later.",
+        description: "We couldn't process your request. Please try again later.",
         variant: "destructive"
       });
     } finally {
@@ -98,96 +98,32 @@ const PricingPlans = () => {
   };
 
   const handleSubscribePro = async () => {
+    if (!razorpayLoaded) {
+      toast({
+        title: "Payment System Loading",
+        description: "Please wait while we initialize the payment system.",
+        variant: "default"
+      });
+      return;
+    }
+
     setIsProcessingPayment(true);
 
     try {
-      // If not logged in, create an anonymous session
       const { data: authData } = await supabase.auth.getSession();
       if (!authData.session?.user) {
         const { error } = await supabase.auth.signInAnonymously();
-        if (error) {
-          console.error("Error signing in anonymously:", error);
-          throw new Error("Authentication error");
-        }
+        if (error) throw error;
       }
       
-      // Create Razorpay order with a temporary phone number
-      // We'll update the actual phone number after successful payment
-      const tempPhoneNumber = "+911234567890"; // This is temporary and will be updated after payment
-      
-      const orderResult = await createRazorpayOrder({
-        phoneNumber: tempPhoneNumber,
-        category: 'business',
-        isPro: true,
-        deliveryTime: 'morning' // Default delivery time
-      });
-      
-      if (!orderResult.success) {
-        throw new Error(orderResult.error || 'Failed to create payment order');
-      }
-      
-      console.log('Razorpay order created:', orderResult.data);
-      
-      // Make sure Razorpay is available
-      if (typeof window.Razorpay === 'undefined') {
-        throw new Error('Razorpay is not loaded. Please try again or refresh the page.');
-      }
-      
-      // Initialize Razorpay payment
-      const options = {
-        key: 'rzp_test_YourTestKeyHere', // Replace with your Razorpay test key
-        amount: orderResult.data.amount,
-        currency: 'INR',
-        name: 'GLINTUP',
-        description: 'Vocabulary Pro Subscription',
-        order_id: orderResult.data.id,
-        theme: {
-          color: '#3F3D56'
-        },
-        handler: function(response: any) {
-          // After successful payment, open dialog to collect WhatsApp number
-          setCurrentPlan({ isPro: true, category: 'business' });
-          
-          // Store the payment IDs to be used when user submits phone number
-          localStorage.setItem('razorpay_payment_id', response.razorpay_payment_id);
-          localStorage.setItem('razorpay_order_id', response.razorpay_order_id);
-          
-          toast({
-            title: "Payment Successful!",
-            description: "Please enter your WhatsApp number to complete subscription setup.",
-          });
-          
-          setIsProcessingPayment(false);
-          setOpenDialog(true);
-        },
-        modal: {
-          ondismiss: function() {
-            toast({
-              title: "Payment Cancelled",
-              description: "You cancelled the payment process. Feel free to try again.",
-              variant: "default"
-            });
-            setIsProcessingPayment(false);
-          }
-        },
-        prefill: {
-          name: '',
-          email: '',
-          contact: ''
-        }
-      };
-      
-      console.log('Creating new Razorpay instance with options:', options);
-      
-      // Create a new Razorpay instance and open the checkout
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
+      setCurrentPlan({ isPro: true, category: 'business' });
+      setOpenDialog(true);
       
     } catch (error) {
-      console.error('Error processing subscription:', error);
+      console.error('Error initiating pro subscription:', error);
       toast({
-        title: "Payment Setup Failed",
-        description: error.message || "We couldn't set up your payment. Please try again later.",
+        title: "Error",
+        description: "We couldn't start the subscription process. Please try again.",
         variant: "destructive"
       });
       setIsProcessingPayment(false);
@@ -207,31 +143,24 @@ const PricingPlans = () => {
     setIsProcessingPayment(true);
 
     try {
-      // Get the current plan
-      if (!currentPlan) {
-        throw new Error("No plan selected");
-      }
-      
+      if (!currentPlan) throw new Error("No plan selected");
       const { isPro, category } = currentPlan;
       
-      // If it's a free trial signup (not pro), we create the order and complete the subscription
+      const orderResult = await createRazorpayOrder({
+        phoneNumber,
+        category,
+        isPro
+      });
+      
+      if (!orderResult.success) {
+        throw new Error(orderResult.error || 'Failed to create order');
+      }
+
       if (!isPro) {
-        // Create Razorpay order for free trial
-        const orderResult = await createRazorpayOrder({
-          phoneNumber,
-          category,
-          isPro,
-          deliveryTime: 'morning' // Default delivery time
-        });
-        
-        if (!orderResult.success) {
-          throw new Error('Failed to create free trial subscription');
-        }
-        
         const subscriptionResult = await completeSubscription({
           phoneNumber,
-          deliveryTime: 'morning',
-          isPro: false
+          isPro: false,
+          deliveryTime: 'morning'
         });
         
         if (!subscriptionResult.success) {
@@ -240,52 +169,81 @@ const PricingPlans = () => {
         
         toast({
           title: "Success!",
-          description: "Your free trial is activated. You'll receive your first words shortly on WhatsApp.",
+          description: "Your free trial is activated. You'll receive your first words shortly.",
         });
         
         setOpenDialog(false);
         navigate('/dashboard');
         return;
       }
-      
-      // For pro subscriptions, get the stored payment IDs from localStorage
-      const razorpayPaymentId = localStorage.getItem('razorpay_payment_id');
-      const razorpayOrderId = localStorage.getItem('razorpay_order_id');
-      
-      if (!razorpayPaymentId || !razorpayOrderId) {
-        throw new Error('Payment information not found. Please try again.');
+
+      if (!window.Razorpay) {
+        throw new Error('Payment system is not ready. Please refresh the page.');
       }
+
+      const options = {
+        key: 'rzp_test_YourTestKeyHere', // Replace with your actual Razorpay key
+        amount: orderResult.data.amount,
+        currency: 'INR',
+        name: 'GLINTUP',
+        description: 'Vocabulary Pro Subscription',
+        order_id: orderResult.data.id,
+        handler: async function(response: any) {
+          try {
+            const subscriptionResult = await completeSubscription({
+              phoneNumber,
+              category,
+              isPro: true,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              deliveryTime: 'morning'
+            });
+
+            if (!subscriptionResult.success) {
+              throw new Error('Payment successful but subscription creation failed');
+            }
+
+            toast({
+              title: "Payment Successful!",
+              description: "Your Pro subscription is now active.",
+            });
+
+            setOpenDialog(false);
+            navigate('/dashboard');
+          } catch (error) {
+            console.error('Error completing subscription:', error);
+            toast({
+              title: "Error",
+              description: "Payment successful but subscription setup failed. Please contact support.",
+              variant: "destructive"
+            });
+          }
+        },
+        modal: {
+          ondismiss: function() {
+            setIsProcessingPayment(false);
+            toast({
+              title: "Payment Cancelled",
+              description: "You cancelled the payment. Feel free to try again.",
+            });
+          }
+        },
+        prefill: {
+          contact: phoneNumber
+        },
+        theme: {
+          color: '#3F3D56'
+        }
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
       
-      // Complete subscription with the collected phone number and payment IDs
-      const subscriptionResult = await completeSubscription({
-        phoneNumber,
-        category,
-        isPro: true,
-        deliveryTime: 'morning',
-        razorpayOrderId,
-        razorpayPaymentId
-      });
-      
-      if (!subscriptionResult.success) {
-        throw new Error('Payment was successful but subscription creation failed');
-      }
-      
-      // Clear the stored payment IDs
-      localStorage.removeItem('razorpay_payment_id');
-      localStorage.removeItem('razorpay_order_id');
-      
-      toast({
-        title: "Subscription Activated!",
-        description: "Your Pro subscription is now active. You'll receive your words on WhatsApp.",
-      });
-      
-      setOpenDialog(false);
-      navigate('/dashboard');
     } catch (error) {
-      console.error('Error completing subscription:', error);
+      console.error('Error processing payment:', error);
       toast({
-        title: "Error Completing Subscription",
-        description: error.message || "We couldn't complete your subscription. Please contact support.",
+        title: "Payment Error",
+        description: error.message || "We couldn't process your payment. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -296,7 +254,6 @@ const PricingPlans = () => {
   return (
     <>
       <div className="grid gap-6 md:grid-cols-2 lg:gap-8 max-w-5xl mx-auto">
-        {/* Free Trial Card */}
         <Card className="border-2 border-gray-200 shadow-sm hover:shadow-md transition-all">
           <CardHeader>
             <CardTitle className="text-2xl">Free Trial</CardTitle>
@@ -325,7 +282,6 @@ const PricingPlans = () => {
           </CardFooter>
         </Card>
 
-        {/* Pro Plan Card */}
         <Card className="border-2 border-primary shadow-md relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-primary text-white text-xs font-bold py-1 px-3 rounded-bl">
             MOST POPULAR
@@ -353,7 +309,12 @@ const PricingPlans = () => {
               className="w-full group" 
               disabled={isProcessingPayment}
             >
-              {isProcessingPayment ? "Processing..." : (
+              {isProcessingPayment ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
                 <>
                   Subscribe Now
                   <ChevronRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -364,7 +325,6 @@ const PricingPlans = () => {
         </Card>
       </div>
 
-      {/* Phone Number Collection Dialog */}
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -396,7 +356,14 @@ const PricingPlans = () => {
               onClick={handlePhoneNumberSubmit}
               disabled={isProcessingPayment || !phoneNumber.trim()}
             >
-              {isProcessingPayment ? "Processing..." : "Continue"}
+              {isProcessingPayment ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Continue"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
