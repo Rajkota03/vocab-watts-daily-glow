@@ -1,44 +1,127 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   Users, CreditCard, CalendarCheck, BookOpen, 
-  ArrowUpRight, ArrowDownRight, TrendingUp 
+  ArrowUpRight, ArrowDownRight, Loader2
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
-// Mock data - in a real application, this would come from your API
-const stats = [
-  { 
-    title: 'Total Users', 
-    value: '1,283', 
-    change: '+12.5%', 
-    trend: 'up',
-    icon: Users 
-  },
-  { 
-    title: 'Pro Subscribers', 
-    value: '423', 
-    change: '+18.2%', 
-    trend: 'up',
-    icon: CreditCard 
-  },
-  { 
-    title: 'Active Today', 
-    value: '652', 
-    change: '+5.1%', 
-    trend: 'up',
-    icon: CalendarCheck 
-  },
-  { 
-    title: 'Total Words', 
-    value: '8,764', 
-    change: '+3.2%', 
-    trend: 'up',
-    icon: BookOpen 
-  },
-];
+interface StatsData {
+  title: string;
+  value: string;
+  change?: string;
+  trend?: 'up' | 'down';
+  icon: React.ElementType;
+}
 
 const OverviewTab = () => {
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<StatsData[]>([
+    { title: 'Total Users', value: '0', trend: 'up', icon: Users },
+    { title: 'Pro Subscribers', value: '0', trend: 'up', icon: CreditCard },
+    { title: 'Active Today', value: '0', trend: 'up', icon: CalendarCheck },
+    { title: 'Total Words', value: '0', trend: 'up', icon: BookOpen },
+  ]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Get total users count
+      const { count: usersCount, error: usersError } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+      if (usersError) throw new Error(`Error fetching users: ${usersError.message}`);
+      
+      // Get pro subscribers count
+      const { count: proCount, error: proError } = await supabase
+        .from('user_subscriptions')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_pro', true);
+
+      if (proError) throw new Error(`Error fetching pro users: ${proError.message}`);
+      
+      // Get active users count (active in the last 24 hours)
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      const { count: activeCount, error: activeError } = await supabase
+        .from('user_word_history')
+        .select('user_id', { count: 'exact', head: true })
+        .gt('date_sent', yesterday.toISOString())
+        .distinctOn('user_id');
+
+      if (activeError) throw new Error(`Error fetching active users: ${activeError.message}`);
+      
+      // Get total words count
+      const { count: wordsCount, error: wordsError } = await supabase
+        .from('vocabulary_words')
+        .select('*', { count: 'exact', head: true });
+
+      if (wordsError) throw new Error(`Error fetching words: ${wordsError.message}`);
+
+      // Get counts from previous month for growth calculation
+      const lastMonth = new Date();
+      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      
+      const { count: lastMonthUsers, error: lastMonthUsersError } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .lt('created_at', lastMonth.toISOString());
+      
+      if (lastMonthUsersError) throw new Error(`Error fetching last month users: ${lastMonthUsersError.message}`);
+
+      // Calculate percent changes
+      const userChange = lastMonthUsers > 0 
+        ? `+${(((usersCount || 0) - (lastMonthUsers || 0)) / (lastMonthUsers || 1) * 100).toFixed(1)}%` 
+        : '+100%';
+
+      setStats([
+        { 
+          title: 'Total Users', 
+          value: String(usersCount || 0), 
+          change: userChange, 
+          trend: 'up', 
+          icon: Users 
+        },
+        { 
+          title: 'Pro Subscribers', 
+          value: String(proCount || 0), 
+          change: '+0.0%', // We don't have historical data yet
+          trend: 'up', 
+          icon: CreditCard 
+        },
+        { 
+          title: 'Active Today', 
+          value: String(activeCount || 0), 
+          change: '+0.0%', // We don't have historical data yet
+          trend: 'up', 
+          icon: CalendarCheck 
+        },
+        { 
+          title: 'Total Words', 
+          value: String(wordsCount || 0), 
+          change: '+0.0%', // We don't have historical data yet
+          trend: 'up', 
+          icon: BookOpen 
+        },
+      ]);
+    } catch (err: any) {
+      console.error('Error fetching stats:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -48,32 +131,50 @@ const OverviewTab = () => {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, index) => (
-          <Card key={index}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium">
-                {stat.title}
-              </CardTitle>
-              <stat.icon className="h-5 w-5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <div className="flex items-center space-x-1 text-sm">
-                {stat.trend === 'up' ? (
-                  <ArrowUpRight className="h-4 w-4 text-green-500" />
-                ) : (
-                  <ArrowDownRight className="h-4 w-4 text-red-500" />
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-[#2DCDA5]" />
+            <p className="text-muted-foreground">Loading metrics...</p>
+          </div>
+        </div>
+      ) : error ? (
+        <Card className="bg-red-50 border-red-200">
+          <CardContent className="p-6">
+            <h3 className="text-red-800 font-medium text-lg">Error loading data</h3>
+            <p className="text-red-700 text-sm mt-1">{error}</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {stats.map((stat, index) => (
+            <Card key={index}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                <CardTitle className="text-sm font-medium">
+                  {stat.title}
+                </CardTitle>
+                <stat.icon className="h-5 w-5 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                {stat.change && (
+                  <div className="flex items-center space-x-1 text-sm">
+                    {stat.trend === 'up' ? (
+                      <ArrowUpRight className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <ArrowDownRight className="h-4 w-4 text-red-500" />
+                    )}
+                    <span className={stat.trend === 'up' ? 'text-green-500' : 'text-red-500'}>
+                      {stat.change}
+                    </span>
+                    <span className="text-muted-foreground">from last month</span>
+                  </div>
                 )}
-                <span className={stat.trend === 'up' ? 'text-green-500' : 'text-red-500'}>
-                  {stat.change}
-                </span>
-                <span className="text-muted-foreground">from last month</span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="md:col-span-2">
@@ -82,7 +183,7 @@ const OverviewTab = () => {
           </CardHeader>
           <CardContent>
             <div className="h-[300px] flex items-center justify-center bg-gray-50 rounded-md">
-              <p className="text-muted-foreground text-sm">Chart placeholder - User growth over time</p>
+              <p className="text-muted-foreground text-sm">Chart data will be implemented in a future update</p>
             </div>
           </CardContent>
         </Card>
@@ -93,7 +194,7 @@ const OverviewTab = () => {
           </CardHeader>
           <CardContent>
             <div className="h-[300px] flex items-center justify-center bg-gray-50 rounded-md">
-              <p className="text-muted-foreground text-sm">Chart placeholder - Pro vs Free users</p>
+              <p className="text-muted-foreground text-sm">Chart data will be implemented in a future update</p>
             </div>
           </CardContent>
         </Card>

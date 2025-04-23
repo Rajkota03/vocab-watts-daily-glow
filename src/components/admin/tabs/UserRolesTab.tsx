@@ -40,25 +40,94 @@ const UserRolesTab = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      setDebugInfo('Fetching users...');
       
-      // First, get all profiles from the profiles table
-      const { data: profiles, error: profilesError } = await supabase.from('profiles').select('*');
+      // First get all users from auth schema using the auth.users() function
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
       
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-        setDebugInfo(`Error fetching profiles: ${profilesError.message}`);
-        throw profilesError;
+      if (authError) {
+        console.error('Error fetching auth users:', authError);
+        setDebugInfo(prev => prev + `\nError fetching auth users: ${authError.message}`);
+        
+        // Fallback to getting profiles directly if we can't use auth.admin
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*');
+        
+        if (profilesError || !profiles || profiles.length === 0) {
+          console.error('Error fetching profiles or no profiles found:', profilesError);
+          setDebugInfo(prev => prev + `\nError fetching profiles: ${profilesError?.message || 'No profiles found'}`);
+          setNoUsers(true);
+          setUsers([]);
+          setAdminUsers([]);
+          setLoading(false);
+          return;
+        }
+        
+        console.log('Fallback: Profiles fetched:', profiles.length);
+        setDebugInfo(prev => prev + `\nFallback: Profiles fetched: ${profiles.length}`);
+        
+        // Continue with profiles data
+        processUserData(profiles);
+      } else {
+        // Process data from auth.users
+        if (!authUsers || authUsers.users.length === 0) {
+          console.log('No auth users found');
+          setDebugInfo(prev => prev + '\nNo auth users found');
+          setNoUsers(true);
+          setUsers([]);
+          setAdminUsers([]);
+          setLoading(false);
+          return;
+        }
+        
+        console.log('Auth users fetched:', authUsers.users.length);
+        setDebugInfo(prev => prev + `\nAuth users fetched: ${authUsers.users.length}`);
+        
+        const simplifiedUsers = authUsers.users.map(user => ({
+          id: user.id,
+          email: user.email || '',
+          first_name: user.user_metadata?.first_name || '',
+          last_name: user.user_metadata?.last_name || '',
+        }));
+        
+        processUserData(simplifiedUsers);
       }
-
-      console.log('Profiles fetched:', profiles?.length || 0);
-      setDebugInfo(prev => prev + `\nProfiles fetched: ${profiles?.length || 0}`);
+    } catch (error: any) {
+      console.error('Error in fetchUsers:', error);
+      setDebugInfo(prev => prev + `\nError in fetchUsers: ${error.message}`);
       
-      if (!profiles || profiles.length === 0) {
+      // Fallback to profiles table as last resort
+      try {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*');
+        
+        if (profilesError || !profiles || profiles.length === 0) {
+          console.error('Last resort fallback failed:', profilesError);
+          setDebugInfo(prev => prev + `\nLast resort fallback failed: ${profilesError?.message || 'No profiles found'}`);
+          setNoUsers(true);
+          setLoading(false);
+          return;
+        }
+        
+        processUserData(profiles);
+      } catch (finalError: any) {
+        console.error('Fatal error fetching users:', finalError);
+        setDebugInfo(prev => prev + `\nFatal error: ${finalError.message}`);
+        toast({
+          title: "Error",
+          description: "Failed to fetch users. Please check console for details.",
+          variant: "destructive"
+        });
         setNoUsers(true);
         setLoading(false);
-        return;
       }
-
+    }
+  };
+  
+  const processUserData = async (userData: any[]) => {
+    try {
       // Get all user roles
       const { data: userRoles, error: rolesError } = await supabase.from('user_roles').select('*');
       
@@ -72,35 +141,37 @@ const UserRolesTab = () => {
       setDebugInfo(prev => prev + `\nUser roles fetched: ${userRoles?.length || 0}`);
 
       // Map roles to users
-      const usersWithRoles = profiles.map(profile => {
+      const usersWithRoles = userData.map(user => {
         const userRolesList = userRoles
-          ?.filter(role => role.user_id === profile.id)
+          ?.filter(role => role.user_id === user.id)
           .map(role => role.role) || [];
 
         return {
-          id: profile.id,
-          email: profile.email,
-          first_name: profile.first_name || '',
-          last_name: profile.last_name || '',
+          id: user.id,
+          email: user.email || '',
+          first_name: user.first_name || '',
+          last_name: user.last_name || '',
           roles: userRolesList,
         };
       });
 
-      setUsers(usersWithRoles || []);
-      const adminUsersList = usersWithRoles?.filter(user => user.roles.includes('admin')) || [];
-      setAdminUsers(adminUsersList);
-      setNoUsers(false); // Make sure this is set to false if we found users
+      console.log('Total users mapped:', usersWithRoles.length);
+      setDebugInfo(prev => prev + `\nTotal users mapped: ${usersWithRoles.length}`);
       
-      console.log('Total users mapped:', usersWithRoles?.length);
-      console.log('Admin users:', adminUsersList?.length);
-      setDebugInfo(prev => prev + `\nTotal users mapped: ${usersWithRoles?.length}\nAdmin users: ${adminUsersList?.length}`);
-
+      setUsers(usersWithRoles);
+      const adminUsersList = usersWithRoles.filter(user => user.roles.includes('admin')) || [];
+      setAdminUsers(adminUsersList);
+      setNoUsers(usersWithRoles.length === 0);
+      
+      console.log('Admin users:', adminUsersList.length);
+      setDebugInfo(prev => prev + `\nAdmin users: ${adminUsersList.length}`);
+      
     } catch (error: any) {
-      console.error('Error fetching users and roles:', error);
-      setDebugInfo(prev => prev + `\nError: ${error.message}`);
+      console.error('Error processing user data:', error);
+      setDebugInfo(prev => prev + `\nError processing user data: ${error.message}`);
       toast({
         title: "Error",
-        description: "Failed to fetch users and roles.",
+        description: "Failed to process user data. Please check console for details.",
         variant: "destructive"
       });
     } finally {
@@ -213,6 +284,24 @@ const UserRolesTab = () => {
                 There are no registered users in the system yet. Users need to sign up first before they can be assigned admin roles.
               </AlertDescription>
             </Alert>
+          ) : eligibleUsers.length === 0 ? (
+            <div>
+              <div className="mb-3">
+                <Input
+                  placeholder="Search user by name or email"
+                  value={selectUserSearch}
+                  onChange={e => setSelectUserSearch(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <Alert className="bg-blue-50 border-blue-200">
+                <AlertCircle className="h-4 w-4 text-blue-500" />
+                <AlertTitle className="text-blue-800">No eligible users found</AlertTitle>
+                <AlertDescription className="text-blue-700">
+                  All existing users may already have admin privileges or no users match your search.
+                </AlertDescription>
+              </Alert>
+            </div>
           ) : (
             <>
               <div className="mb-3">
@@ -224,20 +313,17 @@ const UserRolesTab = () => {
                 />
               </div>
               <div className="max-h-64 overflow-y-auto space-y-1.5">
-                {eligibleUsers.length === 0 && (
-                  <div className="text-muted-foreground py-4 text-center">
-                    {users.length === 0 ? 
-                      "No users found in the system." : 
-                      "No eligible users found. All existing users may already have admin privileges."}
-                  </div>
-                )}
                 {eligibleUsers.map(user => (
                   <div
                     className="flex items-center justify-between border rounded-md p-2 hover:bg-muted cursor-pointer transition"
                     key={user.id}
                   >
                     <div>
-                      <div className="font-medium">{user.first_name || ''} {user.last_name || ''}</div>
+                      <div className="font-medium">
+                        {user.first_name || user.last_name ? 
+                          `${user.first_name || ''} ${user.last_name || ''}` : 
+                          'User'}
+                      </div>
                       <div className="text-xs text-gray-500">{user.email}</div>
                     </div>
                     <Button
@@ -297,7 +383,7 @@ const UserRolesTab = () => {
       </Dialog>
 
       {/* Debug Information (only in development) */}
-      {showDebugInfo && debugInfo && (
+      {showDebugInfo && (
         <Alert className="bg-gray-100 border-gray-200 font-mono text-xs">
           <AlertTitle className="text-gray-800">Debug Information</AlertTitle>
           <AlertDescription className="text-gray-700 whitespace-pre-wrap">
@@ -351,7 +437,11 @@ const UserRolesTab = () => {
                     {filteredAdminUsers.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell>
-                          <div className="font-medium">{user.first_name || ''} {user.last_name || ''}</div>
+                          <div className="font-medium">
+                            {user.first_name || user.last_name ? 
+                              `${user.first_name || ''} ${user.last_name || ''}` : 
+                              'User'}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div className="text-gray-500">{user.email}</div>
