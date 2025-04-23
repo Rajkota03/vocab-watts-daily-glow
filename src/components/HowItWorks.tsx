@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CheckCircle, Smartphone, Sparkles } from 'lucide-react';
 
@@ -22,16 +21,16 @@ const HowItWorks = () => {
   ];
 
   return (
-    <section id="how-it-works" className="py-16 md:py-24 bg-white">
+    <section id="how-it-works" className="py-12 md:py-16 bg-white">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">How GLINTUP Works</h2>
+        <div className="text-center mb-10">
+          <h2 className="text-3xl md:text-4xl font-bold mb-3">How GLINTUP Works</h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Building your vocabulary has never been this simple and effective
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {steps.map((step, index) => (
             <div key={index} className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-all">
               <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary mb-4 text-white">
@@ -43,8 +42,7 @@ const HowItWorks = () => {
           ))}
         </div>
         
-        {/* WhatsApp preview */}
-        <div className="mt-16 max-w-md mx-auto">
+        <div className="mt-10 max-w-md mx-auto">
           <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-200">
             <div className="flex items-center mb-4 bg-[#128C7E] text-white p-2 rounded-t-lg">
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
