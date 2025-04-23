@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { useLocation, Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { PhoneNumberDialog } from '@/components/payment/PhoneNumberDialog';
 import { usePaymentHandler } from '@/hooks/usePaymentHandler';
 import { useRazorpay } from '@/hooks/useRazorpay';
-import { LockClosedIcon, CreditCard, DollarSign, CheckCircle } from 'lucide-react';
+import { Lock, CreditCard, DollarSign, CheckCircle } from 'lucide-react';
 
 interface LocationState {
   plan: {
@@ -59,7 +58,6 @@ const Payment = () => {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Summary Card */}
           <Card className="bg-white shadow-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -96,18 +94,17 @@ const Payment = () => {
             </CardContent>
           </Card>
 
-          {/* Payment Card */}
           <Card className="bg-white shadow-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 {plan.isPro ? (
                   <>
-                    <CreditCard className="h-5 w-5 text-primary" />
+                    <Lock className="h-5 w-5 text-primary" />
                     Payment Details
                   </>
                 ) : (
                   <>
-                    <LockClosedIcon className="h-5 w-5 text-primary" />
+                    <Lock className="h-5 w-5 text-primary" />
                     Activate Trial
                   </>
                 )}
@@ -128,7 +125,7 @@ const Payment = () => {
                 </div>
                 {plan.isPro && (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <LockClosedIcon className="h-4 w-4" />
+                    <Lock className="h-4 w-4" />
                     <span>Your payment is secured with 256-bit encryption</span>
                   </div>
                 )}
