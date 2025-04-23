@@ -240,8 +240,8 @@ const SubscriptionsTab = () => {
                       <TableCell>
                         <Badge className={
                           sub.is_pro 
-                            ? 'bg-vocab-purple/10 text-vocab-purple' 
-                            : 'bg-vocab-teal/10 text-vocab-teal'
+                            ? 'bg-[#3F3D56]/10 text-[#3F3D56]' 
+                            : 'bg-[#2DCDA5]/10 text-[#2DCDA5]'
                         }>
                           {sub.is_pro ? 'Pro' : 'Free Trial'}
                         </Badge>

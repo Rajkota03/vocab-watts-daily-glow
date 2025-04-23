@@ -5,7 +5,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
+    --background: 240 33% 98%;
     --foreground: 240 10% 22%;
     --card: 0 0% 100%;
     --card-foreground: 240 10% 22%;
@@ -17,7 +17,7 @@
     --secondary-foreground: 0 0% 98%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 240 10% 46%;
-    --accent: 48 100% 52%;
+    --accent: 0 100% 70%;
     --accent-foreground: 240 10% 22%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -55,10 +55,10 @@
     @apply border-border;
   }
   body {
-    @apply bg-vuilder-bg text-vuilder-text font-inter;
+    @apply bg-glintup-bg text-glintup-text font-inter;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-poppins font-bold;
+    @apply font-inter font-bold;
   }
   
   /* Smooth scrolling */
@@ -68,61 +68,57 @@
 }
 
 @layer components {
-  /* Apple-inspired card components */
-  .apple-card {
+  /* GLINTUP card components */
+  .glintup-card {
     @apply bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300;
   }
   
-  /* Apple-inspired buttons */
-  .apple-button {
-    @apply rounded-full bg-gradient-to-r from-vuilder-indigo to-vuilder-indigo/90 text-white shadow-sm hover:shadow-md px-5 py-2 transition-all duration-200 font-medium;
+  /* GLINTUP buttons */
+  .glintup-button {
+    @apply rounded-full bg-gradient-to-r from-glintup-indigo to-glintup-indigo/90 text-white shadow-sm hover:shadow-md px-5 py-2 transition-all duration-200 font-medium;
   }
   
-  /* Apple-inspired badges */
-  .apple-badge {
+  /* GLINTUP badges */
+  .glintup-badge {
     @apply rounded-full py-1.5 px-3 text-sm font-medium shadow-sm transition-all duration-200;
   }
   
-  /* Apple-inspired form elements */
-  .apple-input {
-    @apply rounded-full border border-gray-200 px-4 py-2 focus:ring-2 focus:ring-vuilder-mint/30 focus:border-vuilder-mint/60 transition-all duration-200;
+  /* GLINTUP form elements */
+  .glintup-input {
+    @apply rounded-full border border-gray-200 px-4 py-2 focus:ring-2 focus:ring-glintup-mint/30 focus:border-glintup-mint/60 transition-all duration-200;
   }
   
-  /* Existing components - keep these */
-  .vuilder-btn-primary {
-    @apply bg-vuilder-mint hover:bg-vuilder-mint/90 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg;
+  /* Updated branded components */
+  .glintup-btn-primary {
+    @apply bg-glintup-indigo hover:bg-glintup-indigo/90 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg;
   }
   
-  .vuilder-btn-secondary {
-    @apply bg-white border border-vuilder-indigo text-vuilder-indigo hover:bg-vuilder-indigo/5 font-semibold rounded-lg transition-all shadow-sm hover:shadow-md;
+  .glintup-btn-secondary {
+    @apply bg-white border border-glintup-mint text-glintup-indigo hover:bg-glintup-mint/5 font-semibold rounded-lg transition-all shadow-sm hover:shadow-md;
   }
   
-  .vuilder-btn-accent {
-    @apply bg-vuilder-yellow hover:bg-vuilder-yellow/90 text-vuilder-indigo font-semibold rounded-lg transition-all shadow-md hover:shadow-lg;
-  }
-  
-  .vuilder-btn-cta {
-    @apply bg-vuilder-coral hover:bg-vuilder-coral/90 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg;
+  .glintup-btn-accent {
+    @apply bg-glintup-coral hover:bg-glintup-coral/90 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg;
   }
   
   /* Card styles */
-  .vuilder-card {
+  .glintup-card {
     @apply bg-white rounded-xl shadow-md hover:shadow-xl p-6 border-2 border-transparent transition-all duration-300;
   }
   
   /* Feature icon */
-  .vuilder-feature-icon {
-    @apply w-12 h-12 bg-gradient-to-br from-vuilder-mint/20 to-vuilder-indigo/20 rounded-lg flex items-center justify-center mb-4;
+  .glintup-feature-icon {
+    @apply w-12 h-12 bg-gradient-to-br from-glintup-mint/20 to-glintup-indigo/20 rounded-lg flex items-center justify-center mb-4;
   }
   
   /* Free trial badge */
-  .vuilder-free-badge {
-    @apply bg-vuilder-yellow/20 text-vuilder-indigo px-3 py-1 rounded-full text-sm font-medium;
+  .glintup-free-badge {
+    @apply bg-glintup-mint/20 text-glintup-indigo px-3 py-1 rounded-full text-sm font-medium;
   }
   
   /* Pro badge */
-  .vuilder-pro-badge {
-    @apply bg-vuilder-mint/20 text-vuilder-mint px-3 py-1 rounded-full text-sm font-medium;
+  .glintup-pro-badge {
+    @apply bg-glintup-indigo/20 text-glintup-indigo px-3 py-1 rounded-full text-sm font-medium;
   }
   
   /* WhatsApp message bubble */
@@ -130,53 +126,103 @@
     @apply bg-whatsapp-light/50 p-3 rounded-lg rounded-tl-none shadow-sm mb-2;
   }
   
-  /* Keep existing components */
+  /* Legacy component support */
   .vocab-btn {
-    @apply bg-vuilder-mint hover:bg-vuilder-mint/90 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg;
+    @apply bg-glintup-indigo hover:bg-glintup-indigo/90 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg;
   }
   
   .vocab-btn-secondary {
-    @apply bg-vuilder-indigo hover:bg-vuilder-indigo/90 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg;
+    @apply bg-glintup-mint hover:bg-glintup-mint/90 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg;
   }
   
-  /* Keep existing pricing-card */
+  /* Legacy pricing-card with updated styles */
   .pricing-card {
     @apply bg-white rounded-xl shadow-md hover:shadow-xl p-6 border-2 border-transparent transition-all duration-300;
   }
   
-  /* Keep existing feature-icon but updated colors */
+  /* Legacy feature-icon with updated colors */
   .feature-icon {
-    @apply w-12 h-12 bg-gradient-to-br from-vuilder-mint/20 to-vuilder-indigo/20 rounded-lg flex items-center justify-center mb-4 text-vuilder-mint;
+    @apply w-12 h-12 bg-gradient-to-br from-glintup-mint/20 to-glintup-indigo/20 rounded-lg flex items-center justify-center mb-4 text-glintup-mint;
+  }
+
+  /* Apple-inspired styled components - renamed to GLINTUP */
+  .apple-card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300;
+  }
+  
+  .apple-button {
+    @apply rounded-full bg-gradient-to-r from-glintup-indigo to-glintup-indigo/90 text-white shadow-sm hover:shadow-md px-5 py-2 transition-all duration-200 font-medium;
+  }
+  
+  .apple-badge {
+    @apply rounded-full py-1.5 px-3 text-sm font-medium shadow-sm transition-all duration-200;
+  }
+  
+  .apple-input {
+    @apply rounded-full border border-gray-200 px-4 py-2 focus:ring-2 focus:ring-glintup-mint/30 focus:border-glintup-mint/60 transition-all duration-200;
+  }
+  
+  /* Existing components - maintain compatibility but update visuals */
+  .vuilder-btn-primary {
+    @apply bg-glintup-indigo hover:bg-glintup-indigo/90 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg;
+  }
+  
+  .vuilder-btn-secondary {
+    @apply bg-white border border-glintup-mint text-glintup-indigo hover:bg-glintup-mint/5 font-semibold rounded-lg transition-all shadow-sm hover:shadow-md;
+  }
+  
+  .vuilder-btn-accent {
+    @apply bg-glintup-coral hover:bg-glintup-coral/90 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg;
+  }
+  
+  .vuilder-btn-cta {
+    @apply bg-glintup-coral hover:bg-glintup-coral/90 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg;
+  }
+  
+  .vuilder-card {
+    @apply bg-white rounded-xl shadow-md hover:shadow-xl p-6 border-2 border-transparent transition-all duration-300;
+  }
+  
+  .vuilder-feature-icon {
+    @apply w-12 h-12 bg-gradient-to-br from-glintup-mint/20 to-glintup-indigo/20 rounded-lg flex items-center justify-center mb-4;
+  }
+  
+  .vuilder-free-badge {
+    @apply bg-glintup-mint/20 text-glintup-indigo px-3 py-1 rounded-full text-sm font-medium;
+  }
+  
+  .vuilder-pro-badge {
+    @apply bg-glintup-mint/20 text-glintup-mint px-3 py-1 rounded-full text-sm font-medium;
   }
 }
 
 @layer utilities {
-  /* Apple-inspired utilities */
-  .apple-shadow-sm {
+  /* GLINTUP utilities */
+  .glintup-shadow-sm {
     @apply shadow-[0_2px_5px_rgba(0,0,0,0.05)];
   }
   
-  .apple-shadow {
+  .glintup-shadow {
     @apply shadow-[0_4px_10px_rgba(0,0,0,0.07)];
   }
   
-  .apple-shadow-md {
+  .glintup-shadow-md {
     @apply shadow-[0_6px_15px_rgba(0,0,0,0.08)];
   }
   
-  .apple-gradient-blue {
+  .glintup-gradient-blue {
     @apply bg-gradient-to-r from-sky-400 to-blue-500;
   }
   
-  .apple-gradient-purple {
+  .glintup-gradient-purple {
     @apply bg-gradient-to-r from-violet-500 to-purple-600;
   }
   
-  .apple-gradient-mint {
+  .glintup-gradient-mint {
     @apply bg-gradient-to-r from-emerald-400 to-teal-500;
   }
 
-  /* Keep existing utilities */
+  /* Animation utilities */
   .animate-fade-in {
     animation: fadeIn 0.3s ease-in-out;
   }
@@ -232,16 +278,33 @@
   }
   
   /* Glass effect */
-  .vuilder-glass {
+  .glintup-glass {
     @apply bg-white/20 backdrop-blur-md border border-white/30 shadow-lg;
   }
   
   /* Gradient text */
-  .vuilder-text-gradient {
-    @apply bg-gradient-to-r from-vuilder-indigo to-vuilder-mint bg-clip-text text-transparent;
+  .glintup-text-gradient {
+    @apply bg-gradient-to-r from-glintup-indigo to-glintup-mint bg-clip-text text-transparent;
   }
   
   /* Hover effects */
+  .glintup-hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+  }
+  
+  .glintup-hover-glow {
+    @apply transition-all duration-300 hover:shadow-[0_0_15px_rgba(0,0,0,0.1)];
+  }
+
+  /* Legacy utilities with updated styles */
+  .vuilder-glass {
+    @apply bg-white/20 backdrop-blur-md border border-white/30 shadow-lg;
+  }
+  
+  .vuilder-text-gradient {
+    @apply bg-gradient-to-r from-glintup-indigo to-glintup-mint bg-clip-text text-transparent;
+  }
+  
   .vuilder-hover-lift {
     @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
   }
@@ -250,9 +313,8 @@
     @apply transition-all duration-300 hover:shadow-[0_0_15px_rgba(0,0,0,0.1)];
   }
 
-  /* Keep additional existing utilities */
   .text-gradient {
-    @apply bg-gradient-to-r from-vuilder-mint to-vuilder-indigo bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-glintup-mint to-glintup-indigo bg-clip-text text-transparent;
   }
   
   .hover-lift {

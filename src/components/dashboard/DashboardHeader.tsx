@@ -27,7 +27,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               Hi {userNickname} 👋
             </h1>
             <div className="flex flex-col mt-1 md:flex-row md:items-center md:space-x-3">
-              <Badge className="text-sm bg-gradient-to-r from-vuilder-mint to-vuilder-mint/80 hover:from-vuilder-mint/90 hover:to-vuilder-mint/70 px-3 py-1.5 my-1 md:my-0 rounded-full shadow-sm w-fit">
+              <Badge className="text-sm bg-gradient-to-r from-[#2DCDA5] to-[#2DCDA5]/80 hover:from-[#2DCDA5]/90 hover:to-[#2DCDA5]/70 px-3 py-1.5 my-1 md:my-0 rounded-full shadow-sm w-fit">
                 <CheckCircle className="mr-1 h-4 w-4" />
                 Pro Plan
               </Badge>

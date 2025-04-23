@@ -1,9 +1,7 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
-// Remove all the Tabs-related imports since they're not used
 import CategorySelection from './CategorySelection';
-// Remove OverviewTab, ActivityTab, HistoryTab, ApiTestButton imports
 
 interface DashboardMainProps {
   subscription: {
@@ -40,9 +38,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
           />
         </Card>
       )}
-      {/* All main dashboard tabs/content removed as requested */}
       <div className="text-center text-gray-500 py-16">
-        {/* Dashboard is currently under maintenance. */}
         Welcome to your dashboard.
       </div>
     </main>

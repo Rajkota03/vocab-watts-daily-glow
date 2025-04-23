@@ -12,7 +12,7 @@ const HistoryTab: React.FC<HistoryTabProps> = ({ isPro, category }) => {
   return (
     <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl overflow-hidden">
       <CardHeader className="bg-white border-b border-gray-50 p-4">
-        <CardTitle className="text-xl font-semibold text-vuilder-mint">
+        <CardTitle className="text-xl font-semibold text-glintup-mint">
           Your Vocabulary History
         </CardTitle>
       </CardHeader>

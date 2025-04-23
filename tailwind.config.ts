@@ -66,18 +66,23 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// VUILDER Theme Colors - Consistent palette
-				'vuilder-indigo': '#3F3D56', // Primary Brand Color
-				'vuilder-yellow': '#FFD60A', // Accent / Energizer
-				'vuilder-mint': '#2DCDA5',   // Secondary Support Color
-				'vuilder-coral': '#FF6B6B',  // CTA / Emotional Accent
-				'vuilder-bg': '#F9FAFB',     // Background
-				'vuilder-text': '#2F2F2F',   // Text Primary
-				// Keep these for backward compatibility
-				'vocab-teal': '#2DCDA5',     // Mapped to vuilder-mint
-				'vocab-yellow': '#FFD60A',   // Mapped to vuilder-yellow
-				'vocab-purple': '#3F3D56',   // Mapped to vuilder-indigo
-				'vocab-red': '#FF6B6B',      // Mapped to vuilder-coral
+				// GLINTUP Theme Colors - Consistent palette
+				'glintup-indigo': '#3F3D56', // Primary Brand Color
+				'glintup-mint': '#2DCDA5',   // Accent Color 
+				'glintup-coral': '#FF6B6B',  // Action/CTA Color
+				'glintup-bg': '#F7F8FE',     // Background Color
+				'glintup-text': '#2F2F2F',   // Text Primary
+				// Keep these for backward compatibility with renamed variables
+				'vuilder-indigo': '#3F3D56',
+				'vuilder-yellow': '#FFD60A',
+				'vuilder-mint': '#2DCDA5',
+				'vuilder-coral': '#FF6B6B',
+				'vuilder-bg': '#F7F8FE',
+				'vuilder-text': '#2F2F2F',
+				'vocab-teal': '#2DCDA5',
+				'vocab-yellow': '#FFD60A',
+				'vocab-purple': '#3F3D56',
+				'vocab-red': '#FF6B6B',
 				'whatsapp-green': '#25D366',
 				'whatsapp-light': '#DCF8C6',
 				// Duolingo inspired colors

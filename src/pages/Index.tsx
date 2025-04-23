@@ -73,7 +73,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-vuilder-bg font-inter">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-glintup-bg font-inter">
       <Navbar />
       
       <div className="fixed bottom-4 right-4 z-50">
@@ -91,20 +91,20 @@ const Index = () => {
         <HeroSection />
         
         <section className="py-16 md:py-20 bg-white relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-r from-vuilder-mint/5 to-vuilder-indigo/5"></div>
-          <div className="absolute top-0 right-0 w-40 h-40 bg-vuilder-mint/10 rounded-full transform -translate-y-1/2"></div>
-          <div className="absolute bottom-0 left-0 w-60 h-60 bg-vuilder-indigo/10 rounded-full transform translate-y-1/2"></div>
+          <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-r from-glintup-mint/5 to-glintup-indigo/5"></div>
+          <div className="absolute top-0 right-0 w-40 h-40 bg-glintup-mint/10 rounded-full transform -translate-y-1/2"></div>
+          <div className="absolute bottom-0 left-0 w-60 h-60 bg-glintup-indigo/10 rounded-full transform translate-y-1/2"></div>
           
           <div className="container mx-auto px-4 relative z-10">
             <div className="flex flex-col items-center mb-12 text-center">
-              <div className="inline-flex items-center mb-4 bg-gradient-to-r from-vuilder-mint/10 to-vuilder-indigo/10 py-2 px-4 rounded-full">
-                <span className="text-sm font-medium bg-gradient-to-r from-vuilder-mint to-vuilder-indigo bg-clip-text text-transparent">
+              <div className="inline-flex items-center mb-4 bg-gradient-to-r from-glintup-mint/10 to-glintup-indigo/10 py-2 px-4 rounded-full">
+                <span className="text-sm font-medium bg-gradient-to-r from-glintup-mint to-glintup-indigo bg-clip-text text-transparent">
                   Try our interactive learning format
                 </span>
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 font-poppins">Learn Like You're Playing</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 font-inter">Learn Like You're Playing</h2>
               <p className="text-lg text-gray-600 max-w-2xl">
-                VUILDER makes vocabulary building feel like a game, not a chore
+                GLINTUP makes vocabulary building feel like a game, not a chore
               </p>
             </div>
             
@@ -115,13 +115,13 @@ const Index = () => {
         <HowItWorks />
         
         <section className="py-16 md:py-24 bg-white relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-r from-vuilder-indigo/5 to-vuilder-mint/5"></div>
+          <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-r from-glintup-indigo/5 to-glintup-mint/5"></div>
           <div className="container mx-auto px-4 relative z-10">
             <div className="text-center mb-16">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-vuilder-mint to-vuilder-indigo mb-4">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-glintup-mint to-glintup-indigo mb-4">
                 <Sparkles className="h-6 w-6 text-white" />
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 font-poppins">Designed for Your Success</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 font-inter">Designed for Your Success</h2>
               <p className="text-lg text-gray-600 max-w-2xl mx-auto font-inter">
                 Thoughtfully crafted features to make vocabulary learning effortless and engaging
               </p>
@@ -130,22 +130,22 @@ const Index = () => {
           </div>
         </section>
         
-        <section className="py-16 md:py-24 bg-gradient-to-r from-vuilder-indigo/5 to-vuilder-mint/5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-vuilder-yellow/20 rounded-full transform -translate-y-1/3"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-vuilder-mint/10 rounded-full transform translate-y-1/3"></div>
+        <section className="py-16 md:py-24 bg-gradient-to-r from-glintup-indigo/5 to-glintup-mint/5 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-glintup-coral/20 rounded-full transform -translate-y-1/3"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-glintup-mint/10 rounded-full transform translate-y-1/3"></div>
           <div className="container mx-auto px-4 relative z-10">
             <SampleWords />
           </div>
         </section>
         
         <section className="py-16 md:py-24 bg-white relative overflow-hidden">
-          <div className="absolute top-1/2 right-0 w-72 h-72 bg-vuilder-mint/5 rounded-full transform -translate-y-1/2"></div>
+          <div className="absolute top-1/2 right-0 w-72 h-72 bg-glintup-mint/5 rounded-full transform -translate-y-1/2"></div>
           <div className="container mx-auto px-4 relative z-10">
             <div className="text-center mb-16">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-vuilder-mint to-vuilder-indigo mb-4">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-glintup-mint to-glintup-indigo mb-4">
                 <BarChart className="h-6 w-6 text-white" />
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 font-poppins">Watch Your Vocabulary Grow</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 font-inter">Watch Your Vocabulary Grow</h2>
               <p className="text-lg text-gray-600 max-w-2xl mx-auto font-inter">
                 Track your learning journey with beautiful visualizations
               </p>
@@ -154,22 +154,22 @@ const Index = () => {
           </div>
         </section>
         
-        <section className="py-16 md:py-24 bg-gradient-to-r from-whatsapp-green/5 to-vuilder-mint/5 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-whatsapp-green to-vuilder-mint/30"></div>
+        <section className="py-16 md:py-24 bg-gradient-to-r from-whatsapp-green/5 to-glintup-mint/5 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-whatsapp-green to-glintup-mint/30"></div>
           <div className="container mx-auto px-4 relative z-10">
             <WhatsAppComparison />
           </div>
         </section>
         
         <section className="py-16 md:py-24 bg-white relative overflow-hidden">
-          <div className="absolute bottom-0 right-0 w-80 h-80 bg-vuilder-indigo/5 rounded-full transform translate-y-1/3"></div>
+          <div className="absolute bottom-0 right-0 w-80 h-80 bg-glintup-indigo/5 rounded-full transform translate-y-1/3"></div>
           <div className="container mx-auto px-4 relative z-10">
             <Pricing />
           </div>
         </section>
         
-        <section className="py-16 md:py-24 bg-gradient-to-r from-vuilder-mint/5 to-vuilder-indigo/5 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-vuilder-mint to-vuilder-indigo/30"></div>
+        <section className="py-16 md:py-24 bg-gradient-to-r from-glintup-mint/5 to-glintup-indigo/5 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-glintup-mint to-glintup-indigo/30"></div>
           <div className="container mx-auto px-4 relative z-10">
             <Testimonials />
           </div>
@@ -177,18 +177,18 @@ const Index = () => {
         
         <section className="py-16 md:py-24 bg-white relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-full">
-            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-vuilder-mint/5 to-vuilder-indigo/5 rounded-3xl"></div>
-            <div className="absolute top-10 left-10 w-20 h-20 bg-vuilder-yellow/10 rounded-full"></div>
-            <div className="absolute bottom-10 right-10 w-32 h-32 bg-vuilder-mint/10 rounded-full"></div>
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-glintup-mint/5 to-glintup-indigo/5 rounded-3xl"></div>
+            <div className="absolute top-10 left-10 w-20 h-20 bg-glintup-coral/10 rounded-full"></div>
+            <div className="absolute bottom-10 right-10 w-32 h-32 bg-glintup-mint/10 rounded-full"></div>
           </div>
           
           <div className="container mx-auto px-4 relative z-10">
             <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 max-w-4xl mx-auto border border-gray-100">
               <div className="text-center mb-10">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-vuilder-mint to-vuilder-indigo mb-4">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-glintup-mint to-glintup-indigo mb-4">
                   <Zap className="h-6 w-6 text-white" />
                 </div>
-                <h2 className="text-3xl md:text-4xl font-bold mb-4 font-poppins">Join VUILDER Today</h2>
+                <h2 className="text-3xl md:text-4xl font-bold mb-4 font-inter">Join GLINTUP Today</h2>
                 <p className="text-lg text-gray-600 max-w-2xl mx-auto font-inter">
                   Start expanding your vocabulary effortlessly. Get your first words immediately.
                 </p>
