@@ -1,4 +1,6 @@
+
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AdminLayout from './admin/AdminLayout';
 import OverviewTab from './admin/tabs/OverviewTab';
 import UserManagementTab from './admin/tabs/UserManagementTab';
@@ -12,6 +14,16 @@ import PromptManagerTab from './admin/tabs/PromptManagerTab';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const navigate = useNavigate();
+
+  // Modified to handle navigation to analytics page
+  const handleTabChange = (tab: string) => {
+    if (tab === 'analytics') {
+      navigate('/admin/analytics');
+    } else {
+      setActiveTab(tab);
+    }
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -39,7 +51,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>
+    <AdminLayout activeTab={activeTab} setActiveTab={handleTabChange}>
       {renderTabContent()}
     </AdminLayout>
   );
