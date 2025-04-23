@@ -34,20 +34,25 @@ const OverviewTab = () => {
     setError(null);
     
     try {
-      // Get total users count
-      const { count: usersCount, error: usersError } = await supabase
+      // Get total users count from auth.users via profiles table
+      // This is more reliable as a new profile is created for each user
+      const { data: profilesData, error: profilesError, count: usersCount } = await supabase
         .from('profiles')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact' });
 
-      if (usersError) throw new Error(`Error fetching users: ${usersError.message}`);
+      if (profilesError) throw new Error(`Error fetching users: ${profilesError.message}`);
+      
+      console.log('Total profiles count:', usersCount);
       
       // Get pro subscribers count
-      const { count: proCount, error: proError } = await supabase
+      const { data: proData, error: proError, count: proCount } = await supabase
         .from('user_subscriptions')
-        .select('*', { count: 'exact', head: true })
+        .select('*', { count: 'exact' })
         .eq('is_pro', true);
 
       if (proError) throw new Error(`Error fetching pro users: ${proError.message}`);
+      
+      console.log('Pro subscribers count:', proCount);
       
       // Get active users count (active in the last 24 hours)
       // Fix: Using a different approach to get unique users instead of distinctOn
@@ -65,12 +70,16 @@ const OverviewTab = () => {
       const uniqueActiveUsers = new Set(activeUsers?.map(item => item.user_id) || []);
       const activeCount = uniqueActiveUsers.size;
       
+      console.log('Active users count:', activeCount);
+      
       // Get total words count
       const { count: wordsCount, error: wordsError } = await supabase
         .from('vocabulary_words')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact' });
 
       if (wordsError) throw new Error(`Error fetching words: ${wordsError.message}`);
+      
+      console.log('Total words count:', wordsCount);
 
       // Get counts from previous month for growth calculation
       const lastMonth = new Date();
@@ -78,20 +87,23 @@ const OverviewTab = () => {
       
       const { count: lastMonthUsers, error: lastMonthUsersError } = await supabase
         .from('profiles')
-        .select('*', { count: 'exact', head: true })
+        .select('*', { count: 'exact' })
         .lt('created_at', lastMonth.toISOString());
       
       if (lastMonthUsersError) throw new Error(`Error fetching last month users: ${lastMonthUsersError.message}`);
+      
+      console.log('Last month users count:', lastMonthUsers);
 
-      // Calculate percent changes
-      const userChange = lastMonthUsers > 0 
+      // Calculate percent changes for users
+      const userChange = lastMonthUsers && lastMonthUsers > 0 
         ? `+${(((usersCount || 0) - (lastMonthUsers || 0)) / (lastMonthUsers || 1) * 100).toFixed(1)}%` 
         : '+100%';
 
+      // For now, use placeholder values for other metrics until we have historical data
       setStats([
         { 
           title: 'Total Users', 
-          value: String(usersCount || 0), 
+          value: String(profilesData?.length || 0), 
           change: userChange, 
           trend: 'up', 
           icon: Users 
