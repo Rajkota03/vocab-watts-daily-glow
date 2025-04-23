@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -34,18 +33,19 @@ const OverviewTab = () => {
     setError(null);
     
     try {
-      // Get total users count from auth.users via profiles table
-      // This is more reliable as a new profile is created for each user
-      const { data: profilesData, error: profilesError, count: usersCount } = await supabase
+      // Get total users count from profiles table
+      const { data: profiles, error: profilesError, count } = await supabase
         .from('profiles')
         .select('*', { count: 'exact' });
 
       if (profilesError) throw new Error(`Error fetching users: ${profilesError.message}`);
       
-      console.log('Total profiles count:', usersCount);
+      // Use the actual length of the profiles array as users count
+      const usersCount = profiles?.length || 0;
+      console.log('Total users count from profiles:', usersCount);
       
       // Get pro subscribers count
-      const { data: proData, error: proError, count: proCount } = await supabase
+      const { data: proUsers, error: proError, count: proCount } = await supabase
         .from('user_subscriptions')
         .select('*', { count: 'exact' })
         .eq('is_pro', true);
@@ -53,9 +53,9 @@ const OverviewTab = () => {
       if (proError) throw new Error(`Error fetching pro users: ${proError.message}`);
       
       console.log('Pro subscribers count:', proCount);
+      console.log('Pro subscribers data:', proUsers);
       
       // Get active users count (active in the last 24 hours)
-      // Fix: Using a different approach to get unique users instead of distinctOn
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       
@@ -73,7 +73,7 @@ const OverviewTab = () => {
       console.log('Active users count:', activeCount);
       
       // Get total words count
-      const { count: wordsCount, error: wordsError } = await supabase
+      const { data: words, error: wordsError, count: wordsCount } = await supabase
         .from('vocabulary_words')
         .select('*', { count: 'exact' });
 
@@ -85,25 +85,29 @@ const OverviewTab = () => {
       const lastMonth = new Date();
       lastMonth.setMonth(lastMonth.getMonth() - 1);
       
-      const { count: lastMonthUsers, error: lastMonthUsersError } = await supabase
+      const { data: lastMonthProfilesData, error: lastMonthUsersError, count: lastMonthUsersCount } = await supabase
         .from('profiles')
         .select('*', { count: 'exact' })
         .lt('created_at', lastMonth.toISOString());
       
       if (lastMonthUsersError) throw new Error(`Error fetching last month users: ${lastMonthUsersError.message}`);
       
+      const lastMonthUsers = lastMonthProfilesData?.length || 0;
       console.log('Last month users count:', lastMonthUsers);
 
       // Calculate percent changes for users
-      const userChange = lastMonthUsers && lastMonthUsers > 0 
-        ? `+${(((usersCount || 0) - (lastMonthUsers || 0)) / (lastMonthUsers || 1) * 100).toFixed(1)}%` 
-        : '+100%';
+      let userChange;
+      if (lastMonthUsers === 0) {
+        userChange = usersCount > 0 ? '+100%' : '+0.0%';
+      } else {
+        userChange = `+${(((usersCount - lastMonthUsers) / lastMonthUsers) * 100).toFixed(1)}%`;
+      }
 
       // For now, use placeholder values for other metrics until we have historical data
       setStats([
         { 
           title: 'Total Users', 
-          value: String(profilesData?.length || 0), 
+          value: String(usersCount), 
           change: userChange, 
           trend: 'up', 
           icon: Users 

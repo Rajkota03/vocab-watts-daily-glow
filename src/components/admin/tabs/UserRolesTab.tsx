@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -40,117 +39,80 @@ const UserRolesTab = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      setDebugInfo('Fetching users...');
+      setDebugInfo('Started fetching users...');
       
-      // First get all users from auth schema using the auth.users() function
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      // Simplified approach: get users directly from profiles table
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*');
       
-      if (authError) {
-        console.error('Error fetching auth users:', authError);
-        setDebugInfo(prev => prev + `\nError fetching auth users: ${authError.message}`);
-        
-        // Fallback to getting profiles directly if we can't use auth.admin
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('*');
-        
-        if (profilesError || !profiles || profiles.length === 0) {
-          console.error('Error fetching profiles or no profiles found:', profilesError);
-          setDebugInfo(prev => prev + `\nError fetching profiles: ${profilesError?.message || 'No profiles found'}`);
-          setNoUsers(true);
-          setUsers([]);
-          setAdminUsers([]);
-          setLoading(false);
-          return;
-        }
-        
-        console.log('Fallback: Profiles fetched:', profiles.length);
-        setDebugInfo(prev => prev + `\nFallback: Profiles fetched: ${profiles.length}`);
-        
-        // Continue with profiles data
-        processUserData(profiles);
-      } else {
-        // Process data from auth.users
-        if (!authUsers || authUsers.users.length === 0) {
-          console.log('No auth users found');
-          setDebugInfo(prev => prev + '\nNo auth users found');
-          setNoUsers(true);
-          setUsers([]);
-          setAdminUsers([]);
-          setLoading(false);
-          return;
-        }
-        
-        console.log('Auth users fetched:', authUsers.users.length);
-        setDebugInfo(prev => prev + `\nAuth users fetched: ${authUsers.users.length}`);
-        
-        const simplifiedUsers = authUsers.users.map(user => ({
-          id: user.id,
-          email: user.email || '',
-          first_name: user.user_metadata?.first_name || '',
-          last_name: user.user_metadata?.last_name || '',
-        }));
-        
-        processUserData(simplifiedUsers);
-      }
-    } catch (error: any) {
-      console.error('Error in fetchUsers:', error);
-      setDebugInfo(prev => prev + `\nError in fetchUsers: ${error.message}`);
-      
-      // Fallback to profiles table as last resort
-      try {
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('*');
-        
-        if (profilesError || !profiles || profiles.length === 0) {
-          console.error('Last resort fallback failed:', profilesError);
-          setDebugInfo(prev => prev + `\nLast resort fallback failed: ${profilesError?.message || 'No profiles found'}`);
-          setNoUsers(true);
-          setLoading(false);
-          return;
-        }
-        
-        processUserData(profiles);
-      } catch (finalError: any) {
-        console.error('Fatal error fetching users:', finalError);
-        setDebugInfo(prev => prev + `\nFatal error: ${finalError.message}`);
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        setDebugInfo(prev => prev + `\nError fetching profiles: ${profilesError.message}`);
         toast({
           title: "Error",
-          description: "Failed to fetch users. Please check console for details.",
+          description: `Failed to fetch users: ${profilesError.message}`,
           variant: "destructive"
         });
         setNoUsers(true);
         setLoading(false);
+        return;
       }
-    }
-  };
-  
-  const processUserData = async (userData: any[]) => {
-    try {
-      // Get all user roles
-      const { data: userRoles, error: rolesError } = await supabase.from('user_roles').select('*');
+      
+      if (!profiles || profiles.length === 0) {
+        console.log('No profiles found');
+        setDebugInfo(prev => prev + '\nNo profiles found');
+        setNoUsers(true);
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Profiles fetched:', profiles.length);
+      setDebugInfo(prev => prev + `\nProfiles fetched: ${profiles.length}`);
+      
+      // Fetch user roles
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('*');
       
       if (rolesError) {
         console.error('Error fetching user roles:', rolesError);
         setDebugInfo(prev => prev + `\nError fetching user roles: ${rolesError.message}`);
-        throw rolesError;
+        
+        // Continue without roles if there's an error
+        processUserData(profiles, []);
+      } else {
+        console.log('User roles fetched:', userRoles?.length || 0);
+        setDebugInfo(prev => prev + `\nUser roles fetched: ${userRoles?.length || 0}`);
+        
+        processUserData(profiles, userRoles || []);
       }
-
-      console.log('User roles fetched:', userRoles?.length || 0);
-      setDebugInfo(prev => prev + `\nUser roles fetched: ${userRoles?.length || 0}`);
-
+    } catch (error: any) {
+      console.error('Error in fetchUsers:', error);
+      setDebugInfo(prev => prev + `\nError in fetchUsers: ${error.message}`);
+      toast({
+        title: "Error",
+        description: "Failed to fetch users. Please check console for details.",
+        variant: "destructive"
+      });
+      setNoUsers(true);
+      setLoading(false);
+    }
+  };
+  
+  const processUserData = (profiles: any[], userRoles: any[]) => {
+    try {
       // Map roles to users
-      const usersWithRoles = userData.map(user => {
+      const usersWithRoles = profiles.map(profile => {
         const userRolesList = userRoles
-          ?.filter(role => role.user_id === user.id)
+          .filter(role => role.user_id === profile.id)
           .map(role => role.role) || [];
 
         return {
-          id: user.id,
-          email: user.email || '',
-          first_name: user.first_name || '',
-          last_name: user.last_name || '',
+          id: profile.id,
+          email: profile.email || '',
+          first_name: profile.first_name || '',
+          last_name: profile.last_name || '',
           roles: userRolesList,
         };
       });
