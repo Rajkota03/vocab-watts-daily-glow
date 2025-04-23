@@ -316,63 +316,46 @@ const VocabularyTab = () => {
 
   const handleSendTestWhatsApp = async () => {
     if (sending) return;
-    if (testPhone && testPhone.length < 6) {
+    
+    if (!testPhone || testPhone.trim().length < 10) {
       toast({
         title: "Invalid Phone Number",
-        description: "Please enter a valid phone number.",
+        description: "Please enter a valid WhatsApp number with country code.",
         variant: "destructive"
       });
       return;
     }
+
     setSending(true);
     try {
-      if (testPhone) {
-        const res = await supabase.functions.invoke('send-whatsapp', {
-          body: {
-            to: testPhone,
-            category: customCategory || "business-intermediate",
-            isPro: true,
-            skipSubscriptionCheck: true
-          }
-        });
-        if (res.error) throw new Error(res.error.message);
-        toast({
-          title: "Test WhatsApp Sent!",
-          description: `A WhatsApp message sent to ${testPhone}.`,
-        });
-      } else {
-        const { data: subs, error } = await supabase
-          .from('user_subscriptions')
-          .select('user_id, phone_number, category');
-        if (error) throw new Error(error.message);
-        let sentCount = 0;
-        for (const sub of subs || []) {
-          if (sub.phone_number) {
-            const res = await supabase.functions.invoke('send-whatsapp', {
-              body: {
-                to: sub.phone_number,
-                category: sub.category || customCategory || "business-intermediate",
-                isPro: true,
-                skipSubscriptionCheck: true,
-                userId: sub.user_id
-              }
-            });
-            if (!res.error) sentCount++;
-          }
+      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+        body: {
+          to: testPhone,
+          category: customCategory || "business-intermediate",
+          isPro: true,
+          skipSubscriptionCheck: true
         }
-        toast({
-          title: "Test WhatsApp Messages Sent!",
-          description: `WhatsApp messages sent to ${sentCount} user(s) with numbers.`,
-        });
+      });
+
+      if (error) {
+        throw new Error(error.message || "Failed to send WhatsApp message");
       }
+
+      toast({
+        title: "Vocabulary Words Sent!",
+        description: `Vocabulary words sent to ${testPhone} successfully.`,
+      });
+
+      setTestPhone('');
     } catch (err: any) {
       toast({
-        title: "Failed to Send WhatsApp",
-        description: err.message || "An error occurred while sending the WhatsApp message",
+        title: "WhatsApp Send Failed",
+        description: err.message || "An error occurred while sending vocabulary words.",
         variant: "destructive"
       });
+    } finally {
+      setSending(false);
     }
-    setSending(false);
   };
 
   const filteredWords = vocabularyWords.filter(word => 
