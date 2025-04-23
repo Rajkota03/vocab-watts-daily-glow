@@ -18,8 +18,6 @@ const Dashboard = () => {
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
   const [userNickname, setUserNickname] = useState<string>('');
   const [isAdmin, setIsAdmin] = useState(false);
-  const [streak, setStreak] = useState(4);
-  const [dayStatus, setDayStatus] = useState("Day 2 of 3");
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -226,9 +224,6 @@ const Dashboard = () => {
     <div className="min-h-screen bg-white font-inter pb-10">
       <DashboardHeader 
         userNickname={userNickname}
-        dayStatus={dayStatus}
-        streak={streak}
-        displayCategory={displayCategory}
         handleSignOut={handleSignOut}
         isAdmin={isAdmin}
       />

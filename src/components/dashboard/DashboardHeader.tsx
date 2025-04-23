@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, BookOpen, Shield } from 'lucide-react';

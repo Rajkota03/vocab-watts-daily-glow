@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Mail, Whatsapp } from 'lucide-react';
+import { Search, Mail, MessageSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
@@ -32,13 +31,11 @@ const formatDate = (dateString: string) => {
 };
 
 const groupUsersByMonth = (users: User[]) => {
-  // Returns array: [{ month: '2024-01', count: 3 }, ...]
   const map = new Map();
   users.forEach(user => {
     const month = user.created_at.slice(0, 7);
     map.set(month, (map.get(month) || 0) + 1);
   });
-  // Sort by month string (YYYY-MM)
   return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([month, count]) => ({ month, count }));
 };
 
@@ -60,7 +57,6 @@ const UserManagementTab = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
-      // Get profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
@@ -69,11 +65,9 @@ const UserManagementTab = () => {
         setLoading(false);
         return;
       }
-      // Get subscriptions
       const { data: subs } = await supabase
         .from('user_subscriptions')
         .select('*');
-      // activity
       const { data: activities } = await supabase
         .from('user_word_history')
         .select('user_id, date_sent')
@@ -86,7 +80,6 @@ const UserManagementTab = () => {
           category: sub.category
         });
       });
-      // Group activities by user_id and pick latest
       const latestActivityMap = new Map();
       activities?.forEach(activity => {
         if (!latestActivityMap.has(activity.user_id) ||
@@ -120,18 +113,15 @@ const UserManagementTab = () => {
     (user.category || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Chart data
   const userGrowthData = groupUsersByMonth(users);
   const subscriptionData = getSubscriptionDistribution(users);
 
-  // ADMIN: Send test words to all users via Email or WhatsApp
   const handleSendTestEmailAll = async () => {
     if (sending) return;
     setSending(true);
     try {
       const emailList = users.map(u => u.email);
       const categories = users.map(u => u.category || "business-intermediate");
-      // Send words to each user (small scale: serial for simplicity)
       for (let i = 0; i < users.length; i++) {
         const res = await supabase.functions.invoke('send-vocab-email', {
           body: {
@@ -168,7 +158,6 @@ const UserManagementTab = () => {
     if (sending) return;
     setSending(true);
     try {
-      // For each user: look up phone from user_subscriptions?
       const { data: subs } = await supabase
         .from('user_subscriptions')
         .select('user_id, phone_number, category');
@@ -219,7 +208,6 @@ const UserManagementTab = () => {
         </p>
       </div>
 
-      {/* CHARTS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="pb-2">
@@ -266,7 +254,6 @@ const UserManagementTab = () => {
         </Card>
       </div>
 
-      {/* ADMIN CONTROL BUTTONS */}
       <div className="flex gap-4 items-center mb-4">
         <Button
           size="sm"
@@ -285,12 +272,11 @@ const UserManagementTab = () => {
           disabled={sending || users.length === 0}
           className="flex items-center gap-2 bg-green-500 text-white"
         >
-          <Whatsapp className="h-4 w-4" />
+          <MessageSquare className="h-4 w-4" />
           Send Test WhatsApp to All
         </Button>
       </div>
 
-      {/* USER TABLE */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Users</CardTitle>
