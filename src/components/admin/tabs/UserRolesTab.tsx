@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -41,8 +42,8 @@ const UserRolesTab = () => {
       setLoading(true);
       setDebugInfo('Started fetching users...');
       
-      // Simplified approach: get users directly from profiles table
-      const { data: profiles, error: profilesError } = await supabase
+      // Get all profiles from the profiles table
+      const { data: profiles, error: profilesError, count: profilesCount } = await supabase
         .from('profiles')
         .select('*');
       
@@ -59,6 +60,9 @@ const UserRolesTab = () => {
         return;
       }
       
+      console.log('Profiles fetched:', profiles);
+      setDebugInfo(prev => prev + `\nProfiles fetched: ${profiles?.length || 0}`);
+      
       if (!profiles || profiles.length === 0) {
         console.log('No profiles found');
         setDebugInfo(prev => prev + '\nNo profiles found');
@@ -66,9 +70,6 @@ const UserRolesTab = () => {
         setLoading(false);
         return;
       }
-      
-      console.log('Profiles fetched:', profiles.length);
-      setDebugInfo(prev => prev + `\nProfiles fetched: ${profiles.length}`);
       
       // Fetch user roles
       const { data: userRoles, error: rolesError } = await supabase
@@ -82,7 +83,7 @@ const UserRolesTab = () => {
         // Continue without roles if there's an error
         processUserData(profiles, []);
       } else {
-        console.log('User roles fetched:', userRoles?.length || 0);
+        console.log('User roles fetched:', userRoles);
         setDebugInfo(prev => prev + `\nUser roles fetched: ${userRoles?.length || 0}`);
         
         processUserData(profiles, userRoles || []);
@@ -119,6 +120,7 @@ const UserRolesTab = () => {
 
       console.log('Total users mapped:', usersWithRoles.length);
       setDebugInfo(prev => prev + `\nTotal users mapped: ${usersWithRoles.length}`);
+      console.log('User data with roles:', usersWithRoles);
       
       setUsers(usersWithRoles);
       const adminUsersList = usersWithRoles.filter(user => user.roles.includes('admin')) || [];

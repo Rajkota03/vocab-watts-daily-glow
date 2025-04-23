@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -34,25 +35,27 @@ const OverviewTab = () => {
     
     try {
       // Get total users count from profiles table
-      const { data: profiles, error: profilesError, count } = await supabase
+      const { count: usersCount, error: profilesError } = await supabase
         .from('profiles')
-        .select('*', { count: 'exact' });
+        .select('*', { count: 'exact', head: true });
 
       if (profilesError) throw new Error(`Error fetching users: ${profilesError.message}`);
       
-      // Use the actual length of the profiles array as users count
-      const usersCount = profiles?.length || 0;
       console.log('Total users count from profiles:', usersCount);
       
-      // Get pro subscribers count
-      const { data: proUsers, error: proError, count: proCount } = await supabase
+      // Get pro subscribers count (unique users with pro subscription)
+      const { data: proUsers, error: proError } = await supabase
         .from('user_subscriptions')
-        .select('*', { count: 'exact' })
+        .select('user_id, phone_number')
         .eq('is_pro', true);
 
       if (proError) throw new Error(`Error fetching pro users: ${proError.message}`);
       
-      console.log('Pro subscribers count:', proCount);
+      // Count unique phone numbers for pro subscribers
+      const uniqueProPhones = new Set(proUsers?.map(item => item.phone_number) || []);
+      const proCount = uniqueProPhones.size;
+      
+      console.log('Pro subscribers count (unique phone numbers):', proCount);
       console.log('Pro subscribers data:', proUsers);
       
       // Get active users count (active in the last 24 hours)
@@ -73,9 +76,9 @@ const OverviewTab = () => {
       console.log('Active users count:', activeCount);
       
       // Get total words count
-      const { data: words, error: wordsError, count: wordsCount } = await supabase
+      const { count: wordsCount, error: wordsError } = await supabase
         .from('vocabulary_words')
-        .select('*', { count: 'exact' });
+        .select('*', { count: 'exact', head: true });
 
       if (wordsError) throw new Error(`Error fetching words: ${wordsError.message}`);
       
@@ -85,29 +88,28 @@ const OverviewTab = () => {
       const lastMonth = new Date();
       lastMonth.setMonth(lastMonth.getMonth() - 1);
       
-      const { data: lastMonthProfilesData, error: lastMonthUsersError, count: lastMonthUsersCount } = await supabase
+      const { count: lastMonthUsersCount, error: lastMonthUsersError } = await supabase
         .from('profiles')
-        .select('*', { count: 'exact' })
+        .select('*', { count: 'exact', head: true })
         .lt('created_at', lastMonth.toISOString());
       
       if (lastMonthUsersError) throw new Error(`Error fetching last month users: ${lastMonthUsersError.message}`);
       
-      const lastMonthUsers = lastMonthProfilesData?.length || 0;
-      console.log('Last month users count:', lastMonthUsers);
+      console.log('Last month users count:', lastMonthUsersCount);
 
       // Calculate percent changes for users
       let userChange;
-      if (lastMonthUsers === 0) {
+      if (lastMonthUsersCount === 0) {
         userChange = usersCount > 0 ? '+100%' : '+0.0%';
       } else {
-        userChange = `+${(((usersCount - lastMonthUsers) / lastMonthUsers) * 100).toFixed(1)}%`;
+        userChange = `+${(((usersCount - lastMonthUsersCount) / lastMonthUsersCount) * 100).toFixed(1)}%`;
       }
 
       // For now, use placeholder values for other metrics until we have historical data
       setStats([
         { 
           title: 'Total Users', 
-          value: String(usersCount), 
+          value: String(usersCount || 0), 
           change: userChange, 
           trend: 'up', 
           icon: Users 
