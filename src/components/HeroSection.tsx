@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Smartphone, ArrowRight, CheckCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import SignupForm from './SignupForm';
+
 const HeroSection = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   return <section className="min-h-screen py-24 md:py-0 flex items-center bg-gradient-to-br from-white to-primary/5 overflow-hidden">
@@ -13,6 +14,7 @@ const HeroSection = () => {
               
               <img src="/lovable-uploads/164886d6-c431-4caf-9f94-f4729aa2698b.png" alt="WhatsApp" className="w-5 h-5 mr-2" />
               <span className="font-bold">Learn directly on WhatsApp</span>
+              <img src="/lovable-uploads/current-uploaded-image.png" alt="WhatsApp Night" className="w-5 h-5 ml-2" />
             </div>
             
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6">
