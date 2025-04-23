@@ -61,7 +61,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
       <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
         <div className="flex flex-col flex-grow border-r border-gray-200 bg-white pt-5 pb-4 overflow-y-auto">
           <div className="flex items-center flex-shrink-0 px-4 mb-5">
-            <h1 className="text-xl font-bold text-vuilder-indigo">Admin Dashboard</h1>
+            <img src="/src/assets/logo-horizontal.svg" alt="GLINTUP" className="h-8" />
           </div>
           <nav className="mt-5 flex-1 flex flex-col divide-y divide-gray-100 overflow-y-auto">
             <div className="px-2 space-y-1">
@@ -73,7 +73,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                     "flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-md w-full",
                     (activeTab === item.value && item.path === '/admin') || 
                     (window.location.pathname === item.path && item.path !== '/admin')
-                      ? "bg-vuilder-mint/10 text-vuilder-mint"
+                      ? "bg-glintup-mint/10 text-glintup-mint"
                       : "text-gray-600 hover:bg-gray-50"
                   )}
                 >
@@ -88,7 +88,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
 
       {/* Mobile Nav */}
       <div className="lg:hidden flex items-center justify-between p-4 border-b">
-        <h1 className="text-xl font-bold text-vuilder-indigo">Admin Dashboard</h1>
+        <img src="/src/assets/logo-horizontal.svg" alt="GLINTUP" className="h-8" />
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon">
@@ -96,6 +96,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-[240px] sm:w-[280px]">
+            <div className="mb-6">
+              <img src="/src/assets/logo.svg" alt="GLINTUP" className="h-10" />
+            </div>
             <nav className="flex flex-col gap-2 py-4">
               {navItems.map((item) => (
                 <button
@@ -105,7 +108,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                     "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md",
                     (activeTab === item.value && item.path === '/admin') || 
                     (window.location.pathname === item.path && item.path !== '/admin')
-                      ? "bg-vuilder-mint/10 text-vuilder-mint"
+                      ? "bg-glintup-mint/10 text-glintup-mint"
                       : "text-gray-600 hover:bg-gray-50"
                   )}
                 >

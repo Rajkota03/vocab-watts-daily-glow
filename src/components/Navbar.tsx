@@ -10,7 +10,6 @@ import {
   BookOpen,
   DollarSign,
   MessageSquare,
-  Dumbbell,
   Settings,
   Shield
 } from 'lucide-react';
@@ -77,18 +76,9 @@ const Navbar = () => {
       isScrolled ? 'bg-white/95 shadow-md backdrop-blur-md' : 'bg-transparent'
     }`}>
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-glintup-indigo relative">
-            <span className="text-white font-bold text-lg">G</span>
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3">
-              <Dumbbell className="h-3 w-3 text-white transform rotate-90" />
-            </div>
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3">
-              <Dumbbell className="h-3 w-3 text-white transform rotate-90" />
-            </div>
-          </div>
-          <span className="font-bold text-xl text-glintup-indigo font-inter tracking-tight">GLINTUP</span>
-        </div>
+        <Link to="/" className="flex items-center gap-2">
+          <img src="/src/assets/logo-horizontal.svg" alt="GLINTUP" className="h-8" />
+        </Link>
         
         <button 
           className="md:hidden p-2 text-glintup-indigo hover:text-glintup-mint focus:outline-none transition-colors"

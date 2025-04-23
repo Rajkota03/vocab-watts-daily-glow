@@ -1,10 +1,9 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, BookOpen, Shield } from 'lucide-react';
+import { CheckCircle, BookOpen, Shield, LogOut } from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface DashboardHeaderProps {
