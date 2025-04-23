@@ -1,20 +1,15 @@
 
-import React from 'react';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import React, { useState } from 'react';
+import AdminLayout from '@/components/admin/AdminLayout';
 import AdminAnalyticsContent from '@/components/admin/AdminAnalyticsContent';
 
 const AdminAnalytics = () => {
+  const [activeTab, setActiveTab] = useState('analytics');
+  
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar />
-      
-      <main className="flex-1">
-        <AdminAnalyticsContent />
-      </main>
-      
-      <Footer />
-    </div>
+    <AdminLayout activeTab="analytics" setActiveTab={setActiveTab}>
+      <AdminAnalyticsContent />
+    </AdminLayout>
   );
 };
 
