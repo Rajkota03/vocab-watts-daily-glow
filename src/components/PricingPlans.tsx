@@ -5,15 +5,7 @@ import { CheckCircle, ChevronRight, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createRazorpayOrder, completeSubscription } from '@/services/paymentService';
 import { toast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
 declare global {
@@ -72,32 +64,12 @@ const PricingPlans = () => {
     "10 vocabulary words daily"
   ];
 
-  const handleSubscribeFree = async () => {
-    setIsProcessingPayment(true);
-
-    try {
-      const { data: authData } = await supabase.auth.getSession();
-      if (!authData.session?.user) {
-        const { error } = await supabase.auth.signInAnonymously();
-        if (error) throw error;
-      }
-      
-      setCurrentPlan({ isPro: false });
-      setOpenDialog(true);
-      
-    } catch (error) {
-      console.error('Error processing free trial:', error);
-      toast({
-        title: "Error",
-        description: "We couldn't process your request. Please try again later.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsProcessingPayment(false);
-    }
+  const handleSubscribeFree = () => {
+    setCurrentPlan({ isPro: false });
+    setOpenDialog(true);
   };
 
-  const handleSubscribePro = async () => {
+  const handleSubscribePro = () => {
     if (!razorpayLoaded) {
       toast({
         title: "Payment System Loading",
@@ -106,35 +78,15 @@ const PricingPlans = () => {
       });
       return;
     }
-
-    setIsProcessingPayment(true);
-
-    try {
-      const { data: authData } = await supabase.auth.getSession();
-      if (!authData.session?.user) {
-        const { error } = await supabase.auth.signInAnonymously();
-        if (error) throw error;
-      }
-      
-      setCurrentPlan({ isPro: true, category: 'business' });
-      setOpenDialog(true);
-      
-    } catch (error) {
-      console.error('Error initiating pro subscription:', error);
-      toast({
-        title: "Error",
-        description: "We couldn't start the subscription process. Please try again.",
-        variant: "destructive"
-      });
-      setIsProcessingPayment(false);
-    }
+    setCurrentPlan({ isPro: true, category: 'business' });
+    setOpenDialog(true);
   };
 
   const handlePhoneNumberSubmit = async () => {
     if (!phoneNumber || phoneNumber.trim().length < 10) {
       toast({
         title: "Invalid phone number",
-        description: "Please enter a valid WhatsApp number.",
+        description: "Please enter a valid WhatsApp number with country code.",
         variant: "destructive"
       });
       return;
@@ -177,14 +129,10 @@ const PricingPlans = () => {
         return;
       }
 
-      if (!window.Razorpay) {
-        throw new Error('Payment system is not ready. Please refresh the page.');
-      }
-
       const options = {
-        key: 'rzp_test_YourTestKeyHere', // Replace with your actual Razorpay key
+        key: orderResult.data.key,
         amount: orderResult.data.amount,
-        currency: 'INR',
+        currency: orderResult.data.currency,
         name: 'GLINTUP',
         description: 'Vocabulary Pro Subscription',
         order_id: orderResult.data.id,
@@ -239,7 +187,7 @@ const PricingPlans = () => {
       const razorpay = new window.Razorpay(options);
       razorpay.open();
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error processing payment:', error);
       toast({
         title: "Payment Error",
