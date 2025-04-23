@@ -19,13 +19,13 @@ const Footer = () => {
           <div className="flex flex-wrap gap-x-8 gap-y-4 justify-center">
             <a href="#how-it-works" className="text-gray-300 hover:text-accent transition-colors">How It Works</a>
             <a href="#pricing" className="text-gray-300 hover:text-accent transition-colors">Pricing</a>
-            <a href="#" className="text-gray-300 hover:text-accent transition-colors">Terms</a>
-            <a href="#" className="text-gray-300 hover:text-accent transition-colors">Privacy</a>
+            <Link to="/terms" className="text-gray-300 hover:text-accent transition-colors">Terms</Link>
+            <Link to="/privacy" className="text-gray-300 hover:text-accent transition-colors">Privacy</Link>
           </div>
         </div>
         
         <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
-          <p>© 2025 GLINTUP. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} GLINTUP. All rights reserved.</p>
         </div>
       </div>
     </footer>
