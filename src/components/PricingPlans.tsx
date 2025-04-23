@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +12,14 @@ declare global {
   interface Window {
     Razorpay: any;
   }
+}
+
+// Define the type for payment result
+interface PaymentResult {
+  success: boolean;
+  razorpayPaymentId?: string;
+  razorpayOrderId?: string;
+  error?: string;
 }
 
 const PricingPlans = () => {

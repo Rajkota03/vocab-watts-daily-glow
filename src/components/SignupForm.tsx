@@ -16,6 +16,14 @@ declare global {
   }
 }
 
+// Define the type for payment result
+interface PaymentResult {
+  success: boolean;
+  razorpayPaymentId?: string;
+  razorpayOrderId?: string;
+  error?: string;
+}
+
 const SignupForm = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [deliveryTime, setDeliveryTime] = useState('');
@@ -59,22 +67,22 @@ const SignupForm = () => {
     };
   }, []);
 
-  const handlePayment = async (orderData) => {
+  const handlePayment = async (orderData: any): Promise<PaymentResult> => {
     if (!razorpayLoaded) {
       toast({
         title: "Payment system is loading",
         description: "Please wait a moment and try again.",
         variant: "destructive"
       });
-      return false;
+      return { success: false, error: "Payment system not loaded" };
     }
 
     // If it's a free trial signup (not pro), skip payment
     if (orderData.freeSignup) {
-      return true;
+      return { success: true };
     }
 
-    return new Promise((resolve) => {
+    return new Promise<PaymentResult>((resolve) => {
       const options = {
         key: 'rzp_test_YourTestKeyHere', // Replace with your Razorpay test key
         amount: orderData.amount,
@@ -88,7 +96,7 @@ const SignupForm = () => {
         theme: {
           color: '#3F3D56'
         },
-        handler: function(response) {
+        handler: function(response: any) {
           // Payment successful
           console.log('Payment success:', response);
           resolve({
