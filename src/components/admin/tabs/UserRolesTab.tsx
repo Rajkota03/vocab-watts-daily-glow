@@ -68,6 +68,7 @@ const UserRolesTab = () => {
       setUsers(usersWithRoles || []);
       const adminUsersList = usersWithRoles?.filter(user => user.roles.includes('admin')) || [];
       setAdminUsers(adminUsersList);
+      setNoUsers(false); // Make sure this is set to false if we found users
 
     } catch (error) {
       console.error('Error fetching users and roles:', error);
@@ -140,7 +141,7 @@ const UserRolesTab = () => {
   // For Admin table search (all admins)
   const filteredAdminUsers = adminUsers.filter(user =>
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    `${user.first_name} ${u.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
+    `${user.first_name} ${user.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
