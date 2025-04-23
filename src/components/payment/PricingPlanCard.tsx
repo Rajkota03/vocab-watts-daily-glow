@@ -1,7 +1,7 @@
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, ChevronRight, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface PricingPlanCardProps {
   isPro?: boolean;
@@ -10,6 +10,7 @@ interface PricingPlanCardProps {
 }
 
 export const PricingPlanCard = ({ isPro, onSubscribe, isProcessing }: PricingPlanCardProps) => {
+  const navigate = useNavigate();
   const features = [
     "5 vocabulary words daily",
     "WhatsApp delivery",
@@ -24,6 +25,17 @@ export const PricingPlanCard = ({ isPro, onSubscribe, isProcessing }: PricingPla
     "Progress tracking",
     "10 vocabulary words daily"
   ];
+
+  const handleSubscribe = () => {
+    navigate('/payment', {
+      state: {
+        plan: {
+          isPro,
+          price: isPro ? 149 : 0
+        }
+      }
+    });
+  };
 
   return (
     <Card className={`border-2 ${isPro ? 'border-primary shadow-md relative' : 'border-gray-200 shadow-sm hover:shadow-md'} transition-all`}>
@@ -55,7 +67,7 @@ export const PricingPlanCard = ({ isPro, onSubscribe, isProcessing }: PricingPla
       </CardContent>
       <CardFooter>
         <Button 
-          onClick={onSubscribe}
+          onClick={handleSubscribe}
           variant={isPro ? "default" : "outline"}
           className="w-full group" 
           disabled={isProcessing}
