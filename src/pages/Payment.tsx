@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useLocation, Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -119,9 +120,19 @@ const Payment = () => {
             <CardContent>
               <div className="space-y-4">
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm text-blue-800">
-                    We'll send your vocabulary words via WhatsApp. Please provide your WhatsApp number to continue.
-                  </p>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-5 w-5 text-blue-500 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-blue-800 font-medium">How it works:</p>
+                      <p className="text-sm text-blue-800 mt-1">
+                        1. {plan.isPro ? "Complete your payment" : "Start your free trial"}
+                        <br />
+                        2. Add your WhatsApp number
+                        <br />
+                        3. Start receiving daily vocabulary words
+                      </p>
+                    </div>
+                  </div>
                 </div>
                 {plan.isPro && (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
