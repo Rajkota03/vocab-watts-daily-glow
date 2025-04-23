@@ -7,6 +7,7 @@ export interface SubscriptionData {
   phoneNumber: string;
   category?: string;
   isPro: boolean;
+  deliveryTime?: string;
 }
 
 // Define types for our database tables
