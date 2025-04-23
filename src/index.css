@@ -11,13 +11,13 @@
     --card-foreground: 240 10% 22%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 22%;
-    --primary: 240 10% 29%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 215 100% 56%; /* #1E88FF spark blue */
+    --primary-foreground: 0 0% 100%;
     --secondary: 154 64% 49%;
     --secondary-foreground: 0 0% 98%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 240 10% 46%;
-    --accent: 0 100% 70%;
+    --accent: 40 100% 50%; /* #FFB300 spark yellow */
     --accent-foreground: 240 10% 22%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -55,10 +55,10 @@
     @apply border-border;
   }
   body {
-    @apply bg-glintup-bg text-glintup-text font-inter;
+    @apply bg-white text-dark font-sans;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-inter font-bold;
+    @apply font-sans font-bold;
   }
   
   /* Smooth scrolling */
@@ -75,7 +75,7 @@
   
   /* GLINTUP buttons */
   .glintup-button {
-    @apply rounded-full bg-gradient-to-r from-glintup-indigo to-glintup-indigo/90 text-white shadow-sm hover:shadow-md px-5 py-2 transition-all duration-200 font-medium;
+    @apply rounded-full bg-primary text-white shadow-sm hover:shadow-md px-5 py-2 transition-all duration-200 font-medium;
   }
   
   /* GLINTUP badges */
@@ -85,143 +85,48 @@
   
   /* GLINTUP form elements */
   .glintup-input {
-    @apply rounded-full border border-gray-200 px-4 py-2 focus:ring-2 focus:ring-glintup-mint/30 focus:border-glintup-mint/60 transition-all duration-200;
+    @apply rounded-full border border-gray-200 px-4 py-2 focus:ring-2 focus:ring-primary/30 focus:border-primary/60 transition-all duration-200;
   }
   
   /* Updated branded components */
   .glintup-btn-primary {
-    @apply bg-glintup-indigo hover:bg-glintup-indigo/90 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg;
+    @apply bg-primary hover:bg-primary/90 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg;
   }
   
   .glintup-btn-secondary {
-    @apply bg-white border border-glintup-mint text-glintup-indigo hover:bg-glintup-mint/5 font-semibold rounded-lg transition-all shadow-sm hover:shadow-md;
+    @apply bg-white border border-primary text-dark hover:bg-primary/5 font-semibold rounded-lg transition-all shadow-sm hover:shadow-md;
   }
   
   .glintup-btn-accent {
-    @apply bg-glintup-coral hover:bg-glintup-coral/90 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg;
+    @apply bg-accent hover:bg-accent/90 text-dark font-semibold rounded-lg transition-all shadow-md hover:shadow-lg;
   }
   
   /* Card styles */
   .glintup-card {
     @apply bg-white rounded-xl shadow-md hover:shadow-xl p-6 border-2 border-transparent transition-all duration-300;
   }
-  
-  /* Feature icon */
-  .glintup-feature-icon {
-    @apply w-12 h-12 bg-gradient-to-br from-glintup-mint/20 to-glintup-indigo/20 rounded-lg flex items-center justify-center mb-4;
-  }
-  
-  /* Free trial badge */
-  .glintup-free-badge {
-    @apply bg-glintup-mint/20 text-glintup-indigo px-3 py-1 rounded-full text-sm font-medium;
-  }
-  
-  /* Pro badge */
-  .glintup-pro-badge {
-    @apply bg-glintup-indigo/20 text-glintup-indigo px-3 py-1 rounded-full text-sm font-medium;
-  }
-  
-  /* WhatsApp message bubble */
-  .whatsapp-message {
-    @apply bg-whatsapp-light/50 p-3 rounded-lg rounded-tl-none shadow-sm mb-2;
-  }
-  
-  /* Legacy component support */
-  .vocab-btn {
-    @apply bg-glintup-indigo hover:bg-glintup-indigo/90 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg;
-  }
-  
-  .vocab-btn-secondary {
-    @apply bg-glintup-mint hover:bg-glintup-mint/90 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg;
-  }
-  
-  /* Legacy pricing-card with updated styles */
-  .pricing-card {
-    @apply bg-white rounded-xl shadow-md hover:shadow-xl p-6 border-2 border-transparent transition-all duration-300;
-  }
-  
-  /* Legacy feature-icon with updated colors */
-  .feature-icon {
-    @apply w-12 h-12 bg-gradient-to-br from-glintup-mint/20 to-glintup-indigo/20 rounded-lg flex items-center justify-center mb-4 text-glintup-mint;
+
+  /* Section padding utilities */
+  .section-padding {
+    @apply py-12 md:py-16;
   }
 
-  /* Apple-inspired styled components - renamed to GLINTUP */
-  .apple-card {
-    @apply bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300;
+  .section-padding-lg {
+    @apply py-16 md:py-24;
   }
   
-  .apple-button {
-    @apply rounded-full bg-gradient-to-r from-glintup-indigo to-glintup-indigo/90 text-white shadow-sm hover:shadow-md px-5 py-2 transition-all duration-200 font-medium;
+  /* Hide scrollbar for carousel */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
   }
   
-  .apple-badge {
-    @apply rounded-full py-1.5 px-3 text-sm font-medium shadow-sm transition-all duration-200;
-  }
-  
-  .apple-input {
-    @apply rounded-full border border-gray-200 px-4 py-2 focus:ring-2 focus:ring-glintup-mint/30 focus:border-glintup-mint/60 transition-all duration-200;
-  }
-  
-  /* Existing components - maintain compatibility but update visuals */
-  .vuilder-btn-primary {
-    @apply bg-glintup-indigo hover:bg-glintup-indigo/90 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg;
-  }
-  
-  .vuilder-btn-secondary {
-    @apply bg-white border border-glintup-mint text-glintup-indigo hover:bg-glintup-mint/5 font-semibold rounded-lg transition-all shadow-sm hover:shadow-md;
-  }
-  
-  .vuilder-btn-accent {
-    @apply bg-glintup-coral hover:bg-glintup-coral/90 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg;
-  }
-  
-  .vuilder-btn-cta {
-    @apply bg-glintup-coral hover:bg-glintup-coral/90 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg;
-  }
-  
-  .vuilder-card {
-    @apply bg-white rounded-xl shadow-md hover:shadow-xl p-6 border-2 border-transparent transition-all duration-300;
-  }
-  
-  .vuilder-feature-icon {
-    @apply w-12 h-12 bg-gradient-to-br from-glintup-mint/20 to-glintup-indigo/20 rounded-lg flex items-center justify-center mb-4;
-  }
-  
-  .vuilder-free-badge {
-    @apply bg-glintup-mint/20 text-glintup-indigo px-3 py-1 rounded-full text-sm font-medium;
-  }
-  
-  .vuilder-pro-badge {
-    @apply bg-glintup-mint/20 text-glintup-mint px-3 py-1 rounded-full text-sm font-medium;
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
   }
 }
 
 @layer utilities {
-  /* GLINTUP utilities */
-  .glintup-shadow-sm {
-    @apply shadow-[0_2px_5px_rgba(0,0,0,0.05)];
-  }
-  
-  .glintup-shadow {
-    @apply shadow-[0_4px_10px_rgba(0,0,0,0.07)];
-  }
-  
-  .glintup-shadow-md {
-    @apply shadow-[0_6px_15px_rgba(0,0,0,0.08)];
-  }
-  
-  .glintup-gradient-blue {
-    @apply bg-gradient-to-r from-sky-400 to-blue-500;
-  }
-  
-  .glintup-gradient-purple {
-    @apply bg-gradient-to-r from-violet-500 to-purple-600;
-  }
-  
-  .glintup-gradient-mint {
-    @apply bg-gradient-to-r from-emerald-400 to-teal-500;
-  }
-
   /* Animation utilities */
   .animate-fade-in {
     animation: fadeIn 0.3s ease-in-out;
@@ -233,10 +138,6 @@
   
   .animate-slide-in-left {
     animation: slideInLeft 0.4s ease-out;
-  }
-  
-  .animate-spin-slow {
-    animation: spin 10s linear infinite;
   }
   
   .animate-float {
@@ -262,11 +163,6 @@
     to { transform: translateX(0); opacity: 1; }
   }
   
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  
   @keyframes float {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-10px); }
@@ -277,51 +173,13 @@
     50% { opacity: 0.6; }
   }
   
-  /* Glass effect */
-  .glintup-glass {
-    @apply bg-white/20 backdrop-blur-md border border-white/30 shadow-lg;
-  }
-  
   /* Gradient text */
-  .glintup-text-gradient {
-    @apply bg-gradient-to-r from-glintup-indigo to-glintup-mint bg-clip-text text-transparent;
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
   }
   
   /* Hover effects */
-  .glintup-hover-lift {
-    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
-  }
-  
-  .glintup-hover-glow {
-    @apply transition-all duration-300 hover:shadow-[0_0_15px_rgba(0,0,0,0.1)];
-  }
-
-  /* Legacy utilities with updated styles */
-  .vuilder-glass {
-    @apply bg-white/20 backdrop-blur-md border border-white/30 shadow-lg;
-  }
-  
-  .vuilder-text-gradient {
-    @apply bg-gradient-to-r from-glintup-indigo to-glintup-mint bg-clip-text text-transparent;
-  }
-  
-  .vuilder-hover-lift {
-    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
-  }
-  
-  .vuilder-hover-glow {
-    @apply transition-all duration-300 hover:shadow-[0_0_15px_rgba(0,0,0,0.1)];
-  }
-
-  .text-gradient {
-    @apply bg-gradient-to-r from-glintup-mint to-glintup-indigo bg-clip-text text-transparent;
-  }
-  
   .hover-lift {
     @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
-  }
-  
-  .hover-glow {
-    @apply transition-all duration-300 hover:shadow-[0_0_15px_rgba(0,0,0,0.1)];
   }
 }

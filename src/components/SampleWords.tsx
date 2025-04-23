@@ -1,8 +1,11 @@
 
-import React from 'react';
-import { BookOpen } from 'lucide-react';
+import React, { useState } from 'react';
+import { BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const SampleWords = () => {
+  const [activeIndex, setActiveIndex] = useState(0);
+  
   const words = [
     {
       word: 'Persnickety',
@@ -24,77 +27,109 @@ const SampleWords = () => {
     }
   ];
 
+  const nextSlide = () => {
+    setActiveIndex((prevIndex) => 
+      prevIndex === words.length - 1 ? 0 : prevIndex + 1
+    );
+  };
+
+  const prevSlide = () => {
+    setActiveIndex((prevIndex) => 
+      prevIndex === 0 ? words.length - 1 : prevIndex - 1
+    );
+  };
+
   return (
-    <section id="samples" className="py-20 bg-gradient-to-r from-vuilder-bg to-duolingo-blue/5">
+    <section id="samples" className="py-16 md:py-24 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <div className="inline-block mb-4 p-3 bg-duolingo-blue/10 rounded-full">
-            <BookOpen className="w-8 h-8 text-duolingo-blue" />
+          <div className="inline-block mb-4 p-3 bg-primary/10 rounded-full">
+            <BookOpen className="w-8 h-8 text-primary" />
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-vuilder-indigo">Sample Word Drop</h2>
-          <p className="text-xl text-vuilder-text max-w-2xl mx-auto">
+          <h2 className="text-4xl font-bold mb-4 text-dark">Sample Word Drop</h2>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Discover words that transform your language, delivered with wit and wisdom.
           </p>
         </div>
         
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 relative overflow-hidden">
-            {/* WhatsApp-style header */}
-            <div className="absolute -top-4 -left-4 w-16 h-16 rounded-full bg-whatsapp-green flex items-center justify-center shadow-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white">
-                <path d="M19.3547 4.55156C17.3906 2.58281 14.7547 1.5 11.9953 1.5C6.25781 1.5 1.58906 6.16875 1.58906 11.9062C1.58906 13.8094 2.10469 15.6656 3.07031 17.2875L1.5 22.5L6.84375 20.9578C8.40937 21.8391 10.1812 22.3078 11.9906 22.3078H11.9953C17.7281 22.3078 22.5 17.6391 22.5 11.9016C22.5 9.14219 21.3188 6.52031 19.3547 4.55156Z"/>
-              </svg>
-            </div>
-            
-            {/* Chat Header */}
-            <div className="flex items-center border-b border-gray-100 pb-4 mb-6">
-              <div className="w-12 h-12 rounded-full bg-duolingo-green/20 flex items-center justify-center">
-                <span className="text-duolingo-green font-bold text-lg">V</span>
-              </div>
-              <div className="ml-4">
-                <h4 className="font-bold text-lg text-vuilder-indigo">VUILDER</h4>
-                <p className="text-sm text-gray-500">Your Daily Vocabulary Boost</p>
-              </div>
-            </div>
-            
-            {/* Words Container */}
-            <div className="space-y-6">
+        <div className="max-w-3xl mx-auto relative">
+          {/* Carousel navigation */}
+          <div className="absolute top-1/2 -left-4 md:-left-12 -translate-y-1/2 z-10">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full bg-white shadow-md hover:bg-primary/10"
+              onClick={prevSlide}
+            >
+              <ChevronLeft className="h-6 w-6" />
+              <span className="sr-only">Previous word</span>
+            </Button>
+          </div>
+          
+          <div className="absolute top-1/2 -right-4 md:-right-12 -translate-y-1/2 z-10">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full bg-white shadow-md hover:bg-primary/10"
+              onClick={nextSlide}
+            >
+              <ChevronRight className="h-6 w-6" />
+              <span className="sr-only">Next word</span>
+            </Button>
+          </div>
+          
+          {/* Carousel */}
+          <div className="overflow-hidden rounded-xl shadow-lg">
+            <div 
+              className="flex transition-transform duration-500 ease-in-out" 
+              style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+            >
               {words.map((wordItem, index) => (
                 <div 
                   key={index} 
-                  className="bg-vuilder-bg p-5 rounded-xl transform transition-all hover:translate-y-[-2px] hover:shadow-md"
+                  className="min-w-full bg-white p-6 md:p-8"
                 >
                   <div className="mb-3">
-                    <span className="text-xl font-bold text-duolingo-purple">{wordItem.word}</span>
+                    <span className="text-2xl font-bold text-primary">{wordItem.word}</span>
                   </div>
-                  <p className="text-sm font-medium text-gray-700 mb-3">{wordItem.meaning}</p>
-                  <div className="space-y-2">
-                    <div className="text-sm text-gray-600">
-                      <span className="text-xs font-medium uppercase text-gray-400 tracking-wider">Example:</span><br />
+                  <p className="text-lg font-medium text-dark mb-4">{wordItem.meaning}</p>
+                  <div className="space-y-4">
+                    <div className="text-gray-600">
+                      <span className="text-sm font-medium uppercase text-gray-400 tracking-wider">Example:</span><br />
                       {wordItem.example}
                     </div>
-                    <div className="text-sm text-gray-600 italic border-l-2 border-duolingo-green pl-3">
-                      <span className="text-xs font-medium uppercase text-gray-400 tracking-wider">Witty Use:</span><br />
+                    <div className="text-gray-600 italic border-l-3 border-primary pl-4">
+                      <span className="text-sm font-medium uppercase text-gray-400 tracking-wider">Witty Use:</span><br />
                       {wordItem.wittyExample}
                     </div>
                   </div>
                 </div>
               ))}
-              
-              <div className="text-center mt-6 text-gray-500">
-                <p>+ 2 more words daily</p>
-              </div>
             </div>
+          </div>
+          
+          {/* Indicators */}
+          <div className="flex justify-center mt-6 space-x-2">
+            {words.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setActiveIndex(index)}
+                className={`w-2.5 h-2.5 rounded-full ${
+                  activeIndex === index ? 'bg-primary' : 'bg-gray-300'
+                }`}
+              >
+                <span className="sr-only">Word {index + 1}</span>
+              </button>
+            ))}
           </div>
           
           {/* CTA */}
           <div className="text-center mt-10">
-            <a 
-              href="#signup" 
-              className="inline-flex items-center px-8 py-4 bg-duolingo-green text-white font-medium rounded-full transition-all hover:bg-duolingo-green/90 hover:shadow-lg"
+            <Button 
+              onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
             >
               Get Your First Words Today
-            </a>
+            </Button>
           </div>
         </div>
       </div>
