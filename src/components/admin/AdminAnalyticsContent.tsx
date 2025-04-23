@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UserGrowthReport from './analytics/UserGrowthReport';
+import RevenueDashboard from './analytics/RevenueDashboard';
 
 const AdminAnalyticsContent = () => {
   return (
@@ -14,12 +14,17 @@ const AdminAnalyticsContent = () => {
       <Tabs defaultValue="growth" className="w-full">
         <TabsList className="mb-6">
           <TabsTrigger value="growth">User Growth</TabsTrigger>
+          <TabsTrigger value="revenue">Revenue</TabsTrigger>
           <TabsTrigger value="engagement" disabled>Engagement</TabsTrigger>
           <TabsTrigger value="retention" disabled>Retention</TabsTrigger>
         </TabsList>
         
         <TabsContent value="growth" className="focus-visible:outline-none focus-visible:ring-0">
           <UserGrowthReport />
+        </TabsContent>
+        
+        <TabsContent value="revenue">
+          <RevenueDashboard />
         </TabsContent>
         
         <TabsContent value="engagement">
