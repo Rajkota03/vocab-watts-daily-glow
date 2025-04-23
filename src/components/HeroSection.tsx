@@ -1,8 +1,10 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Smartphone, ArrowRight, CheckCircle } from 'lucide-react';
+import { Smartphone, ArrowRight, CheckCircle, WhatsApp } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import SignupForm from './SignupForm';
+
 const HeroSection = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   return <section className="min-h-screen py-24 md:py-0 flex items-center bg-gradient-to-br from-white to-primary/5 overflow-hidden">
@@ -12,6 +14,7 @@ const HeroSection = () => {
           <div className="flex-1 text-center lg:text-left">
             <div className="inline-flex items-center mb-6 py-1.5 px-4 rounded-full text-dark text-sm font-medium shadow-sm bg-green-500">
               <Smartphone className="w-4 h-4 mr-2" />
+              <WhatsApp className="w-5 h-5 mr-2 text-white" />
               <span className="font-bold">Learn directly on WhatsApp</span>
             </div>
             
