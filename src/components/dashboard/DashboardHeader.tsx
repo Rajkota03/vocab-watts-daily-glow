@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Calendar, Sparkles, BookOpen } from 'lucide-react';
+import { CheckCircle, Calendar, Sparkles, BookOpen, Shield } from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface DashboardHeaderProps {
   userNickname: string;
@@ -12,6 +13,7 @@ interface DashboardHeaderProps {
   streak: number;
   displayCategory: string;
   handleSignOut: () => Promise<void>;
+  isAdmin: boolean;
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -19,7 +21,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   dayStatus,
   streak,
   displayCategory,
-  handleSignOut
+  handleSignOut,
+  isAdmin
 }) => {
   return (
     <header className="bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
@@ -52,6 +55,27 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-3 mt-3 md:mt-0 animate-fade-in">
+            {isAdmin && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="rounded-full h-9 w-9 border-gray-200 shadow-sm hover:bg-gray-50 transition-all"
+                      asChild
+                    >
+                      <Link to="/admin">
+                        <Shield className="h-4 w-4 text-gray-600" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Admin Dashboard</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
