@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -30,6 +31,7 @@ export default {
         foreground: 'hsl(var(--foreground))',
         primary: {
           DEFAULT: '#1E88FF', // spark blue
+          light: '#EDF4FF',   // light primary background
           foreground: '#ffffff'
         },
         secondary: {
@@ -56,6 +58,10 @@ export default {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))'
         },
+        dark: '#0D1A2E',
+        stroke: '#E5EAF2',     // 1px borders
+        surface: '#FFFFFF',    // card/panel background
+        success: '#2ECC71',    // success notices
         dark: '#0D1A2E',
         sidebar: {
           DEFAULT: 'hsl(var(--sidebar-background))',

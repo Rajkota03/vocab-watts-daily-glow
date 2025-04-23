@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Card } from '@/components/ui/card';
 import CategorySelection from './CategorySelection';
 
 interface DashboardMainProps {
@@ -14,6 +13,7 @@ interface DashboardMainProps {
   isAdmin: boolean;
   MOCK_TODAYS_QUIZ: any;
   MOCK_RECENT_DROPS: any;
+  wordsLearnedThisMonth?: number;
 }
 
 const DashboardMain: React.FC<DashboardMainProps> = ({
@@ -23,24 +23,20 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
   isGeneratingBatch,
   isAdmin,
   MOCK_TODAYS_QUIZ,
-  MOCK_RECENT_DROPS
+  MOCK_RECENT_DROPS,
+  wordsLearnedThisMonth = 0
 }) => {
   return (
-    <main className="max-w-5xl mx-auto px-6 py-6 space-y-6">
+    <main className="max-w-5xl mx-auto px-6 py-6 space-y-8">
       {subscription.is_pro && (
-        <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl overflow-hidden">
-          <CategorySelection 
-            isPro={subscription.is_pro} 
-            currentCategory={subscription.category} 
-            onCategoryUpdate={handleCategoryUpdate}
-            onNewBatch={handleNewBatch}
-            isLoadingNewBatch={isGeneratingBatch}
-          />
-        </Card>
+        <CategorySelection 
+          isPro={subscription.is_pro} 
+          currentCategory={subscription.category} 
+          onCategoryUpdate={handleCategoryUpdate}
+          onNewBatch={handleNewBatch}
+          isLoadingNewBatch={isGeneratingBatch}
+        />
       )}
-      <div className="text-center text-gray-500 py-16">
-        Welcome to your dashboard.
-      </div>
     </main>
   );
 };

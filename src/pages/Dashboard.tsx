@@ -6,6 +6,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { generateNewWordBatch } from '@/services/wordService';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardMain from '@/components/dashboard/DashboardMain';
+import { Toaster } from '@/components/ui/toaster';
+import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { MOCK_TODAYS_QUIZ, MOCK_RECENT_DROPS } from '@/data/dashboardMockData';
 
 const Dashboard = () => {
@@ -18,6 +20,7 @@ const Dashboard = () => {
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
   const [userNickname, setUserNickname] = useState<string>('');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [wordsLearnedThisMonth, setWordsLearnedThisMonth] = useState(45);
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -33,6 +36,7 @@ const Dashboard = () => {
         toast({
           title: "Authentication required",
           description: "Please login to access your dashboard",
+          variant: "destructive"
         });
         return;
       }
@@ -105,6 +109,22 @@ const Dashboard = () => {
         }));
       }
       
+      // Fetch words learned this month
+      try {
+        const { data: wordsData, error: wordsError } = await supabase
+          .from('word_history')
+          .select('id')
+          .eq('user_id', data.session.user.id)
+          .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+          .lt('created_at', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString());
+          
+        if (!wordsError && wordsData) {
+          setWordsLearnedThisMonth(wordsData.length);
+        }
+      } catch (error) {
+        console.error('Failed to fetch words learned this month:', error);
+      }
+      
       setLoading(false);
     };
     
@@ -152,11 +172,6 @@ const Dashboard = () => {
         ...subscription,
         category: combinedCategory
       });
-      
-      toast({
-        title: 'Category Updated',
-        description: `Your word category is now set to ${combinedCategory}`,
-      });
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -181,11 +196,6 @@ const Dashboard = () => {
           wordHistoryElement.classList.remove('refresh-triggered');
         }, 100);
       }
-      
-      toast({
-        title: "New words generated!",
-        description: `${newWords.length} new words have been added to your vocabulary.`,
-      });
     } catch (error: any) {
       console.error("Error generating new batch:", error);
       toast({
@@ -202,23 +212,12 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-t-glintup-mint border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600 font-medium">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
-
-  const formatCategory = (category: string) => {
-    if (!category) return "General";
-    
-    const parts = category.split('-');
-    if (parts.length !== 2) return category;
-    
-    return `${parts[0].charAt(0).toUpperCase() + parts[0].slice(1)} (${parts[1].charAt(0).toUpperCase() + parts[1].slice(1)})`;
-  };
-
-  const displayCategory = formatCategory(subscription.category);
 
   return (
     <div className="min-h-screen bg-white font-inter pb-10">
@@ -226,6 +225,7 @@ const Dashboard = () => {
         userNickname={userNickname}
         handleSignOut={handleSignOut}
         isAdmin={isAdmin}
+        wordsLearnedThisMonth={wordsLearnedThisMonth}
       />
       <DashboardMain 
         subscription={subscription}
@@ -235,7 +235,10 @@ const Dashboard = () => {
         isAdmin={isAdmin}
         MOCK_TODAYS_QUIZ={MOCK_TODAYS_QUIZ}
         MOCK_RECENT_DROPS={MOCK_RECENT_DROPS}
+        wordsLearnedThisMonth={wordsLearnedThisMonth}
       />
+      <Toaster />
+      <SonnerToaster position="top-right" />
     </div>
   );
 };
