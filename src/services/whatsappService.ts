@@ -1,3 +1,4 @@
+
 import { createSubscription, getVocabWordsByCategory } from './subscriptionService';
 import { Database } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +13,8 @@ import { supabase } from '@/integrations/supabase/client';
 export interface SendWordsRequest {
   phoneNumber: string;
   category?: string;
-  isPro: boolean;
+  isPro?: boolean;
+  deliveryTime?: string;
 }
 
 // Define types based on our database schema
@@ -286,7 +288,8 @@ export const sendVocabWords = async (request: SendWordsRequest): Promise<boolean
     const subscriptionCreated = await createSubscription({
       phoneNumber: request.phoneNumber,
       category: request.isPro ? request.category : undefined,
-      isPro: request.isPro
+      isPro: request.isPro || false,
+      deliveryTime: request.deliveryTime
     });
     
     if (!subscriptionCreated) {
@@ -298,7 +301,7 @@ export const sendVocabWords = async (request: SendWordsRequest): Promise<boolean
     const words = await getSampleWords(request.category);
     
     // Format message for WhatsApp
-    const message = formatWhatsAppMessage(words || [], request.isPro);
+    const message = formatWhatsAppMessage(words || [], request.isPro || false);
     
     // Call our edge function to send the WhatsApp message
     const { data, error } = await supabase.functions.invoke('send-whatsapp', {
@@ -306,7 +309,8 @@ export const sendVocabWords = async (request: SendWordsRequest): Promise<boolean
         to: request.phoneNumber,
         message: message,
         category: request.category,
-        isPro: request.isPro
+        isPro: request.isPro || false,
+        deliveryTime: request.deliveryTime
       }
     });
     
