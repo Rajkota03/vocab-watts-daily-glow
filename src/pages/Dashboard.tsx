@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -229,6 +230,7 @@ const Dashboard = () => {
         streak={streak}
         displayCategory={displayCategory}
         handleSignOut={handleSignOut}
+        isAdmin={isAdmin}
       />
       <DashboardMain 
         subscription={subscription}
