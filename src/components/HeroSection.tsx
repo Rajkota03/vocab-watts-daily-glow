@@ -14,7 +14,7 @@ const HeroSection = () => {
               
               <img src="/lovable-uploads/164886d6-c431-4caf-9f94-f4729aa2698b.png" alt="WhatsApp" className="w-5 h-5 mr-2" />
               <span className="font-bold">Learn directly on WhatsApp</span>
-              <img src="/lovable-uploads/current-uploaded-image.png" alt="WhatsApp Night" className="w-5 h-5 ml-2" />
+              <img src="/lovable-uploads/31877f18-a2e4-40fc-9d28-387c2001a2c3.png" alt="WhatsApp Night" className="w-5 h-5 ml-2" />
             </div>
             
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6">
