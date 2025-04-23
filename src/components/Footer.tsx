@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
@@ -8,7 +9,7 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-center mb-8">
           <div className="mb-6 md:mb-0">
             <div className="flex items-center gap-2 mb-2">
-              <span className="font-bold text-xl">GLINTUP</span>
+              <img src="/src/assets/logo.svg" alt="GLINTUP" className="h-8" />
             </div>
             <p className="text-gray-400">
               Expanding your vocabulary effortlessly.

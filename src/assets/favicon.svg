@@ -1,13 +1,5 @@
 
-<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- "G" letterform as background -->
-  <path d="M25 16C25 20.9706 20.9706 25 16 25C11.0294 25 7 20.9706 7 16C7 11.0294 11.0294 7 16 7C20.9706 7 25 11.0294 25 16Z" fill="#3F3D56"/>
-  
-  <!-- Spark element -->
-  <path d="M14.5 12L16.5 16L20.5 14L18.5 10L14.5 12Z" fill="#2DCDA5"/>
-  <path d="M14.5 16L18.5 18L20.5 14L16.5 12L14.5 16Z" fill="#FF6B6B"/>
-  
-  <!-- Small glow effects -->
-  <circle cx="18" cy="8" r="1.5" fill="#2DCDA5" opacity="0.7"/>
-  <circle cx="22" cy="19" r="1" fill="#FF6B6B" opacity="0.7"/>
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <path d="M16 4C9.373 4 4 9.373 4 16s5.373 12 12 12 12-5.373 12-12S22.627 4 16 4zm-2 10l4-4 4 4v4l-4 4-4-4v-4z" fill="#2DCDA5"/>
+  <path d="M14 16v-4l4-4 4 4v4l-4 4-4-4z" fill="#3F3D56"/>
 </svg>
