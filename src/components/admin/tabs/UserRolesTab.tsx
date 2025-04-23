@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader as DialogHeaderUI, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Shield, UserPlus, UserMinus, AlertCircle } from 'lucide-react';
+import { Shield, UserPlus, UserMinus, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -31,6 +31,7 @@ const UserRolesTab = () => {
   const [selectUserSearch, setSelectUserSearch] = useState('');
   const [addInProgress, setAddInProgress] = useState(false);
   const [noUsers, setNoUsers] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   useEffect(() => {
     fetchUsers();
@@ -39,19 +40,39 @@ const UserRolesTab = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      
+      // First, get all profiles from the profiles table
       const { data: profiles, error: profilesError } = await supabase.from('profiles').select('*');
-      if (profilesError) throw profilesError;
+      
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        setDebugInfo(`Error fetching profiles: ${profilesError.message}`);
+        throw profilesError;
+      }
 
+      console.log('Profiles fetched:', profiles?.length || 0);
+      setDebugInfo(prev => prev + `\nProfiles fetched: ${profiles?.length || 0}`);
+      
       if (!profiles || profiles.length === 0) {
         setNoUsers(true);
         setLoading(false);
         return;
       }
 
+      // Get all user roles
       const { data: userRoles, error: rolesError } = await supabase.from('user_roles').select('*');
-      if (rolesError) throw rolesError;
+      
+      if (rolesError) {
+        console.error('Error fetching user roles:', rolesError);
+        setDebugInfo(prev => prev + `\nError fetching user roles: ${rolesError.message}`);
+        throw rolesError;
+      }
 
-      const usersWithRoles = profiles?.map(profile => {
+      console.log('User roles fetched:', userRoles?.length || 0);
+      setDebugInfo(prev => prev + `\nUser roles fetched: ${userRoles?.length || 0}`);
+
+      // Map roles to users
+      const usersWithRoles = profiles.map(profile => {
         const userRolesList = userRoles
           ?.filter(role => role.user_id === profile.id)
           .map(role => role.role) || [];
@@ -59,8 +80,8 @@ const UserRolesTab = () => {
         return {
           id: profile.id,
           email: profile.email,
-          first_name: profile.first_name,
-          last_name: profile.last_name,
+          first_name: profile.first_name || '',
+          last_name: profile.last_name || '',
           roles: userRolesList,
         };
       });
@@ -69,9 +90,14 @@ const UserRolesTab = () => {
       const adminUsersList = usersWithRoles?.filter(user => user.roles.includes('admin')) || [];
       setAdminUsers(adminUsersList);
       setNoUsers(false); // Make sure this is set to false if we found users
+      
+      console.log('Total users mapped:', usersWithRoles?.length);
+      console.log('Admin users:', adminUsersList?.length);
+      setDebugInfo(prev => prev + `\nTotal users mapped: ${usersWithRoles?.length}\nAdmin users: ${adminUsersList?.length}`);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching users and roles:', error);
+      setDebugInfo(prev => prev + `\nError: ${error.message}`);
       toast({
         title: "Error",
         description: "Failed to fetch users and roles.",
@@ -130,19 +156,22 @@ const UserRolesTab = () => {
     }
   };
 
-  // Filter for user search in dialog (only non-admins)
+  // Filter for user search in dialog - showing all users who don't have admin role
   const eligibleUsers = users
     .filter(u => !u.roles.includes('admin'))
     .filter(u =>
-      (u.email.toLowerCase().includes(selectUserSearch.toLowerCase()) ||
-      `${u.first_name} ${u.last_name}`.toLowerCase().includes(selectUserSearch.toLowerCase()))
+      (u.email?.toLowerCase().includes(selectUserSearch.toLowerCase()) ||
+      `${u.first_name || ''} ${u.last_name || ''}`.toLowerCase().includes(selectUserSearch.toLowerCase()))
     );
 
   // For Admin table search (all admins)
   const filteredAdminUsers = adminUsers.filter(user =>
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    `${user.first_name} ${user.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    `${user.first_name || ''} ${user.last_name || ''}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Show debug information in development mode
+  const showDebugInfo = process.env.NODE_ENV === 'development';
 
   return (
     <div className="space-y-6">
@@ -172,7 +201,11 @@ const UserRolesTab = () => {
             </DialogDescription>
           </DialogHeaderUI>
           
-          {noUsers ? (
+          {loading ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-[#2DCDA5]" />
+            </div>
+          ) : noUsers || users.length === 0 ? (
             <Alert className="bg-amber-50 border-amber-200">
               <AlertCircle className="h-4 w-4 text-amber-500" />
               <AlertTitle className="text-amber-800">No registered users found</AlertTitle>
@@ -204,7 +237,7 @@ const UserRolesTab = () => {
                     key={user.id}
                   >
                     <div>
-                      <div className="font-medium">{user.first_name} {user.last_name}</div>
+                      <div className="font-medium">{user.first_name || ''} {user.last_name || ''}</div>
                       <div className="text-xs text-gray-500">{user.email}</div>
                     </div>
                     <Button
@@ -242,7 +275,7 @@ const UserRolesTab = () => {
           <DialogHeaderUI>
             <DialogTitle>Remove Admin Privilege</DialogTitle>
             <DialogDescription>
-              Are you sure you want to remove admin rights from <span className="font-semibold">{removeDialogOpen.user?.first_name} {removeDialogOpen.user?.last_name} ({removeDialogOpen.user?.email})</span>? This will not delete the user.
+              Are you sure you want to remove admin rights from <span className="font-semibold">{removeDialogOpen.user?.first_name || ''} {removeDialogOpen.user?.last_name || ''} ({removeDialogOpen.user?.email})</span>? This will not delete the user.
             </DialogDescription>
           </DialogHeaderUI>
           <DialogFooter>
@@ -263,10 +296,28 @@ const UserRolesTab = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Debug Information (only in development) */}
+      {showDebugInfo && debugInfo && (
+        <Alert className="bg-gray-100 border-gray-200 font-mono text-xs">
+          <AlertTitle className="text-gray-800">Debug Information</AlertTitle>
+          <AlertDescription className="text-gray-700 whitespace-pre-wrap">
+            {debugInfo}
+          </AlertDescription>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mt-2" 
+            onClick={() => fetchUsers()}
+          >
+            Refresh Data
+          </Button>
+        </Alert>
+      )}
+
       {/* Admin Users Table */}
       {loading ? (
         <div className="flex justify-center py-10">
-          <div className="animate-spin h-8 w-8 border-4 border-vuilder-indigo border-t-transparent rounded-full"></div>
+          <Loader2 className="h-8 w-8 animate-spin text-[#2DCDA5]" />
         </div>
       ) : (
         <Card>
@@ -300,7 +351,7 @@ const UserRolesTab = () => {
                     {filteredAdminUsers.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell>
-                          <div className="font-medium">{user.first_name} {user.last_name}</div>
+                          <div className="font-medium">{user.first_name || ''} {user.last_name || ''}</div>
                         </TableCell>
                         <TableCell>
                           <div className="text-gray-500">{user.email}</div>
