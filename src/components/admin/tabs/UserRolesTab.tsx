@@ -1,14 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader as DialogHeaderUI, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Shield, UserPlus, UserMinus } from 'lucide-react';
+import { Shield, UserPlus, UserMinus, AlertCircle } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 type UserWithRoles = {
   id: string;
@@ -29,6 +30,7 @@ const UserRolesTab = () => {
   const [removeDialogOpen, setRemoveDialogOpen] = useState<{ open: boolean; user: UserWithRoles | null }>({ open: false, user: null });
   const [selectUserSearch, setSelectUserSearch] = useState('');
   const [addInProgress, setAddInProgress] = useState(false);
+  const [noUsers, setNoUsers] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -39,6 +41,12 @@ const UserRolesTab = () => {
       setLoading(true);
       const { data: profiles, error: profilesError } = await supabase.from('profiles').select('*');
       if (profilesError) throw profilesError;
+
+      if (!profiles || profiles.length === 0) {
+        setNoUsers(true);
+        setLoading(false);
+        return;
+      }
 
       const { data: userRoles, error: rolesError } = await supabase.from('user_roles').select('*');
       if (rolesError) throw rolesError;
@@ -132,7 +140,7 @@ const UserRolesTab = () => {
   // For Admin table search (all admins)
   const filteredAdminUsers = adminUsers.filter(user =>
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    `${user.first_name} ${user.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
+    `${user.first_name} ${u.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -162,41 +170,63 @@ const UserRolesTab = () => {
               Select a user to grant admin privileges.
             </DialogDescription>
           </DialogHeaderUI>
-          <div className="mb-3">
-            <Input
-              placeholder="Search user by name or email"
-              value={selectUserSearch}
-              onChange={e => setSelectUserSearch(e.target.value)}
-              autoFocus
-            />
-          </div>
-          <div className="max-h-64 overflow-y-auto space-y-1.5">
-            {eligibleUsers.length === 0 && (
-              <div className="text-muted-foreground py-4 text-center">
-                No eligible users found.
+          
+          {noUsers ? (
+            <Alert className="bg-amber-50 border-amber-200">
+              <AlertCircle className="h-4 w-4 text-amber-500" />
+              <AlertTitle className="text-amber-800">No registered users found</AlertTitle>
+              <AlertDescription className="text-amber-700">
+                There are no registered users in the system yet. Users need to sign up first before they can be assigned admin roles.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <>
+              <div className="mb-3">
+                <Input
+                  placeholder="Search user by name or email"
+                  value={selectUserSearch}
+                  onChange={e => setSelectUserSearch(e.target.value)}
+                  autoFocus
+                />
               </div>
-            )}
-            {eligibleUsers.map(user => (
-              <div
-                className="flex items-center justify-between border rounded-md p-2 hover:bg-muted cursor-pointer transition"
-                key={user.id}
-              >
-                <div>
-                  <div className="font-medium">{user.first_name} {user.last_name}</div>
-                  <div className="text-xs text-gray-500">{user.email}</div>
-                </div>
-                <Button
-                  size="sm"
-                  className="bg-[#2DCDA5] hover:bg-[#29B896] text-white"
-                  disabled={addInProgress}
-                  onClick={() => updateUserRole(user.id, "admin", "add")}
-                >
-                  <UserPlus className="h-4 w-4" />
-                  Add Admin
-                </Button>
+              <div className="max-h-64 overflow-y-auto space-y-1.5">
+                {eligibleUsers.length === 0 && (
+                  <div className="text-muted-foreground py-4 text-center">
+                    {users.length === 0 ? 
+                      "No users found in the system." : 
+                      "No eligible users found. All existing users may already have admin privileges."}
+                  </div>
+                )}
+                {eligibleUsers.map(user => (
+                  <div
+                    className="flex items-center justify-between border rounded-md p-2 hover:bg-muted cursor-pointer transition"
+                    key={user.id}
+                  >
+                    <div>
+                      <div className="font-medium">{user.first_name} {user.last_name}</div>
+                      <div className="text-xs text-gray-500">{user.email}</div>
+                    </div>
+                    <Button
+                      size="sm"
+                      className="bg-[#2DCDA5] hover:bg-[#29B896] text-white"
+                      disabled={addInProgress}
+                      onClick={() => updateUserRole(user.id, "admin", "add")}
+                    >
+                      <UserPlus className="h-4 w-4 mr-1" />
+                      Add Admin
+                    </Button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
+          
+          <Alert className="bg-blue-50 border-blue-200">
+            <AlertTitle className="text-blue-800">How do users get registered?</AlertTitle>
+            <AlertDescription className="text-blue-700">
+              Users need to sign up through the application's registration page. Only registered users can be assigned admin roles.
+            </AlertDescription>
+          </Alert>
         </DialogContent>
       </Dialog>
 
@@ -306,6 +336,26 @@ const UserRolesTab = () => {
           </CardContent>
         </Card>
       )}
+      
+      {/* Information for admins */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardHeader>
+          <CardTitle className="text-blue-800 text-lg">How Admin Access Works</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-blue-700 space-y-2">
+            <p>
+              <strong>Who can be an admin?</strong> Only users who have registered accounts in the system can be assigned admin roles.
+            </p>
+            <p>
+              <strong>Why don't I see any users?</strong> If you don't see any eligible users, it means there are no registered users in the system yet, or all users already have admin privileges.
+            </p>
+            <p>
+              <strong>How to add users?</strong> Users need to sign up through the registration page. You cannot manually create user accounts from this admin panel.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
