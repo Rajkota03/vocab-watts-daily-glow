@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import AdminLayout from './admin/AdminLayout';
 import OverviewTab from './admin/tabs/OverviewTab';
@@ -9,11 +8,11 @@ import MessagesTab from './admin/tabs/MessagesTab';
 import ActivityTab from './admin/tabs/ActivityTab';
 import SettingsTab from './admin/tabs/SettingsTab';
 import UserRolesTab from './admin/tabs/UserRolesTab';
+import PromptManagerTab from './admin/tabs/PromptManagerTab';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Render the appropriate tab based on the active tab state
   const renderTabContent = () => {
     switch (activeTab) {
       case 'overview':
@@ -32,6 +31,8 @@ const AdminDashboard = () => {
         return <SettingsTab />;
       case 'roles':
         return <UserRolesTab />;
+      case 'prompts':
+        return <PromptManagerTab />;
       default:
         return <OverviewTab />;
     }

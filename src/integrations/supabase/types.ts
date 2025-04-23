@@ -205,6 +205,36 @@ export type Database = {
           },
         ]
       }
+      vocab_prompts: {
+        Row: {
+          category: string
+          created_at: string
+          difficulty_level: string | null
+          id: string
+          prompt: string
+          subcategory: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          difficulty_level?: string | null
+          id?: string
+          prompt: string
+          subcategory?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          difficulty_level?: string | null
+          id?: string
+          prompt?: string
+          subcategory?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       vocabulary_words: {
         Row: {
           category: string

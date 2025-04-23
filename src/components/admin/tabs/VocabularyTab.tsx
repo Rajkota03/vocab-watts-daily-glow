@@ -44,6 +44,9 @@ const VocabularyTab = () => {
   const [generatedWords, setGeneratedWords] = useState<any[]>([]);
   const [promptError, setPromptError] = useState<string | null>(null);
 
+  const [openAIPrompt, setOpenAIPrompt] = useState<string>("");
+  const [openAIDifficulty, setOpenAIDifficulty] = useState<string>("");
+
   const form = useForm<FormData>({
     defaultValues: {
       word: '',
@@ -74,6 +77,32 @@ const VocabularyTab = () => {
       });
     }
   }, [editingWord, form]);
+
+  useEffect(() => {
+    async function fetchCurrentPrompt() {
+      if (!customCategory) return;
+      let category = customCategory;
+      let subcategory = "";
+      if (category.includes("-")) {
+        [category, subcategory] = category.split("-", 2);
+      }
+      const { data, error } = await supabase
+        .from("vocab_prompts")
+        .select("*")
+        .eq("category", category)
+        .eq("subcategory", subcategory || null)
+        .order("updated_at", { ascending: false })
+        .limit(1);
+      if (!error && data && data.length > 0) {
+        setOpenAIPrompt(data[0].prompt);
+        setOpenAIDifficulty(data[0].difficulty_level);
+      } else {
+        setOpenAIPrompt("(Using default OpenAI prompt logic)");
+        setOpenAIDifficulty("(Default)");
+      }
+    }
+    fetchCurrentPrompt();
+  }, [customCategory]);
 
   const fetchVocabularyWords = async () => {
     try {
@@ -282,6 +311,11 @@ const VocabularyTab = () => {
               {isGenerating ? "Generating..." : "Generate"}
             </Button>
           </form>
+          <div className="text-xs text-gray-500 mb-2">
+            <b>Current Prompt:</b> <span className="whitespace-pre-wrap break-words">{openAIPrompt}</span>
+            <br />
+            <b>Difficulty:</b> {openAIDifficulty}
+          </div>
           {promptError && (
             <div className="text-sm text-red-600">{promptError}</div>
           )}
