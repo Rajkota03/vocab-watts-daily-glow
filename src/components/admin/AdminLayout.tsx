@@ -1,30 +1,35 @@
+
 import React, { useState } from 'react';
 import { 
   Users, BarChart2, MessageSquare, Activity, 
-  Settings, Database, PieChart, Shield, FileText
+  Settings, Database, PieChart, Shield, FileText,
+  LineChart
 } from 'lucide-react';
 import { 
   Sheet, SheetContent, SheetTrigger 
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 interface NavItem {
   title: string;
   icon: React.ElementType;
   value: string;
+  path?: string;
 }
 
 const navItems: NavItem[] = [
-  { title: 'Overview', icon: PieChart, value: 'overview' },
-  { title: 'User Management', icon: Users, value: 'users' },
-  { title: 'User Roles', icon: Shield, value: 'roles' },
-  { title: 'Vocabulary', icon: Database, value: 'vocabulary' },
-  { title: 'Prompt Manager', icon: FileText, value: 'prompts' },
-  { title: 'Subscriptions', icon: BarChart2, value: 'subscriptions' },
-  { title: 'Messages', icon: MessageSquare, value: 'messages' },
-  { title: 'Activity', icon: Activity, value: 'activity' },
-  { title: 'Settings', icon: Settings, value: 'settings' }
+  { title: 'Overview', icon: PieChart, value: 'overview', path: '/admin' },
+  { title: 'User Management', icon: Users, value: 'users', path: '/admin' },
+  { title: 'User Roles', icon: Shield, value: 'roles', path: '/admin' },
+  { title: 'Vocabulary', icon: Database, value: 'vocabulary', path: '/admin' },
+  { title: 'Analytics', icon: LineChart, value: 'analytics', path: '/admin/analytics' },
+  { title: 'Prompt Manager', icon: FileText, value: 'prompts', path: '/admin' },
+  { title: 'Subscriptions', icon: BarChart2, value: 'subscriptions', path: '/admin' },
+  { title: 'Messages', icon: MessageSquare, value: 'messages', path: '/admin' },
+  { title: 'Activity', icon: Activity, value: 'activity', path: '/admin' },
+  { title: 'Settings', icon: Settings, value: 'settings', path: '/admin' }
 ];
 
 interface AdminLayoutProps {
@@ -39,6 +44,16 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
   setActiveTab 
 }) => {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleNavigation = (item: NavItem) => {
+    if (item.path === '/admin') {
+      setActiveTab(item.value);
+    } else if (item.path) {
+      navigate(item.path);
+    }
+    setOpen(false);
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -53,10 +68,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
               {navItems.map((item) => (
                 <button
                   key={item.value}
-                  onClick={() => setActiveTab(item.value)}
+                  onClick={() => handleNavigation(item)}
                   className={cn(
                     "flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-md w-full",
-                    activeTab === item.value
+                    (activeTab === item.value && item.path === '/admin') || 
+                    (window.location.pathname === item.path && item.path !== '/admin')
                       ? "bg-vuilder-mint/10 text-vuilder-mint"
                       : "text-gray-600 hover:bg-gray-50"
                   )}
@@ -84,13 +100,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
               {navItems.map((item) => (
                 <button
                   key={item.value}
-                  onClick={() => {
-                    setActiveTab(item.value);
-                    setOpen(false);
-                  }}
+                  onClick={() => handleNavigation(item)}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md",
-                    activeTab === item.value
+                    (activeTab === item.value && item.path === '/admin') || 
+                    (window.location.pathname === item.path && item.path !== '/admin')
                       ? "bg-vuilder-mint/10 text-vuilder-mint"
                       : "text-gray-600 hover:bg-gray-50"
                   )}
