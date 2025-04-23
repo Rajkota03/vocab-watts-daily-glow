@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { 
   Users, BarChart2, MessageSquare, Activity, 
   Settings, Database, PieChart, Shield, FileText,
-  LineChart
+  LineChart, ArrowLeft
 } from 'lucide-react';
 import { 
   Sheet, SheetContent, SheetTrigger 
@@ -11,6 +11,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface NavItem {
   title: string;
@@ -83,6 +85,27 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
               ))}
             </div>
           </nav>
+          <div className="px-4 py-4 border-t border-gray-200">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full flex items-center justify-center gap-2 text-gray-700"
+                    asChild
+                  >
+                    <Link to="/dashboard">
+                      <ArrowLeft className="h-4 w-4" />
+                      <span>Back to Dashboard</span>
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Return to main dashboard</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
       </div>
 
@@ -117,6 +140,18 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                 </button>
               ))}
             </nav>
+            <div className="px-2 pt-4 border-t border-gray-200 mt-2">
+              <Button
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2 text-gray-700"
+                asChild
+              >
+                <Link to="/dashboard">
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back to Dashboard</span>
+                </Link>
+              </Button>
+            </div>
           </SheetContent>
         </Sheet>
       </div>
