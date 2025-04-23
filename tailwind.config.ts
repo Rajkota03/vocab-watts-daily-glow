@@ -104,8 +104,8 @@ export default {
 			},
 			padding: {
 				'section': {
-					DEFAULT: '4rem', // 64px for desktop
-					'mobile': '3rem', // 48px for mobile
+					DEFAULT: '3rem', // Reduced from 4rem to 48px for desktop
+					'mobile': '2rem', // Reduced from 3rem to 32px for mobile
 				}
 			},
 			keyframes: {
