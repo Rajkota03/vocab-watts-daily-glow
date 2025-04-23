@@ -1,11 +1,13 @@
 
 import React from 'react';
 import { useLocation, Navigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { PhoneNumberDialog } from '@/components/payment/PhoneNumberDialog';
-import { usePaymentHandler } from '@/hooks/usePaymentHandler';
-import { useRazorpay } from '@/hooks/useRazorpay';
-import { Lock, CreditCard, DollarSign, CheckCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RegisterForm } from '@/components/auth/RegisterForm';
+import { ArrowRight, Lock } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import type { RegisterFormValues } from '@/types/auth';
 
 interface LocationState {
   plan: {
@@ -18,160 +20,139 @@ interface LocationState {
 const Payment = () => {
   const location = useLocation();
   const { plan } = (location.state as LocationState) || {};
-  const razorpayLoaded = useRazorpay();
-  
-  const {
-    isProcessingPayment,
-    openDialog,
-    setOpenDialog,
-    phoneNumber,
-    setPhoneNumber,
-    handlePhoneNumberSubmit,
-  } = usePaymentHandler({ razorpayLoaded });
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (values: RegisterFormValues) => {
+    try {
+      const { data: orderData, error: orderError } = await supabase.functions.invoke('create-razorpay-order', {
+        body: { amount: 149 * 100 } // Convert to paise
+      });
+
+      if (orderError) throw orderError;
+
+      const options = {
+        key: orderData.key,
+        amount: orderData.amount,
+        currency: "INR",
+        name: "GLINTUP",
+        description: "Pro Plan Subscription",
+        order_id: orderData.id,
+        prefill: {
+          name: `${values.firstName} ${values.lastName}`,
+          email: values.email,
+          contact: values.whatsappNumber
+        },
+        theme: {
+          color: "#9b87f5"
+        },
+        handler: async function(response: any) {
+          try {
+            // Create user account
+            const { error: signUpError } = await supabase.auth.signUp({
+              email: values.email,
+              password: values.password,
+              options: {
+                data: {
+                  first_name: values.firstName,
+                  last_name: values.lastName,
+                  nick_name: values.nickName || null,
+                  whatsapp_number: values.whatsappNumber,
+                  is_pro: true,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_order_id: response.razorpay_order_id
+                }
+              }
+            });
+
+            if (signUpError) throw signUpError;
+
+            toast({
+              title: "Welcome to GLINTUP Pro! 🎉",
+              description: "Your account has been created successfully.",
+            });
+
+            navigate('/dashboard');
+          } catch (error: any) {
+            toast({
+              title: "Error",
+              description: error.message,
+              variant: "destructive"
+            });
+          }
+        }
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
 
   if (!plan) {
     return <Navigate to="/" replace />;
   }
 
-  const features = plan.isPro ? [
-    "10 vocabulary words daily",
-    "Choose your category",
-    "Custom delivery time",
-    "Personalized difficulty",
-    "Progress tracking"
-  ] : [
-    "5 vocabulary words daily",
-    "WhatsApp delivery",
-    "Daily practice quizzes",
-    "Example sentences"
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-12">
-      <div className="container max-w-4xl mx-auto px-4">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Complete Your {plan.isPro ? 'Pro' : 'Free Trial'} Subscription
-          </h1>
-          <p className="text-gray-600">
-            You're just one step away from expanding your vocabulary
-          </p>
-        </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-[#9b87f5]/10 to-[#7E69AB]/10 py-12 px-4">
+      <div className="container max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-[#9b87f5] to-[#7E69AB]">
+          Complete Your Pro Subscription
+        </h1>
+        
         <div className="grid md:grid-cols-2 gap-8">
-          <Card className="bg-white shadow-md">
+          {/* Left side - Registration form */}
+          <Card className="border border-gray-100/50 shadow-xl bg-white/95 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-primary" />
-                Order Summary
-              </CardTitle>
+              <CardTitle className="text-2xl">Create Your Account</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center pb-4 border-b">
-                  <span className="font-medium">Plan</span>
-                  <span className="text-primary font-semibold">
-                    {plan.isPro ? 'Pro Plan' : 'Free Trial'}
-                  </span>
-                </div>
-                {plan.isPro && (
-                  <div className="flex justify-between items-center pb-4 border-b">
-                    <span className="font-medium">Amount</span>
-                    <span className="text-xl font-bold">₹149/month</span>
-                  </div>
-                )}
-                <div className="space-y-2">
-                  <h4 className="font-medium">Included Features:</h4>
-                  <ul className="space-y-2">
-                    {features.map((feature, index) => (
-                      <li key={index} className="flex items-center gap-2 text-gray-600">
-                        <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+              <RegisterForm onSubmit={handleSubmit} isLoading={false} />
             </CardContent>
           </Card>
 
-          <Card className="bg-white shadow-md">
+          {/* Right side - Pricing box */}
+          <Card className="border-2 border-[#9b87f5] shadow-xl bg-white/95 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                {plan.isPro ? (
-                  <>
-                    <Lock className="h-5 w-5 text-primary" />
-                    Payment Details
-                  </>
-                ) : (
-                  <>
-                    <Lock className="h-5 w-5 text-primary" />
-                    Activate Trial
-                  </>
-                )}
-              </CardTitle>
-              <CardDescription>
-                {plan.isPro 
-                  ? "Secure payment processed by Razorpay"
-                  : "Start your free trial now"
-                }
-              </CardDescription>
+              <CardTitle className="text-xl">Pro Plan Benefits</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-500 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-blue-800 font-medium">How it works:</p>
-                      <p className="text-sm text-blue-800 mt-1">
-                        1. {plan.isPro ? "Complete your payment" : "Start your free trial"}
-                        <br />
-                        2. Add your WhatsApp number
-                        <br />
-                        3. Start receiving daily vocabulary words
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                {plan.isPro && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Lock className="h-4 w-4" />
-                    <span>Your payment is secured with 256-bit encryption</span>
-                  </div>
-                )}
+            <CardContent className="space-y-6">
+              <div className="text-3xl font-bold text-[#9b87f5]">
+                ₹149 <span className="text-sm font-normal text-gray-500">/month</span>
+              </div>
+              
+              <ul className="space-y-3">
+                {[
+                  "10 vocabulary words daily",
+                  "Choose your category",
+                  "Custom delivery time",
+                  "Personalized difficulty",
+                  "Progress tracking",
+                  "Example sentences",
+                  "Daily practice quizzes",
+                  "Priority support"
+                ].map((feature, index) => (
+                  <li key={index} className="flex items-center gap-2 text-gray-700">
+                    <ArrowRight className="h-4 w-4 text-[#9b87f5]" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  Fill in your details and click "Create Account" to proceed with the payment. Your Pro access will be activated immediately after successful payment.
+                </p>
               </div>
             </CardContent>
-            <CardFooter>
-              <button
-                onClick={() => setOpenDialog(true)}
-                className="w-full bg-primary text-white py-3 px-4 rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
-                disabled={isProcessingPayment}
-              >
-                {isProcessingPayment ? (
-                  <>Processing...</>
-                ) : plan.isPro ? (
-                  <>
-                    <DollarSign className="h-5 w-5" />
-                    Proceed to Payment
-                  </>
-                ) : (
-                  'Start Free Trial'
-                )}
-              </button>
-            </CardFooter>
           </Card>
         </div>
       </div>
-
-      <PhoneNumberDialog
-        open={openDialog}
-        onOpenChange={setOpenDialog}
-        phoneNumber={phoneNumber}
-        onPhoneNumberChange={setPhoneNumber}
-        onSubmit={handlePhoneNumberSubmit}
-        isProcessing={isProcessingPayment}
-      />
     </div>
   );
 };
