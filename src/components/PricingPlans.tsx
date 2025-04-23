@@ -54,16 +54,13 @@ const PricingPlans = () => {
     "10 vocabulary words daily"
   ];
 
-  const handlePhoneNumberSubmit = async () => {
-    if (!phoneNumber || phoneNumber.trim().length < 10) {
-      toast({
-        title: "Invalid phone number",
-        description: "Please enter a valid WhatsApp number.",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleSubscribeFree = () => {
+    setCurrentPlan({ isPro: false });
+    setOpenDialog(true);
+  };
 
+  const handleSubscribePro = async () => {
+    setCurrentPlan({ isPro: true, category: 'business' });
     setIsProcessingPayment(true);
 
     try {
@@ -77,17 +74,14 @@ const PricingPlans = () => {
         }
       }
       
-      if (!currentPlan) {
-        throw new Error("No plan selected");
-      }
+      // Create Razorpay order with a temporary phone number
+      // We'll update the actual phone number after successful payment
+      const tempPhoneNumber = "+911234567890"; // This is temporary and will be updated after payment
       
-      const { isPro, category } = currentPlan;
-      
-      // Create Razorpay order
       const orderResult = await createRazorpayOrder({
-        phoneNumber,
-        category,
-        isPro,
+        phoneNumber: tempPhoneNumber,
+        category: 'business',
+        isPro: true,
         deliveryTime: 'morning' // Default delivery time
       });
       
@@ -95,8 +89,93 @@ const PricingPlans = () => {
         throw new Error('Failed to create payment order');
       }
       
-      // If it's a free trial signup (not pro), we complete the subscription directly
+      // Initialize Razorpay payment
+      const options = {
+        key: 'rzp_test_YourTestKeyHere', // Replace with your Razorpay test key
+        amount: orderResult.data.amount,
+        currency: 'INR',
+        name: 'GLINTUP',
+        description: 'Vocabulary Pro Subscription',
+        order_id: orderResult.data.id,
+        theme: {
+          color: '#3F3D56'
+        },
+        handler: function(response: any) {
+          // After successful payment, open dialog to collect WhatsApp number
+          setCurrentPlan({ isPro: true, category: 'business' });
+          setOpenDialog(true);
+          
+          // Store the payment IDs to be used when user submits phone number
+          localStorage.setItem('razorpay_payment_id', response.razorpay_payment_id);
+          localStorage.setItem('razorpay_order_id', response.razorpay_order_id);
+          
+          toast({
+            title: "Payment Successful!",
+            description: "Please enter your WhatsApp number to complete subscription setup.",
+          });
+          
+          setIsProcessingPayment(false);
+        },
+        modal: {
+          ondismiss: function() {
+            toast({
+              title: "Payment Cancelled",
+              description: "You cancelled the payment process. Feel free to try again.",
+              variant: "default"
+            });
+            setIsProcessingPayment(false);
+          }
+        }
+      };
+      
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+      
+    } catch (error) {
+      console.error('Error processing subscription:', error);
+      toast({
+        title: "Payment Setup Failed",
+        description: error.message || "We couldn't set up your payment. Please try again later.",
+        variant: "destructive"
+      });
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const handlePhoneNumberSubmit = async () => {
+    if (!phoneNumber || phoneNumber.trim().length < 10) {
+      toast({
+        title: "Invalid phone number",
+        description: "Please enter a valid WhatsApp number.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsProcessingPayment(true);
+
+    try {
+      // Get the current plan
+      if (!currentPlan) {
+        throw new Error("No plan selected");
+      }
+      
+      const { isPro, category } = currentPlan;
+      
+      // If it's a free trial signup (not pro), we create the order and complete the subscription
       if (!isPro) {
+        // Create Razorpay order for free trial
+        const orderResult = await createRazorpayOrder({
+          phoneNumber,
+          category,
+          isPro,
+          deliveryTime: 'morning' // Default delivery time
+        });
+        
+        if (!orderResult.success) {
+          throw new Error('Failed to create free trial subscription');
+        }
+        
         const subscriptionResult = await completeSubscription({
           phoneNumber,
           deliveryTime: 'morning',
@@ -117,87 +196,49 @@ const PricingPlans = () => {
         return;
       }
       
-      // Initialize Razorpay payment
-      const options = {
-        key: 'rzp_test_YourTestKeyHere', // Replace with your Razorpay test key
-        amount: orderResult.data.amount,
-        currency: 'INR',
-        name: 'GLINTUP',
-        description: 'Vocabulary Pro Subscription',
-        order_id: orderResult.data.id,
-        prefill: {
-          contact: phoneNumber
-        },
-        theme: {
-          color: '#3F3D56'
-        },
-        handler: async function(response: any) {
-          try {
-            // Complete subscription after successful payment
-            const subscriptionResult = await completeSubscription({
-              phoneNumber,
-              category,
-              isPro: true,
-              deliveryTime: 'morning',
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id
-            });
-            
-            if (!subscriptionResult.success) {
-              throw new Error('Payment was successful but subscription creation failed');
-            }
-            
-            toast({
-              title: "Payment Successful!",
-              description: "Your Pro subscription is now active. You'll receive your words on WhatsApp.",
-            });
-            
-            setOpenDialog(false);
-            navigate('/dashboard');
-          } catch (error) {
-            console.error('Error completing subscription after payment:', error);
-            toast({
-              title: "Error Completing Subscription",
-              description: "Your payment was received but we couldn't complete your subscription setup. Please contact support.",
-              variant: "destructive"
-            });
-          } finally {
-            setIsProcessingPayment(false);
-          }
-        },
-        modal: {
-          ondismiss: function() {
-            toast({
-              title: "Payment Cancelled",
-              description: "You cancelled the payment process. Feel free to try again.",
-              variant: "default"
-            });
-            setIsProcessingPayment(false);
-            setOpenDialog(false);
-          }
-        }
-      };
+      // For pro subscriptions, get the stored payment IDs from localStorage
+      const razorpayPaymentId = localStorage.getItem('razorpay_payment_id');
+      const razorpayOrderId = localStorage.getItem('razorpay_order_id');
       
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
+      if (!razorpayPaymentId || !razorpayOrderId) {
+        throw new Error('Payment information not found. Please try again.');
+      }
       
-    } catch (error) {
-      console.error('Error processing subscription:', error);
+      // Complete subscription with the collected phone number and payment IDs
+      const subscriptionResult = await completeSubscription({
+        phoneNumber,
+        category,
+        isPro: true,
+        deliveryTime: 'morning',
+        razorpayOrderId,
+        razorpayPaymentId
+      });
+      
+      if (!subscriptionResult.success) {
+        throw new Error('Payment was successful but subscription creation failed');
+      }
+      
+      // Clear the stored payment IDs
+      localStorage.removeItem('razorpay_payment_id');
+      localStorage.removeItem('razorpay_order_id');
+      
       toast({
-        title: "Payment Setup Failed",
-        description: error.message || "We couldn't set up your payment. Please try again later.",
+        title: "Subscription Activated!",
+        description: "Your Pro subscription is now active. You'll receive your words on WhatsApp.",
+      });
+      
+      setOpenDialog(false);
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error completing subscription:', error);
+      toast({
+        title: "Error Completing Subscription",
+        description: error.message || "We couldn't complete your subscription. Please contact support.",
         variant: "destructive"
       });
     } finally {
-      if (!currentPlan?.isPro) {
-        setIsProcessingPayment(false);
-      }
+      setIsProcessingPayment(false);
     }
-  };
-
-  const handleSubscribe = (isPro: boolean, category?: string) => {
-    setCurrentPlan({ isPro, category });
-    setOpenDialog(true);
   };
 
   return (
@@ -222,7 +263,7 @@ const PricingPlans = () => {
           </CardContent>
           <CardFooter>
             <Button 
-              onClick={() => handleSubscribe(false)} 
+              onClick={handleSubscribeFree}
               variant="outline" 
               className="w-full" 
               disabled={isProcessingPayment}
@@ -256,7 +297,7 @@ const PricingPlans = () => {
           </CardContent>
           <CardFooter>
             <Button 
-              onClick={() => handleSubscribe(true, 'business')} 
+              onClick={handleSubscribePro}
               className="w-full group" 
               disabled={isProcessingPayment}
             >
