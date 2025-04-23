@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -77,7 +76,7 @@ const Navbar = () => {
     }`}>
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <Link to="/" className="flex items-center gap-2">
-          <img src="/src/assets/logo-horizontal.svg" alt="GLINTUP" className="h-8" />
+          <img src="/logo-horizontal.svg" alt="GLINTUP" className="h-8" />
         </Link>
         
         <button 
