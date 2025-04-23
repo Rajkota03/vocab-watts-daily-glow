@@ -50,16 +50,20 @@ const OverviewTab = () => {
       if (proError) throw new Error(`Error fetching pro users: ${proError.message}`);
       
       // Get active users count (active in the last 24 hours)
+      // Fix: Using a different approach to get unique users instead of distinctOn
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       
-      const { count: activeCount, error: activeError } = await supabase
+      const { data: activeUsers, error: activeError } = await supabase
         .from('user_word_history')
-        .select('user_id', { count: 'exact', head: true })
-        .gt('date_sent', yesterday.toISOString())
-        .distinctOn('user_id');
+        .select('user_id')
+        .gt('date_sent', yesterday.toISOString());
 
       if (activeError) throw new Error(`Error fetching active users: ${activeError.message}`);
+      
+      // Count unique user_ids using a Set
+      const uniqueActiveUsers = new Set(activeUsers?.map(item => item.user_id) || []);
+      const activeCount = uniqueActiveUsers.size;
       
       // Get total words count
       const { count: wordsCount, error: wordsError } = await supabase
