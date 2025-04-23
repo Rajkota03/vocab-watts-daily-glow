@@ -8,7 +8,6 @@ import { Search, Mail, MessageSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
-
 interface User {
   id: string;
   first_name: string;
@@ -19,60 +18,62 @@ interface User {
   created_at: string;
   last_active: string;
 }
-
 const COLORS = ["#80cbb6", "#fde047", "#38bdf8", "#fca5a5", "#b8b8ff", "#fdba74"];
-
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric',
+    day: 'numeric'
   });
 };
-
 const groupUsersByMonth = (users: User[]) => {
   const map = new Map();
   users.forEach(user => {
     const month = user.created_at.slice(0, 7);
     map.set(month, (map.get(month) || 0) + 1);
   });
-  return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([month, count]) => ({ month, count }));
+  return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([month, count]) => ({
+    month,
+    count
+  }));
 };
-
 const getSubscriptionDistribution = (users: User[]) => {
-  let pro = 0, free = 0;
+  let pro = 0,
+    free = 0;
   users.forEach(user => user.is_pro ? pro++ : free++);
-  return [
-    { name: 'Pro', value: pro },
-    { name: 'Free', value: free }
-  ];
+  return [{
+    name: 'Pro',
+    value: pro
+  }, {
+    name: 'Free',
+    value: free
+  }];
 };
-
 const UserManagementTab = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sending, setSending] = useState(false);
-
   useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*');
+      const {
+        data: profiles,
+        error: profilesError
+      } = await supabase.from('profiles').select('*');
       if (profilesError) {
         setUsers([]);
         setLoading(false);
         return;
       }
-      const { data: subs } = await supabase
-        .from('user_subscriptions')
-        .select('*');
-      const { data: activities } = await supabase
-        .from('user_word_history')
-        .select('user_id, date_sent')
-        .order('date_sent', { ascending: false });
-
+      const {
+        data: subs
+      } = await supabase.from('user_subscriptions').select('*');
+      const {
+        data: activities
+      } = await supabase.from('user_word_history').select('user_id, date_sent').order('date_sent', {
+        ascending: false
+      });
       const subscriptionMap = new Map();
       subs?.forEach(sub => {
         subscriptionMap.set(sub.user_id, {
@@ -82,13 +83,15 @@ const UserManagementTab = () => {
       });
       const latestActivityMap = new Map();
       activities?.forEach(activity => {
-        if (!latestActivityMap.has(activity.user_id) ||
-            new Date(activity.date_sent) > new Date(latestActivityMap.get(activity.user_id))) {
+        if (!latestActivityMap.has(activity.user_id) || new Date(activity.date_sent) > new Date(latestActivityMap.get(activity.user_id))) {
           latestActivityMap.set(activity.user_id, activity.date_sent);
         }
       });
       const usersData: User[] = profiles?.map(profile => {
-        const subscription = subscriptionMap.get(profile.id) || { is_pro: false, category: 'none' };
+        const subscription = subscriptionMap.get(profile.id) || {
+          is_pro: false,
+          category: 'none'
+        };
         const lastActive = latestActivityMap.get(profile.id) || profile.created_at;
         return {
           id: profile.id,
@@ -106,16 +109,9 @@ const UserManagementTab = () => {
     };
     fetchUsers();
   }, []);
-
-  const filteredUsers = users.filter(user =>
-    `${user.first_name} ${user.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (user.category || '').toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
+  const filteredUsers = users.filter(user => `${user.first_name} ${user.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) || user.email.toLowerCase().includes(searchQuery.toLowerCase()) || (user.category || '').toLowerCase().includes(searchQuery.toLowerCase()));
   const userGrowthData = groupUsersByMonth(users);
   const subscriptionData = getSubscriptionDistribution(users);
-
   const handleSendTestEmailAll = async () => {
     if (sending) return;
     setSending(true);
@@ -142,7 +138,7 @@ const UserManagementTab = () => {
       }
       toast({
         title: "Test Email Sent!",
-        description: "A test vocab email has been sent to ALL user emails.",
+        description: "A test vocab email has been sent to ALL user emails."
       });
     } catch (err: any) {
       toast({
@@ -153,17 +149,19 @@ const UserManagementTab = () => {
     }
     setSending(false);
   };
-
   const handleSendWhatsAppAll = async () => {
     if (sending) return;
     setSending(true);
     try {
-      const { data: subs } = await supabase
-        .from('user_subscriptions')
-        .select('user_id, phone_number, category');
+      const {
+        data: subs
+      } = await supabase.from('user_subscriptions').select('user_id, phone_number, category');
       const subMap = new Map();
       subs?.forEach(sub => {
-        subMap.set(sub.user_id, { phone_number: sub.phone_number, category: sub.category });
+        subMap.set(sub.user_id, {
+          phone_number: sub.phone_number,
+          category: sub.category
+        });
       });
       for (let user of users) {
         const sub = subMap.get(user.id);
@@ -187,7 +185,7 @@ const UserManagementTab = () => {
       }
       toast({
         title: "Test WhatsApp Sent!",
-        description: "Test WhatsApp vocab words have been sent to all users who have numbers.",
+        description: "Test WhatsApp vocab words have been sent to all users who have numbers."
       });
     } catch (err: any) {
       toast({
@@ -198,9 +196,7 @@ const UserManagementTab = () => {
     }
     setSending(false);
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">User Management</h2>
         <p className="text-muted-foreground">
@@ -209,69 +205,16 @@ const UserManagementTab = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>User Growth</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={userGrowthData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Line type="monotone" dataKey="count" stroke="#34d399" strokeWidth={2} />
-                <Legend />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>Subscription Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie
-                  data={subscriptionData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={60}
-                  label
-                >
-                  {subscriptionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        
+        
       </div>
 
       <div className="flex gap-4 items-center mb-4">
-        <Button
-          size="sm"
-          variant="default"
-          onClick={handleSendTestEmailAll}
-          disabled={sending || users.length === 0}
-          className="flex items-center gap-2 bg-vuilder-mint text-white"
-        >
+        <Button size="sm" variant="default" onClick={handleSendTestEmailAll} disabled={sending || users.length === 0} className="flex items-center gap-2 bg-vuilder-mint text-white">
           <Mail className="h-4 w-4" />
           Send Test Vocabulary Email to All
         </Button>
-        <Button
-          size="sm"
-          variant="default"
-          onClick={handleSendWhatsAppAll}
-          disabled={sending || users.length === 0}
-          className="flex items-center gap-2 bg-green-500 text-white"
-        >
+        <Button size="sm" variant="default" onClick={handleSendWhatsAppAll} disabled={sending || users.length === 0} className="flex items-center gap-2 bg-green-500 text-white">
           <MessageSquare className="h-4 w-4" />
           Send Test WhatsApp to All
         </Button>
@@ -285,19 +228,11 @@ const UserManagementTab = () => {
           <div className="flex items-center mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search by name, email, or category..."
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+              <Input placeholder="Search by name, email, or category..." className="pl-10" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
             </div>
           </div>
           <div className="rounded-md border overflow-hidden">
-            {loading ? (
-              <div className="py-16 text-center text-muted-foreground">Loading users...</div>
-            ) : (
-              <Table>
+            {loading ? <div className="py-16 text-center text-muted-foreground">Loading users...</div> : <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
@@ -309,8 +244,7 @@ const UserManagementTab = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map(user => (
-                    <TableRow key={user.id}>
+                  {filteredUsers.map(user => <TableRow key={user.id}>
                       <TableCell>
                         <div>
                           <div className="font-medium">{user.first_name} {user.last_name}</div>
@@ -318,13 +252,7 @@ const UserManagementTab = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          className={
-                            user.is_pro
-                              ? 'bg-vuilder-mint/10 text-vuilder-mint hover:bg-vuilder-mint/20 hover:text-vuilder-mint'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-700'
-                          }
-                        >
+                        <Badge className={user.is_pro ? 'bg-vuilder-mint/10 text-vuilder-mint hover:bg-vuilder-mint/20 hover:text-vuilder-mint' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-700'}>
                           {user.is_pro ? 'Pro' : 'Free'}
                         </Badge>
                       </TableCell>
@@ -338,16 +266,12 @@ const UserManagementTab = () => {
                       <TableCell className="text-right">
                         <Button variant="outline" size="sm">View</Button>
                       </TableCell>
-                    </TableRow>
-                  ))}
+                    </TableRow>)}
                 </TableBody>
-              </Table>
-            )}
+              </Table>}
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default UserManagementTab;
