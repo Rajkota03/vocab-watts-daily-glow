@@ -8,6 +8,7 @@ import {
   ChartTooltipContent
 } from "@/components/ui/chart";
 import { CircleDollarSign, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import * as Recharts from "recharts";
 
 // Dummy data for stat cards (simulate period-over-period changes)
 const metricStats = [
@@ -71,7 +72,7 @@ function generateRevenueData(timeframe: TimeFrame) {
         date.setDate(date.getDate() - i);
         data.push({
           date: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-          revenue: randomBetween(...minMax.daily)
+          revenue: randomBetween(minMax.daily[0], minMax.daily[1])
         });
       }
       break;
@@ -81,7 +82,7 @@ function generateRevenueData(timeframe: TimeFrame) {
         date.setDate(date.getDate() - i * 7);
         data.push({
           date: `Week ${8 - i}`,
-          revenue: randomBetween(...minMax.weekly)
+          revenue: randomBetween(minMax.weekly[0], minMax.weekly[1])
         });
       }
       break;
@@ -91,7 +92,7 @@ function generateRevenueData(timeframe: TimeFrame) {
         date.setMonth(date.getMonth() - i);
         data.push({
           date: date.toLocaleDateString("en-US", { month: "short" }),
-          revenue: randomBetween(...minMax.monthly)
+          revenue: randomBetween(minMax.monthly[0], minMax.monthly[1])
         });
       }
       break;
@@ -101,7 +102,7 @@ function generateRevenueData(timeframe: TimeFrame) {
         date.setFullYear(date.getFullYear() - i);
         data.push({
           date: date.getFullYear().toString(),
-          revenue: randomBetween(...minMax.yearly)
+          revenue: randomBetween(minMax.yearly[0], minMax.yearly[1])
         });
       }
       break;
@@ -180,45 +181,42 @@ const RevenueDashboard = () => {
         <CardContent>
           <div className="h-[340px] w-full overflow-x-auto">
             <ChartContainer config={chartConfig} className="h-full">
-              {/* Always line chart for now */}
-              <ChartContainer.ResponsiveContainer width="100%" height="100%">
-                {(ResponsiveContainerProps) => (
-                  <ChartContainer.LineChart
-                    data={data}
-                    margin={{ top: 24, right: 30, left: 20, bottom: 30 }}
-                  >
-                    <ChartContainer.CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <ChartContainer.XAxis
-                      dataKey="date"
-                      tick={{ fill: "#6b7280" }}
-                      tickLine={{ stroke: "#e5e7eb" }}
-                      axisLine={{ stroke: "#e5e7eb" }}
-                    />
-                    <ChartContainer.YAxis
-                      tick={{ fill: "#6b7280" }}
-                      tickLine={{ stroke: "#e5e7eb" }}
-                      axisLine={{ stroke: "#e5e7eb" }}
-                      width={56}
-                    />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <ChartContainer.Line
-                      type="monotone"
-                      dataKey="revenue"
-                      name="Revenue"
-                      stroke="#3F3D56"
-                      strokeWidth={2}
-                      dot={{ stroke: "#3F3D56", strokeWidth: 2, r: 4, fill: "white" }}
-                      activeDot={{
-                        r: 6,
-                        stroke: "#3F3D56",
-                        strokeWidth: 2,
-                        fill: "#2DCDA5"
-                      }}
-                      animationDuration={500}
-                    />
-                  </ChartContainer.LineChart>
-                )}
-              </ChartContainer.ResponsiveContainer>
+              <Recharts.ResponsiveContainer width="100%" height="100%">
+                <Recharts.LineChart
+                  data={data}
+                  margin={{ top: 24, right: 30, left: 20, bottom: 30 }}
+                >
+                  <Recharts.CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <Recharts.XAxis
+                    dataKey="date"
+                    tick={{ fill: "#6b7280" }}
+                    tickLine={{ stroke: "#e5e7eb" }}
+                    axisLine={{ stroke: "#e5e7eb" }}
+                  />
+                  <Recharts.YAxis
+                    tick={{ fill: "#6b7280" }}
+                    tickLine={{ stroke: "#e5e7eb" }}
+                    axisLine={{ stroke: "#e5e7eb" }}
+                    width={56}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Recharts.Line
+                    type="monotone"
+                    dataKey="revenue"
+                    name="Revenue"
+                    stroke="#3F3D56"
+                    strokeWidth={2}
+                    dot={{ stroke: "#3F3D56", strokeWidth: 2, r: 4, fill: "white" }}
+                    activeDot={{
+                      r: 6,
+                      stroke: "#3F3D56",
+                      strokeWidth: 2,
+                      fill: "#2DCDA5"
+                    }}
+                    animationDuration={500}
+                  />
+                </Recharts.LineChart>
+              </Recharts.ResponsiveContainer>
             </ChartContainer>
           </div>
           <div className="mt-4 text-sm text-gray-500 flex items-center gap-2">
