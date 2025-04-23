@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -29,12 +28,21 @@ type FormData = {
   category: string;
 };
 
+const DEFAULT_OPENAI_CATEGORY = "business-intermediate";
+const DEFAULT_OPENAI_COUNT = 5;
+
 const VocabularyTab = () => {
   const [vocabularyWords, setVocabularyWords] = useState<VocabularyWord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
   const [editingWord, setEditingWord] = useState<VocabularyWord | null>(null);
+
+  const [customCategory, setCustomCategory] = useState(DEFAULT_OPENAI_CATEGORY);
+  const [customCount, setCustomCount] = useState(DEFAULT_OPENAI_COUNT);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedWords, setGeneratedWords] = useState<any[]>([]);
+  const [promptError, setPromptError] = useState<string | null>(null);
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -110,7 +118,6 @@ const VocabularyTab = () => {
   const handleSubmit = async (data: FormData) => {
     try {
       if (editingWord) {
-        // Update existing word
         const { error } = await supabase
           .from('vocabulary_words')
           .update({
@@ -127,7 +134,6 @@ const VocabularyTab = () => {
           description: `"${data.word}" has been successfully updated.`,
         });
       } else {
-        // Add new word
         const { error } = await supabase
           .from('vocabulary_words')
           .insert({
@@ -183,6 +189,39 @@ const VocabularyTab = () => {
     }
   };
 
+  const handleGenerateVocab = async () => {
+    setPromptError(null);
+    setGeneratedWords([]);
+    setIsGenerating(true);
+
+    try {
+      const res = await fetch(
+        `https://pbpmtqcffhqwzboviqfw.functions.supabase.co/generate-vocab-words`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            category: customCategory,
+            count: customCount,
+          }),
+        }
+      );
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        setPromptError(data.error || "OpenAI generation failed");
+        return;
+      }
+      setGeneratedWords(data.words || []);
+    } catch (e: any) {
+      setPromptError(e.message || "Failed to call OpenAI edge function");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const filteredWords = vocabularyWords.filter(word => 
     word.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
     word.definition.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -194,10 +233,75 @@ const VocabularyTab = () => {
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Vocabulary Management</h2>
         <p className="text-muted-foreground">
-          Manage vocabulary words, categories, and related content.
+          Manage vocabulary words, categories, and try live vocabulary generation using OpenAI.
         </p>
       </div>
-      
+
+      <Card className="border shadow-sm mb-6">
+        <CardHeader>
+          <CardTitle>Prompt Playground (OpenAI Vocabulary Generator)</CardTitle>
+          <CardDescription>
+            Edit the category and word count to generate vocabulary live using your current OpenAI prompt logic.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            className="flex gap-4 flex-col sm:flex-row items-end w-full mb-4"
+            onSubmit={e => {
+              e.preventDefault();
+              handleGenerateVocab();
+            }}
+          >
+            <div className="flex flex-col flex-1 min-w-0">
+              <label className="text-sm font-medium mb-1" htmlFor="category">Category</label>
+              <Input
+                id="category"
+                value={customCategory}
+                onChange={e => setCustomCategory(e.target.value)}
+                placeholder="e.g., business-intermediate"
+                className="max-w-xs"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1" htmlFor="count">Word Count</label>
+              <Input
+                id="count"
+                type="number"
+                min={1}
+                max={10}
+                value={customCount}
+                onChange={e => setCustomCount(Math.max(1, Math.min(10, Number(e.target.value))))}
+                className="w-20"
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={isGenerating}
+              className="whitespace-nowrap"
+            >
+              {isGenerating ? "Generating..." : "Generate"}
+            </Button>
+          </form>
+          {promptError && (
+            <div className="text-sm text-red-600">{promptError}</div>
+          )}
+          {generatedWords.length > 0 && (
+            <div className="bg-gray-50 rounded-lg px-4 py-3 space-y-3 mt-2 border">
+              <div className="font-semibold mb-2">Generated Words ({customCategory}):</div>
+              <div className="space-y-3">
+                {generatedWords.map((w, idx) => (
+                  <div key={idx} className="p-2 bg-white rounded shadow flex flex-col md:flex-row md:items-center gap-3">
+                    <span className="font-bold text-vuilder-mint">{w.word}</span>
+                    <span className="text-gray-700 flex-1">{w.definition}</span>
+                    <span className="italic text-gray-500">{w.example}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+            
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle>Vocabulary Database</CardTitle>
