@@ -5,8 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+import { Search, Mail, Whatsapp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/use-toast';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 
 interface User {
   id: string;
@@ -19,6 +21,8 @@ interface User {
   last_active: string;
 }
 
+const COLORS = ["#80cbb6", "#fde047", "#38bdf8", "#fca5a5", "#b8b8ff", "#fdba74"];
+
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -27,10 +31,31 @@ const formatDate = (dateString: string) => {
   });
 };
 
+const groupUsersByMonth = (users: User[]) => {
+  // Returns array: [{ month: '2024-01', count: 3 }, ...]
+  const map = new Map();
+  users.forEach(user => {
+    const month = user.created_at.slice(0, 7);
+    map.set(month, (map.get(month) || 0) + 1);
+  });
+  // Sort by month string (YYYY-MM)
+  return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([month, count]) => ({ month, count }));
+};
+
+const getSubscriptionDistribution = (users: User[]) => {
+  let pro = 0, free = 0;
+  users.forEach(user => user.is_pro ? pro++ : free++);
+  return [
+    { name: 'Pro', value: pro },
+    { name: 'Free', value: free }
+  ];
+};
+
 const UserManagementTab = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -45,11 +70,11 @@ const UserManagementTab = () => {
         return;
       }
       // Get subscriptions
-      const { data: subs, error: subsError } = await supabase
+      const { data: subs } = await supabase
         .from('user_subscriptions')
         .select('*');
       // activity
-      const { data: activities, error: activityError } = await supabase
+      const { data: activities } = await supabase
         .from('user_word_history')
         .select('user_id, date_sent')
         .order('date_sent', { ascending: false });
@@ -95,6 +120,96 @@ const UserManagementTab = () => {
     (user.category || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Chart data
+  const userGrowthData = groupUsersByMonth(users);
+  const subscriptionData = getSubscriptionDistribution(users);
+
+  // ADMIN: Send test words to all users via Email or WhatsApp
+  const handleSendTestEmailAll = async () => {
+    if (sending) return;
+    setSending(true);
+    try {
+      const emailList = users.map(u => u.email);
+      const categories = users.map(u => u.category || "business-intermediate");
+      // Send words to each user (small scale: serial for simplicity)
+      for (let i = 0; i < users.length; i++) {
+        const res = await supabase.functions.invoke('send-vocab-email', {
+          body: {
+            email: users[i].email,
+            category: users[i].category || "business-intermediate",
+            wordCount: 5,
+            force_new_words: true,
+            user_id: users[i].id
+          }
+        });
+        if (res.error) {
+          toast({
+            title: `Error sending email to ${users[i].email}`,
+            description: res.error?.message,
+            variant: "destructive"
+          });
+        }
+      }
+      toast({
+        title: "Test Email Sent!",
+        description: "A test vocab email has been sent to ALL user emails.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Failed to Send Email",
+        description: err.message || "",
+        variant: "destructive"
+      });
+    }
+    setSending(false);
+  };
+
+  const handleSendWhatsAppAll = async () => {
+    if (sending) return;
+    setSending(true);
+    try {
+      // For each user: look up phone from user_subscriptions?
+      const { data: subs } = await supabase
+        .from('user_subscriptions')
+        .select('user_id, phone_number, category');
+      const subMap = new Map();
+      subs?.forEach(sub => {
+        subMap.set(sub.user_id, { phone_number: sub.phone_number, category: sub.category });
+      });
+      for (let user of users) {
+        const sub = subMap.get(user.id);
+        if (!sub?.phone_number) continue;
+        const res = await supabase.functions.invoke('send-whatsapp', {
+          body: {
+            to: sub.phone_number,
+            category: sub.category || "business-intermediate",
+            isPro: user.is_pro,
+            skipSubscriptionCheck: true,
+            userId: user.id
+          }
+        });
+        if (res.error) {
+          toast({
+            title: `Error sending WhatsApp to ${user.first_name}`,
+            description: res.error?.message,
+            variant: "destructive"
+          });
+        }
+      }
+      toast({
+        title: "Test WhatsApp Sent!",
+        description: "Test WhatsApp vocab words have been sent to all users who have numbers.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Failed to Send WhatsApp",
+        description: err.message || "",
+        variant: "destructive"
+      });
+    }
+    setSending(false);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -104,6 +219,78 @@ const UserManagementTab = () => {
         </p>
       </div>
 
+      {/* CHARTS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle>User Growth</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={userGrowthData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Line type="monotone" dataKey="count" stroke="#34d399" strokeWidth={2} />
+                <Legend />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle>Subscription Distribution</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie
+                  data={subscriptionData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={60}
+                  label
+                >
+                  {subscriptionData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ADMIN CONTROL BUTTONS */}
+      <div className="flex gap-4 items-center mb-4">
+        <Button
+          size="sm"
+          variant="default"
+          onClick={handleSendTestEmailAll}
+          disabled={sending || users.length === 0}
+          className="flex items-center gap-2 bg-vuilder-mint text-white"
+        >
+          <Mail className="h-4 w-4" />
+          Send Test Vocabulary Email to All
+        </Button>
+        <Button
+          size="sm"
+          variant="default"
+          onClick={handleSendWhatsAppAll}
+          disabled={sending || users.length === 0}
+          className="flex items-center gap-2 bg-green-500 text-white"
+        >
+          <Whatsapp className="h-4 w-4" />
+          Send Test WhatsApp to All
+        </Button>
+      </div>
+
+      {/* USER TABLE */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Users</CardTitle>
@@ -119,11 +306,7 @@ const UserManagementTab = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button className="ml-4">
-              Export
-            </Button>
           </div>
-
           <div className="rounded-md border overflow-hidden">
             {loading ? (
               <div className="py-16 text-center text-muted-foreground">Loading users...</div>
@@ -182,4 +365,3 @@ const UserManagementTab = () => {
 };
 
 export default UserManagementTab;
-

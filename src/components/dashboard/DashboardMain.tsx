@@ -1,14 +1,9 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Link } from 'react-router-dom';
-import { Shield } from 'lucide-react';
+// Remove all the Tabs-related imports since they're not used
 import CategorySelection from './CategorySelection';
-import OverviewTab from './tabs/OverviewTab';
-import ActivityTab from './tabs/ActivityTab';
-import HistoryTab from './tabs/HistoryTab';
-import ApiTestButton from './ApiTestButton';
+// Remove OverviewTab, ActivityTab, HistoryTab, ApiTestButton imports
 
 interface DashboardMainProps {
   subscription: {
@@ -45,40 +40,11 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
           />
         </Card>
       )}
-
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="bg-gray-100/80 p-1 rounded-xl">
-          <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="activity" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            Activity
-          </TabsTrigger>
-          <TabsTrigger value="history" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            History
-          </TabsTrigger>
-          {isAdmin && (
-            <TabsTrigger value="admin" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm flex items-center gap-1">
-              <Link to="/admin" className="flex items-center gap-1">
-                <Shield className="h-4 w-4" />
-                Admin
-              </Link>
-            </TabsTrigger>
-          )}
-        </TabsList>
-
-        <TabsContent value="overview">
-          <OverviewTab todaysQuiz={MOCK_TODAYS_QUIZ} />
-        </TabsContent>
-
-        <TabsContent value="activity">
-          <ActivityTab recentDrops={MOCK_RECENT_DROPS} />
-        </TabsContent>
-
-        <TabsContent value="history">
-          <HistoryTab isPro={subscription.is_pro} category={subscription.category} />
-        </TabsContent>
-      </Tabs>
+      {/* All main dashboard tabs/content removed as requested */}
+      <div className="text-center text-gray-500 py-16">
+        {/* Dashboard is currently under maintenance. */}
+        Welcome to your dashboard.
+      </div>
     </main>
   );
 };
