@@ -10,9 +10,9 @@ const HeroSection = () => {
         <div className="flex flex-col lg:flex-row gap-12 items-center">
           {/* Hero content */}
           <div className="flex-1 text-center lg:text-left">
-            <div className="inline-flex items-center mb-6 bg-accent/10 py-1.5 px-4 rounded-full text-dark text-sm font-medium shadow-sm">
+            <div className="inline-flex items-center mb-6 py-1.5 px-4 rounded-full text-dark text-sm font-medium shadow-sm bg-green-500">
               <Smartphone className="w-4 h-4 mr-2" />
-              <span>Learn directly on WhatsApp</span>
+              <span className="font-bold">Learn directly on WhatsApp</span>
             </div>
             
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6">
