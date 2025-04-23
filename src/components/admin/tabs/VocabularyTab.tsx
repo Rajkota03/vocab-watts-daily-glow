@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useForm } from 'react-hook-form';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, Search, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Search, Edit, Trash2, Mail, MessageSquare, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 
@@ -46,6 +46,10 @@ const VocabularyTab = () => {
 
   const [openAIPrompt, setOpenAIPrompt] = useState<string>("");
   const [openAIDifficulty, setOpenAIDifficulty] = useState<string>("");
+
+  const [testEmail, setTestEmail] = useState('');
+  const [testPhone, setTestPhone] = useState('');
+  const [sending, setSending] = useState(false);
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -251,6 +255,126 @@ const VocabularyTab = () => {
     }
   };
 
+  const handleSendTestEmail = async () => {
+    if (sending) return;
+    if (testEmail && !testEmail.includes('@')) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setSending(true);
+    try {
+      if (testEmail) {
+        const res = await supabase.functions.invoke('send-vocab-email', {
+          body: {
+            email: testEmail,
+            category: customCategory || "business-intermediate",
+            wordCount: customCount || 5,
+            force_new_words: true
+          }
+        });
+        if (res.error) throw new Error(res.error.message);
+        toast({
+          title: "Test Email Sent!",
+          description: `A test vocab email has been sent to ${testEmail}.`,
+        });
+      } else {
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('id, email, first_name');
+        if (error) throw new Error(error.message);
+        let sentCount = 0;
+        for (const profile of profiles || []) {
+          const res = await supabase.functions.invoke('send-vocab-email', {
+            body: {
+              email: profile.email,
+              category: customCategory || "business-intermediate",
+              wordCount: customCount || 5,
+              force_new_words: true,
+              user_id: profile.id
+            }
+          });
+          if (!res.error) sentCount++;
+        }
+        toast({
+          title: "Test Emails Sent!",
+          description: `Test vocab emails sent to ${sentCount} user(s).`,
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: "Failed to Send Email",
+        description: err.message || "An error occurred while sending the email",
+        variant: "destructive"
+      });
+    }
+    setSending(false);
+  };
+
+  const handleSendTestWhatsApp = async () => {
+    if (sending) return;
+    if (testPhone && testPhone.length < 6) {
+      toast({
+        title: "Invalid Phone Number",
+        description: "Please enter a valid phone number.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setSending(true);
+    try {
+      if (testPhone) {
+        const res = await supabase.functions.invoke('send-whatsapp', {
+          body: {
+            to: testPhone,
+            category: customCategory || "business-intermediate",
+            isPro: true,
+            skipSubscriptionCheck: true
+          }
+        });
+        if (res.error) throw new Error(res.error.message);
+        toast({
+          title: "Test WhatsApp Sent!",
+          description: `A WhatsApp message sent to ${testPhone}.`,
+        });
+      } else {
+        const { data: subs, error } = await supabase
+          .from('user_subscriptions')
+          .select('user_id, phone_number, category');
+        if (error) throw new Error(error.message);
+        let sentCount = 0;
+        for (const sub of subs || []) {
+          if (sub.phone_number) {
+            const res = await supabase.functions.invoke('send-whatsapp', {
+              body: {
+                to: sub.phone_number,
+                category: sub.category || customCategory || "business-intermediate",
+                isPro: true,
+                skipSubscriptionCheck: true,
+                userId: sub.user_id
+              }
+            });
+            if (!res.error) sentCount++;
+          }
+        }
+        toast({
+          title: "Test WhatsApp Messages Sent!",
+          description: `WhatsApp messages sent to ${sentCount} user(s) with numbers.`,
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: "Failed to Send WhatsApp",
+        description: err.message || "An error occurred while sending the WhatsApp message",
+        variant: "destructive"
+      });
+    }
+    setSending(false);
+  };
+
   const filteredWords = vocabularyWords.filter(word => 
     word.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
     word.definition.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -264,6 +388,57 @@ const VocabularyTab = () => {
         <p className="text-muted-foreground">
           Manage vocabulary words, categories, and try live vocabulary generation using OpenAI.
         </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+        <div className="border rounded-lg shadow bg-white p-6">
+          <div className="font-semibold text-lg mb-2 flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            Send Test Vocabulary Email
+          </div>
+          <div className="flex gap-4 items-end">
+            <div className="flex-1">
+              <Input
+                placeholder="Enter test email address (optional)"
+                type="email"
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+                disabled={sending}
+              />
+            </div>
+            <Button onClick={handleSendTestEmail} disabled={sending} className="flex items-center gap-2 bg-vuilder-mint text-white" type="button">
+              {sending ? <Loader2 className="animate-spin h-4 w-4" /> : <Mail className="h-4 w-4" />}
+              {testEmail ? 'Send Email' : 'Send to All'}
+            </Button>
+          </div>
+          <p className="text-sm text-gray-500 mt-2">
+            {testEmail ? "Send vocabulary email to the entered address." : "Leave blank to send test email to all users."}
+          </p>
+        </div>
+        <div className="border rounded-lg shadow bg-white p-6">
+          <div className="font-semibold text-lg mb-2 flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Send Test WhatsApp Message
+          </div>
+          <div className="flex gap-4 items-end">
+            <div className="flex-1">
+              <Input
+                placeholder="Enter WhatsApp number with country code"
+                type="tel"
+                value={testPhone}
+                onChange={e => setTestPhone(e.target.value)}
+                disabled={sending}
+              />
+            </div>
+            <Button onClick={handleSendTestWhatsApp} disabled={sending} className="flex items-center gap-2 bg-green-500 text-white" type="button">
+              {sending ? <Loader2 className="animate-spin h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
+              {testPhone ? 'Send WhatsApp' : 'Send to All'}
+            </Button>
+          </div>
+          <p className="text-sm text-gray-500 mt-2">
+            {testPhone ? "Send WhatsApp to the given number (include country code)." : "Leave blank to send WhatsApp to all users with numbers."}
+          </p>
+        </div>
       </div>
 
       <Card className="border shadow-sm mb-6">
