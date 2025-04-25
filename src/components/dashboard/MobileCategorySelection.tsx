@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   BookOpen, Briefcase, MessageSquare, 
@@ -189,7 +190,7 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   const isFullySelected = selectedPrimary && selectedSubcategory;
 
   return (
-    <div className="space-y-4 pb-4">
+    <div className="space-y-3">
       <div className="bg-white rounded-xl p-3">
         <h3 className="text-sm font-semibold text-gray-800 mb-2">Word Category</h3>
         <div className="grid grid-cols-3 gap-2">
@@ -301,7 +302,7 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
         </p>
       </div>
 
-      <div className="px-2">
+      <div className="px-2 mt-2">
         <Button
           onClick={handleApply}
           disabled={!isFullySelected || isLoadingNewBatch}
