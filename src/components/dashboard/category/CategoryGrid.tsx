@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BookOpen, Briefcase, MessageSquare, Smile, Sparkles, Heart, GraduationCap } from 'lucide-react';
+import { BookOpen, Briefcase, MessageSquare, Smile, Sparkles, Heart, GraduationCap, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface CategoryGridProps {
