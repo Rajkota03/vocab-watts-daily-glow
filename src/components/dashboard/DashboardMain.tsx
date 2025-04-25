@@ -25,7 +25,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
   wordsLearnedThisMonth = 0
 }) => {
   return <main className="min-h-[calc(100vh-80px)] bg-gray-50/50 flex flex-col items-center">
-      <div className="w-full max-w-5xl md:px-6 md:py-12 py-0 px-[11px] mx-0 my-0">
+      <div className="w-full max-w-5xl md:px-6 md:py-12 py-0 px-[10px] mx-[13px] my-[3px]">
         {subscription.is_pro && <div id="dashboardCard" className="mt-8 max-w-[720px] w-full mx-auto">
             <CategorySelection isPro={subscription.is_pro} currentCategory={subscription.category} onCategoryUpdate={handleCategoryUpdate} onNewBatch={handleNewBatch} isLoadingNewBatch={isGeneratingBatch} />
           </div>}
