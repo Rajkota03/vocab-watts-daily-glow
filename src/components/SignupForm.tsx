@@ -7,22 +7,8 @@ import { toast } from "@/components/ui/use-toast";
 import { Clock, CheckCircle, Info, Send, Loader2 } from 'lucide-react';
 import { sendVocabWords } from '@/services/whatsappService';
 import { supabase } from '@/integrations/supabase/client';
-import { createRazorpayOrder, completeSubscription } from '@/services/paymentService';
-
-// Declare Razorpay types
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
-
-// Define the type for payment result
-interface PaymentResult {
-  success: boolean;
-  razorpayPaymentId?: string;
-  razorpayOrderId?: string;
-  error?: string;
-}
+import { createSubscription } from '@/services/subscriptionService';
+import { useNavigate } from 'react-router-dom';
 
 const SignupForm = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -30,94 +16,18 @@ const SignupForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState(1);
   const [success, setSuccess] = useState(false);
-  const [user, setUser] = useState(null);
-  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+  const navigate = useNavigate();
 
-  // Check for existing session on component mount
+  // Check if form was submitted successfully
   useEffect(() => {
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session?.user) {
-        setUser(data.session.user);
-      }
-    };
-
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user || null);
-      }
-    );
-
-    checkSession();
-
-    // Load Razorpay script
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    script.onload = () => setRazorpayLoaded(true);
-    document.body.appendChild(script);
-
-    // Cleanup
-    return () => {
-      subscription.unsubscribe();
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, []);
-
-  const handlePayment = async (orderData: any): Promise<PaymentResult> => {
-    if (!razorpayLoaded) {
-      toast({
-        title: "Payment system is loading",
-        description: "Please wait a moment and try again.",
-        variant: "destructive"
-      });
-      return { success: false, error: "Payment system not loaded" };
+    if (success) {
+      const timer = setTimeout(() => {
+        navigate('/dashboard');
+      }, 3000);
+      
+      return () => clearTimeout(timer);
     }
-
-    // If it's a free trial signup (not pro), skip payment
-    if (orderData.freeSignup) {
-      return { success: true };
-    }
-
-    return new Promise<PaymentResult>((resolve) => {
-      const options = {
-        key: 'rzp_test_YourTestKeyHere', // Replace with your Razorpay test key
-        amount: orderData.amount,
-        currency: 'INR',
-        name: 'GLINTUP',
-        description: 'Vocabulary Pro Subscription',
-        order_id: orderData.id,
-        prefill: {
-          contact: phoneNumber
-        },
-        theme: {
-          color: '#3F3D56'
-        },
-        handler: function(response: any) {
-          // Payment successful
-          console.log('Payment success:', response);
-          resolve({
-            success: true,
-            razorpayPaymentId: response.razorpay_payment_id,
-            razorpayOrderId: response.razorpay_order_id
-          });
-        },
-        modal: {
-          ondismiss: function() {
-            // Payment canceled
-            console.log('Payment canceled');
-            resolve({ success: false, error: 'Payment canceled' });
-          }
-        }
-      };
-
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
-    });
-  };
+  }, [success, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,56 +57,50 @@ const SignupForm = () => {
       
       console.log("Submitting form with:", { phoneNumber, deliveryTime });
       
-      // If not logged in, create an anonymous session
-      if (!user) {
-        const { error } = await supabase.auth.signInAnonymously();
-        if (error) {
-          console.error("Error signing in anonymously:", error);
-          toast({
-            title: "Authentication error",
-            description: "We couldn't create a session for you. Please try again.",
-            variant: "destructive"
-          });
-          setIsSubmitting(false);
-          return;
-        }
+      // Check if user already exists with this phone number
+      const { data: existingSubscriptions } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('phone_number', phoneNumber)
+        .limit(1);
+        
+      if (existingSubscriptions && existingSubscriptions.length > 0) {
+        toast({
+          title: "Phone number already registered",
+          description: "This number is already registered for our service.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
       }
       
-      // Default to free trial
+      // Sign in anonymously to create session for the user
+      const { error: authError } = await supabase.auth.signInAnonymously();
+      if (authError) {
+        console.error("Error signing in anonymously:", authError);
+        toast({
+          title: "Authentication error",
+          description: "We couldn't create a session for you. Please try again.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Create free trial subscription (not pro)
       const isPro = false;
-      
-      // Create Razorpay order
-      const orderResult = await createRazorpayOrder({
+      const subscriptionSuccess = await createSubscription({
         phoneNumber,
         deliveryTime,
-        isPro
+        isPro, 
+        category: 'daily' // Default category for free trial users
       });
       
-      if (!orderResult.success) {
-        throw new Error('Failed to create payment order');
-      }
-      
-      // Initialize payment if needed
-      const paymentResult = await handlePayment(orderResult.data);
-      
-      if (!paymentResult.success && !orderResult.data.freeSignup) {
-        throw new Error('Payment failed or was canceled');
-      }
-      
-      // Complete subscription process
-      const subscriptionResult = await completeSubscription({
-        phoneNumber,
-        deliveryTime,
-        isPro,
-        razorpayOrderId: paymentResult.razorpayOrderId,
-        razorpayPaymentId: paymentResult.razorpayPaymentId
-      });
-      
-      if (!subscriptionResult.success) {
+      if (!subscriptionSuccess) {
         throw new Error('Failed to create subscription');
       }
       
-      // Send vocabulary words via WhatsApp
+      // Send first vocabulary words via WhatsApp
       const messageResult = await sendVocabWords({
         phoneNumber,
         deliveryTime
@@ -209,17 +113,10 @@ const SignupForm = () => {
       setSuccess(true);
       toast({
         title: "You're all set!",
-        description: "You'll receive your first words shortly on WhatsApp.",
+        description: "Your 3-day free trial has started. You'll receive your first words shortly on WhatsApp.",
       });
       
-      // Reset form after success
-      setTimeout(() => {
-        setPhoneNumber('');
-        setDeliveryTime('');
-        setStep(1);
-        setSuccess(false);
-      }, 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error processing subscription:', error);
       toast({
         title: "Something went wrong",
@@ -240,17 +137,12 @@ const SignupForm = () => {
         </div>
         <h3 className="text-2xl font-bold mb-2">Success!</h3>
         <p className="text-gray-600 mb-6">
-          Your first vocabulary words will be sent to your WhatsApp shortly.
+          Your free trial has been activated. Your first vocabulary words will be sent to your WhatsApp shortly.
         </p>
         <Button 
-          onClick={() => {
-            setPhoneNumber('');
-            setDeliveryTime('');
-            setStep(1);
-            setSuccess(false);
-          }}
+          onClick={() => navigate('/dashboard')}
         >
-          Sign up another number
+          Go to Dashboard
         </Button>
       </div>
     );

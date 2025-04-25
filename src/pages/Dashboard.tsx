@@ -1,17 +1,21 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { generateNewWordBatch } from '@/services/wordService';
+import { checkSubscriptionStatus } from '@/services/subscriptionService';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardMain from '@/components/dashboard/DashboardMain';
 import { MOCK_TODAYS_QUIZ, MOCK_RECENT_DROPS } from '@/data/dashboardMockData';
 
 const Dashboard = () => {
   const [subscription, setSubscription] = useState({
-    is_pro: true,
-    category: 'business-intermediate',
-    phone_number: '+1234567890'
+    is_pro: false,
+    category: 'daily-intermediate',
+    phone_number: '',
+    trial_ends_at: null as string | null,
+    subscription_ends_at: null as string | null
   });
   const [loading, setLoading] = useState(true);
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
@@ -83,27 +87,64 @@ const Dashboard = () => {
         setUserNickname(profileData.nick_name || profileData.first_name || 'there');
       }
       
-      const userMetadata = data.session.user.user_metadata;
-      console.log("User metadata:", userMetadata);
+      // Fetch subscription details
+      const { data: subscriptionData, error: subscriptionError } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('user_id', data.session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
       
-      if (userMetadata) {
-        let category = userMetadata.category || 'business-intermediate';
+      if (subscriptionError) {
+        console.error('Error fetching subscription:', subscriptionError);
+      } else if (subscriptionData) {
+        let category = subscriptionData.category || 'daily-intermediate';
         
+        // Format category if needed
         if (category && !category.includes('-')) {
           const mapping: { [key: string]: string } = {
             'business': 'business-intermediate',
             'exam': 'exam-gre',
             'slang': 'slang-intermediate',
-            'general': 'daily-intermediate'
+            'daily': 'daily-intermediate'
           };
-          category = mapping[category] || 'business-intermediate';
+          category = mapping[category] || 'daily-intermediate';
         }
         
-        setSubscription(prev => ({
-          ...prev,
-          is_pro: userMetadata.is_pro || true,
-          category: category
-        }));
+        setSubscription({
+          is_pro: subscriptionData.is_pro,
+          category: category,
+          phone_number: subscriptionData.phone_number,
+          trial_ends_at: subscriptionData.trial_ends_at,
+          subscription_ends_at: subscriptionData.subscription_ends_at
+        });
+      } else {
+        // If no subscription found, check user metadata
+        const userMetadata = data.session.user.user_metadata;
+        console.log("User metadata:", userMetadata);
+        
+        if (userMetadata) {
+          let category = userMetadata.category || 'daily-intermediate';
+          
+          if (category && !category.includes('-')) {
+            const mapping: { [key: string]: string } = {
+              'business': 'business-intermediate',
+              'exam': 'exam-gre',
+              'slang': 'slang-intermediate',
+              'daily': 'daily-intermediate'
+            };
+            category = mapping[category] || 'daily-intermediate';
+          }
+          
+          setSubscription(prev => ({
+            ...prev,
+            is_pro: userMetadata.is_pro || false,
+            category: category,
+            trial_ends_at: userMetadata.trial_ends_at || null,
+            subscription_ends_at: userMetadata.subscription_ends_at || null
+          }));
+        }
       }
       
       // Fetch words learned this month
@@ -159,15 +200,44 @@ const Dashboard = () => {
       const combinedCategory = `${primary}-${subcategory}`;
       console.log("Updating category to:", combinedCategory);
       
+      // Check if free trial user is trying to change category
+      const isFreeTrialUser = !subscription.is_pro && 
+        subscription.trial_ends_at && 
+        new Date(subscription.trial_ends_at) > new Date();
+        
+      if (isFreeTrialUser && primary !== 'daily') {
+        toast({
+          title: 'Free Trial Restriction',
+          description: 'Free trial users can only use the Daily category. Upgrade to Pro to unlock all categories.',
+          variant: 'warning'
+        });
+        return;
+      }
+      
       const { error } = await supabase.auth.updateUser({
         data: { category: combinedCategory }
       });
       
       if (error) throw error;
       
+      // Update the subscription in the database
+      const { error: dbError } = await supabase
+        .from('user_subscriptions')
+        .update({ category: combinedCategory })
+        .eq('user_id', (await supabase.auth.getSession()).data.session?.user.id);
+      
+      if (dbError) {
+        console.error("Error updating subscription in DB:", dbError);
+      }
+      
       setSubscription({
         ...subscription,
         category: combinedCategory
+      });
+      
+      toast({
+        title: 'Category Updated',
+        description: `Your category has been updated to ${primary} - ${subcategory}`,
       });
     } catch (error: any) {
       toast({
@@ -193,6 +263,11 @@ const Dashboard = () => {
           wordHistoryElement.classList.remove('refresh-triggered');
         }, 100);
       }
+      
+      toast({
+        title: "Words Generated",
+        description: "Your new words have been generated and will be sent at your scheduled time.",
+      });
     } catch (error: any) {
       console.error("Error generating new batch:", error);
       toast({

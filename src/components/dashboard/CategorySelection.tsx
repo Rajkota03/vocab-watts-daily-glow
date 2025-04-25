@@ -17,6 +17,7 @@ interface CategorySelectionProps {
   onCategoryUpdate: (primary: string, subcategory: string) => void;
   onNewBatch?: () => Promise<void>;
   isLoadingNewBatch?: boolean;
+  isFreeTrialUser?: boolean;
 }
 
 const CategorySelection: React.FC<CategorySelectionProps> = ({
@@ -24,7 +25,8 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   currentCategory,
   onCategoryUpdate,
   onNewBatch,
-  isLoadingNewBatch = false
+  isLoadingNewBatch = false,
+  isFreeTrialUser = false
 }) => {
   const isMobile = useIsMobile();
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
@@ -44,6 +46,16 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   }, [currentCategory]);
 
   const handlePrimarySelect = (primary: string) => {
+    // If user is on free trial, they can only select 'daily' category
+    if (isFreeTrialUser && primary !== 'daily') {
+      toast({
+        title: "Free Trial Restriction",
+        description: "Free trial users can only access the Daily vocabulary category. Upgrade to Pro to unlock all categories.",
+        variant: "warning"
+      });
+      return;
+    }
+    
     setSelectedPrimary(primary);
     if (primary !== selectedPrimary) {
       setSelectedSubcategory(null);
@@ -76,17 +88,35 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   };
 
   if (isMobile) {
-    return <MobileCategorySelection isPro={isPro} currentCategory={currentCategory} onCategoryUpdate={onCategoryUpdate} onNewBatch={onNewBatch} isLoadingNewBatch={isLoadingNewBatch} />;
+    return <MobileCategorySelection 
+      isPro={isPro} 
+      currentCategory={currentCategory} 
+      onCategoryUpdate={onCategoryUpdate} 
+      onNewBatch={onNewBatch} 
+      isLoadingNewBatch={isLoadingNewBatch}
+      isFreeTrialUser={isFreeTrialUser}
+    />;
   }
 
   return (
     <Card className="border border-stroke/50 shadow-sm rounded-2xl overflow-hidden bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+      {isFreeTrialUser && (
+        <div className="bg-amber-50 border-b border-amber-100 p-4 text-sm">
+          <p className="text-amber-800">
+            <strong>Free Trial Mode:</strong> You can only use the Daily category. Upgrade to Pro to unlock all categories.
+          </p>
+        </div>
+      )}
       <div className="p-6 md:p-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-8">
             <div>
               <h3 className="text-sm font-medium text-gray-700 mb-4">Word Category</h3>
-              <CategoryGrid selectedPrimary={selectedPrimary} onPrimarySelect={handlePrimarySelect} />
+              <CategoryGrid 
+                selectedPrimary={selectedPrimary} 
+                onPrimarySelect={handlePrimarySelect} 
+                isFreeTrialUser={isFreeTrialUser}
+              />
             </div>
             
             {selectedPrimary && (
@@ -94,6 +124,7 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
                 selectedPrimary={selectedPrimary} 
                 selectedSubcategory={selectedSubcategory} 
                 onSubcategorySelect={handleSubcategorySelect} 
+                isFreeTrialUser={isFreeTrialUser}
               />
             )}
           </div>
@@ -101,9 +132,17 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
           <div className="space-y-8">
             {selectedSubcategory && (
               <>
-                <WordCountSelector wordCount={wordCount} onWordCountChange={setWordCount} />
+                <WordCountSelector 
+                  wordCount={wordCount} 
+                  onWordCountChange={setWordCount}
+                  isPro={isPro}
+                  isFreeTrialUser={isFreeTrialUser}
+                />
                 
-                <TimeScheduler scheduledTime={scheduledTime} onScheduledTimeChange={setScheduledTime} />
+                <TimeScheduler 
+                  scheduledTime={scheduledTime} 
+                  onScheduledTimeChange={setScheduledTime} 
+                />
 
                 <Button 
                   disabled={!selectedPrimary || !selectedSubcategory || isLoadingNewBatch} 
