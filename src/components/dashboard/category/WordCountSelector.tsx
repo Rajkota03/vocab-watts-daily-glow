@@ -17,9 +17,9 @@ const WordCountSelector: React.FC<WordCountSelectorProps> = ({
   isFreeTrialUser = false
 }) => {
   const options = [
-    { value: 3, label: '3 words', description: 'Beginner pace', proOnly: false },
-    { value: 5, label: '5 words', description: 'Standard', proOnly: false },
-    { value: 10, label: '10 words', description: 'Advanced', proOnly: true }
+    { value: 1, label: '1 word', description: 'Start slow', proOnly: false },
+    { value: 2, label: '2 words', description: 'Beginner pace', proOnly: false },
+    { value: 5, label: '5 words', description: 'Advanced', proOnly: true }
   ];
 
   return (
@@ -31,7 +31,7 @@ const WordCountSelector: React.FC<WordCountSelectorProps> = ({
         className="grid grid-cols-3 gap-3"
       >
         {options.map((option) => {
-          const isDisabled = (option.proOnly && !isPro) || (isFreeTrialUser && option.value > 5);
+          const isDisabled = option.proOnly && !isPro;
           return (
             <div key={option.value} className="relative">
               <RadioGroupItem 
@@ -49,7 +49,7 @@ const WordCountSelector: React.FC<WordCountSelectorProps> = ({
                 {option.proOnly && (
                   <span className="absolute top-1 right-1 bg-purple-100 text-purple-700 text-[10px] px-1.5 rounded">Pro</span>
                 )}
-                {isFreeTrialUser && option.value > 5 && (
+                {isDisabled && (
                   <span className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-lg">
                     <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs px-2 py-1 rounded">
                       Pro only
