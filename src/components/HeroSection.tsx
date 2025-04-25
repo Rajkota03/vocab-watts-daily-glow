@@ -9,14 +9,14 @@ const HeroSection = () => {
       <div className="container mx-auto px-4">
         <div className="flex flex-col lg:flex-row gap-12 items-center">
           <div className="flex-1 text-center lg:text-left px-[49px]">
-            <div className="inline-flex items-center mb-6 py-1.5 px-4 rounded-full text-dark text-sm font-medium shadow-sm bg-green-500">
+            <div className="inline-flex items-center mb-6 py-1.5 rounded-full text-dark text-sm font-medium shadow-sm bg-green-500 px-[13px]">
               
               <img src="/lovable-uploads/164886d6-c431-4caf-9f94-f4729aa2698b.png" alt="WhatsApp" className="w-5 h-5 mr-2" />
-              <span className="font-bold">Learn directly on WhatsApp</span>
+              <span className="font-bold">Learn directly on Whatsapp</span>
               
             </div>
             
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6">
+            <h1 className="sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6 text-2xl px-0 mx-0">
               5 fresh words every day—<br />straight to WhatsApp.
             </h1>
             
