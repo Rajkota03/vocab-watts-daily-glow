@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Check, Lock, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -71,6 +72,7 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({
     <TooltipProvider>
       <div className="grid grid-cols-2 gap-3">
         {categories.map((category) => {
+          // For free trial users, all categories except 'daily' are disabled
           const isDisabled = isFreeTrialUser && category.id !== 'daily';
           const isSelected = selectedPrimary === category.id;
           

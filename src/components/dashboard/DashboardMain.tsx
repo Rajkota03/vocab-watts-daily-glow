@@ -51,7 +51,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
                 <h3 className="text-amber-800 font-medium">Free Trial Active</h3>
                 <p className="text-amber-700 text-sm mt-1">
                   You're currently on a free trial that ends on {trialEndsAt?.toLocaleDateString()}. 
-                  Free trial users can only access the "Daily" category.
+                  Free trial users can only access the "Daily" category and select up to 2 words per day.
                 </p>
               </div>
             )}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
@@ -30,7 +31,8 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   const isMobile = useIsMobile();
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-  const [wordCount, setWordCount] = useState(3);
+  // Set default word count to 1 for free trial users, 2 for pro users
+  const [wordCount, setWordCount] = useState(isFreeTrialUser ? 1 : 2);
   const [scheduledTime, setScheduledTime] = useState<string>('');
   const { toast } = useToast();
 
@@ -43,6 +45,13 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
       }
     }
   }, [currentCategory]);
+
+  // Update word count when pro status changes
+  useEffect(() => {
+    if (isFreeTrialUser && wordCount > 2) {
+      setWordCount(1);
+    }
+  }, [isFreeTrialUser, wordCount]);
 
   const handlePrimarySelect = (primary: string) => {
     if (isFreeTrialUser && primary !== 'daily') {
@@ -62,6 +71,29 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
 
   const handleSubcategorySelect = (subcategory: string) => {
     setSelectedSubcategory(subcategory);
+  };
+
+  const handleWordCountChange = (count: number) => {
+    // Validate word count selection based on user type
+    if (isFreeTrialUser && count > 2) {
+      toast({
+        title: "Free Trial Restriction",
+        description: "Free trial users can only select up to 2 words. Upgrade to Pro for more options.",
+        variant: "default"
+      });
+      return;
+    }
+    
+    if (!isPro && count > 2) {
+      toast({
+        title: "Pro Feature",
+        description: "Upgrade to Pro to select more than 2 words per day.",
+        variant: "default"
+      });
+      return;
+    }
+    
+    setWordCount(count);
   };
 
   const handleApply = async () => {
@@ -101,7 +133,7 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
       {isFreeTrialUser && (
         <div className="bg-amber-50 border-b border-amber-100 p-4 text-sm">
           <p className="text-amber-800">
-            <strong>Free Trial Mode:</strong> You can only use the Daily category. Upgrade to Pro to unlock all categories.
+            <strong>Free Trial Mode:</strong> You can only use the Daily category and select up to 2 words per day. Upgrade to Pro to unlock all categories.
           </p>
         </div>
       )}
@@ -132,7 +164,7 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
               <>
                 <WordCountSelector 
                   wordCount={wordCount} 
-                  onWordCountChange={setWordCount}
+                  onWordCountChange={handleWordCountChange}
                   isPro={isPro}
                   isFreeTrialUser={isFreeTrialUser}
                 />
