@@ -9,6 +9,7 @@ import SubcategoryGrid from './category/SubcategoryGrid';
 import WordCountSelector from './category/WordCountSelector';
 import TimeScheduler from './category/TimeScheduler';
 import { useToast } from '@/hooks/use-toast';
+
 interface CategorySelectionProps {
   isPro: boolean;
   currentCategory: string;
@@ -16,6 +17,7 @@ interface CategorySelectionProps {
   onNewBatch?: () => Promise<void>;
   isLoadingNewBatch?: boolean;
 }
+
 const CategorySelection: React.FC<CategorySelectionProps> = ({
   isPro,
   currentCategory,
@@ -31,6 +33,7 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   const {
     toast
   } = useToast();
+
   useEffect(() => {
     if (currentCategory) {
       const parts = currentCategory.split('-');
@@ -40,15 +43,18 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
       }
     }
   }, [currentCategory]);
+
   const handlePrimarySelect = (primary: string) => {
     setSelectedPrimary(primary);
     if (primary !== selectedPrimary) {
       setSelectedSubcategory(null);
     }
   };
+
   const handleSubcategorySelect = (subcategory: string) => {
     setSelectedSubcategory(subcategory);
   };
+
   const handleApply = async () => {
     if (selectedPrimary && selectedSubcategory) {
       try {
@@ -69,19 +75,21 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
       }
     }
   };
+
   if (isMobile) {
     return <MobileCategorySelection isPro={isPro} currentCategory={currentCategory} onCategoryUpdate={onCategoryUpdate} onNewBatch={onNewBatch} isLoadingNewBatch={isLoadingNewBatch} />;
   }
+
   return <Card className="border border-stroke/50 shadow-sm rounded-2xl overflow-hidden bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/80">
-      <div className="p-6 md:p-8 space-y-8 px-[28px]">
-        <div className="card-content lg:grid lg:grid-cols-2 lg:gap-x-10 flex flex-col gap-6">
-          <div className="space-y-8 flex-shrink-0">
+      <div className="p-6 md:p-8 space-y-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+          <div className="space-y-8">
             <CategoryGrid selectedPrimary={selectedPrimary} onPrimarySelect={handlePrimarySelect} />
             
             {selectedPrimary && <SubcategoryGrid selectedPrimary={selectedPrimary} selectedSubcategory={selectedSubcategory} onSubcategorySelect={handleSubcategorySelect} />}
           </div>
           
-          <div className="space-y-8 flex-shrink-0">
+          <div className="space-y-8">
             {selectedSubcategory && <>
                 <WordCountSelector wordCount={wordCount} onWordCountChange={setWordCount} />
                 
@@ -99,4 +107,5 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
       </div>
     </Card>;
 };
+
 export default CategorySelection;

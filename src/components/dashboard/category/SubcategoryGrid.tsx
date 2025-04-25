@@ -16,47 +16,101 @@ const SubcategoryGrid: React.FC<SubcategoryGridProps> = ({
 }) => {
   const subcategories = selectedPrimary === 'exam' ? 
     [
-      { name: 'GRE', id: 'gre', description: 'Graduate Record Examination' },
-      { name: 'IELTS', id: 'ielts', description: 'English Language Testing' },
-      { name: 'TOEFL', id: 'toefl', description: 'Test of English as Foreign Language' },
-      { name: 'CAT', id: 'cat', description: 'Common Admission Test' },
-      { name: 'GMAT', id: 'gmat', description: 'Graduate Management Test' }
-    ] : 
-    [
-      { name: 'Beginner', id: 'beginner', description: 'Basic everyday vocabulary' },
-      { name: 'Intermediate', id: 'intermediate', description: 'Challenging vocabulary' },
-      { name: 'Professional', id: 'professional', description: 'Advanced terminology' }
+      { 
+        id: 'gre', 
+        name: 'GRE',
+        description: 'Graduate Record Examination',
+        color: 'from-red-500/20 to-red-600/20',
+        textColor: 'text-red-700',
+        activeColor: 'from-red-500/30 to-red-600/30'
+      },
+      { 
+        id: 'ielts', 
+        name: 'IELTS',
+        description: 'English Language Testing',
+        color: 'from-blue-500/20 to-blue-600/20',
+        textColor: 'text-blue-700',
+        activeColor: 'from-blue-500/30 to-blue-600/30'
+      },
+      { 
+        id: 'toefl', 
+        name: 'TOEFL',
+        description: 'Test of English as Foreign Language',
+        color: 'from-green-500/20 to-green-600/20',
+        textColor: 'text-green-700',
+        activeColor: 'from-green-500/30 to-green-600/30'
+      },
+      { 
+        id: 'cat', 
+        name: 'CAT',
+        description: 'Common Admission Test',
+        color: 'from-amber-500/20 to-amber-600/20',
+        textColor: 'text-amber-700',
+        activeColor: 'from-amber-500/30 to-amber-600/30'
+      },
+      { 
+        id: 'gmat', 
+        name: 'GMAT',
+        description: 'Graduate Management Test',
+        color: 'from-indigo-500/20 to-indigo-600/20',
+        textColor: 'text-indigo-700',
+        activeColor: 'from-indigo-500/30 to-indigo-600/30'
+      }
+    ] : [
+      { 
+        id: 'beginner', 
+        name: 'Beginner',
+        description: 'Basic everyday vocabulary',
+        color: 'from-green-500/20 to-green-600/20',
+        textColor: 'text-green-700',
+        activeColor: 'from-green-500/30 to-green-600/30'
+      },
+      { 
+        id: 'intermediate', 
+        name: 'Intermediate',
+        description: 'Challenging vocabulary',
+        color: 'from-blue-500/20 to-blue-600/20',
+        textColor: 'text-blue-700',
+        activeColor: 'from-blue-500/30 to-blue-600/30'
+      },
+      { 
+        id: 'professional', 
+        name: 'Professional',
+        description: 'Advanced terminology',
+        color: 'from-purple-500/20 to-purple-600/20',
+        textColor: 'text-purple-700',
+        activeColor: 'from-purple-500/30 to-purple-600/30'
+      }
     ];
 
   if (!selectedPrimary) return null;
 
   return (
     <div className="animate-fade-in">
-      <h3 className="text-sm font-medium mb-4 text-gray-700">
+      <h3 className="text-sm font-medium text-gray-700 mb-4">
         {selectedPrimary === 'exam' ? 'Exam Type' : 'Difficulty Level'}
       </h3>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {subcategories.map((subcategory) => (
+      <div className="grid grid-cols-3 gap-3">
+        {subcategories.map((level) => (
           <button
-            key={subcategory.id}
-            onClick={() => onSubcategorySelect(subcategory.id)}
+            key={level.id}
+            onClick={() => onSubcategorySelect(level.id)}
             className={cn(
-              "flex items-center p-4 rounded-xl transition-all duration-200 border h-full",
-              selectedSubcategory === subcategory.id 
-                ? "bg-primary-light border-primary text-gray-800" 
-                : "bg-white hover:bg-gray-50 text-gray-600 border-stroke"
+              "p-4 rounded-xl text-sm transition-all duration-200",
+              "bg-gradient-to-br shadow-sm flex flex-col items-center text-center min-h-[100px] justify-center",
+              level.color,
+              "hover:shadow-md",
+              selectedSubcategory === level.id && [
+                "ring-2 ring-offset-2",
+                level.activeColor
+              ]
             )}
-            role="radio"
-            aria-checked={selectedSubcategory === subcategory.id}
           >
-            <div className="flex-1 text-left">
-              <h4 className="font-medium">{subcategory.name}</h4>
-              <p className="text-xs text-gray-500 mt-1">{subcategory.description}</p>
-            </div>
-            {selectedSubcategory === subcategory.id && (
-              <CheckCircle className="h-5 w-5 ml-2 flex-shrink-0 text-primary" />
-            )}
+            <span className="font-semibold mb-1">{level.name}</span>
+            <span className="text-xs opacity-75 px-2">
+              {level.description}
+            </span>
           </button>
         ))}
       </div>
