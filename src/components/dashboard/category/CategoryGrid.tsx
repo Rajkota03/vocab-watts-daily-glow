@@ -9,12 +9,14 @@ interface CategoryGridProps {
   selectedPrimary: string | null;
   onPrimarySelect: (primary: string) => void;
   isFreeTrialUser?: boolean;
+  isPro?: boolean;
 }
 
 const CategoryGrid: React.FC<CategoryGridProps> = ({ 
   selectedPrimary, 
   onPrimarySelect,
-  isFreeTrialUser = false
+  isFreeTrialUser = false,
+  isPro = false
 }) => {
   const categories = [
     {
@@ -73,7 +75,10 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({
       <div className="grid grid-cols-2 gap-3">
         {categories.map((category) => {
           // For free trial users, all categories except 'daily' are disabled
-          const isDisabled = isFreeTrialUser && category.id !== 'daily';
+          // For pro users, no categories should be disabled
+          const isDisabled = (isFreeTrialUser && category.id !== 'daily') || 
+                            (!isPro && category.proOnly);
+          
           const isSelected = selectedPrimary === category.id;
           
           return (

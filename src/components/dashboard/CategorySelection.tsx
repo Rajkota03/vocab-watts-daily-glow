@@ -31,8 +31,8 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   const isMobile = useIsMobile();
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-  // Set default word count to 1 for free trial users, 2 for pro users
-  const [wordCount, setWordCount] = useState(isFreeTrialUser ? 1 : 2);
+  // Set default word count based on user status
+  const [wordCount, setWordCount] = useState(isPro ? 2 : 1);
   const [scheduledTime, setScheduledTime] = useState<string>('');
   const { toast } = useToast();
 
@@ -146,6 +146,7 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
                 selectedPrimary={selectedPrimary} 
                 onPrimarySelect={handlePrimarySelect} 
                 isFreeTrialUser={isFreeTrialUser}
+                isPro={isPro}
               />
             </div>
             
@@ -155,6 +156,7 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
                 selectedSubcategory={selectedSubcategory} 
                 onSubcategorySelect={handleSubcategorySelect} 
                 isFreeTrialUser={isFreeTrialUser}
+                isPro={isPro}
               />
             )}
           </div>
