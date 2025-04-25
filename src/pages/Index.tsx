@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
@@ -14,13 +13,14 @@ import { useNavigate } from 'react-router-dom';
 import SocialProofBar from '@/components/SocialProofBar';
 import PricingToggle from '@/components/PricingToggle';
 import { supabase } from '@/integrations/supabase/client';
-
 const Index = () => {
   const navigate = useNavigate();
-  
   const assignAdminRole = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
+    const {
+      data: {
+        session
+      }
+    } = await supabase.auth.getSession();
     if (!session?.user) {
       toast({
         title: "Error",
@@ -39,22 +39,19 @@ const Index = () => {
       });
       return;
     }
-
     try {
-      const { error } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: session.user.id,
-          role: 'admin'
-        });
-
+      const {
+        error
+      } = await supabase.from('user_roles').insert({
+        user_id: session.user.id,
+        role: 'admin'
+      });
       if (error) throw error;
-
       toast({
         title: "Success",
-        description: "Admin role assigned successfully. You can now access the admin dashboard.",
+        description: "Admin role assigned successfully. You can now access the admin dashboard."
       });
-      
+
       // Redirect to dashboard with parameter to show admin role notification
       navigate('/dashboard?adminAssigned=true');
     } catch (error: any) {
@@ -66,20 +63,11 @@ const Index = () => {
       });
     }
   };
-
-  return (
-    <div className="min-h-screen flex flex-col bg-white font-sans">
+  return <div className="min-h-screen flex flex-col bg-white font-sans">
       <Navbar />
       
       <div className="fixed bottom-4 right-4 z-50">
-        <Button
-          onClick={assignAdminRole}
-          variant="outline"
-          className="bg-white shadow-lg"
-        >
-          <Shield className="mr-2 h-4 w-4" />
-          Assign Admin Role
-        </Button>
+        
       </div>
       
       <main>
@@ -101,8 +89,6 @@ const Index = () => {
       </main>
       
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
