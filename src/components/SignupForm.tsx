@@ -13,6 +13,10 @@ import { useNavigate } from 'react-router-dom';
 const SignupForm = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [deliveryTime, setDeliveryTime] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState(1);
   const [success, setSuccess] = useState(false);
@@ -34,7 +38,7 @@ const SignupForm = () => {
     setIsSubmitting(true);
     
     try {
-      // Validate phone number (basic validation)
+      // Validate inputs (basic validation)
       if (!phoneNumber.trim() || phoneNumber.length < 10) {
         toast({
           title: "Invalid phone number",
@@ -45,17 +49,39 @@ const SignupForm = () => {
         return;
       }
       
-      if (step === 2 && !deliveryTime) {
-        toast({
-          title: "Please select a delivery time",
-          description: "Choose when you want to receive your daily words.",
-          variant: "destructive"
-        });
-        setIsSubmitting(false);
-        return;
+      if (step === 2) {
+        if (!deliveryTime) {
+          toast({
+            title: "Please select a delivery time",
+            description: "Choose when you want to receive your daily words.",
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
+        if (!email || !password) {
+          toast({
+            title: "Email and password required",
+            description: "Please enter your email and create a password.",
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
+        if (password.length < 6) {
+          toast({
+            title: "Password too short",
+            description: "Password must be at least 6 characters long.",
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
       }
       
-      console.log("Submitting form with:", { phoneNumber, deliveryTime });
+      console.log("Submitting form with:", { phoneNumber, deliveryTime, email });
       
       // Check if user already exists with this phone number
       const { data: existingSubscriptions } = await supabase
@@ -74,13 +100,24 @@ const SignupForm = () => {
         return;
       }
       
-      // Sign in anonymously to create session for the user
-      const { error: authError } = await supabase.auth.signInAnonymously();
-      if (authError) {
-        console.error("Error signing in anonymously:", authError);
+      // Create user account with email and password
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName || "User",
+            last_name: lastName || "",
+            whatsapp_number: phoneNumber
+          }
+        }
+      });
+      
+      if (signUpError) {
+        console.error("Error signing up:", signUpError);
         toast({
-          title: "Authentication error",
-          description: "We couldn't create a session for you. Please try again.",
+          title: "Account creation failed",
+          description: signUpError.message || "Could not create your account. Please try again.",
           variant: "destructive"
         });
         setIsSubmitting(false);
@@ -209,24 +246,89 @@ const SignupForm = () => {
         
         {step === 2 && (
           <div className="space-y-5">
-            <div className="mb-2 animate-fade-in">
-              <label htmlFor="deliveryTime" className="block text-sm font-medium mb-1.5">
-                Choose delivery time
-              </label>
-              <Select value={deliveryTime} onValueChange={setDeliveryTime} required>
-                <SelectTrigger id="deliveryTime" className="h-12">
-                  <SelectValue placeholder="Select delivery time" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="morning">7:00 AM - Morning boost</SelectItem>
-                  <SelectItem value="noon">12:00 PM - Lunch break learning</SelectItem>
-                  <SelectItem value="evening">7:00 PM - Evening review</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="mt-1.5 text-xs text-gray-500 flex items-start">
-                <Info className="h-3.5 w-3.5 mr-1 flex-shrink-0 mt-0.5" />
-                Pick when you want to receive your daily words
-              </p>
+            <div className="mb-2 animate-fade-in space-y-4">
+              <div>
+                <label htmlFor="firstName" className="block text-sm font-medium mb-1.5">
+                  First Name
+                </label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  placeholder="Your first name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  className="h-12"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="lastName" className="block text-sm font-medium mb-1.5">
+                  Last Name
+                </label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  placeholder="Your last name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="h-12"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium mb-1.5">
+                  Email Address
+                </label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-12"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium mb-1.5">
+                  Create Password
+                </label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Minimum 6 characters"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="h-12"
+                />
+                <p className="mt-1.5 text-xs text-gray-500 flex items-start">
+                  <Info className="h-3.5 w-3.5 mr-1 flex-shrink-0 mt-0.5" />
+                  Create a secure password for your account
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="deliveryTime" className="block text-sm font-medium mb-1.5">
+                  Choose delivery time
+                </label>
+                <Select value={deliveryTime} onValueChange={setDeliveryTime} required>
+                  <SelectTrigger id="deliveryTime" className="h-12">
+                    <SelectValue placeholder="Select delivery time" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="morning">7:00 AM - Morning boost</SelectItem>
+                    <SelectItem value="noon">12:00 PM - Lunch break learning</SelectItem>
+                    <SelectItem value="evening">7:00 PM - Evening review</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="mt-1.5 text-xs text-gray-500 flex items-start">
+                  <Info className="h-3.5 w-3.5 mr-1 flex-shrink-0 mt-0.5" />
+                  Pick when you want to receive your daily words
+                </p>
+              </div>
             </div>
             
             <div className="flex gap-3">
@@ -242,7 +344,7 @@ const SignupForm = () => {
               <Button 
                 type="submit" 
                 className="flex-1"
-                disabled={isSubmitting || !deliveryTime}
+                disabled={isSubmitting || !deliveryTime || !email || !password}
               >
                 {isSubmitting ? (
                   <>
