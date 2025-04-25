@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   BookOpen, Briefcase, MessageSquare, 
@@ -6,7 +5,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import WordCountSelector from './category/WordCountSelector';
 
 interface MobileCategorySelectionProps {
   isPro: boolean;
@@ -25,7 +23,7 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
 }) => {
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-  const [wordCount, setWordCount] = useState(3);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
   
   const categories = [
     {
@@ -87,9 +85,9 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   ];
 
   const difficultyLevels = [
-    { id: 'beginner', name: 'Beginner' },
-    { id: 'intermediate', name: 'Intermediate' },
-    { id: 'professional', name: 'Professional' }
+    { id: 'beginner', name: 'Beginner', description: 'Basic everyday vocabulary' },
+    { id: 'intermediate', name: 'Intermediate', description: 'Challenging vocabulary' },
+    { id: 'professional', name: 'Professional', description: 'Advanced terminology' }
   ];
 
   const examTypes = [
@@ -104,10 +102,12 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
     if (!isPro) return;
     setSelectedPrimary(prevSelected => prevSelected === categoryId ? null : categoryId);
     setSelectedSubcategory(null);
+    setSelectedDifficulty(null);
   };
 
-  const handleSubcategorySelect = (subcategoryId: string) => {
-    setSelectedSubcategory(subcategoryId);
+  const handleDifficultySelect = (difficultyId: string) => {
+    setSelectedDifficulty(difficultyId);
+    setSelectedSubcategory(difficultyId);
   };
 
   const handleApply = async () => {
@@ -117,10 +117,6 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
         await onNewBatch();
       }
     }
-  };
-
-  const handleWordCountChange = (count: number) => {
-    setWordCount(count);
   };
 
   return (
@@ -169,53 +165,35 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
 
         {selectedPrimary && (
           <div className="mt-4 pt-4 border-t border-gray-100 animate-fade-in">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-medium text-gray-700">
-                {selectedPrimary === 'exam' ? 'Select Exam Type' : 'Choose Difficulty'}
-              </h4>
-            </div>
+            <h4 className="text-sm font-medium text-gray-700 mb-3">
+              {selectedPrimary === 'exam' ? 'Select Exam Type' : 'Choose Difficulty'}
+            </h4>
 
-            <div className="flex overflow-x-auto pb-2 gap-2 -mx-2 px-2">
-              {(selectedPrimary === 'exam' ? [
-                { id: 'gre', name: 'GRE' },
-                { id: 'ielts', name: 'IELTS' },
-                { id: 'toefl', name: 'TOEFL' },
-                { id: 'cat', name: 'CAT' },
-                { id: 'gmat', name: 'GMAT' }
-              ] : [
-                { id: 'beginner', name: 'Beginner' },
-                { id: 'intermediate', name: 'Intermediate' },
-                { id: 'professional', name: 'Professional' }
-              ]).map((level) => (
+            <div className="grid grid-cols-3 gap-2">
+              {(selectedPrimary === 'exam' ? examTypes : difficultyLevels).map((level) => (
                 <button
                   key={level.id}
-                  onClick={() => handleSubcategorySelect(level.id)}
+                  onClick={() => handleDifficultySelect(level.id)}
                   className={cn(
-                    "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap",
-                    selectedSubcategory === level.id
-                      ? "bg-vocab-purple text-white shadow-sm"
+                    "p-2 rounded-lg text-sm font-medium transition-all duration-200 flex flex-col items-center justify-center text-center min-h-[64px]",
+                    selectedDifficulty === level.id
+                      ? "bg-primary text-white shadow-sm"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   )}
                 >
-                  {level.name}
+                  <span>{level.name}</span>
+                  {!selectedPrimary.includes('exam') && (
+                    <span className="text-xs mt-1 opacity-75">
+                      {level.description}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {selectedSubcategory && (
-          <div className="mt-4 pt-4 border-t border-gray-100 animate-fade-in">
-            <div className="slider-wrapper px-1">
-              <WordCountSelector
-                wordCount={wordCount}
-                onWordCountChange={handleWordCountChange}
-              />
-            </div>
-          </div>
-        )}
-
-        {selectedPrimary && selectedSubcategory && (
+        {selectedPrimary && selectedDifficulty && (
           <Button
             onClick={handleApply}
             disabled={isLoadingNewBatch || !isPro}
