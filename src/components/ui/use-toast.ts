@@ -7,16 +7,18 @@ const generateId = () => {
   return Math.random().toString(36).substring(2, 9);
 };
 
-const useToast = () => {
-  const toast = (props: Omit<Toast, "id">) => {
-    const id = generateId();
-    if (toastQueue.has(id)) return;
-    toastQueue.add(id);
-    setTimeout(() => toastQueue.delete(id), 5000); // Clean up after 5s
-    return { ...props, id };
-  };
+type ToastProps = Omit<Toast, "id">;
 
+const toast = (props: ToastProps) => {
+  const id = generateId();
+  if (toastQueue.has(id)) return;
+  toastQueue.add(id);
+  setTimeout(() => toastQueue.delete(id), 5000); // Clean up after 5s
+  return { ...props, id };
+};
+
+const useToast = () => {
   return { toast };
 };
 
-export { useToast };
+export { useToast, toast };

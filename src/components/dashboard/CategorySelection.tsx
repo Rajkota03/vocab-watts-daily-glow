@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
@@ -30,6 +31,7 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [wordCount, setWordCount] = useState(3);
   const [scheduledTime, setScheduledTime] = useState<string>('');
+  const { toast } = useToast();
 
   useEffect(() => {
     if (currentCategory) {
@@ -75,7 +77,13 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   };
 
   if (isMobile) {
-    return <MobileCategorySelection {...props} />;
+    return <MobileCategorySelection 
+      isPro={isPro}
+      currentCategory={currentCategory}
+      onCategoryUpdate={onCategoryUpdate}
+      onNewBatch={onNewBatch}
+      isLoadingNewBatch={isLoadingNewBatch}
+    />;
   }
   
   return (
