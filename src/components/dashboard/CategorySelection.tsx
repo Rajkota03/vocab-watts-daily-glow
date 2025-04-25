@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
@@ -46,12 +45,11 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   }, [currentCategory]);
 
   const handlePrimarySelect = (primary: string) => {
-    // If user is on free trial, they can only select 'daily' category
     if (isFreeTrialUser && primary !== 'daily') {
       toast({
         title: "Free Trial Restriction",
         description: "Free trial users can only access the Daily vocabulary category. Upgrade to Pro to unlock all categories.",
-        variant: "warning"
+        variant: "default"
       });
       return;
     }

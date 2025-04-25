@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -42,12 +41,10 @@ const Dashboard = () => {
         return;
       }
       
-      // Check if the user email is the admin email
       if (data.session.user.email === 'rajkota.sql@gmail.com') {
         console.log("Admin user detected");
         setIsAdmin(true);
         
-        // Also check admin role in database
         try {
           const { data: hasAdminRole, error } = await supabase.rpc('has_role', { 
             _user_id: data.session.user.id,
@@ -58,7 +55,6 @@ const Dashboard = () => {
             console.error('Error checking admin role:', error);
           } else if (!hasAdminRole) {
             console.log("Admin email but no admin role found, adding admin role");
-            // Automatically assign admin role if it doesn't exist
             const { error: roleError } = await supabase
               .from('user_roles')
               .insert({
@@ -87,7 +83,6 @@ const Dashboard = () => {
         setUserNickname(profileData.nick_name || profileData.first_name || 'there');
       }
       
-      // Fetch subscription details
       const { data: subscriptionData, error: subscriptionError } = await supabase
         .from('user_subscriptions')
         .select('*')
@@ -101,7 +96,6 @@ const Dashboard = () => {
       } else if (subscriptionData) {
         let category = subscriptionData.category || 'daily-intermediate';
         
-        // Format category if needed
         if (category && !category.includes('-')) {
           const mapping: { [key: string]: string } = {
             'business': 'business-intermediate',
@@ -120,7 +114,6 @@ const Dashboard = () => {
           subscription_ends_at: subscriptionData.subscription_ends_at
         });
       } else {
-        // If no subscription found, check user metadata
         const userMetadata = data.session.user.user_metadata;
         console.log("User metadata:", userMetadata);
         
@@ -147,7 +140,6 @@ const Dashboard = () => {
         }
       }
       
-      // Fetch words learned this month
       try {
         const { data: wordsData, error: wordsError } = await supabase
           .from('user_word_history')
@@ -200,7 +192,6 @@ const Dashboard = () => {
       const combinedCategory = `${primary}-${subcategory}`;
       console.log("Updating category to:", combinedCategory);
       
-      // Check if free trial user is trying to change category
       const isFreeTrialUser = !subscription.is_pro && 
         subscription.trial_ends_at && 
         new Date(subscription.trial_ends_at) > new Date();
@@ -209,7 +200,7 @@ const Dashboard = () => {
         toast({
           title: 'Free Trial Restriction',
           description: 'Free trial users can only use the Daily category. Upgrade to Pro to unlock all categories.',
-          variant: 'warning'
+          variant: 'default'
         });
         return;
       }
@@ -220,7 +211,6 @@ const Dashboard = () => {
       
       if (error) throw error;
       
-      // Update the subscription in the database
       const { error: dbError } = await supabase
         .from('user_subscriptions')
         .update({ category: combinedCategory })

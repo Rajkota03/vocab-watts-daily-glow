@@ -45,7 +45,7 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
       toast({
         title: "Free Trial Restriction",
         description: "Free trial users can only access the Daily vocabulary category. Upgrade to Pro to unlock all categories.",
-        variant: "warning"
+        variant: "default"
       });
       return;
     }

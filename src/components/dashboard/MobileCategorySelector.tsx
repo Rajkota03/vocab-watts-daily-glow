@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   ArrowLeft, BookOpen, Briefcase, MessageSquare, Smile, Sparkle, 
   Heart, GraduationCap, Check, Zap, RefreshCw
@@ -11,14 +11,15 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface MobileCategorySelectorProps {
-  isPro: boolean;
-  currentCategory: string;
+  isPro?: boolean;
+  currentCategory?: string;
   selectedPrimary: string | null;
   selectedSubcategory: string | null;
-  onPrimarySelect: (category: string) => void;
+  onPrimarySelect: (primary: string) => void;
   onSubcategorySelect: (subcategory: string) => void;
-  onApplySelection: () => void;
+  onApplySelection?: () => void;
   isLoadingNewBatch?: boolean;
+  isFreeTrialUser?: boolean;
 }
 
 const MobileCategorySelector: React.FC<MobileCategorySelectorProps> = ({

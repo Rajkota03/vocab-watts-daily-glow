@@ -7,12 +7,14 @@ interface SubcategoryGridProps {
   selectedPrimary: string | null;
   selectedSubcategory: string | null;
   onSubcategorySelect: (subcategory: string) => void;
+  isFreeTrialUser?: boolean;
 }
 
 const SubcategoryGrid: React.FC<SubcategoryGridProps> = ({
   selectedPrimary,
   selectedSubcategory,
   onSubcategorySelect,
+  isFreeTrialUser = false
 }) => {
   const subcategories = selectedPrimary === 'exam' ? 
     [
