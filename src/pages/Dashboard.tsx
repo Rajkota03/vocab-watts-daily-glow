@@ -9,7 +9,7 @@ import DashboardLoading from '@/components/dashboard/DashboardLoading';
 import { MOCK_TODAYS_QUIZ, MOCK_RECENT_DROPS } from '@/data/dashboardMockData';
 import { generateNewWordBatch } from '@/services/wordService';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client'; // Added missing import
+import { supabase } from '@/integrations/supabase/client';
 
 const Dashboard = () => {
   const { loading: authLoading, userNickname, isAdmin } = useAuthStatus();
@@ -18,6 +18,9 @@ const Dashboard = () => {
   const [wordsLearnedThisMonth, setWordsLearnedThisMonth] = useState(45);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  console.log('Dashboard - subscription:', subscription);
+  console.log('Dashboard - is_pro:', subscription.is_pro);
 
   const handleSignOut = async () => {
     try {

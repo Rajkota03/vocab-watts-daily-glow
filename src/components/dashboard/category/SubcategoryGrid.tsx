@@ -63,11 +63,10 @@ const SubcategoryGrid: React.FC<SubcategoryGridProps> = ({
       <h3 className="text-sm font-medium text-gray-700 mb-4">Subcategory</h3>
       <div className="grid grid-cols-2 gap-3">
         {options.map((option) => {
-          // Determine if option should be disabled
+          // For Pro users, all options should be enabled regardless of proOnly status
           // For free trial users, options with proOnly should be disabled
           // For regular users who are not pro, options with proOnly should be disabled
-          const isDisabled = (isFreeTrialUser && option.proOnly) || 
-                            (!isPro && option.proOnly);
+          const isDisabled = (!isPro && option.proOnly);
                          
           const isSelected = selectedSubcategory === option.id;
           

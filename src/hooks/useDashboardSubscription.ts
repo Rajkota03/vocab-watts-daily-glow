@@ -20,37 +20,47 @@ export const useDashboardSubscription = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
 
-      const { data: subscriptionData, error } = await supabase
-        .from('user_subscriptions')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+      try {
+        const { data: subscriptionData, error } = await supabase
+          .from('user_subscriptions')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
 
-      if (error) {
-        console.error('Error fetching subscription:', error);
-      } else if (subscriptionData) {
-        let category = subscriptionData.category || 'daily-intermediate';
-        if (category && !category.includes('-')) {
-          const mapping: { [key: string]: string } = {
-            'business': 'business-intermediate',
-            'exam': 'exam-gre',
-            'slang': 'slang-intermediate',
-            'daily': 'daily-intermediate'
-          };
-          category = mapping[category] || 'daily-intermediate';
-        }
+        if (error) {
+          console.error('Error fetching subscription:', error);
+          // Even if there's an error, we continue with default values
+        } 
         
-        setSubscription({
-          is_pro: subscriptionData.is_pro,
-          category: category,
-          phone_number: subscriptionData.phone_number,
-          trial_ends_at: subscriptionData.trial_ends_at,
-          subscription_ends_at: subscriptionData.subscription_ends_at
-        });
+        if (subscriptionData) {
+          let category = subscriptionData.category || 'daily-intermediate';
+          if (category && !category.includes('-')) {
+            const mapping: { [key: string]: string } = {
+              'business': 'business-intermediate',
+              'exam': 'exam-gre',
+              'slang': 'slang-intermediate',
+              'daily': 'daily-intermediate'
+            };
+            category = mapping[category] || 'daily-intermediate';
+          }
+          
+          console.log('useDashboardSubscription - is_pro:', subscriptionData.is_pro);
+          
+          setSubscription({
+            is_pro: subscriptionData.is_pro || false,
+            category: category,
+            phone_number: subscriptionData.phone_number || '',
+            trial_ends_at: subscriptionData.trial_ends_at,
+            subscription_ends_at: subscriptionData.subscription_ends_at
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch subscription data:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     initializeSubscription();

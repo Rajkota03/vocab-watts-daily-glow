@@ -36,10 +36,13 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
   
   const isTrialActive = trialEndsAt ? now < trialEndsAt : false;
   const isSubscriptionActive = subscriptionEndsAt ? now < subscriptionEndsAt : false;
-  const isActive = isTrialActive || isSubscriptionActive;
+  const isActive = isTrialActive || isSubscriptionActive || subscription.is_pro;
   
   // If user is on free trial, they can only access daily category
   const isFreeTrialUser = isTrialActive && !subscription.is_pro;
+
+  console.log('DashboardMain - is_pro:', subscription.is_pro);
+  console.log('DashboardMain - isFreeTrialUser:', isFreeTrialUser);
 
   return (
     <main className="min-h-[calc(100vh-80px)] bg-gray-50/50 flex flex-col items-center w-full">
