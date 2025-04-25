@@ -66,7 +66,7 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({
             key={category.id}
             onClick={() => onPrimarySelect(category.id)}
             className={cn(
-              "flex items-center px-3 py-2 rounded-full whitespace-nowrap transition-all duration-200",
+              "flex items-center px-3 py-2 rounded-full whitespace-nowrap transition-all duration-200 flex-shrink-0",
               selectedPrimary === category.id 
                 ? "bg-primary-light text-primary border border-primary" 
                 : "bg-[#F4F7FB] text-[#4F607E] hover:bg-gray-100"

@@ -63,7 +63,6 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
           toast({
             title: "Words generated successfully!",
             description: `Your new ${wordCount} words have been scheduled for delivery.`,
-            variant: "success",
           });
         }
       } catch (error) {
@@ -87,60 +86,58 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   }
   
   return (
-    <div className="max-w-3xl mx-auto">
-      <Card className="border border-stroke/50 shadow-sm rounded-2xl overflow-hidden bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/80">
-        <div className="p-6 md:p-8 space-y-8">
-          <div className="lg:grid lg:grid-cols-2 lg:gap-x-12 lg:gap-y-8">
-            <div className="space-y-8">
-              <CategoryGrid 
-                selectedPrimary={selectedPrimary} 
-                onPrimarySelect={handlePrimarySelect} 
-              />
-              
-              {selectedPrimary && (
-                <SubcategoryGrid
-                  selectedPrimary={selectedPrimary}
-                  selectedSubcategory={selectedSubcategory}
-                  onSubcategorySelect={handleSubcategorySelect}
-                />
-              )}
-            </div>
+    <Card className="border border-stroke/50 shadow-sm rounded-2xl overflow-hidden bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+      <div className="p-6 md:p-8 space-y-8">
+        <div className="card-content lg:grid lg:grid-cols-2 lg:gap-x-10 flex flex-col gap-6">
+          <div className="space-y-8 flex-shrink-0">
+            <CategoryGrid 
+              selectedPrimary={selectedPrimary} 
+              onPrimarySelect={handlePrimarySelect} 
+            />
             
-            <div className="space-y-8 mt-8 lg:mt-0">
-              {selectedSubcategory && (
-                <>
-                  <WordCountSelector
-                    wordCount={wordCount}
-                    onWordCountChange={setWordCount}
-                  />
-                  
-                  <TimeScheduler
-                    scheduledTime={scheduledTime}
-                    onScheduledTimeChange={setScheduledTime}
-                  />
+            {selectedPrimary && (
+              <SubcategoryGrid
+                selectedPrimary={selectedPrimary}
+                selectedSubcategory={selectedSubcategory}
+                onSubcategorySelect={handleSubcategorySelect}
+              />
+            )}
+          </div>
+          
+          <div className="space-y-8 flex-shrink-0">
+            {selectedSubcategory && (
+              <>
+                <WordCountSelector
+                  wordCount={wordCount}
+                  onWordCountChange={setWordCount}
+                />
+                
+                <TimeScheduler
+                  scheduledTime={scheduledTime}
+                  onScheduledTimeChange={setScheduledTime}
+                />
 
-                  <Button
-                    disabled={!selectedPrimary || !selectedSubcategory || isLoadingNewBatch}
-                    onClick={handleApply}
-                    className="w-full bg-primary text-white rounded-lg py-3 h-12 font-medium transition-all hover:bg-primary/90"
-                    aria-live="polite"
-                  >
-                    {isLoadingNewBatch ? (
-                      <>
-                        <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      'Apply Selection & Generate Words'
-                    )}
-                  </Button>
-                </>
-              )}
-            </div>
+                <Button
+                  disabled={!selectedPrimary || !selectedSubcategory || isLoadingNewBatch}
+                  onClick={handleApply}
+                  className="w-full bg-primary text-white rounded-lg py-3 h-12 font-medium transition-all hover:bg-primary/90"
+                  aria-live="polite"
+                >
+                  {isLoadingNewBatch ? (
+                    <>
+                      <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    'Apply Selection & Generate Words'
+                  )}
+                </Button>
+              </>
+            )}
           </div>
         </div>
-      </Card>
-    </div>
+      </div>
+    </Card>
   );
 };
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   BookOpen, Briefcase, MessageSquare, 
@@ -5,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import WordCountSelector from './category/WordCountSelector';
 
 interface MobileCategorySelectionProps {
   isPro: boolean;
@@ -23,6 +25,7 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
 }) => {
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+  const [wordCount, setWordCount] = useState(3);
   
   const categories = [
     {
@@ -116,6 +119,10 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
     }
   };
 
+  const handleWordCountChange = (count: number) => {
+    setWordCount(count);
+  };
+
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-xl p-4">
@@ -168,13 +175,23 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
               </h4>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {(selectedPrimary === 'exam' ? examTypes : difficultyLevels).map((level) => (
+            <div className="flex overflow-x-auto pb-2 gap-2 -mx-2 px-2">
+              {(selectedPrimary === 'exam' ? [
+                { id: 'gre', name: 'GRE' },
+                { id: 'ielts', name: 'IELTS' },
+                { id: 'toefl', name: 'TOEFL' },
+                { id: 'cat', name: 'CAT' },
+                { id: 'gmat', name: 'GMAT' }
+              ] : [
+                { id: 'beginner', name: 'Beginner' },
+                { id: 'intermediate', name: 'Intermediate' },
+                { id: 'professional', name: 'Professional' }
+              ]).map((level) => (
                 <button
                   key={level.id}
                   onClick={() => handleSubcategorySelect(level.id)}
                   className={cn(
-                    "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                    "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap",
                     selectedSubcategory === level.id
                       ? "bg-vocab-purple text-white shadow-sm"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -183,6 +200,17 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
                   {level.name}
                 </button>
               ))}
+            </div>
+          </div>
+        )}
+
+        {selectedSubcategory && (
+          <div className="mt-4 pt-4 border-t border-gray-100 animate-fade-in">
+            <div className="slider-wrapper px-1">
+              <WordCountSelector
+                wordCount={wordCount}
+                onWordCountChange={handleWordCountChange}
+              />
             </div>
           </div>
         )}
