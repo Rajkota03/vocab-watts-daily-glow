@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RegisterForm } from '@/components/auth/RegisterForm';
@@ -7,19 +6,22 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { RegisterFormValues } from '@/types/auth';
-
 const Upgrade = () => {
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const navigate = useNavigate();
-
   const handleSubmit = async (values: RegisterFormValues) => {
     try {
-      const { data: orderData, error: orderError } = await supabase.functions.invoke('create-razorpay-order', {
-        body: { amount: 499 * 100 } // Convert to paise
+      const {
+        data: orderData,
+        error: orderError
+      } = await supabase.functions.invoke('create-razorpay-order', {
+        body: {
+          amount: 499 * 100
+        } // Convert to paise
       });
-
       if (orderError) throw orderError;
-
       const options = {
         key: orderData.key,
         amount: orderData.amount,
@@ -35,10 +37,12 @@ const Upgrade = () => {
         theme: {
           color: "#9b87f5"
         },
-        handler: async function(response: any) {
+        handler: async function (response: any) {
           try {
             // Create user account
-            const { error: signUpError } = await supabase.auth.signUp({
+            const {
+              error: signUpError
+            } = await supabase.auth.signUp({
               email: values.email,
               password: values.password,
               options: {
@@ -53,14 +57,11 @@ const Upgrade = () => {
                 }
               }
             });
-
             if (signUpError) throw signUpError;
-
             toast({
               title: "Welcome to GLINTUP Pro! 🎉",
-              description: "Your account has been created successfully.",
+              description: "Your account has been created successfully."
             });
-
             navigate('/dashboard');
           } catch (error: any) {
             toast({
@@ -71,7 +72,6 @@ const Upgrade = () => {
           }
         }
       };
-
       const razorpay = new window.Razorpay(options);
       razorpay.open();
     } catch (error: any) {
@@ -82,10 +82,8 @@ const Upgrade = () => {
       });
     }
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#9b87f5]/10 to-[#7E69AB]/10 py-12 px-4">
-      <div className="container max-w-6xl mx-auto">
+  return <div className="min-h-screen bg-gradient-to-br from-[#9b87f5]/10 to-[#7E69AB]/10 py-12 px-4">
+      <div className="container max-w-6xl mx-px my-0 py-0 px-0">
         <h1 className="text-3xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-[#9b87f5] to-[#7E69AB]">
           Upgrade to GLINTUP Pro
         </h1>
@@ -115,21 +113,10 @@ const Upgrade = () => {
               </div>
               
               <ul className="space-y-3">
-                {[
-                  "10 vocabulary words daily",
-                  "Choose your category",
-                  "Custom delivery time",
-                  "Personalized difficulty",
-                  "Progress tracking",
-                  "Example sentences",
-                  "Daily practice quizzes",
-                  "Priority support"
-                ].map((feature, index) => (
-                  <li key={index} className="flex items-center gap-2 text-gray-700">
+                {["10 vocabulary words daily", "Choose your category", "Custom delivery time", "Personalized difficulty", "Progress tracking", "Example sentences", "Daily practice quizzes", "Priority support"].map((feature, index) => <li key={index} className="flex items-center gap-2 text-gray-700">
                     <ArrowRight className="h-4 w-4 text-[#9b87f5]" />
                     {feature}
-                  </li>
-                ))}
+                  </li>)}
               </ul>
 
               <div className="bg-blue-50 p-4 rounded-lg">
@@ -141,8 +128,6 @@ const Upgrade = () => {
           </Card>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Upgrade;
