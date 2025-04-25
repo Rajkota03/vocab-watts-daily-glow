@@ -189,10 +189,10 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   const isFullySelected = selectedPrimary && selectedSubcategory;
 
   return (
-    <div className="space-y-6 pb-6">
-      <div className="bg-white rounded-xl p-4">
-        <h3 className="text-base font-semibold text-gray-800 mb-4">Word Category</h3>
-        <div className="grid grid-cols-3 gap-3">
+    <div className="space-y-4 pb-4">
+      <div className="bg-white rounded-xl p-3">
+        <h3 className="text-sm font-semibold text-gray-800 mb-2">Word Category</h3>
+        <div className="grid grid-cols-3 gap-2">
           {categories.map((category) => (
             <button
               key={category.id}
@@ -225,9 +225,9 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-4">
-        <h3 className="text-base font-semibold text-gray-800 mb-4">Difficulty Level</h3>
-        <div className="grid grid-cols-3 gap-3">
+      <div className="bg-white rounded-xl p-3">
+        <h3 className="text-sm font-semibold text-gray-800 mb-2">Difficulty Level</h3>
+        <div className="grid grid-cols-3 gap-2">
           {(selectedPrimary === 'exam' ? examTypes : difficultyLevels).map((level) => (
             <button
               key={level.id}
@@ -252,13 +252,13 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-4">
-        <div className="flex items-center mb-4">
-          <ListOrdered className="h-5 w-5 mr-2 text-vocab-purple" />
-          <h3 className="text-base font-semibold text-gray-800">Daily Word Count</h3>
+      <div className="bg-white rounded-xl p-3">
+        <div className="flex items-center mb-2">
+          <ListOrdered className="h-4 w-4 mr-2 text-vocab-purple" />
+          <h3 className="text-sm font-semibold text-gray-800">Daily Word Count</h3>
         </div>
         
-        <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-3 gap-2 mb-2">
           {[1, 2, 3].map((count) => (
             <button
               key={count}
@@ -277,7 +277,7 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
           ))}
         </div>
         
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2">
           {[4, 5].map((count) => (
             <button
               key={count}
@@ -296,16 +296,16 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
           ))}
         </div>
         
-        <p className="text-sm text-gray-600 italic mt-4 text-center">
+        <p className="text-xs text-gray-600 italic mt-2 text-center">
           {wordCountOptions.find(option => option.count === wordCount)?.message}
         </p>
       </div>
 
-      <div className="px-4">
+      <div className="px-2">
         <Button
           onClick={handleApply}
           disabled={!isFullySelected || isLoadingNewBatch}
-          className="w-full bg-gradient-to-r from-vocab-purple to-indigo-500 hover:from-vocab-purple/90 hover:to-indigo-500/90 text-white h-14 rounded-xl shadow-sm"
+          className="w-full bg-gradient-to-r from-vocab-purple to-indigo-500 hover:from-vocab-purple/90 hover:to-indigo-500/90 text-white h-12 rounded-xl shadow-sm"
         >
           {isLoadingNewBatch ? (
             <>
