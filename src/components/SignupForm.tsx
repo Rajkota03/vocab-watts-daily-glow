@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,36 +7,124 @@ import { toast } from "@/components/ui/use-toast";
 import { Clock, CheckCircle, Info, Send, Loader2 } from 'lucide-react';
 import { sendVocabWords } from '@/services/whatsappService';
 import { supabase } from '@/integrations/supabase/client';
-import { createSubscription } from '@/services/subscriptionService';
-import { useNavigate } from 'react-router-dom';
+import { createRazorpayOrder, completeSubscription } from '@/services/paymentService';
+
+// Declare Razorpay types
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
+// Define the type for payment result
+interface PaymentResult {
+  success: boolean;
+  razorpayPaymentId?: string;
+  razorpayOrderId?: string;
+  error?: string;
+}
 
 const SignupForm = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [deliveryTime, setDeliveryTime] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState(1);
   const [success, setSuccess] = useState(false);
-  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
 
+  // Check for existing session on component mount
   useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => {
-        navigate('/dashboard');
-      }, 3000);
-      
-      return () => clearTimeout(timer);
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user) {
+        setUser(data.session.user);
+      }
+    };
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+
+    checkSession();
+
+    // Load Razorpay script
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => setRazorpayLoaded(true);
+    document.body.appendChild(script);
+
+    // Cleanup
+    return () => {
+      subscription.unsubscribe();
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
+
+  const handlePayment = async (orderData: any): Promise<PaymentResult> => {
+    if (!razorpayLoaded) {
+      toast({
+        title: "Payment system is loading",
+        description: "Please wait a moment and try again.",
+        variant: "destructive"
+      });
+      return { success: false, error: "Payment system not loaded" };
     }
-  }, [success, navigate]);
+
+    // If it's a free trial signup (not pro), skip payment
+    if (orderData.freeSignup) {
+      return { success: true };
+    }
+
+    return new Promise<PaymentResult>((resolve) => {
+      const options = {
+        key: 'rzp_test_YourTestKeyHere', // Replace with your Razorpay test key
+        amount: orderData.amount,
+        currency: 'INR',
+        name: 'GLINTUP',
+        description: 'Vocabulary Pro Subscription',
+        order_id: orderData.id,
+        prefill: {
+          contact: phoneNumber
+        },
+        theme: {
+          color: '#3F3D56'
+        },
+        handler: function(response: any) {
+          // Payment successful
+          console.log('Payment success:', response);
+          resolve({
+            success: true,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpayOrderId: response.razorpay_order_id
+          });
+        },
+        modal: {
+          ondismiss: function() {
+            // Payment canceled
+            console.log('Payment canceled');
+            resolve({ success: false, error: 'Payment canceled' });
+          }
+        }
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
     try {
+      // Validate phone number (basic validation)
       if (!phoneNumber.trim() || phoneNumber.length < 10) {
         toast({
           title: "Invalid phone number",
@@ -46,106 +135,91 @@ const SignupForm = () => {
         return;
       }
       
-      if (step === 2) {
-        if (!deliveryTime) {
-          toast({
-            title: "Please select a delivery time",
-            description: "Choose when you want to receive your daily words.",
-            variant: "destructive"
-          });
-          setIsSubmitting(false);
-          return;
-        }
-
-        if (!email || !password) {
-          toast({
-            title: "Email and password required",
-            description: "Please enter your email and create a password.",
-            variant: "destructive"
-          });
-          setIsSubmitting(false);
-          return;
-        }
-
-        if (password.length < 6) {
-          toast({
-            title: "Password too short",
-            description: "Password must be at least 6 characters long.",
-            variant: "destructive"
-          });
-          setIsSubmitting(false);
-          return;
-        }
-        
-        console.log("Submitting form with:", { phoneNumber, deliveryTime, email });
-        
-        const { data: existingSubscriptions } = await supabase
-          .from('user_subscriptions')
-          .select('*')
-          .eq('phone_number', phoneNumber)
-          .limit(1);
-          
-        if (existingSubscriptions && existingSubscriptions.length > 0) {
-          toast({
-            title: "Phone number already registered",
-            description: "This number is already registered for our service.",
-            variant: "destructive"
-          });
-          setIsSubmitting(false);
-          return;
-        }
-        
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              first_name: firstName || "User",
-              last_name: lastName || "",
-              whatsapp_number: phoneNumber
-            }
-          }
-        });
-        
-        if (signUpError) {
-          console.error("Error signing up:", signUpError);
-          toast({
-            title: "Account creation failed",
-            description: signUpError.message || "Could not create your account. Please try again.",
-            variant: "destructive"
-          });
-          setIsSubmitting(false);
-          return;
-        }
-        
-        const isPro = false;
-        const subscriptionSuccess = await createSubscription({
-          phoneNumber,
-          deliveryTime,
-          isPro, 
-          category: 'daily'
-        });
-        
-        if (!subscriptionSuccess) {
-          throw new Error('Failed to create subscription');
-        }
-        
-        const messageResult = await sendVocabWords({
-          phoneNumber,
-          deliveryTime
-        });
-        
-        if (!messageResult) {
-          console.warn('WhatsApp message sending failed, but subscription was created');
-        }
-        
-        setSuccess(true);
+      if (step === 2 && !deliveryTime) {
         toast({
-          title: "You're all set!",
-          description: "Your 3-day free trial has started. You'll receive your first words shortly on WhatsApp.",
+          title: "Please select a delivery time",
+          description: "Choose when you want to receive your daily words.",
+          variant: "destructive"
         });
+        setIsSubmitting(false);
+        return;
       }
-    } catch (error: any) {
+      
+      console.log("Submitting form with:", { phoneNumber, deliveryTime });
+      
+      // If not logged in, create an anonymous session
+      if (!user) {
+        const { error } = await supabase.auth.signInAnonymously();
+        if (error) {
+          console.error("Error signing in anonymously:", error);
+          toast({
+            title: "Authentication error",
+            description: "We couldn't create a session for you. Please try again.",
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      
+      // Default to free trial
+      const isPro = false;
+      
+      // Create Razorpay order
+      const orderResult = await createRazorpayOrder({
+        phoneNumber,
+        deliveryTime,
+        isPro
+      });
+      
+      if (!orderResult.success) {
+        throw new Error('Failed to create payment order');
+      }
+      
+      // Initialize payment if needed
+      const paymentResult = await handlePayment(orderResult.data);
+      
+      if (!paymentResult.success && !orderResult.data.freeSignup) {
+        throw new Error('Payment failed or was canceled');
+      }
+      
+      // Complete subscription process
+      const subscriptionResult = await completeSubscription({
+        phoneNumber,
+        deliveryTime,
+        isPro,
+        razorpayOrderId: paymentResult.razorpayOrderId,
+        razorpayPaymentId: paymentResult.razorpayPaymentId
+      });
+      
+      if (!subscriptionResult.success) {
+        throw new Error('Failed to create subscription');
+      }
+      
+      // Send vocabulary words via WhatsApp
+      const messageResult = await sendVocabWords({
+        phoneNumber,
+        deliveryTime
+      });
+      
+      if (!messageResult) {
+        console.warn('WhatsApp message sending failed, but subscription was created');
+      }
+      
+      setSuccess(true);
+      toast({
+        title: "You're all set!",
+        description: "You'll receive your first words shortly on WhatsApp.",
+      });
+      
+      // Reset form after success
+      setTimeout(() => {
+        setPhoneNumber('');
+        setDeliveryTime('');
+        setStep(1);
+        setSuccess(false);
+      }, 3000);
+    } catch (error) {
       console.error('Error processing subscription:', error);
       toast({
         title: "Something went wrong",
@@ -157,6 +231,7 @@ const SignupForm = () => {
     }
   };
 
+  // Show success message if form was submitted successfully
   if (success) {
     return (
       <div className="text-center">
@@ -165,12 +240,17 @@ const SignupForm = () => {
         </div>
         <h3 className="text-2xl font-bold mb-2">Success!</h3>
         <p className="text-gray-600 mb-6">
-          Your free trial has been activated. Your first vocabulary words will be sent to your WhatsApp shortly.
+          Your first vocabulary words will be sent to your WhatsApp shortly.
         </p>
         <Button 
-          onClick={() => navigate('/dashboard')}
+          onClick={() => {
+            setPhoneNumber('');
+            setDeliveryTime('');
+            setStep(1);
+            setSuccess(false);
+          }}
         >
-          Go to Dashboard
+          Sign up another number
         </Button>
       </div>
     );
@@ -237,89 +317,24 @@ const SignupForm = () => {
         
         {step === 2 && (
           <div className="space-y-5">
-            <div className="mb-2 animate-fade-in space-y-4">
-              <div>
-                <label htmlFor="firstName" className="block text-sm font-medium mb-1.5">
-                  First Name
-                </label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  placeholder="Your first name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
-                  className="h-12"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium mb-1.5">
-                  Last Name
-                </label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  placeholder="Your last name"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="h-12"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium mb-1.5">
-                  Email Address
-                </label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="h-12"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium mb-1.5">
-                  Create Password
-                </label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Minimum 6 characters"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="h-12"
-                />
-                <p className="mt-1.5 text-xs text-gray-500 flex items-start">
-                  <Info className="h-3.5 w-3.5 mr-1 flex-shrink-0 mt-0.5" />
-                  Create a secure password for your account
-                </p>
-              </div>
-
-              <div>
-                <label htmlFor="deliveryTime" className="block text-sm font-medium mb-1.5">
-                  Choose delivery time
-                </label>
-                <Select value={deliveryTime} onValueChange={setDeliveryTime} required>
-                  <SelectTrigger id="deliveryTime" className="h-12">
-                    <SelectValue placeholder="Select delivery time" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="morning">7:00 AM - Morning boost</SelectItem>
-                    <SelectItem value="noon">12:00 PM - Lunch break learning</SelectItem>
-                    <SelectItem value="evening">7:00 PM - Evening review</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="mt-1.5 text-xs text-gray-500 flex items-start">
-                  <Info className="h-3.5 w-3.5 mr-1 flex-shrink-0 mt-0.5" />
-                  Pick when you want to receive your daily words
-                </p>
-              </div>
+            <div className="mb-2 animate-fade-in">
+              <label htmlFor="deliveryTime" className="block text-sm font-medium mb-1.5">
+                Choose delivery time
+              </label>
+              <Select value={deliveryTime} onValueChange={setDeliveryTime} required>
+                <SelectTrigger id="deliveryTime" className="h-12">
+                  <SelectValue placeholder="Select delivery time" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="morning">7:00 AM - Morning boost</SelectItem>
+                  <SelectItem value="noon">12:00 PM - Lunch break learning</SelectItem>
+                  <SelectItem value="evening">7:00 PM - Evening review</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="mt-1.5 text-xs text-gray-500 flex items-start">
+                <Info className="h-3.5 w-3.5 mr-1 flex-shrink-0 mt-0.5" />
+                Pick when you want to receive your daily words
+              </p>
             </div>
             
             <div className="flex gap-3">
@@ -335,7 +350,7 @@ const SignupForm = () => {
               <Button 
                 type="submit" 
                 className="flex-1"
-                disabled={isSubmitting || !deliveryTime || !email || !password}
+                disabled={isSubmitting || !deliveryTime}
               >
                 {isSubmitting ? (
                   <>

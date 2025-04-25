@@ -36,7 +36,7 @@ export const createSubscription = async (data: SubscriptionData) => {
         user_id: userId,
         phone_number: data.phoneNumber,
         is_pro: data.isPro,
-        category: data.isPro ? data.category : 'daily', // Free trial users only get the daily category
+        category: data.isPro ? data.category : null,
         trial_ends_at: trialEndsAt,
         subscription_ends_at: subscriptionEndsAt
       })
@@ -49,19 +49,6 @@ export const createSubscription = async (data: SubscriptionData) => {
     }
     
     console.log('Subscription created:', subscription);
-    
-    // Save trial end date in user metadata for easy access
-    if (userId) {
-      await supabase.auth.updateUser({
-        data: { 
-          trial_ends_at: trialEndsAt,
-          subscription_ends_at: subscriptionEndsAt,
-          is_pro: data.isPro,
-          category: data.isPro ? data.category : 'daily'
-        }
-      });
-    }
-    
     return true;
   } catch (error) {
     console.error('Failed to create subscription:', error);
@@ -94,47 +81,5 @@ export const getVocabWordsByCategory = async (category?: string) => {
   } catch (error) {
     console.error('Failed to fetch vocabulary words:', error);
     return null;
-  }
-};
-
-// Check subscription status to see if a user's trial or subscription is still valid
-export const checkSubscriptionStatus = async (userId?: string): Promise<{isActive: boolean, isPro: boolean, trialEndsAt?: Date | null, subscriptionEndsAt?: Date | null}> => {
-  try {
-    if (!userId) {
-      const { data } = await supabase.auth.getSession();
-      userId = data.session?.user?.id;
-      if (!userId) return { isActive: false, isPro: false };
-    }
-    
-    const { data, error } = await supabase
-      .from('user_subscriptions')
-      .select('is_pro, trial_ends_at, subscription_ends_at')
-      .eq('user_id', userId)
-      .single();
-    
-    if (error || !data) {
-      console.error('Error checking subscription status:', error);
-      return { isActive: false, isPro: false };
-    }
-    
-    const now = new Date();
-    const trialEndsAt = data.trial_ends_at ? new Date(data.trial_ends_at) : null;
-    const subscriptionEndsAt = data.subscription_ends_at ? new Date(data.subscription_ends_at) : null;
-    
-    // Check if trial is still active
-    const isTrialActive = trialEndsAt ? now < trialEndsAt : false;
-    
-    // Check if paid subscription is active
-    const isSubscriptionActive = subscriptionEndsAt ? now < subscriptionEndsAt : false;
-    
-    return {
-      isActive: isTrialActive || isSubscriptionActive,
-      isPro: data.is_pro && isSubscriptionActive,
-      trialEndsAt,
-      subscriptionEndsAt
-    };
-  } catch (error) {
-    console.error('Failed to check subscription status:', error);
-    return { isActive: false, isPro: false };
   }
 };

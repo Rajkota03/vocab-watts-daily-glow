@@ -1,108 +1,123 @@
 
 import React from 'react';
-import { Check } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface SubcategoryOption {
-  id: string;
-  name: string;
-  description?: string;
-  proOnly?: boolean;
-}
 
 interface SubcategoryGridProps {
   selectedPrimary: string | null;
   selectedSubcategory: string | null;
   onSubcategorySelect: (subcategory: string) => void;
-  isFreeTrialUser?: boolean;
-  isPro?: boolean;
 }
 
-const SubcategoryGrid: React.FC<SubcategoryGridProps> = ({ 
-  selectedPrimary, 
-  selectedSubcategory, 
+const SubcategoryGrid: React.FC<SubcategoryGridProps> = ({
+  selectedPrimary,
+  selectedSubcategory,
   onSubcategorySelect,
-  isFreeTrialUser = false,
-  isPro = false
 }) => {
-  const subcategories: {[key: string]: SubcategoryOption[]} = {
-    daily: [
-      { id: 'beginner', name: 'Beginner' },
-      { id: 'intermediate', name: 'Intermediate' },
-      { id: 'advanced', name: 'Advanced', proOnly: true },
-      { id: 'expert', name: 'Expert', proOnly: true }
-    ],
-    business: [
-      { id: 'beginner', name: 'Beginner' },
-      { id: 'intermediate', name: 'Intermediate' },
-      { id: 'finance', name: 'Finance', proOnly: true },
-      { id: 'marketing', name: 'Marketing', proOnly: true }
-    ],
-    exam: [
-      { id: 'gre', name: 'GRE' },
-      { id: 'toefl', name: 'TOEFL' },
-      { id: 'sat', name: 'SAT', proOnly: true },
-      { id: 'ielts', name: 'IELTS', proOnly: true }
-    ],
-    slang: [
-      { id: 'beginner', name: 'Beginner' },
-      { id: 'intermediate', name: 'Intermediate' },
-      { id: 'advanced', name: 'Advanced', proOnly: true },
-      { id: 'americanisms', name: 'American', proOnly: true }
-    ]
-  };
+  const subcategories = selectedPrimary === 'exam' ? 
+    [
+      { 
+        id: 'gre', 
+        name: 'GRE',
+        description: 'Graduate Record Examination',
+        color: 'from-red-500/20 to-red-600/20',
+        textColor: 'text-red-700',
+        activeColor: 'from-red-500/30 to-red-600/30'
+      },
+      { 
+        id: 'ielts', 
+        name: 'IELTS',
+        description: 'English Language Testing',
+        color: 'from-blue-500/20 to-blue-600/20',
+        textColor: 'text-blue-700',
+        activeColor: 'from-blue-500/30 to-blue-600/30'
+      },
+      { 
+        id: 'toefl', 
+        name: 'TOEFL',
+        description: 'Test of English as Foreign Language',
+        color: 'from-green-500/20 to-green-600/20',
+        textColor: 'text-green-700',
+        activeColor: 'from-green-500/30 to-green-600/30'
+      },
+      { 
+        id: 'cat', 
+        name: 'CAT',
+        description: 'Common Admission Test',
+        color: 'from-amber-500/20 to-amber-600/20',
+        textColor: 'text-amber-700',
+        activeColor: 'from-amber-500/30 to-amber-600/30'
+      },
+      { 
+        id: 'gmat', 
+        name: 'GMAT',
+        description: 'Graduate Management Test',
+        color: 'from-indigo-500/20 to-indigo-600/20',
+        textColor: 'text-indigo-700',
+        activeColor: 'from-indigo-500/30 to-indigo-600/30'
+      }
+    ] : [
+      { 
+        id: 'beginner', 
+        name: 'Beginner',
+        description: 'Basic everyday vocabulary',
+        color: 'from-green-500/20 to-green-600/20',
+        textColor: 'text-green-700',
+        activeColor: 'from-green-500/30 to-green-600/30'
+      },
+      { 
+        id: 'intermediate', 
+        name: 'Intermediate',
+        description: 'Challenging vocabulary',
+        color: 'from-blue-500/20 to-blue-600/20',
+        textColor: 'text-blue-700',
+        activeColor: 'from-blue-500/30 to-blue-600/30'
+      },
+      { 
+        id: 'professional', 
+        name: 'Professional',
+        description: 'Advanced terminology',
+        color: 'from-purple-500/20 to-purple-600/20',
+        textColor: 'text-purple-700',
+        activeColor: 'from-purple-500/30 to-purple-600/30'
+      }
+    ];
 
-  if (!selectedPrimary || !subcategories[selectedPrimary]) {
-    return null;
-  }
-
-  const options = subcategories[selectedPrimary];
+  if (!selectedPrimary) return null;
 
   return (
-    <div>
-      <h3 className="text-sm font-medium text-gray-700 mb-4">Subcategory</h3>
-      <div className="grid grid-cols-2 gap-3">
-        {options.map((option) => {
-          // For Pro users, all options should be enabled regardless of proOnly status
-          // For free trial users, options with proOnly should be disabled
-          // For regular users who are not pro, options with proOnly should be disabled
-          const isDisabled = (!isPro && option.proOnly);
-                         
-          const isSelected = selectedSubcategory === option.id;
-          
-          return (
-            <div
-              key={option.id}
-              className={cn(
-                "relative rounded-lg p-3 cursor-pointer border hover:border-primary/50 transition-all",
-                isSelected ? "border-primary bg-primary/5" : "border-gray-200",
-                isDisabled ? "opacity-50 cursor-not-allowed hover:border-gray-200 bg-gray-50" : ""
-              )}
-              onClick={() => !isDisabled && onSubcategorySelect(option.id)}
-            >
-              <div className="flex items-center gap-2">
-                <h4 className={cn(
-                  "font-medium",
-                  isDisabled ? "text-gray-500" : "text-gray-900"
-                )}>
-                  {option.name}
-                </h4>
-                {option.proOnly && (
-                  <span className="bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded">Pro</span>
-                )}
-              </div>
-              {option.description && (
-                <p className="text-xs text-gray-500 mt-1">{option.description}</p>
-              )}
-              {isSelected && (
-                <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center text-white">
-                  <Check className="h-3 w-3" />
-                </div>
-              )}
-            </div>
-          );
-        })}
+    <div className="animate-fade-in">
+      <h3 className="text-sm font-medium text-gray-700 mb-4">
+        {selectedPrimary === 'exam' ? 'Exam Type' : 'Difficulty Level'}
+      </h3>
+      
+      <div className="grid grid-cols-3 gap-3">
+        {subcategories.map((level) => (
+          <button
+            key={level.id}
+            onClick={() => onSubcategorySelect(level.id)}
+            className={cn(
+              "p-4 rounded-xl text-sm transition-all duration-200",
+              "bg-gradient-to-br shadow-sm flex flex-col items-center text-center min-h-[100px] justify-center",
+              level.color,
+              "hover:shadow-md",
+              selectedSubcategory === level.id && [
+                "ring-2 ring-offset-2",
+                level.activeColor
+              ]
+            )}
+          >
+            <span className="font-semibold mb-1">{level.name}</span>
+            <span className="text-xs opacity-75 px-2">
+              {level.description}
+            </span>
+          </button>
+        ))}
       </div>
+      
+      <p className="text-sm text-gray-500 mt-3">
+        Switch anytime. We'll adjust your word complexity automatically.
+      </p>
     </div>
   );
 };

@@ -17,7 +17,6 @@ interface CategorySelectionProps {
   onCategoryUpdate: (primary: string, subcategory: string) => void;
   onNewBatch?: () => Promise<void>;
   isLoadingNewBatch?: boolean;
-  isFreeTrialUser?: boolean;
 }
 
 const CategorySelection: React.FC<CategorySelectionProps> = ({
@@ -25,14 +24,12 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   currentCategory,
   onCategoryUpdate,
   onNewBatch,
-  isLoadingNewBatch = false,
-  isFreeTrialUser = false
+  isLoadingNewBatch = false
 }) => {
   const isMobile = useIsMobile();
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-  // Set default word count based on user status
-  const [wordCount, setWordCount] = useState(isPro ? 2 : 1);
+  const [wordCount, setWordCount] = useState(3);
   const [scheduledTime, setScheduledTime] = useState<string>('');
   const { toast } = useToast();
 
@@ -46,23 +43,7 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
     }
   }, [currentCategory]);
 
-  // Update word count when pro status changes
-  useEffect(() => {
-    if (isFreeTrialUser && wordCount > 2) {
-      setWordCount(1);
-    }
-  }, [isFreeTrialUser, wordCount]);
-
   const handlePrimarySelect = (primary: string) => {
-    if (isFreeTrialUser && primary !== 'daily') {
-      toast({
-        title: "Free Trial Restriction",
-        description: "Free trial users can only access the Daily vocabulary category. Upgrade to Pro to unlock all categories.",
-        variant: "default"
-      });
-      return;
-    }
-    
     setSelectedPrimary(primary);
     if (primary !== selectedPrimary) {
       setSelectedSubcategory(null);
@@ -71,29 +52,6 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
 
   const handleSubcategorySelect = (subcategory: string) => {
     setSelectedSubcategory(subcategory);
-  };
-
-  const handleWordCountChange = (count: number) => {
-    // Validate word count selection based on user type
-    if (isFreeTrialUser && count > 2) {
-      toast({
-        title: "Free Trial Restriction",
-        description: "Free trial users can only select up to 2 words. Upgrade to Pro for more options.",
-        variant: "default"
-      });
-      return;
-    }
-    
-    if (!isPro && count > 2) {
-      toast({
-        title: "Pro Feature",
-        description: "Upgrade to Pro to select more than 2 words per day.",
-        variant: "default"
-      });
-      return;
-    }
-    
-    setWordCount(count);
   };
 
   const handleApply = async () => {
@@ -118,36 +76,17 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   };
 
   if (isMobile) {
-    return <MobileCategorySelection 
-      isPro={isPro} 
-      currentCategory={currentCategory} 
-      onCategoryUpdate={onCategoryUpdate} 
-      onNewBatch={onNewBatch} 
-      isLoadingNewBatch={isLoadingNewBatch}
-      isFreeTrialUser={isFreeTrialUser}
-    />;
+    return <MobileCategorySelection isPro={isPro} currentCategory={currentCategory} onCategoryUpdate={onCategoryUpdate} onNewBatch={onNewBatch} isLoadingNewBatch={isLoadingNewBatch} />;
   }
 
   return (
     <Card className="border border-stroke/50 shadow-sm rounded-2xl overflow-hidden bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/80">
-      {isFreeTrialUser && (
-        <div className="bg-amber-50 border-b border-amber-100 p-4 text-sm">
-          <p className="text-amber-800">
-            <strong>Free Trial Mode:</strong> You can only use the Daily category and select up to 2 words per day. Upgrade to Pro to unlock all categories.
-          </p>
-        </div>
-      )}
       <div className="p-6 md:p-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-8">
             <div>
               <h3 className="text-sm font-medium text-gray-700 mb-4">Word Category</h3>
-              <CategoryGrid 
-                selectedPrimary={selectedPrimary} 
-                onPrimarySelect={handlePrimarySelect} 
-                isFreeTrialUser={isFreeTrialUser}
-                isPro={isPro}
-              />
+              <CategoryGrid selectedPrimary={selectedPrimary} onPrimarySelect={handlePrimarySelect} />
             </div>
             
             {selectedPrimary && (
@@ -155,8 +94,6 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
                 selectedPrimary={selectedPrimary} 
                 selectedSubcategory={selectedSubcategory} 
                 onSubcategorySelect={handleSubcategorySelect} 
-                isFreeTrialUser={isFreeTrialUser}
-                isPro={isPro}
               />
             )}
           </div>
@@ -164,17 +101,9 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
           <div className="space-y-8">
             {selectedSubcategory && (
               <>
-                <WordCountSelector 
-                  wordCount={wordCount} 
-                  onWordCountChange={handleWordCountChange}
-                  isPro={isPro}
-                  isFreeTrialUser={isFreeTrialUser}
-                />
+                <WordCountSelector wordCount={wordCount} onWordCountChange={setWordCount} />
                 
-                <TimeScheduler 
-                  scheduledTime={scheduledTime} 
-                  onScheduledTimeChange={setScheduledTime} 
-                />
+                <TimeScheduler scheduledTime={scheduledTime} onScheduledTimeChange={setScheduledTime} />
 
                 <Button 
                   disabled={!selectedPrimary || !selectedSubcategory || isLoadingNewBatch} 

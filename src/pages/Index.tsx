@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
@@ -8,16 +7,14 @@ import Testimonials from '@/components/Testimonials';
 import Footer from '@/components/Footer';
 import SignupForm from '@/components/SignupForm';
 import { Button } from "@/components/ui/button";
-import { Shield, LogIn } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
 import SocialProofBar from '@/components/SocialProofBar';
 import PricingToggle from '@/components/PricingToggle';
 import { supabase } from '@/integrations/supabase/client';
-
 const Index = () => {
   const navigate = useNavigate();
-  
   const assignAdminRole = async () => {
     const {
       data: {
@@ -66,20 +63,11 @@ const Index = () => {
       });
     }
   };
-  
   return <div className="min-h-screen flex flex-col bg-white font-sans">
       <Navbar />
       
       <div className="fixed bottom-4 right-4 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          className="bg-white shadow-md flex items-center gap-2"
-          onClick={() => navigate('/login')}
-        >
-          <LogIn className="h-4 w-4" />
-          <span>Already have an account?</span>
-        </Button>
+        
       </div>
       
       <main>
@@ -103,5 +91,4 @@ const Index = () => {
       <Footer />
     </div>;
 };
-
 export default Index;

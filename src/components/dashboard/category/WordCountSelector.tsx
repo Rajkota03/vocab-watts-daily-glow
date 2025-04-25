@@ -1,72 +1,65 @@
 
 import React from 'react';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { cn } from '@/lib/utils';
+import { Slider } from '@/components/ui/slider';
 
 interface WordCountSelectorProps {
   wordCount: number;
   onWordCountChange: (count: number) => void;
-  isPro?: boolean; 
-  isFreeTrialUser?: boolean;
 }
 
-const WordCountSelector: React.FC<WordCountSelectorProps> = ({ 
-  wordCount, 
+const WordCountSelector: React.FC<WordCountSelectorProps> = ({
+  wordCount,
   onWordCountChange,
-  isPro = false,
-  isFreeTrialUser = false
 }) => {
-  const options = [
-    { value: 1, label: '1 word', description: 'Start slow', proOnly: false },
-    { value: 2, label: '2 words', description: 'Beginner pace', proOnly: false },
-    { value: 5, label: '5 words', description: 'Advanced', proOnly: true }
-  ];
-
-  console.log('WordCountSelector - isPro:', isPro);
+  // Pastel colors for each word count option
+  const wordCountColors = {
+    1: "bg-[#F2FCE2] text-green-700",    // Soft Green
+    2: "bg-[#FEF7CD] text-amber-700",    // Soft Yellow
+    3: "bg-[#E5DEFF] text-indigo-700",   // Soft Purple
+    4: "bg-[#FDE1D3] text-orange-700",   // Soft Peach
+    5: "bg-[#FFDEE2] text-pink-700",     // Soft Pink
+  };
 
   return (
-    <div>
-      <h3 className="text-sm font-medium text-gray-700 mb-4">Daily Word Count</h3>
-      <RadioGroup 
-        value={wordCount.toString()} 
-        onValueChange={(value) => onWordCountChange(parseInt(value))}
-        className="grid grid-cols-3 gap-3"
-      >
-        {options.map((option) => {
-          // For Pro users, nothing should be disabled
-          // For free trial users, only options up to 2 words are enabled
-          // For regular users, Pro options are disabled
-          const isDisabled = option.proOnly && !isPro;
-          
-          return (
-            <div key={option.value} className="relative">
-              <RadioGroupItem 
-                value={option.value.toString()} 
-                id={`word-count-${option.value}`} 
-                className="peer sr-only" 
-                disabled={isDisabled}
-              />
-              <Label 
-                htmlFor={`word-count-${option.value}`} 
-                className={`flex flex-col items-center justify-center h-24 rounded-lg border-2 border-zinc-200 bg-white p-2 cursor-pointer hover:bg-zinc-50 hover:border-zinc-300 peer-checked:border-primary peer-checked:bg-primary/5 transition-all ${isDisabled ? 'opacity-50 cursor-not-allowed hover:bg-white hover:border-zinc-200' : ''}`}
-              >
-                <span className="text-lg font-medium mb-1">{option.label}</span>
-                <span className="text-xs text-center text-zinc-500">{option.description}</span>
-                {option.proOnly && (
-                  <span className="absolute top-1 right-1 bg-purple-100 text-purple-700 text-[10px] px-1.5 rounded">Pro</span>
-                )}
-                {isDisabled && (
-                  <span className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-lg">
-                    <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs px-2 py-1 rounded">
-                      Pro only
-                    </div>
-                  </span>
-                )}
-              </Label>
-            </div>
-          );
-        })}
-      </RadioGroup>
+    <div className="space-y-4 flex-shrink-0">
+      <h3 className="text-sm font-medium text-gray-700 slider-label">Daily Word Count</h3>
+      
+      <div className="text-center mb-2 text-primary font-medium">
+        <span className={cn(
+          "text-2xl px-3 py-1 rounded-lg",
+          wordCountColors[wordCount as keyof typeof wordCountColors]
+        )}>
+          {wordCount}
+        </span>
+        <span className="ml-1">word{wordCount !== 1 ? 's' : ''} a day</span>
+      </div>
+      
+      <Slider
+        value={[wordCount]}
+        min={1}
+        max={5}
+        step={1}
+        className="py-4"
+        onValueChange={(values) => onWordCountChange(values[0])}
+        aria-label="Word count"
+      />
+      
+      <div className="flex justify-between text-xs text-gray-500">
+        <span>1</span>
+        <span>2</span>
+        <span>3</span>
+        <span>4</span>
+        <span>5</span>
+      </div>
+      
+      <p className="text-sm text-gray-600 italic mt-2">
+        {wordCount === 1 && "Perfect for focused, in-depth learning! Master one word at a time. 🎯"}
+        {wordCount === 2 && "A balanced approach to expand your vocabulary steadily! 📚"}
+        {wordCount === 3 && "Great choice! Build your vocabulary with confidence! 💪"}
+        {wordCount === 4 && "Fantastic! You're taking your language skills to the next level! 🚀"}
+        {wordCount === 5 && "Impressive commitment to rapid vocabulary growth! You're a language champion! 🏆"}
+      </p>
     </div>
   );
 };

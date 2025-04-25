@@ -1,31 +1,149 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStatus } from '@/hooks/useAuthStatus';
-import { useDashboardSubscription } from '@/hooks/useDashboardSubscription';
-import DashboardHeader from '@/components/dashboard/DashboardHeader';
-import DashboardMain from '@/components/dashboard/DashboardMain';
-import DashboardLoading from '@/components/dashboard/DashboardLoading';
-import { MOCK_TODAYS_QUIZ, MOCK_RECENT_DROPS } from '@/data/dashboardMockData';
-import { generateNewWordBatch } from '@/services/wordService';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { generateNewWordBatch } from '@/services/wordService';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import DashboardMain from '@/components/dashboard/DashboardMain';
+import { MOCK_TODAYS_QUIZ, MOCK_RECENT_DROPS } from '@/data/dashboardMockData';
 
 const Dashboard = () => {
-  const { loading: authLoading, userNickname, isAdmin } = useAuthStatus();
-  const { subscription, loading: subscriptionLoading } = useDashboardSubscription();
+  const [subscription, setSubscription] = useState({
+    is_pro: true,
+    category: 'business-intermediate',
+    phone_number: '+1234567890'
+  });
+  const [loading, setLoading] = useState(true);
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
+  const [userNickname, setUserNickname] = useState<string>('');
+  const [isAdmin, setIsAdmin] = useState(false);
   const [wordsLearnedThisMonth, setWordsLearnedThisMonth] = useState(45);
-  const navigate = useNavigate();
+  
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  console.log('Dashboard - subscription:', subscription);
-  console.log('Dashboard - is_pro:', subscription.is_pro);
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      console.log("Dashboard session check:", data.session);
+      
+      if (!data.session) {
+        console.log("No session found, redirecting to login");
+        navigate('/login');
+        toast({
+          title: "Authentication required",
+          description: "Please login to access your dashboard",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Check if the user email is the admin email
+      if (data.session.user.email === 'rajkota.sql@gmail.com') {
+        console.log("Admin user detected");
+        setIsAdmin(true);
+        
+        // Also check admin role in database
+        try {
+          const { data: hasAdminRole, error } = await supabase.rpc('has_role', { 
+            _user_id: data.session.user.id,
+            _role: 'admin'
+          });
+          
+          if (error) {
+            console.error('Error checking admin role:', error);
+          } else if (!hasAdminRole) {
+            console.log("Admin email but no admin role found, adding admin role");
+            // Automatically assign admin role if it doesn't exist
+            const { error: roleError } = await supabase
+              .from('user_roles')
+              .insert({
+                user_id: data.session.user.id,
+                role: 'admin'
+              });
+              
+            if (roleError) {
+              console.error('Error adding admin role:', roleError);
+            } else {
+              console.log("Admin role added successfully");
+            }
+          }
+        } catch (error) {
+          console.error('Failed to check admin role:', error);
+        }
+      }
+      
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('nick_name, first_name')
+        .eq('id', data.session.user.id)
+        .single();
+      
+      if (profileData) {
+        setUserNickname(profileData.nick_name || profileData.first_name || 'there');
+      }
+      
+      const userMetadata = data.session.user.user_metadata;
+      console.log("User metadata:", userMetadata);
+      
+      if (userMetadata) {
+        let category = userMetadata.category || 'business-intermediate';
+        
+        if (category && !category.includes('-')) {
+          const mapping: { [key: string]: string } = {
+            'business': 'business-intermediate',
+            'exam': 'exam-gre',
+            'slang': 'slang-intermediate',
+            'general': 'daily-intermediate'
+          };
+          category = mapping[category] || 'business-intermediate';
+        }
+        
+        setSubscription(prev => ({
+          ...prev,
+          is_pro: userMetadata.is_pro || true,
+          category: category
+        }));
+      }
+      
+      // Fetch words learned this month
+      try {
+        const { data: wordsData, error: wordsError } = await supabase
+          .from('user_word_history')
+          .select('id')
+          .eq('user_id', data.session.user.id)
+          .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+          .lt('created_at', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString());
+          
+        if (!wordsError && wordsData) {
+          setWordsLearnedThisMonth(wordsData.length);
+        }
+      } catch (error) {
+        console.error('Failed to fetch words learned this month:', error);
+      }
+      
+      setLoading(false);
+    };
+    
+    checkAuth();
+    
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log("Auth state change in dashboard:", event);
+        if (event === 'SIGNED_OUT' || !session) {
+          navigate('/login');
+        }
+      }
+    );
+    
+    return () => {
+      authSubscription.unsubscribe();
+    };
+  }, [navigate, toast]);
 
   const handleSignOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      await supabase.auth.signOut();
       navigate('/login');
     } catch (error: any) {
       toast({
@@ -47,9 +165,9 @@ const Dashboard = () => {
       
       if (error) throw error;
       
-      toast({
-        title: 'Category Updated',
-        description: `Your category has been updated to ${combinedCategory}`,
+      setSubscription({
+        ...subscription,
+        category: combinedCategory
       });
     } catch (error: any) {
       toast({
@@ -67,10 +185,14 @@ const Dashboard = () => {
     try {
       const newWords = await generateNewWordBatch(subscription.category);
       console.log("New batch generated:", newWords);
-      toast({
-        title: "Words Generated",
-        description: "Your new words have been generated and will be sent at your scheduled time.",
-      });
+      
+      const wordHistoryElement = document.getElementById('word-history');
+      if (wordHistoryElement) {
+        wordHistoryElement.classList.add('refresh-triggered');
+        setTimeout(() => {
+          wordHistoryElement.classList.remove('refresh-triggered');
+        }, 100);
+      }
     } catch (error: any) {
       console.error("Error generating new batch:", error);
       toast({
@@ -83,8 +205,15 @@ const Dashboard = () => {
     }
   };
 
-  if (authLoading || subscriptionLoading) {
-    return <DashboardLoading />;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
