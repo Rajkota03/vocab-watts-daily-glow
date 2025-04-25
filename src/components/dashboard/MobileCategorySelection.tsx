@@ -85,17 +85,68 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   ];
 
   const difficultyLevels = [
-    { id: 'beginner', name: 'Beginner', description: 'Basic everyday vocabulary' },
-    { id: 'intermediate', name: 'Intermediate', description: 'Challenging vocabulary' },
-    { id: 'professional', name: 'Professional', description: 'Advanced terminology' }
+    { 
+      id: 'beginner', 
+      name: 'Beginner', 
+      description: 'Basic everyday vocabulary',
+      color: 'from-green-500/20 to-green-600/20',
+      textColor: 'text-green-700',
+      activeColor: 'from-green-500/30 to-green-600/30'
+    },
+    { 
+      id: 'intermediate', 
+      name: 'Intermediate', 
+      description: 'Challenging vocabulary',
+      color: 'from-blue-500/20 to-blue-600/20',
+      textColor: 'text-blue-700',
+      activeColor: 'from-blue-500/30 to-blue-600/30'
+    },
+    { 
+      id: 'professional', 
+      name: 'Professional', 
+      description: 'Advanced terminology',
+      color: 'from-purple-500/20 to-purple-600/20',
+      textColor: 'text-purple-700',
+      activeColor: 'from-purple-500/30 to-purple-600/30'
+    }
   ];
 
   const examTypes = [
-    { id: 'gre', name: 'GRE' },
-    { id: 'ielts', name: 'IELTS' },
-    { id: 'toefl', name: 'TOEFL' },
-    { id: 'cat', name: 'CAT' },
-    { id: 'gmat', name: 'GMAT' }
+    { 
+      id: 'gre', 
+      name: 'GRE',
+      color: 'from-red-500/20 to-red-600/20',
+      textColor: 'text-red-700',
+      activeColor: 'from-red-500/30 to-red-600/30'
+    },
+    { 
+      id: 'ielts', 
+      name: 'IELTS',
+      color: 'from-blue-500/20 to-blue-600/20',
+      textColor: 'text-blue-700',
+      activeColor: 'from-blue-500/30 to-blue-600/30'
+    },
+    { 
+      id: 'toefl', 
+      name: 'TOEFL',
+      color: 'from-green-500/20 to-green-600/20',
+      textColor: 'text-green-700',
+      activeColor: 'from-green-500/30 to-green-600/30'
+    },
+    { 
+      id: 'cat', 
+      name: 'CAT',
+      color: 'from-amber-500/20 to-amber-600/20',
+      textColor: 'text-amber-700',
+      activeColor: 'from-amber-500/30 to-amber-600/30'
+    },
+    { 
+      id: 'gmat', 
+      name: 'GMAT',
+      color: 'from-indigo-500/20 to-indigo-600/20',
+      textColor: 'text-indigo-700',
+      activeColor: 'from-indigo-500/30 to-indigo-600/30'
+    }
   ];
 
   const handlePrimarySelect = (categoryId: string) => {
@@ -176,13 +227,18 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
                   onClick={() => handleDifficultySelect(level.id)}
                   className={cn(
                     "p-2 rounded-lg text-sm font-medium transition-all duration-200 flex flex-col items-center justify-center text-center min-h-[64px]",
-                    selectedDifficulty === level.id
-                      ? "bg-primary text-white shadow-sm"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    "bg-gradient-to-br shadow-sm",
+                    level.color,
+                    level.textColor,
+                    "hover:shadow-md",
+                    selectedDifficulty === level.id && [
+                      "ring-2 ring-offset-2",
+                      level.activeColor
+                    ]
                   )}
                 >
                   <span>{level.name}</span>
-                  {!selectedPrimary.includes('exam') && (
+                  {!selectedPrimary.includes('exam') && level.description && (
                     <span className="text-xs mt-1 opacity-75">
                       {level.description}
                     </span>
