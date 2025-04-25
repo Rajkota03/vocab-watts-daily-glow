@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   BookOpen, Briefcase, MessageSquare, 
@@ -190,7 +189,7 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   const isFullySelected = selectedPrimary && selectedSubcategory;
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col min-h-[500px] overflow-hidden">
       <div className="bg-white rounded-xl p-3">
         <h3 className="text-sm font-semibold text-gray-800 mb-2">Word Category</h3>
         <div className="grid grid-cols-3 gap-2">
@@ -266,11 +265,12 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
               onClick={() => handleWordCountSelect(count)}
               className={cn(
                 "p-4 rounded-xl text-lg font-medium transition-all duration-200",
-                "bg-gradient-to-br shadow-sm",
                 wordCount === count ? [
                   "ring-2 ring-offset-2 ring-vocab-purple",
-                  "from-vocab-purple/20 to-indigo-500/20 text-vocab-purple"
-                ] : "from-gray-100 to-gray-200 text-gray-700 hover:shadow-md"
+                  count === 1 ? "bg-[#F2FCE2] text-green-700" :
+                  count === 2 ? "bg-[#FEF7CD] text-amber-700" :
+                  "bg-[#E5DEFF] text-indigo-700"
+                ] : "bg-gray-50 text-gray-700 hover:bg-gray-100"
               )}
             >
               {count}
@@ -285,11 +285,11 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
               onClick={() => handleWordCountSelect(count)}
               className={cn(
                 "p-4 rounded-xl text-lg font-medium transition-all duration-200",
-                "bg-gradient-to-br shadow-sm",
                 wordCount === count ? [
                   "ring-2 ring-offset-2 ring-vocab-purple",
-                  "from-vocab-purple/20 to-indigo-500/20 text-vocab-purple"
-                ] : "from-gray-100 to-gray-200 text-gray-700 hover:shadow-md"
+                  count === 4 ? "bg-[#FDE1D3] text-orange-700" :
+                  "bg-[#FFDEE2] text-pink-700"
+                ] : "bg-gray-50 text-gray-700 hover:bg-gray-100"
               )}
             >
               {count}
