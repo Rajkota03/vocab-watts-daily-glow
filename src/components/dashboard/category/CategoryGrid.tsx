@@ -72,38 +72,35 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({
   onPrimarySelect,
 }) => {
   return (
-    <div>
-      <h3 className="text-sm font-medium text-gray-700 mb-4">Word Category</h3>
-      <div className="grid grid-cols-4 gap-3">
-        {categories.map((category) => (
-          <button
-            key={category.id}
-            onClick={() => onPrimarySelect(category.id)}
-            className={cn(
-              "relative flex flex-col items-center justify-center p-4 rounded-xl transition-all duration-200",
-              "bg-gradient-to-br shadow-sm",
-              "hover:shadow-md",
-              category.color,
-              category.hoverColor,
-              selectedPrimary === category.id && [
-                "ring-2 ring-offset-2",
-                category.activeColor
-              ]
-            )}
-          >
-            <div className="mb-2">{category.icon}</div>
-            <span className="text-sm font-medium text-center leading-tight">
-              {category.name}
-            </span>
-            
-            {selectedPrimary === category.id && (
-              <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full shadow-sm p-0.5">
-                <Check className="h-3 w-3 text-vocab-purple" />
-              </div>
-            )}
-          </button>
-        ))}
-      </div>
+    <div className="grid grid-cols-4 gap-3">
+      {categories.map((category) => (
+        <button
+          key={category.id}
+          onClick={() => onPrimarySelect(category.id)}
+          className={cn(
+            "relative flex flex-col items-center justify-center p-4 rounded-xl transition-all duration-200",
+            "bg-gradient-to-br shadow-sm",
+            "hover:shadow-md",
+            category.color,
+            category.hoverColor,
+            selectedPrimary === category.id && [
+              "ring-2 ring-offset-2",
+              category.activeColor
+            ]
+          )}
+        >
+          <div className="mb-2">{category.icon}</div>
+          <span className="text-xs md:text-sm font-medium text-center leading-tight">
+            {category.name}
+          </span>
+          
+          {selectedPrimary === category.id && (
+            <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full shadow-sm p-0.5">
+              <Check className="h-3 w-3 text-vocab-purple" />
+            </div>
+          )}
+        </button>
+      ))}
     </div>
   );
 };
