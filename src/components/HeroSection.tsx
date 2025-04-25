@@ -8,7 +8,7 @@ const HeroSection = () => {
   return <section className="min-h-screen py-24 md:py-0 flex items-center bg-gradient-to-br from-white to-primary/5 overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="flex flex-col lg:flex-row gap-12 items-center">
-          <div className="flex-1 text-center lg:text-left">
+          <div className="flex-1 text-center lg:text-left px-[49px]">
             <div className="inline-flex items-center mb-6 py-1.5 px-4 rounded-full text-dark text-sm font-medium shadow-sm bg-green-500">
               
               <img src="/lovable-uploads/164886d6-c431-4caf-9f94-f4729aa2698b.png" alt="WhatsApp" className="w-5 h-5 mr-2" />
@@ -81,7 +81,7 @@ const HeroSection = () => {
               <div className="absolute -top-8 -left-8 w-20 h-20 bg-primary/10 rounded-full blur-xl"></div>
               <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-dark/10 rounded-full blur-xl"></div>
               
-              <div className="relative bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+              <div className="relative bg-white rounded-2xl shadow-xl p-8 border border-gray-100 px-[24px]">
                 <SignupForm />
               </div>
             </div>
