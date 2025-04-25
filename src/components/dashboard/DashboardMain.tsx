@@ -1,6 +1,8 @@
+
 import React from 'react';
 import CategorySelection from './CategorySelection';
 import { cn } from '@/lib/utils';
+
 interface DashboardMainProps {
   subscription: {
     is_pro: boolean;
@@ -14,6 +16,7 @@ interface DashboardMainProps {
   MOCK_RECENT_DROPS: any;
   wordsLearnedThisMonth?: number;
 }
+
 const DashboardMain: React.FC<DashboardMainProps> = ({
   subscription,
   handleCategoryUpdate,
@@ -24,12 +27,23 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
   MOCK_RECENT_DROPS,
   wordsLearnedThisMonth = 0
 }) => {
-  return <main className="min-h-[calc(100vh-80px)] bg-gray-50/50 flex flex-col items-center">
-      <div className="w-full max-w-5xl md:px-6 md:py-12 py-0 px-[10px] mx-[13px] my-[3px]">
-        {subscription.is_pro && <div id="dashboardCard" className="mt-8 max-w-[720px] w-full mx-auto">
-            <CategorySelection isPro={subscription.is_pro} currentCategory={subscription.category} onCategoryUpdate={handleCategoryUpdate} onNewBatch={handleNewBatch} isLoadingNewBatch={isGeneratingBatch} />
-          </div>}
+  return (
+    <main className="min-h-[calc(100vh-80px)] bg-gray-50/50 flex flex-col items-center">
+      <div className="w-full max-w-5xl md:px-6 md:py-12 py-4 px-4">
+        {subscription.is_pro && (
+          <div id="dashboardCard" className="mt-4 md:mt-8 max-w-[800px] w-full mx-auto">
+            <CategorySelection 
+              isPro={subscription.is_pro} 
+              currentCategory={subscription.category} 
+              onCategoryUpdate={handleCategoryUpdate} 
+              onNewBatch={handleNewBatch} 
+              isLoadingNewBatch={isGeneratingBatch} 
+            />
+          </div>
+        )}
       </div>
-    </main>;
+    </main>
+  );
 };
+
 export default DashboardMain;

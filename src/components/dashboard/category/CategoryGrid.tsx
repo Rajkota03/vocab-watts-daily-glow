@@ -60,13 +60,14 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({
   return (
     <div>
       <h3 className="text-sm font-medium mb-4 text-gray-700">Word Category</h3>
-      <div className="flex overflow-x-auto pb-2 gap-2 md:gap-3 -mx-2 px-2 md:px-0 md:-mx-0 md:flex-wrap">
+      <div className="flex flex-wrap gap-2 md:gap-3">
         {categories.map((category) => (
           <button
             key={category.id}
             onClick={() => onPrimarySelect(category.id)}
             className={cn(
-              "flex items-center px-3 py-2 rounded-full whitespace-nowrap transition-all duration-200 flex-shrink-0",
+              "flex items-center px-3 py-2 rounded-full transition-all duration-200",
+              "min-w-max whitespace-nowrap",
               selectedPrimary === category.id 
                 ? "bg-primary-light text-primary border border-primary" 
                 : "bg-[#F4F7FB] text-[#4F607E] hover:bg-gray-100"

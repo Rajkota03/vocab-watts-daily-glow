@@ -12,12 +12,26 @@ const WordCountSelector: React.FC<WordCountSelectorProps> = ({
   wordCount,
   onWordCountChange,
 }) => {
+  // Pastel colors for each word count option
+  const wordCountColors = {
+    1: "bg-[#F2FCE2] text-green-700",    // Soft Green
+    2: "bg-[#FEF7CD] text-amber-700",    // Soft Yellow
+    3: "bg-[#E5DEFF] text-indigo-700",   // Soft Purple
+    4: "bg-[#FDE1D3] text-orange-700",   // Soft Peach
+    5: "bg-[#FFDEE2] text-pink-700",     // Soft Pink
+  };
+
   return (
     <div className="space-y-4 flex-shrink-0">
       <h3 className="text-sm font-medium text-gray-700 slider-label">Daily Word Count</h3>
       
       <div className="text-center mb-2 text-primary font-medium">
-        <span className="text-2xl">{wordCount}</span>
+        <span className={cn(
+          "text-2xl px-3 py-1 rounded-lg",
+          wordCountColors[wordCount as keyof typeof wordCountColors]
+        )}>
+          {wordCount}
+        </span>
         <span className="ml-1">word{wordCount !== 1 ? 's' : ''} a day</span>
       </div>
       

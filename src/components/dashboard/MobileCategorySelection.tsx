@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   BookOpen, Briefcase, MessageSquare, 
@@ -6,6 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface MobileCategorySelectionProps {
   isPro: boolean;
@@ -156,11 +158,16 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   ];
 
   const wordCountOptions = [
-    { count: 1, message: "Perfect for focused, in-depth learning! Master one word at a time. 🎯" },
-    { count: 2, message: "A balanced approach to expand your vocabulary steadily! 📚" },
-    { count: 3, message: "Great choice! Build your vocabulary with confidence! 💪" },
-    { count: 4, message: "Fantastic! You're taking your language skills to the next level! 🚀" },
-    { count: 5, message: "Impressive commitment to rapid vocabulary growth! You're a language champion! 🏆" },
+    { count: 1, message: "Perfect for focused, in-depth learning! Master one word at a time. 🎯", 
+      color: "bg-[#F2FCE2] text-green-700" }, // Soft Green
+    { count: 2, message: "A balanced approach to expand your vocabulary steadily! 📚", 
+      color: "bg-[#FEF7CD] text-amber-700" }, // Soft Yellow
+    { count: 3, message: "Great choice! Build your vocabulary with confidence! 💪", 
+      color: "bg-[#E5DEFF] text-indigo-700" }, // Soft Purple
+    { count: 4, message: "Fantastic! You're taking your language skills to the next level! 🚀", 
+      color: "bg-[#FDE1D3] text-orange-700" }, // Soft Peach
+    { count: 5, message: "Impressive commitment to rapid vocabulary growth! You're a language champion! 🏆", 
+      color: "bg-[#FFDEE2] text-pink-700" }, // Soft Pink
   ];
 
   const handlePrimarySelect = (categoryId: string) => {
@@ -189,120 +196,125 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   const isFullySelected = selectedPrimary && selectedSubcategory;
 
   return (
-    <div className="flex flex-col min-h-[500px] overflow-y-auto scrollbar-hidden">
-      <div className="bg-white rounded-xl p-3">
-        <h3 className="text-sm font-semibold text-gray-800 mb-2">Word Category</h3>
-        <div className="grid grid-cols-3 gap-2">
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => handlePrimarySelect(category.id)}
-              className={cn(
-                "relative flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200",
-                "bg-gradient-to-br shadow-sm",
-                "hover:shadow-md",
-                category.color,
-                category.hoverColor,
-                selectedPrimary === category.id && [
-                  "ring-2 ring-offset-2",
-                  category.activeColor
-                ],
-                !isPro && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              <div className="mb-2">{category.icon}</div>
-              <span className="text-xs font-medium text-center leading-tight">
-                {category.name}
-              </span>
-              
-              {selectedPrimary === category.id && (
-                <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full shadow-sm p-0.5">
-                  <Check className="h-3 w-3 text-vocab-purple" />
-                </div>
-              )}
-            </button>
-          ))}
+    <div className="flex flex-col min-h-[500px] overflow-hidden">
+      <div className="flex-1 overflow-y-auto scrollbar-hidden">
+        <div className="bg-white rounded-xl p-3 mb-3">
+          <h3 className="text-sm font-semibold text-gray-800 mb-2">Word Category</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => handlePrimarySelect(category.id)}
+                className={cn(
+                  "relative flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200",
+                  "bg-gradient-to-br shadow-sm",
+                  "hover:shadow-md",
+                  category.color,
+                  category.hoverColor,
+                  selectedPrimary === category.id && [
+                    "ring-2 ring-offset-2",
+                    category.activeColor
+                  ],
+                  !isPro && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                <div className="mb-2">{category.icon}</div>
+                <span className="text-xs font-medium text-center leading-tight">
+                  {category.name}
+                </span>
+                
+                {selectedPrimary === category.id && (
+                  <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full shadow-sm p-0.5">
+                    <Check className="h-3 w-3 text-vocab-purple" />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-3 mb-3">
+          <h3 className="text-sm font-semibold text-gray-800 mb-2">Difficulty Level</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {(selectedPrimary === 'exam' ? examTypes : difficultyLevels).map((level) => (
+              <button
+                key={level.id}
+                onClick={() => handleDifficultySelect(level.id)}
+                className={cn(
+                  "p-3 rounded-xl text-sm font-medium transition-all duration-200",
+                  "bg-gradient-to-br shadow-sm flex flex-col items-center text-center min-h-[80px] justify-center",
+                  level.color,
+                  "hover:shadow-md",
+                  selectedSubcategory === level.id && [
+                    "ring-2 ring-offset-2",
+                    level.activeColor
+                  ]
+                )}
+              >
+                <span className="font-semibold mb-1">{level.name}</span>
+                <span className="text-xs opacity-75">
+                  {level.description}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-3">
+          <div className="flex items-center mb-2">
+            <ListOrdered className="h-4 w-4 mr-2 text-vocab-purple" />
+            <h3 className="text-sm font-semibold text-gray-800">Daily Word Count</h3>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-2 mb-2">
+            {[1, 2, 3].map((count) => {
+              const option = wordCountOptions.find(o => o.count === count);
+              return (
+                <button
+                  key={count}
+                  onClick={() => handleWordCountSelect(count)}
+                  className={cn(
+                    "p-4 rounded-xl text-lg font-medium transition-all duration-200",
+                    wordCount === count ? [
+                      "ring-2 ring-offset-2 ring-vocab-purple",
+                      option?.color
+                    ] : "bg-gray-50 text-gray-700 hover:bg-gray-100"
+                  )}
+                >
+                  {count}
+                </button>
+              );
+            })}
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2">
+            {[4, 5].map((count) => {
+              const option = wordCountOptions.find(o => o.count === count);
+              return (
+                <button
+                  key={count}
+                  onClick={() => handleWordCountSelect(count)}
+                  className={cn(
+                    "p-4 rounded-xl text-lg font-medium transition-all duration-200",
+                    wordCount === count ? [
+                      "ring-2 ring-offset-2 ring-vocab-purple",
+                      option?.color
+                    ] : "bg-gray-50 text-gray-700 hover:bg-gray-100"
+                  )}
+                >
+                  {count}
+                </button>
+              );
+            })}
+          </div>
+          
+          <p className="text-xs text-gray-600 italic mt-2 text-center">
+            {wordCountOptions.find(option => option.count === wordCount)?.message}
+          </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-3">
-        <h3 className="text-sm font-semibold text-gray-800 mb-2">Difficulty Level</h3>
-        <div className="grid grid-cols-3 gap-2">
-          {(selectedPrimary === 'exam' ? examTypes : difficultyLevels).map((level) => (
-            <button
-              key={level.id}
-              onClick={() => handleDifficultySelect(level.id)}
-              className={cn(
-                "p-3 rounded-xl text-sm font-medium transition-all duration-200",
-                "bg-gradient-to-br shadow-sm flex flex-col items-center text-center min-h-[80px] justify-center",
-                level.color,
-                "hover:shadow-md",
-                selectedSubcategory === level.id && [
-                  "ring-2 ring-offset-2",
-                  level.activeColor
-                ]
-              )}
-            >
-              <span className="font-semibold mb-1">{level.name}</span>
-              <span className="text-xs opacity-75">
-                {level.description}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl p-3">
-        <div className="flex items-center mb-2">
-          <ListOrdered className="h-4 w-4 mr-2 text-vocab-purple" />
-          <h3 className="text-sm font-semibold text-gray-800">Daily Word Count</h3>
-        </div>
-        
-        <div className="grid grid-cols-3 gap-2 mb-2">
-          {[1, 2, 3].map((count) => (
-            <button
-              key={count}
-              onClick={() => handleWordCountSelect(count)}
-              className={cn(
-                "p-4 rounded-xl text-lg font-medium transition-all duration-200",
-                wordCount === count ? [
-                  "ring-2 ring-offset-2 ring-vocab-purple",
-                  count === 1 ? "bg-[#F2FCE2] text-green-700" :
-                  count === 2 ? "bg-[#FEF7CD] text-amber-700" :
-                  "bg-[#E5DEFF] text-indigo-700"
-                ] : "bg-gray-50 text-gray-700 hover:bg-gray-100"
-              )}
-            >
-              {count}
-            </button>
-          ))}
-        </div>
-        
-        <div className="grid grid-cols-2 gap-2">
-          {[4, 5].map((count) => (
-            <button
-              key={count}
-              onClick={() => handleWordCountSelect(count)}
-              className={cn(
-                "p-4 rounded-xl text-lg font-medium transition-all duration-200",
-                wordCount === count ? [
-                  "ring-2 ring-offset-2 ring-vocab-purple",
-                  count === 4 ? "bg-[#FDE1D3] text-orange-700" :
-                  "bg-[#FFDEE2] text-pink-700"
-                ] : "bg-gray-50 text-gray-700 hover:bg-gray-100"
-              )}
-            >
-              {count}
-            </button>
-          ))}
-        </div>
-        
-        <p className="text-xs text-gray-600 italic mt-2 text-center">
-          {wordCountOptions.find(option => option.count === wordCount)?.message}
-        </p>
-      </div>
-
-      <div className="px-2 mt-2">
+      <div className="px-2 mt-3 sticky bottom-0">
         <Button
           onClick={handleApply}
           disabled={!isFullySelected || isLoadingNewBatch}

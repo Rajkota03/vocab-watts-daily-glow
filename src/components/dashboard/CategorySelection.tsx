@@ -87,9 +87,9 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   
   return (
     <Card className="border border-stroke/50 shadow-sm rounded-2xl overflow-hidden bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/80">
-      <div className="p-6 md:p-8 space-y-8">
-        <div className="card-content lg:grid lg:grid-cols-2 lg:gap-x-10 flex flex-col gap-6">
-          <div className="space-y-8 flex-shrink-0">
+      <div className="p-6 md:p-8">
+        <div className="grid lg:grid-cols-2 gap-8">
+          <div className="space-y-8">
             <CategoryGrid 
               selectedPrimary={selectedPrimary} 
               onPrimarySelect={handlePrimarySelect} 
@@ -104,7 +104,7 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
             )}
           </div>
           
-          <div className="space-y-8 flex-shrink-0">
+          <div className="space-y-8">
             {selectedSubcategory && (
               <>
                 <WordCountSelector

@@ -1,8 +1,6 @@
 
 import React from 'react';
 import { CheckCircle } from 'lucide-react';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { cn } from '@/lib/utils';
 
 interface SubcategoryGridProps {
@@ -44,7 +42,7 @@ const SubcategoryGrid: React.FC<SubcategoryGridProps> = ({
             key={subcategory.id}
             onClick={() => onSubcategorySelect(subcategory.id)}
             className={cn(
-              "flex items-center p-4 rounded-xl transition-all duration-200 border",
+              "flex items-center p-4 rounded-xl transition-all duration-200 border h-full",
               selectedSubcategory === subcategory.id 
                 ? "bg-primary-light border-primary text-gray-800" 
                 : "bg-white hover:bg-gray-50 text-gray-600 border-stroke"
