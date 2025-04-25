@@ -10,7 +10,8 @@ type ToasterToast = {
   variant?: "default" | "destructive" | "success";
 };
 
-const TOAST_LIMIT = 5;
+const TOAST_LIMIT = 3;
+const TOAST_REMOVE_DELAY = 5000;
 
 type Toast = {
   id: string;
@@ -27,7 +28,11 @@ const actionTypes = {
   REMOVE_TOAST: "REMOVE_TOAST",
 } as const;
 
+// Toast ID counter
 let count = 0;
+
+// Track active toast IDs to prevent duplicates
+const activeToastIds = new Set<string>();
 
 function generateId() {
   return `${count++}`;
@@ -67,11 +72,12 @@ const addToRemoveQueue = (toastId: string) => {
 
   const timeout = setTimeout(() => {
     toastTimeouts.delete(toastId);
+    activeToastIds.delete(toastId);
     dispatch({
       type: "REMOVE_TOAST",
       toastId: toastId,
     });
-  }, 1000);
+  }, TOAST_REMOVE_DELAY);
 
   toastTimeouts.set(toastId, timeout);
 };
@@ -143,10 +149,32 @@ function dispatch(action: Action) {
   });
 }
 
+// Prevent duplicate toast content
+function isDuplicateToast(title: string, description?: string): boolean {
+  for (const toast of memoryState.toasts) {
+    if (
+      toast.title === title && 
+      toast.description === description
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 type ToastProps = Omit<Toast, "id">;
 
 function toast(props: ToastProps) {
+  // Check for duplicate toasts
+  if (
+    typeof props.title === "string" && 
+    isDuplicateToast(props.title, props.description as string | undefined)
+  ) {
+    return { id: "", dismiss: () => {}, update: () => {} };
+  }
+
   const id = generateId();
+  activeToastIds.add(id);
 
   const update = (props: ToastProps) =>
     dispatch({
@@ -172,14 +200,17 @@ function toast(props: ToastProps) {
   if (props.variant === "success") {
     sonnerToast.success(props.title as string, {
       description: props.description as string,
+      id,
     });
   } else if (props.variant === "destructive") {
     sonnerToast.error(props.title as string, {
       description: props.description as string,
+      id,
     });
   } else {
     sonnerToast(props.title as string, {
       description: props.description as string,
+      id,
     });
   }
 

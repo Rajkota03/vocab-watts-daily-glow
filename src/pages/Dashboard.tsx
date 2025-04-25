@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -6,8 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { generateNewWordBatch } from '@/services/wordService';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardMain from '@/components/dashboard/DashboardMain';
-import { Toaster } from '@/components/ui/toaster';
-import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { MOCK_TODAYS_QUIZ, MOCK_RECENT_DROPS } from '@/data/dashboardMockData';
 
 const Dashboard = () => {
@@ -237,8 +234,6 @@ const Dashboard = () => {
         MOCK_RECENT_DROPS={MOCK_RECENT_DROPS}
         wordsLearnedThisMonth={wordsLearnedThisMonth}
       />
-      <Toaster />
-      <SonnerToaster position="top-right" />
     </div>
   );
 };
