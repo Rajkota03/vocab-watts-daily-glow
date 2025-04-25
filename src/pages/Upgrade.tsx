@@ -82,7 +82,7 @@ const Upgrade = () => {
       });
     }
   };
-  return <div className="min-h-screen bg-gradient-to-br from-[#9b87f5]/10 to-[#7E69AB]/10 py-12 px-4">
+  return <div className="min-h-screen bg-gradient-to-br from-[#9b87f5]/10 to-[#7E69AB]/10 py-12 px-[38px] text-lg">
       <div className="container max-w-6xl mx-px my-0 py-0 px-0">
         <h1 className="text-3xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-[#9b87f5] to-[#7E69AB]">
           Upgrade to GLINTUP Pro
