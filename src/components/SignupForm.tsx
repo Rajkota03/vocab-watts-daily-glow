@@ -103,8 +103,7 @@ const SignupForm = () => {
               first_name: firstName || "User",
               last_name: lastName || "",
               whatsapp_number: phoneNumber
-            },
-            emailRedirect: false
+            }
           }
         });
         
