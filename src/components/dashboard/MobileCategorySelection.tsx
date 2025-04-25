@@ -218,7 +218,7 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
           <div className="grid grid-cols-3 gap-2 mb-2">
             {[1, 2, 3].map(count => {
             const option = wordCountOptions.find(o => o.count === count);
-            return <button key={count} onClick={() => handleWordCountSelect(count)} className="">
+            return <button key={count} onClick={() => handleWordCountSelect(count)} className="bg-green-300 hover:bg-green-200">
                   {count}
                 </button>;
           })}
@@ -227,7 +227,7 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
           <div className="grid grid-cols-2 gap-2">
             {[4, 5].map(count => {
             const option = wordCountOptions.find(o => o.count === count);
-            return <button key={count} onClick={() => handleWordCountSelect(count)} className="">
+            return <button key={count} onClick={() => handleWordCountSelect(count)} className="bg-green-300 hover:bg-green-200">
                   {count}
                 </button>;
           })}
