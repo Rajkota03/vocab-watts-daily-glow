@@ -66,7 +66,7 @@ export const useAuthStatus = () => {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('nick_name, first_name')
-          .eq('id', userId)
+          .eq('id', data.session.user.id)
           .single();
         
         if (profileData) {
@@ -85,14 +85,14 @@ export const useAuthStatus = () => {
     
     checkAuth();
     
-    // Set up auth state change listener
+    // Set up auth state change listener with immediate execution
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log("Auth state changed:", event);
         if (event === 'SIGNED_OUT' || !session) {
           navigate('/login');
-        } else if (event === 'SIGNED_IN') {
-          checkAuth(); // Refresh user data when signed in
+        } else if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+          checkAuth(); // Refresh user data when signed in or updated
         }
       }
     );

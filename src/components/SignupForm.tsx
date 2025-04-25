@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +21,6 @@ const SignupForm = () => {
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
-  // Check if form was submitted successfully
   useEffect(() => {
     if (success) {
       const timer = setTimeout(() => {
@@ -38,7 +36,6 @@ const SignupForm = () => {
     setIsSubmitting(true);
     
     try {
-      // Validate inputs (basic validation)
       if (!phoneNumber.trim() || phoneNumber.length < 10) {
         toast({
           title: "Invalid phone number",
@@ -79,80 +76,76 @@ const SignupForm = () => {
           setIsSubmitting(false);
           return;
         }
-      }
-      
-      console.log("Submitting form with:", { phoneNumber, deliveryTime, email });
-      
-      // Check if user already exists with this phone number
-      const { data: existingSubscriptions } = await supabase
-        .from('user_subscriptions')
-        .select('*')
-        .eq('phone_number', phoneNumber)
-        .limit(1);
         
-      if (existingSubscriptions && existingSubscriptions.length > 0) {
-        toast({
-          title: "Phone number already registered",
-          description: "This number is already registered for our service.",
-          variant: "destructive"
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Create user account with email and password
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name: firstName || "User",
-            last_name: lastName || "",
-            whatsapp_number: phoneNumber
-          }
+        console.log("Submitting form with:", { phoneNumber, deliveryTime, email });
+        
+        const { data: existingSubscriptions } = await supabase
+          .from('user_subscriptions')
+          .select('*')
+          .eq('phone_number', phoneNumber)
+          .limit(1);
+          
+        if (existingSubscriptions && existingSubscriptions.length > 0) {
+          toast({
+            title: "Phone number already registered",
+            description: "This number is already registered for our service.",
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
         }
-      });
-      
-      if (signUpError) {
-        console.error("Error signing up:", signUpError);
-        toast({
-          title: "Account creation failed",
-          description: signUpError.message || "Could not create your account. Please try again.",
-          variant: "destructive"
+        
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              first_name: firstName || "User",
+              last_name: lastName || "",
+              whatsapp_number: phoneNumber
+            },
+            emailRedirect: false
+          }
         });
-        setIsSubmitting(false);
-        return;
+        
+        if (signUpError) {
+          console.error("Error signing up:", signUpError);
+          toast({
+            title: "Account creation failed",
+            description: signUpError.message || "Could not create your account. Please try again.",
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
+        
+        const isPro = false;
+        const subscriptionSuccess = await createSubscription({
+          phoneNumber,
+          deliveryTime,
+          isPro, 
+          category: 'daily'
+        });
+        
+        if (!subscriptionSuccess) {
+          throw new Error('Failed to create subscription');
+        }
+        
+        const messageResult = await sendVocabWords({
+          phoneNumber,
+          deliveryTime
+        });
+        
+        if (!messageResult) {
+          console.warn('WhatsApp message sending failed, but subscription was created');
+        }
+        
+        setSuccess(true);
+        toast({
+          title: "You're all set!",
+          description: "Your 3-day free trial has started. You'll receive your first words shortly on WhatsApp.",
+        });
       }
-      
-      // Create free trial subscription (not pro)
-      const isPro = false;
-      const subscriptionSuccess = await createSubscription({
-        phoneNumber,
-        deliveryTime,
-        isPro, 
-        category: 'daily' // Default category for free trial users
-      });
-      
-      if (!subscriptionSuccess) {
-        throw new Error('Failed to create subscription');
-      }
-      
-      // Send first vocabulary words via WhatsApp
-      const messageResult = await sendVocabWords({
-        phoneNumber,
-        deliveryTime
-      });
-      
-      if (!messageResult) {
-        console.warn('WhatsApp message sending failed, but subscription was created');
-      }
-      
-      setSuccess(true);
-      toast({
-        title: "You're all set!",
-        description: "Your 3-day free trial has started. You'll receive your first words shortly on WhatsApp.",
-      });
-      
     } catch (error: any) {
       console.error('Error processing subscription:', error);
       toast({
@@ -165,7 +158,6 @@ const SignupForm = () => {
     }
   };
 
-  // Show success message if form was submitted successfully
   if (success) {
     return (
       <div className="text-center">
