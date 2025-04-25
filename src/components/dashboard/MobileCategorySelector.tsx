@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   ArrowLeft, BookOpen, Briefcase, MessageSquare, Smile, Sparkle, 
   Heart, GraduationCap, Check, Zap, RefreshCw
