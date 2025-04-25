@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -113,6 +112,13 @@ export default {
           DEFAULT: '2.5rem', // Reduced from 3rem to 40px for desktop
           'mobile': '1.5rem', // Reduced from 2rem to 24px for mobile
         }
+      },
+      spacing: {
+        'safe-x': 'clamp(1rem, 4vw, 4rem)',   // 16px to 64px
+        'safe-y': 'clamp(1.5rem, 5vh, 4rem)', // 24px to 64px
+      },
+      maxWidth: {
+        'dashboard-card': '720px',
       },
       keyframes: {
         'accordion-down': {

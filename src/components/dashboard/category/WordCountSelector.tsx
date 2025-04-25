@@ -14,7 +14,7 @@ const WordCountSelector: React.FC<WordCountSelectorProps> = ({
 }) => {
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium text-gray-700">Daily Word Count</h3>
+      <h3 className="slider-label text-sm font-medium text-primary">Daily Word Count</h3>
       
       <div className="text-center mb-2 text-primary font-medium">
         <span className="text-2xl">{wordCount}</span>

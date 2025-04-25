@@ -1,15 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card } from '@/components/ui/card';
-import MobileCategorySelection from './MobileCategorySelection';
+import { useToast } from '@/hooks/use-toast';
 import CategoryGrid from './category/CategoryGrid';
 import SubcategoryGrid from './category/SubcategoryGrid';
 import WordCountSelector from './category/WordCountSelector';
-import TimeScheduler from './category/TimeScheduler';
-import { useToast } from '@/hooks/use-toast';
 
 interface CategorySelectionProps {
   isPro: boolean;
@@ -26,22 +24,10 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   onNewBatch,
   isLoadingNewBatch = false
 }) => {
-  const isMobile = useIsMobile();
-  const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-  const [wordCount, setWordCount] = useState(3);
-  const [scheduledTime, setScheduledTime] = useState<string>('');
+  const [selectedPrimary, setSelectedPrimary] = React.useState<string | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = React.useState<string | null>(null);
+  const [wordCount, setWordCount] = React.useState(3);
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (currentCategory) {
-      const parts = currentCategory.split('-');
-      if (parts.length === 2) {
-        setSelectedPrimary(parts[0]);
-        setSelectedSubcategory(parts[1]);
-      }
-    }
-  }, [currentCategory]);
 
   const handlePrimarySelect = (primary: string) => {
     setSelectedPrimary(primary);
@@ -53,7 +39,7 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   const handleSubcategorySelect = (subcategory: string) => {
     setSelectedSubcategory(subcategory);
   };
-  
+
   const handleApply = async () => {
     if (selectedPrimary && selectedSubcategory) {
       try {
@@ -76,71 +62,56 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
     }
   };
 
-  if (isMobile) {
-    return <MobileCategorySelection 
-      isPro={isPro}
-      currentCategory={currentCategory}
-      onCategoryUpdate={onCategoryUpdate}
-      onNewBatch={onNewBatch}
-      isLoadingNewBatch={isLoadingNewBatch}
-    />;
-  }
-  
   return (
-    <div className="max-w-3xl mx-auto">
-      <Card className="border border-stroke/50 shadow-sm rounded-2xl overflow-hidden bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/80">
-        <div className="p-6 md:p-8 space-y-8">
-          <div className="lg:grid lg:grid-cols-2 lg:gap-x-12 lg:gap-y-8">
-            <div className="space-y-8">
+    <Card className="border border-stroke/50 shadow-sm rounded-2xl overflow-hidden bg-white/80 backdrop-blur">
+      <div className="p-6 md:p-8">
+        <div className="card-content flex flex-col gap-6 md:grid md:grid-cols-2 md:gap-10">
+          <div className="space-y-8 flex-shrink-0">
+            <div className="overflow-x-auto pb-2 -mx-2 px-2">
               <CategoryGrid 
                 selectedPrimary={selectedPrimary} 
                 onPrimarySelect={handlePrimarySelect} 
               />
-              
-              {selectedPrimary && (
-                <SubcategoryGrid
-                  selectedPrimary={selectedPrimary}
-                  selectedSubcategory={selectedSubcategory}
-                  onSubcategorySelect={handleSubcategorySelect}
-                />
-              )}
             </div>
             
-            <div className="space-y-8 mt-8 lg:mt-0">
-              {selectedSubcategory && (
-                <>
-                  <WordCountSelector
-                    wordCount={wordCount}
-                    onWordCountChange={setWordCount}
-                  />
-                  
-                  <TimeScheduler
-                    scheduledTime={scheduledTime}
-                    onScheduledTimeChange={setScheduledTime}
-                  />
-
-                  <Button
-                    disabled={!selectedPrimary || !selectedSubcategory || isLoadingNewBatch}
-                    onClick={handleApply}
-                    className="w-full bg-primary text-white rounded-lg py-3 h-12 font-medium transition-all hover:bg-primary/90"
-                    aria-live="polite"
-                  >
-                    {isLoadingNewBatch ? (
-                      <>
-                        <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      'Apply Selection & Generate Words'
-                    )}
-                  </Button>
-                </>
-              )}
+            <div className="slider-wrapper px-1">
+              <WordCountSelector
+                wordCount={wordCount}
+                onWordCountChange={setWordCount}
+              />
             </div>
+            
+            {selectedPrimary && (
+              <SubcategoryGrid
+                selectedPrimary={selectedPrimary}
+                selectedSubcategory={selectedSubcategory}
+                onSubcategorySelect={handleSubcategorySelect}
+              />
+            )}
+          </div>
+
+          <div className="space-y-8 flex-shrink-0">
+            {selectedSubcategory && (
+              <Button
+                disabled={!selectedPrimary || !selectedSubcategory || isLoadingNewBatch}
+                onClick={handleApply}
+                className="w-full bg-primary text-white rounded-lg py-3 h-12 font-medium transition-all hover:bg-primary/90"
+                aria-live="polite"
+              >
+                {isLoadingNewBatch ? (
+                  <>
+                    <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  'Apply Selection & Generate Words'
+                )}
+              </Button>
+            )}
           </div>
         </div>
-      </Card>
-    </div>
+      </div>
+    </Card>
   );
 };
 
