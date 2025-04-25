@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { 
   BookOpen, Briefcase, MessageSquare, 
-  GraduationCap, Smile, Sparkles, Heart, Zap, RefreshCw, Check, ArrowLeft, ListOrdered
+  GraduationCap, Smile, Sparkles, Heart, Zap, RefreshCw, Check, ListOrdered
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -25,9 +24,7 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
 }) => {
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
   const [wordCount, setWordCount] = useState<number>(3);
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   
   const categories = [
     {
@@ -158,7 +155,6 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
     }
   ];
 
-  // Word count options with messages
   const wordCountOptions = [
     { count: 1, message: "Perfect for focused, in-depth learning! Master one word at a time. 🎯" },
     { count: 2, message: "A balanced approach to expand your vocabulary steadily! 📚" },
@@ -171,31 +167,14 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
     if (!isPro) return;
     setSelectedPrimary(prevSelected => prevSelected === categoryId ? null : categoryId);
     setSelectedSubcategory(null);
-    setSelectedDifficulty(null);
-    setStep(2);
   };
 
   const handleDifficultySelect = (difficultyId: string) => {
-    setSelectedDifficulty(difficultyId);
     setSelectedSubcategory(difficultyId);
-    setStep(3);
   };
 
   const handleWordCountSelect = (count: number) => {
     setWordCount(count);
-    setStep(4);
-  };
-
-  const handleBack = () => {
-    if (step === 4) {
-      setStep(3);
-    } else if (step === 3) {
-      setStep(2);
-    } else if (step === 2) {
-      setStep(1);
-      setSelectedPrimary(null);
-      setSelectedSubcategory(null);
-    }
   };
 
   const handleApply = async () => {
@@ -207,231 +186,139 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
     }
   };
 
+  const isFullySelected = selectedPrimary && selectedSubcategory;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 pb-6">
       <div className="bg-white rounded-xl p-4">
-        {/* Progress bar at top */}
-        <div className="mb-6 px-2">
-          <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
-            <div 
-              className="bg-gradient-to-r from-vocab-purple to-indigo-500 h-full rounded-full transition-all duration-300 ease-out"
-              style={{ width: step === 1 ? '25%' : step === 2 ? '50%' : step === 3 ? '75%' : '100%' }}
-            />
-          </div>
-          <div className="flex justify-between mt-2 text-xs font-medium">
-            <span className={step >= 1 ? "text-vocab-purple" : "text-gray-400"}>Category</span>
-            <span className={step >= 2 ? "text-vocab-purple" : "text-gray-400"}>Level</span>
-            <span className={step >= 3 ? "text-vocab-purple" : "text-gray-400"}>Words</span>
-            <span className={step >= 4 ? "text-vocab-purple" : "text-gray-400"}>Apply</span>
-          </div>
-        </div>
-
-        {step > 1 && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleBack}
-            className="p-1 mb-4 rounded-full hover:bg-gray-100"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span className="ml-1 text-sm">Back</span>
-          </Button>
-        )}
-
-        {/* Step 1: Primary Category Selection */}
-        {step === 1 && (
-          <div className="animate-fade-in">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-gray-800">Category Selection</h3>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => handlePrimarySelect(category.id)}
-                  className={cn(
-                    "relative flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200",
-                    "bg-gradient-to-br shadow-sm",
-                    "hover:shadow-md",
-                    category.color,
-                    category.hoverColor,
-                    selectedPrimary === category.id && [
-                      "ring-2 ring-offset-2",
-                      category.activeColor
-                    ],
-                    !isPro && "opacity-50 cursor-not-allowed"
-                  )}
-                >
-                  <div className="mb-2">{category.icon}</div>
-                  <span className="text-xs font-medium text-center leading-tight">
-                    {category.name}
-                  </span>
-                  
-                  {selectedPrimary === category.id && (
-                    <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full shadow-sm p-0.5">
-                      <Check className="h-3 w-3 text-vocab-purple" />
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: Subcategory/Difficulty Selection */}
-        {step === 2 && selectedPrimary && (
-          <div className="animate-fade-in">
-            <h4 className="text-base font-semibold text-gray-800 mb-4">
-              {selectedPrimary === 'exam' ? 'Select Exam Type' : 'Choose Difficulty'}
-            </h4>
-
-            <div className="grid grid-cols-3 gap-2">
-              {(selectedPrimary === 'exam' ? examTypes : difficultyLevels).map((level) => (
-                <button
-                  key={level.id}
-                  onClick={() => handleDifficultySelect(level.id)}
-                  className={cn(
-                    "p-2 rounded-lg text-sm font-medium transition-all duration-200 flex flex-col items-center justify-center text-center min-h-[64px]",
-                    "bg-gradient-to-br shadow-sm",
-                    level.color,
-                    level.textColor,
-                    "hover:shadow-md",
-                    selectedDifficulty === level.id && [
-                      "ring-2 ring-offset-2",
-                      level.activeColor
-                    ]
-                  )}
-                >
-                  <span>{level.name}</span>
-                  {!selectedPrimary.includes('exam') && level.description && (
-                    <span className="text-xs mt-1 opacity-75">
-                      {level.description}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: Word Count Selection */}
-        {step === 3 && selectedPrimary && selectedSubcategory && (
-          <div className="animate-fade-in">
-            <div className="flex items-center mb-4">
-              <div className="flex items-center">
-                <ListOrdered className="h-5 w-5 mr-2 text-vocab-purple" />
-                <h4 className="text-base font-semibold text-gray-800">Daily Word Count</h4>
-              </div>
-            </div>
-            
-            <div className="text-center mb-4 text-primary font-medium">
-              <span className="text-2xl">{wordCount}</span>
-              <span className="ml-1">word{wordCount !== 1 ? 's' : ''} a day</span>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              {[1, 2, 3].map((count) => (
-                <button
-                  key={count}
-                  onClick={() => handleWordCountSelect(count)}
-                  className={cn(
-                    "p-4 rounded-lg text-lg font-medium transition-all duration-200",
-                    "bg-gradient-to-br shadow-sm",
-                    wordCount === count ? [
-                      "ring-2 ring-offset-2 ring-vocab-purple",
-                      "from-vocab-purple/20 to-indigo-500/20 text-vocab-purple"
-                    ] : "from-gray-100 to-gray-200 text-gray-700 hover:shadow-md"
-                  )}
-                >
-                  {count}
-                </button>
-              ))}
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2">
-              {[4, 5].map((count) => (
-                <button
-                  key={count}
-                  onClick={() => handleWordCountSelect(count)}
-                  className={cn(
-                    "p-4 rounded-lg text-lg font-medium transition-all duration-200",
-                    "bg-gradient-to-br shadow-sm",
-                    wordCount === count ? [
-                      "ring-2 ring-offset-2 ring-vocab-purple",
-                      "from-vocab-purple/20 to-indigo-500/20 text-vocab-purple"
-                    ] : "from-gray-100 to-gray-200 text-gray-700 hover:shadow-md"
-                  )}
-                >
-                  {count}
-                </button>
-              ))}
-            </div>
-            
-            <p className="text-sm text-gray-600 italic mt-4 text-center">
-              {wordCountOptions.find(option => option.count === wordCount)?.message}
-            </p>
-          </div>
-        )}
-
-        {/* Step 4: Final Review & Apply */}
-        {step === 4 && selectedPrimary && selectedSubcategory && (
-          <div className="animate-fade-in">
-            <h4 className="text-base font-semibold text-gray-800 mb-4">Your Selection</h4>
-            
-            <Card className="border-0 shadow-sm p-4 mb-6 bg-white">
-              <div className="flex items-center mb-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center mr-3 bg-gradient-to-br from-vocab-purple/20 to-indigo-500/20">
-                  <span className="text-vocab-purple">{categories.find(c => c.id === selectedPrimary)?.icon}</span>
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm text-gray-700">Category</h3>
-                  <p className="text-base font-medium text-vocab-purple">{categories.find(c => c.id === selectedPrimary)?.name}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center mb-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center mr-3 bg-gradient-to-br from-vocab-purple/20 to-indigo-500/20">
-                  <Check className="h-4 w-4 text-vocab-purple" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm text-gray-700">Level</h3>
-                  <p className="text-base font-medium text-vocab-purple">
-                    {(selectedPrimary === 'exam' ? examTypes : difficultyLevels).find(l => l.id === selectedSubcategory)?.name}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center mr-3 bg-gradient-to-br from-vocab-purple/20 to-indigo-500/20">
-                  <ListOrdered className="h-4 w-4 text-vocab-purple" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm text-gray-700">Daily Words</h3>
-                  <p className="text-base font-medium text-vocab-purple">{wordCount} word{wordCount > 1 ? 's' : ''}</p>
-                </div>
-              </div>
-            </Card>
-            
-            <Button
-              onClick={handleApply}
-              disabled={isLoadingNewBatch || !isPro}
-              className="w-full bg-gradient-to-r from-vocab-purple to-indigo-500 hover:from-vocab-purple/90 hover:to-indigo-500/90 text-white h-11 rounded-xl shadow-sm"
-            >
-              {isLoadingNewBatch ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Zap className="mr-2 h-4 w-4" />
-                  Apply & Generate Words
-                </>
+        <h3 className="text-base font-semibold text-gray-800 mb-4">Word Category</h3>
+        <div className="grid grid-cols-3 gap-3">
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => handlePrimarySelect(category.id)}
+              className={cn(
+                "relative flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200",
+                "bg-gradient-to-br shadow-sm",
+                "hover:shadow-md",
+                category.color,
+                category.hoverColor,
+                selectedPrimary === category.id && [
+                  "ring-2 ring-offset-2",
+                  category.activeColor
+                ],
+                !isPro && "opacity-50 cursor-not-allowed"
               )}
-            </Button>
-          </div>
-        )}
+            >
+              <div className="mb-2">{category.icon}</div>
+              <span className="text-xs font-medium text-center leading-tight">
+                {category.name}
+              </span>
+              
+              {selectedPrimary === category.id && (
+                <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full shadow-sm p-0.5">
+                  <Check className="h-3 w-3 text-vocab-purple" />
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl p-4">
+        <h3 className="text-base font-semibold text-gray-800 mb-4">Difficulty Level</h3>
+        <div className="grid grid-cols-3 gap-3">
+          {(selectedPrimary === 'exam' ? examTypes : difficultyLevels).map((level) => (
+            <button
+              key={level.id}
+              onClick={() => handleDifficultySelect(level.id)}
+              className={cn(
+                "p-3 rounded-xl text-sm font-medium transition-all duration-200",
+                "bg-gradient-to-br shadow-sm flex flex-col items-center text-center min-h-[80px] justify-center",
+                level.color,
+                "hover:shadow-md",
+                selectedSubcategory === level.id && [
+                  "ring-2 ring-offset-2",
+                  level.activeColor
+                ]
+              )}
+            >
+              <span className="font-semibold mb-1">{level.name}</span>
+              <span className="text-xs opacity-75">
+                {level.description}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl p-4">
+        <div className="flex items-center mb-4">
+          <ListOrdered className="h-5 w-5 mr-2 text-vocab-purple" />
+          <h3 className="text-base font-semibold text-gray-800">Daily Word Count</h3>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          {[1, 2, 3].map((count) => (
+            <button
+              key={count}
+              onClick={() => handleWordCountSelect(count)}
+              className={cn(
+                "p-4 rounded-xl text-lg font-medium transition-all duration-200",
+                "bg-gradient-to-br shadow-sm",
+                wordCount === count ? [
+                  "ring-2 ring-offset-2 ring-vocab-purple",
+                  "from-vocab-purple/20 to-indigo-500/20 text-vocab-purple"
+                ] : "from-gray-100 to-gray-200 text-gray-700 hover:shadow-md"
+              )}
+            >
+              {count}
+            </button>
+          ))}
+        </div>
+        
+        <div className="grid grid-cols-2 gap-3">
+          {[4, 5].map((count) => (
+            <button
+              key={count}
+              onClick={() => handleWordCountSelect(count)}
+              className={cn(
+                "p-4 rounded-xl text-lg font-medium transition-all duration-200",
+                "bg-gradient-to-br shadow-sm",
+                wordCount === count ? [
+                  "ring-2 ring-offset-2 ring-vocab-purple",
+                  "from-vocab-purple/20 to-indigo-500/20 text-vocab-purple"
+                ] : "from-gray-100 to-gray-200 text-gray-700 hover:shadow-md"
+              )}
+            >
+              {count}
+            </button>
+          ))}
+        </div>
+        
+        <p className="text-sm text-gray-600 italic mt-4 text-center">
+          {wordCountOptions.find(option => option.count === wordCount)?.message}
+        </p>
+      </div>
+
+      <div className="px-4">
+        <Button
+          onClick={handleApply}
+          disabled={!isFullySelected || isLoadingNewBatch}
+          className="w-full bg-gradient-to-r from-vocab-purple to-indigo-500 hover:from-vocab-purple/90 hover:to-indigo-500/90 text-white h-14 rounded-xl shadow-sm"
+        >
+          {isLoadingNewBatch ? (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <Zap className="mr-2 h-4 w-4" />
+              Apply & Generate Words
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );
