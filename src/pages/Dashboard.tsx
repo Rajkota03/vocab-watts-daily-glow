@@ -112,7 +112,7 @@ const Dashboard = () => {
       // Fetch words learned this month
       try {
         const { data: wordsData, error: wordsError } = await supabase
-          .from('word_history')
+          .from('user_word_history')
           .select('id')
           .eq('user_id', data.session.user.id)
           .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())

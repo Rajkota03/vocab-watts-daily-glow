@@ -7,7 +7,7 @@ const generateId = () => {
   return Math.random().toString(36).substring(2, 9);
 };
 
-type ToastProps = Omit<Toast, "id">;
+type ToastProps = Omit<React.ComponentPropsWithoutRef<typeof Toast>, "id">;
 
 const toast = (props: ToastProps) => {
   const id = generateId();
