@@ -189,7 +189,7 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   const isFullySelected = selectedPrimary && selectedSubcategory;
 
   return (
-    <div className="flex flex-col min-h-[500px] overflow-hidden">
+    <div className="flex flex-col min-h-[500px] overflow-y-auto scrollbar-hidden">
       <div className="bg-white rounded-xl p-3">
         <h3 className="text-sm font-semibold text-gray-800 mb-2">Word Category</h3>
         <div className="grid grid-cols-3 gap-2">

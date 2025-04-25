@@ -15,24 +15,36 @@
 }
 
 @layer utilities {
-  .scrollbar-thin {
+  /* Minimal, almost invisible scrollbar */
+  .scrollbar-hidden {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer and Edge */
+  }
+  
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none; /* Webkit browsers (Chrome, Safari) */
+  }
+  
+  /* Optional: Very thin scrollbar for when it's needed */
+  .scrollbar-minimal {
     scrollbar-width: thin;
   }
   
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
+  .scrollbar-minimal::-webkit-scrollbar {
+    width: 4px;
   }
   
-  .scrollbar-thin::-webkit-scrollbar-track {
+  .scrollbar-minimal::-webkit-scrollbar-track {
     background: transparent;
   }
   
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: #E5E7EB;
-    border-radius: 3px;
+  .scrollbar-minimal::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.2);
+    border-radius: 2px;
   }
   
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: #D1D5DB;
+  .scrollbar-minimal::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,0,0,0.3);
   }
 }
+
