@@ -27,19 +27,17 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
   wordsLearnedThisMonth = 0
 }) => {
   return (
-    <main className="min-h-[calc(100vh-80px)] bg-gray-50/50 px-safe-x">
-      <div className="flex flex-col items-center w-full">
-        <div id="dashboardCard" className="w-full max-w-dashboard-card mt-8 md:mt-[32px]">
-          {subscription.is_pro && (
-            <CategorySelection 
-              isPro={subscription.is_pro} 
-              currentCategory={subscription.category} 
-              onCategoryUpdate={handleCategoryUpdate}
-              onNewBatch={handleNewBatch}
-              isLoadingNewBatch={isGeneratingBatch}
-            />
-          )}
-        </div>
+    <main className="min-h-[calc(100vh-80px)] bg-gray-50/50">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12">
+        {subscription.is_pro && (
+          <CategorySelection 
+            isPro={subscription.is_pro} 
+            currentCategory={subscription.category} 
+            onCategoryUpdate={handleCategoryUpdate}
+            onNewBatch={handleNewBatch}
+            isLoadingNewBatch={isGeneratingBatch}
+          />
+        )}
       </div>
     </main>
   );
