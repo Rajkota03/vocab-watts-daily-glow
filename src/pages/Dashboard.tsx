@@ -9,6 +9,7 @@ import DashboardLoading from '@/components/dashboard/DashboardLoading';
 import { MOCK_TODAYS_QUIZ, MOCK_RECENT_DROPS } from '@/data/dashboardMockData';
 import { generateNewWordBatch } from '@/services/wordService';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client'; // Added missing import
 
 const Dashboard = () => {
   const { loading: authLoading, userNickname, isAdmin } = useAuthStatus();
