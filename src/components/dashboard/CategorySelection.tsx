@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
@@ -9,7 +8,7 @@ import CategoryGrid from './category/CategoryGrid';
 import SubcategoryGrid from './category/SubcategoryGrid';
 import WordCountSelector from './category/WordCountSelector';
 import TimeScheduler from './category/TimeScheduler';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface CategorySelectionProps {
   isPro: boolean;
@@ -76,70 +75,64 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   };
 
   if (isMobile) {
-    return (
-      <MobileCategorySelection
-        isPro={isPro}
-        currentCategory={currentCategory}
-        onCategoryUpdate={onCategoryUpdate}
-        onNewBatch={onNewBatch}
-        isLoadingNewBatch={isLoadingNewBatch}
-      />
-    );
+    return <MobileCategorySelection {...props} />;
   }
   
   return (
-    <Card className="border border-stroke shadow-sm rounded-2xl p-6 md:p-8 max-w-3xl mx-auto animate-fade-in">
-      <div className="lg:grid lg:grid-cols-2 lg:gap-8">
-        <div className="space-y-8">
-          <CategoryGrid 
-            selectedPrimary={selectedPrimary} 
-            onPrimarySelect={handlePrimarySelect} 
-          />
-          
-          {selectedPrimary && (
-            <SubcategoryGrid
-              selectedPrimary={selectedPrimary}
-              selectedSubcategory={selectedSubcategory}
-              onSubcategorySelect={handleSubcategorySelect}
-            />
-          )}
-        </div>
-        
-        <div className="space-y-8 mt-8 lg:mt-0">
-          {selectedSubcategory && (
-            <>
-              <WordCountSelector
-                wordCount={wordCount}
-                onWordCountChange={setWordCount}
+    <div className="max-w-3xl mx-auto">
+      <Card className="border border-stroke/50 shadow-sm rounded-2xl overflow-hidden bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+        <div className="p-6 md:p-8 space-y-8">
+          <div className="lg:grid lg:grid-cols-2 lg:gap-x-12 lg:gap-y-8">
+            <div className="space-y-8">
+              <CategoryGrid 
+                selectedPrimary={selectedPrimary} 
+                onPrimarySelect={handlePrimarySelect} 
               />
               
-              <TimeScheduler
-                scheduledTime={scheduledTime}
-                onScheduledTimeChange={setScheduledTime}
-              />
-            </>
-          )}
-          
-          {selectedSubcategory && (
-            <Button
-              disabled={!selectedPrimary || !selectedSubcategory || isLoadingNewBatch}
-              onClick={handleApply}
-              className="w-full bg-primary text-white rounded-lg py-3 h-12 font-medium shadow-sm"
-              aria-live="polite"
-            >
-              {isLoadingNewBatch ? (
-                <>
-                  <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                'Apply Selection & Generate Words'
+              {selectedPrimary && (
+                <SubcategoryGrid
+                  selectedPrimary={selectedPrimary}
+                  selectedSubcategory={selectedSubcategory}
+                  onSubcategorySelect={handleSubcategorySelect}
+                />
               )}
-            </Button>
-          )}
+            </div>
+            
+            <div className="space-y-8 mt-8 lg:mt-0">
+              {selectedSubcategory && (
+                <>
+                  <WordCountSelector
+                    wordCount={wordCount}
+                    onWordCountChange={setWordCount}
+                  />
+                  
+                  <TimeScheduler
+                    scheduledTime={scheduledTime}
+                    onScheduledTimeChange={setScheduledTime}
+                  />
+
+                  <Button
+                    disabled={!selectedPrimary || !selectedSubcategory || isLoadingNewBatch}
+                    onClick={handleApply}
+                    className="w-full bg-primary text-white rounded-lg py-3 h-12 font-medium transition-all hover:bg-primary/90"
+                    aria-live="polite"
+                  >
+                    {isLoadingNewBatch ? (
+                      <>
+                        <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      'Apply Selection & Generate Words'
+                    )}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </div>
   );
 };
 
