@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -14,6 +15,7 @@ interface WhatsAppRequest {
   skipSubscriptionCheck?: boolean;
   userId?: string;
   scheduledTime?: string;
+  sendImmediately?: boolean;
 }
 
 function formatWhatsAppNumber(number: string): string {
@@ -46,9 +48,10 @@ serve(async (req) => {
   }
   
   try {
-    const { to, message, category, isPro, skipSubscriptionCheck, userId, scheduledTime } = await req.json() as WhatsAppRequest;
+    const { to, message, category, isPro, skipSubscriptionCheck, userId, scheduledTime, sendImmediately } = await req.json() as WhatsAppRequest;
 
-    if (scheduledTime) {
+    // If we're sending immediately as requested from signup, skip scheduling
+    if (!sendImmediately && scheduledTime) {
       const scheduledDate = new Date(scheduledTime);
       if (scheduledDate > new Date()) {
         const supabaseClient = createClient(
@@ -157,6 +160,11 @@ serve(async (req) => {
         : `\n👉 Hey ${nickname}, upgrade to Pro for custom word categories and more features!`;
       
       finalMessage = header + wordsList + footer;
+    }
+    
+    // For immediate signup deliveries, add a special welcome message
+    if (sendImmediately) {
+      finalMessage = `Welcome to VocabSpark! 🎉\n\n${finalMessage}`;
     }
     
     if (finalMessage) {

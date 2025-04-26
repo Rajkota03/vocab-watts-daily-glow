@@ -15,6 +15,7 @@ export interface SendWordsRequest {
   category?: string;
   isPro?: boolean;
   deliveryTime?: string;
+  sendImmediately?: boolean; // New flag for immediate delivery
 }
 
 // Define types based on our database schema
@@ -254,8 +255,9 @@ const getSampleWords = async (category?: string): Promise<VocabWord[]> => {
 };
 
 // Format words for WhatsApp message
-const formatWhatsAppMessage = (words: VocabWord[], isPro: boolean): string => {
-  const header = `🌟 *Today's VocabSpark Words* 🌟\n\n`;
+const formatWhatsAppMessage = (words: VocabWord[], isPro: boolean, firstName?: string): string => {
+  const name = firstName || "there";
+  const header = `🌟 *Hi ${name}! Here are Your VocabSpark Words* 🌟\n\n`;
   
   const formattedWords = words.map((word, index) => {
     return `*${index + 1}. ${word.word}*\n` +
@@ -300,8 +302,30 @@ export const sendVocabWords = async (request: SendWordsRequest): Promise<boolean
     // Get words based on category (or default words)
     const words = await getSampleWords(request.category);
     
+    // Try to get user profile info if available
+    let firstName: string | undefined;
+    
+    try {
+      // Get session to find the current user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        // Get profile to find name
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (profile?.first_name) {
+          firstName = profile.first_name;
+        }
+      }
+    } catch (err) {
+      console.warn("[WhatsApp] Could not retrieve user profile:", err);
+    }
+    
     // Format message for WhatsApp
-    const message = formatWhatsAppMessage(words || [], request.isPro || false);
+    const message = formatWhatsAppMessage(words || [], request.isPro || false, firstName);
     
     // Call our edge function to send the WhatsApp message
     const { data, error } = await supabase.functions.invoke('send-whatsapp', {
@@ -310,7 +334,8 @@ export const sendVocabWords = async (request: SendWordsRequest): Promise<boolean
         message: message,
         category: request.category,
         isPro: request.isPro || false,
-        deliveryTime: request.deliveryTime
+        deliveryTime: request.deliveryTime,
+        sendImmediately: request.sendImmediately || false
       }
     });
     

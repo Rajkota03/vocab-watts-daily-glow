@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
-import { Clock, CheckCircle, Info, Send, Loader2 } from 'lucide-react';
+import { Clock, CheckCircle, Info, Send, Loader2, User } from 'lucide-react';
 import { sendVocabWords } from '@/services/whatsappService';
 import { supabase } from '@/integrations/supabase/client';
 import { createRazorpayOrder, completeSubscription } from '@/services/paymentService';
@@ -27,8 +27,10 @@ interface PaymentResult {
 const SignupForm = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
-  const [deliveryTime, setDeliveryTime] = useState('');
+  const [deliveryTime, setDeliveryTime] = useState('evening'); // Default delivery time
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState(1);
   const [success, setSuccess] = useState(false);
@@ -137,6 +139,17 @@ const SignupForm = () => {
         return;
       }
       
+      // Validate required name fields
+      if (!firstName.trim()) {
+        toast({
+          title: "Missing information",
+          description: "Please enter your first name.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
       if (step === 2 && !deliveryTime) {
         toast({
           title: "Please select a delivery time",
@@ -147,7 +160,7 @@ const SignupForm = () => {
         return;
       }
       
-      console.log("Submitting form with:", { phoneNumber, email, deliveryTime });
+      console.log("Submitting form with:", { phoneNumber, email, firstName, lastName, deliveryTime });
       
       // Use email signup instead of anonymous signup
       if (!user) {
@@ -159,6 +172,8 @@ const SignupForm = () => {
           password: generatedPassword,
           options: {
             data: {
+              first_name: firstName,
+              last_name: lastName || firstName,
               whatsapp_number: phoneNumber,
               delivery_time: deliveryTime
             }
@@ -224,10 +239,12 @@ const SignupForm = () => {
         throw new Error('Failed to create subscription');
       }
       
-      // Send vocabulary words via WhatsApp
+      // Send vocabulary words via WhatsApp immediately upon signup
+      // regardless of the selected delivery time
       const messageResult = await sendVocabWords({
         phoneNumber,
-        deliveryTime
+        deliveryTime,
+        sendImmediately: true // New flag to indicate immediate delivery
       });
       
       if (!messageResult) {
@@ -244,8 +261,10 @@ const SignupForm = () => {
       setTimeout(() => {
         setPhoneNumber('');
         setEmail('');
+        setFirstName('');
+        setLastName('');
         setPassword('');
-        setDeliveryTime('');
+        setDeliveryTime('evening');
         setStep(1);
         setSuccess(false);
       }, 3000);
@@ -276,8 +295,10 @@ const SignupForm = () => {
           onClick={() => {
             setPhoneNumber('');
             setEmail('');
+            setFirstName('');
+            setLastName('');
             setPassword('');
-            setDeliveryTime('');
+            setDeliveryTime('evening');
             setStep(1);
             setSuccess(false);
           }}
@@ -301,6 +322,45 @@ const SignupForm = () => {
       <form onSubmit={handleSubmit}>
         {step === 1 && (
           <div className="space-y-5">
+            <div>
+              <label htmlFor="firstName" className="block text-sm font-medium mb-1.5">
+                First Name
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-4 w-4 text-gray-400" />
+                </div>
+                <Input 
+                  id="firstName"
+                  type="text" 
+                  placeholder="Your first name" 
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  className="h-12 pl-10"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label htmlFor="lastName" className="block text-sm font-medium mb-1.5">
+                Last Name (Optional)
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-4 w-4 text-gray-400" />
+                </div>
+                <Input 
+                  id="lastName"
+                  type="text" 
+                  placeholder="Your last name" 
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="h-12 pl-10"
+                />
+              </div>
+            </div>
+            
             <div>
               <label htmlFor="phone" className="block text-sm font-medium mb-1.5">
                 Enter WhatsApp number (+91...)
@@ -337,10 +397,16 @@ const SignupForm = () => {
             <Button 
               type="button" 
               className="w-full py-6 h-auto text-base"
-              disabled={!phoneNumber || phoneNumber.trim().length < 10}
+              disabled={!phoneNumber || phoneNumber.trim().length < 10 || !firstName.trim()}
               onClick={() => {
-                if(phoneNumber && phoneNumber.trim().length >= 10) {
+                if(phoneNumber && phoneNumber.trim().length >= 10 && firstName.trim()) {
                   setStep(2);
+                } else if (!firstName.trim()) {
+                  toast({
+                    title: "Missing information",
+                    description: "Please enter your first name.",
+                    variant: "destructive"
+                  });
                 } else {
                   toast({
                     title: "Invalid phone number",
@@ -380,6 +446,10 @@ const SignupForm = () => {
               <p className="mt-1.5 text-xs text-gray-500 flex items-start">
                 <Info className="h-3.5 w-3.5 mr-1 flex-shrink-0 mt-0.5" />
                 Pick when you want to receive your daily words
+              </p>
+              <p className="mt-1.5 text-xs text-green-600 flex items-start">
+                <Info className="h-3.5 w-3.5 mr-1 flex-shrink-0 mt-0.5" />
+                You'll get your first words immediately after signup!
               </p>
             </div>
             
