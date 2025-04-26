@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -9,8 +10,8 @@ import { MOCK_TODAYS_QUIZ, MOCK_RECENT_DROPS } from '@/data/dashboardMockData';
 
 const Dashboard = () => {
   const [subscription, setSubscription] = useState({
-    is_pro: true,
-    category: 'business-intermediate',
+    is_pro: false, // Default to free user
+    category: 'daily-beginner', // Default free category
     phone_number: '+1234567890'
   });
   const [loading, setLoading] = useState(true);
@@ -83,28 +84,66 @@ const Dashboard = () => {
         setUserNickname(profileData.nick_name || profileData.first_name || 'there');
       }
       
+      // Check if user has a pro subscription
+      const { data: subscriptionData, error: subscriptionError } = await supabase
+        .from('user_subscriptions')
+        .select('is_pro, category')
+        .eq('user_id', data.session.user.id)
+        .single();
+      
+      // Determine if user is a pro user from multiple sources
+      let isPro = false;
+      let category = 'daily-beginner'; // Default for free users
+      
+      // 1. First check user_subscriptions table
+      if (subscriptionData) {
+        console.log("Found subscription data:", subscriptionData);
+        isPro = subscriptionData.is_pro === true;
+        category = subscriptionData.category || category;
+      }
+      
+      // 2. Then check user metadata (fallback)
       const userMetadata = data.session.user.user_metadata;
       console.log("User metadata:", userMetadata);
       
       if (userMetadata) {
-        let category = userMetadata.category || 'business-intermediate';
-        
-        if (category && !category.includes('-')) {
-          const mapping: { [key: string]: string } = {
-            'business': 'business-intermediate',
-            'exam': 'exam-gre',
-            'slang': 'slang-intermediate',
-            'general': 'daily-intermediate'
-          };
-          category = mapping[category] || 'business-intermediate';
+        // Only use metadata if we didn't find subscription data
+        if (!subscriptionData) {
+          isPro = userMetadata.is_pro === true;
+          
+          // Get category from metadata if available
+          if (userMetadata.category) {
+            let metadataCategory = userMetadata.category;
+            
+            // If category doesn't have a subcategory, add default
+            if (metadataCategory && !metadataCategory.includes('-')) {
+              const mapping: { [key: string]: string } = {
+                'business': 'business-intermediate',
+                'exam': 'exam-gre',
+                'slang': 'slang-intermediate',
+                'general': 'daily-intermediate',
+                'daily': 'daily-intermediate'
+              };
+              metadataCategory = mapping[metadataCategory] || 'daily-beginner';
+            }
+            
+            category = metadataCategory;
+          }
         }
-        
-        setSubscription(prev => ({
-          ...prev,
-          is_pro: userMetadata.is_pro || true,
-          category: category
-        }));
       }
+      
+      // 3. Apply free user restrictions if not pro
+      if (!isPro && category !== 'daily-beginner' && !category.startsWith('daily-')) {
+        category = 'daily-beginner'; // Reset free users to the only allowed category
+      }
+      
+      console.log(`User status: ${isPro ? 'PRO' : 'FREE'}, Category: ${category}`);
+      
+      setSubscription({
+        is_pro: isPro,
+        category: category,
+        phone_number: subscriptionData?.phone_number || '+1234567890'
+      });
       
       // Fetch words learned this month
       try {
@@ -156,6 +195,16 @@ const Dashboard = () => {
 
   const handleCategoryUpdate = async (primary: string, subcategory: string) => {
     try {
+      // Restrict non-pro users to daily category only
+      if (!subscription.is_pro && primary !== 'daily') {
+        toast({
+          title: 'Pro Feature',
+          description: 'Upgrade to Pro to access this category',
+          variant: 'destructive'
+        });
+        return;
+      }
+      
       const combinedCategory = `${primary}-${subcategory}`;
       console.log("Updating category to:", combinedCategory);
       
@@ -164,6 +213,20 @@ const Dashboard = () => {
       });
       
       if (error) throw error;
+      
+      // Also update the user_subscriptions table
+      const { error: subscriptionError } = await supabase
+        .from('user_subscriptions')
+        .upsert({
+          user_id: (await supabase.auth.getUser()).data.user?.id,
+          category: combinedCategory,
+          is_pro: subscription.is_pro,
+          phone_number: subscription.phone_number
+        });
+      
+      if (subscriptionError) {
+        console.error('Error updating subscription:', subscriptionError);
+      }
       
       setSubscription({
         ...subscription,
@@ -215,6 +278,8 @@ const Dashboard = () => {
       </div>
     );
   }
+
+  console.log("Rendering dashboard with subscription:", subscription);
 
   return (
     <div className="min-h-screen bg-white font-inter pb-10">
