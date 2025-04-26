@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -45,12 +44,10 @@ const Dashboard = () => {
         return;
       }
       
-      // Check if the user email is the admin email
       if (data.session.user.email === 'rajkota.sql@gmail.com') {
         console.log("Admin user detected");
         setIsAdmin(true);
         
-        // Also check admin role in database
         try {
           const { data: hasAdminRole, error } = await supabase.rpc('has_role', { 
             _user_id: data.session.user.id,
@@ -61,7 +58,6 @@ const Dashboard = () => {
             console.error('Error checking admin role:', error);
           } else if (!hasAdminRole) {
             console.log("Admin email but no admin role found, adding admin role");
-            // Automatically assign admin role if it doesn't exist
             const { error: roleError } = await supabase
               .from('user_roles')
               .insert({
@@ -90,38 +86,31 @@ const Dashboard = () => {
         setUserNickname(profileData.nick_name || profileData.first_name || 'there');
       }
       
-      // Check if user has a pro subscription
       const { data: subscriptionData, error: subscriptionError } = await supabase
         .from('user_subscriptions')
         .select('is_pro, category')
         .eq('user_id', data.session.user.id)
         .single();
       
-      // Determine if user is a pro user from multiple sources
       let isPro = false;
-      let category = 'daily-beginner'; // Default for free users
+      let category = 'daily-beginner';
       
-      // 1. First check user_subscriptions table
       if (subscriptionData) {
         console.log("Found subscription data:", subscriptionData);
         isPro = subscriptionData.is_pro === true;
         category = subscriptionData.category || category;
       }
       
-      // 2. Then check user metadata (fallback)
       const userMetadata = data.session.user.user_metadata;
       console.log("User metadata:", userMetadata);
       
       if (userMetadata) {
-        // Only use metadata if we didn't find subscription data
         if (!subscriptionData) {
           isPro = userMetadata.is_pro === true;
           
-          // Get category from metadata if available
           if (userMetadata.category) {
             let metadataCategory = userMetadata.category;
             
-            // If category doesn't have a subcategory, add default
             if (metadataCategory && !metadataCategory.includes('-')) {
               const mapping: { [key: string]: string } = {
                 'business': 'business-intermediate',
@@ -138,9 +127,8 @@ const Dashboard = () => {
         }
       }
       
-      // 3. Apply free user restrictions if not pro
       if (!isPro && category !== 'daily-beginner' && !category.startsWith('daily-')) {
-        category = 'daily-beginner'; // Reset free users to the only allowed category
+        category = 'daily-beginner';
       }
       
       console.log(`User status: ${isPro ? 'PRO' : 'FREE'}, Category: ${category}`);
@@ -151,7 +139,6 @@ const Dashboard = () => {
         phone_number: subscriptionData?.phone_number || '+1234567890'
       });
       
-      // Fetch words learned this month
       try {
         const { data: wordsData, error: wordsError } = await supabase
           .from('user_word_history')
@@ -210,7 +197,6 @@ const Dashboard = () => {
       
       if (error) throw error;
       
-      // Also update the user_subscriptions table
       const { error: subscriptionError } = await supabase
         .from('user_subscriptions')
         .upsert({
