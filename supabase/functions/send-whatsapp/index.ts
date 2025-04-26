@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -49,6 +48,15 @@ serve(async (req) => {
   
   try {
     const { to, message, category, isPro, skipSubscriptionCheck, userId, scheduledTime, sendImmediately } = await req.json() as WhatsAppRequest;
+
+    console.log('WhatsApp request received:', { 
+      to, 
+      category, 
+      isPro, 
+      scheduledTime, 
+      sendImmediately,
+      messageLength: message ? message.length : 0
+    });
 
     // If we're sending immediately as requested from signup, skip scheduling
     if (!sendImmediately && scheduledTime) {
@@ -139,6 +147,25 @@ serve(async (req) => {
       );
     }
 
+    if (!to || to.trim().length < 10) {
+      const errorMessage = 'Invalid phone number provided';
+      console.error(errorMessage, { phoneNumber: to });
+      
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: errorMessage,
+          details: { 
+            message: "Please provide a valid phone number with country code."
+          }
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     const toNumber = formatWhatsAppNumber(to);
     
     let finalMessage = message;
@@ -165,6 +192,7 @@ serve(async (req) => {
     // For immediate signup deliveries, add a special welcome message
     if (sendImmediately) {
       finalMessage = `Welcome to VocabSpark! 🎉\n\n${finalMessage || ''}`;
+      console.log('Sending immediate welcome message to new signup:', toNumber);
     }
     
     if (finalMessage) {

@@ -59,18 +59,27 @@ export const completeSubscription = async (data: PaymentData) => {
       ? addDays(new Date(), 30).toISOString() 
       : null;
     
+    // For free trial, we need to ensure the phone number is stored properly
+    // and we're not trying to store any Razorpay information
+    const subscriptionData: any = {
+      user_id: userId,
+      phone_number: data.phoneNumber,
+      is_pro: data.isPro,
+      category: data.isPro ? data.category : null,
+      trial_ends_at: trialEndsAt,
+      subscription_ends_at: subscriptionEndsAt,
+    };
+    
+    // Only add Razorpay data for paid subscriptions
+    if (data.isPro && data.razorpayOrderId && data.razorpayPaymentId) {
+      subscriptionData.razorpay_order_id = data.razorpayOrderId;
+      subscriptionData.razorpay_payment_id = data.razorpayPaymentId;
+    }
+
+    // Insert the subscription record
     const { data: subscription, error } = await supabase
       .from('user_subscriptions')
-      .insert({
-        user_id: userId,
-        phone_number: data.phoneNumber,
-        is_pro: data.isPro,
-        category: data.isPro ? data.category : null,
-        trial_ends_at: trialEndsAt,
-        subscription_ends_at: subscriptionEndsAt,
-        razorpay_order_id: data.razorpayOrderId,
-        razorpay_payment_id: data.razorpayPaymentId
-      })
+      .insert(subscriptionData)
       .select()
       .single();
     
@@ -80,6 +89,30 @@ export const completeSubscription = async (data: PaymentData) => {
     }
     
     console.log('Subscription created:', subscription);
+    
+    // For free trial, also trigger the WhatsApp message to be sent
+    if (!data.isPro) {
+      try {
+        const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-whatsapp', {
+          body: {
+            to: data.phoneNumber,
+            category: 'general',
+            isPro: false,
+            sendImmediately: true
+          }
+        });
+        
+        if (whatsappError) {
+          console.error('Error sending welcome WhatsApp message:', whatsappError);
+          // We don't fail the subscription creation if WhatsApp fails
+        } else {
+          console.log('Welcome WhatsApp message sent:', whatsappResult);
+        }
+      } catch (whatsappErr) {
+        console.error('Failed to send welcome WhatsApp message:', whatsappErr);
+      }
+    }
+    
     return { success: true, data: subscription };
   } catch (error) {
     console.error('Failed to create subscription:', error);
