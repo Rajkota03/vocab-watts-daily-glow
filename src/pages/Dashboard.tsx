@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -273,11 +272,7 @@ const Dashboard = () => {
         wordsLearnedThisMonth={wordsLearnedThisMonth}
       />
       <DashboardMain 
-        subscription={{
-          is_pro: subscription.is_pro,
-          category: subscription.category,
-          phone_number: subscription.phone_number || '+1234567890' // Provide a default value if undefined
-        }}
+        subscription={subscription}
         handleCategoryUpdate={handleCategoryUpdate}
         handleNewBatch={handleNewBatch}
         isGeneratingBatch={isGeneratingBatch}
