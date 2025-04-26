@@ -8,11 +8,16 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardMain from '@/components/dashboard/DashboardMain';
 import { MOCK_TODAYS_QUIZ, MOCK_RECENT_DROPS } from '@/data/dashboardMockData';
 
+interface UserSubscription {
+  is_pro: boolean;
+  category: string;
+  phone_number?: string; // Made phone_number optional
+}
+
 const Dashboard = () => {
-  const [subscription, setSubscription] = useState({
+  const [subscription, setSubscription] = useState<UserSubscription>({
     is_pro: false, // Default to free user
     category: 'daily-beginner', // Default free category
-    phone_number: '+1234567890'
   });
   const [loading, setLoading] = useState(true);
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);

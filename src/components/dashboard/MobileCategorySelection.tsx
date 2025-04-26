@@ -129,41 +129,47 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
     proOnly: true
   }];
   
+  // Adding the proOnly property to exam types
   const examTypes = [{
     id: 'gre',
     name: 'GRE',
     description: 'Graduate Record Examination',
     color: 'from-red-500/20 to-red-600/20',
     textColor: 'text-red-700',
-    activeColor: 'from-red-500/30 to-red-600/30'
+    activeColor: 'from-red-500/30 to-red-600/30',
+    proOnly: true
   }, {
     id: 'ielts',
     name: 'IELTS',
     description: 'International English Testing',
     color: 'from-blue-500/20 to-blue-600/20',
     textColor: 'text-blue-700',
-    activeColor: 'from-blue-500/30 to-blue-600/30'
+    activeColor: 'from-blue-500/30 to-blue-600/30',
+    proOnly: true
   }, {
     id: 'toefl',
     name: 'TOEFL',
     description: 'Test of English as Foreign Language',
     color: 'from-green-500/20 to-green-600/20',
     textColor: 'text-green-700',
-    activeColor: 'from-green-500/30 to-green-600/30'
+    activeColor: 'from-green-500/30 to-green-600/30',
+    proOnly: true
   }, {
     id: 'cat',
     name: 'CAT',
     description: 'Common Admission Test',
     color: 'from-amber-500/20 to-amber-600/20',
     textColor: 'text-amber-700',
-    activeColor: 'from-amber-500/30 to-amber-600/30'
+    activeColor: 'from-amber-500/30 to-amber-600/30',
+    proOnly: true
   }, {
     id: 'gmat',
     name: 'GMAT',
     description: 'Graduate Management Admission Test',
     color: 'from-indigo-500/20 to-indigo-600/20',
     textColor: 'text-indigo-700',
-    activeColor: 'from-indigo-500/30 to-indigo-600/30'
+    activeColor: 'from-indigo-500/30 to-indigo-600/30',
+    proOnly: true
   }];
   
   const wordCountOptions = [{

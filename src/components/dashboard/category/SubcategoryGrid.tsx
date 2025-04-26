@@ -24,7 +24,8 @@ const SubcategoryGrid: React.FC<SubcategoryGridProps> = ({
       description: 'Graduate Record Examination',
       color: 'from-red-500/20 to-red-600/20',
       textColor: 'text-red-700',
-      activeColor: 'from-red-500/30 to-red-600/30'
+      activeColor: 'from-red-500/30 to-red-600/30',
+      proOnly: true
     },
     { 
       id: 'ielts', 
@@ -32,7 +33,8 @@ const SubcategoryGrid: React.FC<SubcategoryGridProps> = ({
       description: 'English Language Testing',
       color: 'from-blue-500/20 to-blue-600/20',
       textColor: 'text-blue-700',
-      activeColor: 'from-blue-500/30 to-blue-600/30'
+      activeColor: 'from-blue-500/30 to-blue-600/30',
+      proOnly: true
     },
     { 
       id: 'toefl', 
@@ -40,7 +42,8 @@ const SubcategoryGrid: React.FC<SubcategoryGridProps> = ({
       description: 'Test of English as Foreign Language',
       color: 'from-green-500/20 to-green-600/20',
       textColor: 'text-green-700',
-      activeColor: 'from-green-500/30 to-green-600/30'
+      activeColor: 'from-green-500/30 to-green-600/30',
+      proOnly: true
     },
     { 
       id: 'cat', 
@@ -48,7 +51,8 @@ const SubcategoryGrid: React.FC<SubcategoryGridProps> = ({
       description: 'Common Admission Test',
       color: 'from-amber-500/20 to-amber-600/20',
       textColor: 'text-amber-700',
-      activeColor: 'from-amber-500/30 to-amber-600/30'
+      activeColor: 'from-amber-500/30 to-amber-600/30',
+      proOnly: true
     },
     { 
       id: 'gmat', 
@@ -56,7 +60,8 @@ const SubcategoryGrid: React.FC<SubcategoryGridProps> = ({
       description: 'Graduate Management Test',
       color: 'from-indigo-500/20 to-indigo-600/20',
       textColor: 'text-indigo-700',
-      activeColor: 'from-indigo-500/30 to-indigo-600/30'
+      activeColor: 'from-indigo-500/30 to-indigo-600/30',
+      proOnly: true
     }
   ];
   
@@ -102,7 +107,8 @@ const SubcategoryGrid: React.FC<SubcategoryGridProps> = ({
     if (selectedPrimary === 'exam' && !isPro) {
       return; // Pro only
     }
-    if (!isPro && 'proOnly' in subcategory && subcategory.proOnly) {
+    // Fixed the type issue by safely checking if proOnly exists and is true
+    if (!isPro && subcategory && subcategory.proOnly === true) {
       return; // Pro only
     }
     onSubcategorySelect(subcategoryId);
@@ -133,17 +139,17 @@ const SubcategoryGrid: React.FC<SubcategoryGridProps> = ({
                       ],
                       (
                         (!isPro && selectedPrimary === 'exam') || 
-                        (!isPro && 'proOnly' in level && level.proOnly)
+                        (!isPro && level.proOnly === true)
                       ) && "opacity-50"
                     )}
-                    disabled={(!isPro && selectedPrimary === 'exam') || (!isPro && 'proOnly' in level && level.proOnly)}
+                    disabled={(!isPro && selectedPrimary === 'exam') || (!isPro && level.proOnly === true)}
                   >
                     <span className="font-semibold mb-1">{level.name}</span>
                     <span className="text-xs opacity-75 px-2">
                       {level.description}
                     </span>
                     
-                    {((!isPro && selectedPrimary === 'exam') || (!isPro && 'proOnly' in level && level.proOnly)) && (
+                    {((!isPro && selectedPrimary === 'exam') || (!isPro && level.proOnly === true)) && (
                       <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full shadow-sm p-0.5">
                         <Lock className="h-3 w-3 text-amber-500" />
                       </div>
@@ -151,7 +157,7 @@ const SubcategoryGrid: React.FC<SubcategoryGridProps> = ({
                   </button>
                 </div>
               </TooltipTrigger>
-              {((!isPro && selectedPrimary === 'exam') || (!isPro && 'proOnly' in level && level.proOnly)) && (
+              {((!isPro && selectedPrimary === 'exam') || (!isPro && level.proOnly === true)) && (
                 <TooltipContent side="top" className="bg-amber-50 border border-amber-200">
                   <div className="text-xs text-amber-800">
                     <p>Pro Feature: {level.name}</p>
