@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -7,18 +6,19 @@ import { generateNewWordBatch } from '@/services/wordService';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardMain from '@/components/dashboard/DashboardMain';
 import { MOCK_TODAYS_QUIZ, MOCK_RECENT_DROPS } from '@/data/dashboardMockData';
+import { useAuthHandler } from '@/hooks/useAuthHandler';
 
 interface UserSubscription {
   is_pro: boolean;
   category: string;
-  phone_number?: string; // Define phone_number as optional property
+  phone_number?: string;
 }
 
 const Dashboard = () => {
   const [subscription, setSubscription] = useState<UserSubscription>({
     is_pro: false,
     category: 'daily-beginner',
-    phone_number: undefined // Explicitly set to undefined
+    phone_number: undefined
   });
   const [loading, setLoading] = useState(true);
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
@@ -28,158 +28,85 @@ const Dashboard = () => {
   
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { session } = useAuthHandler();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      console.log("Dashboard session check:", data.session);
-      
-      if (!data.session) {
-        console.log("No session found, redirecting to login");
-        navigate('/login');
-        toast({
-          title: "Authentication required",
-          description: "Please login to access your dashboard",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      if (data.session.user.email === 'rajkota.sql@gmail.com') {
-        console.log("Admin user detected");
-        setIsAdmin(true);
-        
-        try {
+    const loadUserData = async () => {
+      if (!session?.user) return;
+
+      try {
+        if (session.user.email === 'rajkota.sql@gmail.com') {
+          setIsAdmin(true);
+          
           const { data: hasAdminRole, error } = await supabase.rpc('has_role', { 
-            _user_id: data.session.user.id,
+            _user_id: session.user.id,
             _role: 'admin'
           });
           
           if (error) {
             console.error('Error checking admin role:', error);
           } else if (!hasAdminRole) {
-            console.log("Admin email but no admin role found, adding admin role");
             const { error: roleError } = await supabase
               .from('user_roles')
               .insert({
-                user_id: data.session.user.id,
+                user_id: session.user.id,
                 role: 'admin'
               });
               
             if (roleError) {
               console.error('Error adding admin role:', roleError);
-            } else {
-              console.log("Admin role added successfully");
             }
           }
-        } catch (error) {
-          console.error('Failed to check admin role:', error);
         }
-      }
-      
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('nick_name, first_name')
-        .eq('id', data.session.user.id)
-        .single();
-      
-      if (profileData) {
-        setUserNickname(profileData.nick_name || profileData.first_name || 'there');
-      }
-      
-      const { data: subscriptionData, error: subscriptionError } = await supabase
-        .from('user_subscriptions')
-        .select('is_pro, category, phone_number')
-        .eq('user_id', data.session.user.id)
-        .single();
-      
-      let isPro = false;
-      let category = 'daily-beginner';
-      let phoneNumber;
-      
-      if (subscriptionData) {
-        console.log("Found subscription data:", subscriptionData);
-        isPro = subscriptionData.is_pro === true;
-        category = subscriptionData.category || category;
-        phoneNumber = subscriptionData.phone_number;
-      }
-      
-      const userMetadata = data.session.user.user_metadata;
-      console.log("User metadata:", userMetadata);
-      
-      if (userMetadata) {
-        if (!subscriptionData) {
-          isPro = userMetadata.is_pro === true;
-          
-          if (userMetadata.category) {
-            let metadataCategory = userMetadata.category;
-            
-            if (metadataCategory && !metadataCategory.includes('-')) {
-              const mapping: { [key: string]: string } = {
-                'business': 'business-intermediate',
-                'exam': 'exam-gre',
-                'slang': 'slang-intermediate',
-                'general': 'daily-intermediate',
-                'daily': 'daily-intermediate'
-              };
-              metadataCategory = mapping[metadataCategory] || 'daily-beginner';
-            }
-            
-            category = metadataCategory;
-          }
-          
-          // Try to get phone number from metadata if not in subscription
-          if (userMetadata.whatsapp_number) {
-            phoneNumber = userMetadata.whatsapp_number;
-          }
+        
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('nick_name, first_name')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (profileData) {
+          setUserNickname(profileData.nick_name || profileData.first_name || 'there');
         }
-      }
-      
-      if (!isPro && category !== 'daily-beginner' && !category.startsWith('daily-')) {
-        category = 'daily-beginner';
-      }
-      
-      console.log(`User status: ${isPro ? 'PRO' : 'FREE'}, Category: ${category}, Phone: ${phoneNumber || 'Not set'}`);
-      
-      setSubscription({
-        is_pro: isPro,
-        category: category,
-        phone_number: phoneNumber || '+1234567890' // Ensure there's a default value
-      });
-      
-      try {
-        const { data: wordsData, error: wordsError } = await supabase
+        
+        const { data: subscriptionData } = await supabase
+          .from('user_subscriptions')
+          .select('is_pro, category, phone_number')
+          .eq('user_id', session.user.id)
+          .single();
+        
+        if (subscriptionData) {
+          setSubscription({
+            is_pro: subscriptionData.is_pro === true,
+            category: subscriptionData.category || 'daily-beginner',
+            phone_number: subscriptionData.phone_number
+          });
+        }
+
+        const { data: wordsData } = await supabase
           .from('user_word_history')
           .select('id')
-          .eq('user_id', data.session.user.id)
+          .eq('user_id', session.user.id)
           .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
           .lt('created_at', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString());
           
-        if (!wordsError && wordsData) {
+        if (wordsData) {
           setWordsLearnedThisMonth(wordsData.length);
         }
       } catch (error) {
-        console.error('Failed to fetch words learned this month:', error);
+        console.error('Error loading user data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load user data",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
-    
-    checkAuth();
-    
-    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("Auth state change in dashboard:", event);
-        if (event === 'SIGNED_OUT' || !session) {
-          navigate('/login');
-        }
-      }
-    );
-    
-    return () => {
-      authSubscription.unsubscribe();
-    };
-  }, [navigate, toast]);
+
+    loadUserData();
+  }, [session, toast]);
 
   const handleSignOut = async () => {
     try {
@@ -268,8 +195,6 @@ const Dashboard = () => {
       </div>
     );
   }
-
-  console.log("Rendering dashboard with subscription:", subscription);
 
   return (
     <div className="min-h-screen bg-white font-inter pb-10">
