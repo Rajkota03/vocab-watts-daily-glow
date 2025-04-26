@@ -26,6 +26,8 @@ interface PaymentResult {
 
 const SignupForm = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [deliveryTime, setDeliveryTime] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState(1);
@@ -145,20 +147,46 @@ const SignupForm = () => {
         return;
       }
       
-      console.log("Submitting form with:", { phoneNumber, deliveryTime });
+      console.log("Submitting form with:", { phoneNumber, email, deliveryTime });
       
-      // If not logged in, create an anonymous session
+      // Use email signup instead of anonymous signup
       if (!user) {
-        const { error } = await supabase.auth.signInAnonymously();
+        // Generate a random password if not provided
+        const generatedPassword = password || Math.random().toString(36).slice(-8);
+        
+        const { data, error } = await supabase.auth.signUp({
+          email: email || `${phoneNumber.replace(/\+|\s/g, '')}@glintup.app`,
+          password: generatedPassword,
+          options: {
+            data: {
+              whatsapp_number: phoneNumber,
+              delivery_time: deliveryTime
+            }
+          }
+        });
+        
         if (error) {
-          console.error("Error signing in anonymously:", error);
-          toast({
-            title: "Authentication error",
-            description: "We couldn't create a session for you. Please try again.",
-            variant: "destructive"
-          });
-          setIsSubmitting(false);
-          return;
+          console.error("Error signing up:", error);
+          
+          // If the user already exists, try to sign them in
+          if (error.message.includes('already registered')) {
+            toast({
+              title: "User already exists",
+              description: "We'll sign you in with your existing account.",
+            });
+            
+            // Try to sign in with the provided credentials
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+              email: email || `${phoneNumber.replace(/\+|\s/g, '')}@glintup.app`,
+              password: generatedPassword
+            });
+            
+            if (signInError) {
+              throw new Error('Could not sign in with existing account. Please try again or use the login page.');
+            }
+          } else {
+            throw error;
+          }
         }
       }
       
@@ -215,6 +243,8 @@ const SignupForm = () => {
       // Reset form after success
       setTimeout(() => {
         setPhoneNumber('');
+        setEmail('');
+        setPassword('');
         setDeliveryTime('');
         setStep(1);
         setSuccess(false);
@@ -245,6 +275,8 @@ const SignupForm = () => {
         <Button 
           onClick={() => {
             setPhoneNumber('');
+            setEmail('');
+            setPassword('');
             setDeliveryTime('');
             setStep(1);
             setSuccess(false);
@@ -286,6 +318,20 @@ const SignupForm = () => {
                 <Info className="h-3.5 w-3.5 mr-1 flex-shrink-0 mt-0.5" />
                 We never spam or share your number
               </p>
+            </div>
+            
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium mb-1.5">
+                Email (optional)
+              </label>
+              <Input 
+                id="email"
+                type="email" 
+                placeholder="Your email address" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-12"
+              />
             </div>
             
             <Button 

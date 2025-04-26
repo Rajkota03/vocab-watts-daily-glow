@@ -13,7 +13,19 @@ export const useAuthHandler = () => {
   useEffect(() => {
     // Initial session check
     const checkSession = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error("Error checking session:", error);
+        toast({
+          title: "Authentication error",
+          description: "Please sign in again to continue.",
+          variant: "destructive"
+        });
+        navigate('/login');
+        return;
+      }
+      
       setSession(currentSession);
       
       if (!currentSession) {
@@ -50,5 +62,34 @@ export const useAuthHandler = () => {
     };
   }, [navigate, toast]);
 
-  return { session };
+  // Function to manually attempt to refresh the token
+  const refreshToken = async () => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        console.error("Error refreshing token:", error);
+        // If refresh fails, redirect to login
+        toast({
+          title: "Session expired",
+          description: "Please sign in again to continue.",
+          variant: "destructive"
+        });
+        navigate('/login');
+        return false;
+      }
+      
+      if (data.session) {
+        setSession(data.session);
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error("Exception refreshing token:", error);
+      return false;
+    }
+  };
+
+  return { session, refreshToken };
 };
