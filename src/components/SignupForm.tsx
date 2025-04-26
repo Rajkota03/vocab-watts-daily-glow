@@ -104,8 +104,9 @@ const SignupForm = () => {
       
       console.log("Submitting form with:", { phoneNumber, email, firstName, lastName, deliveryTime });
       
-      // Try to create the subscription first (doesn't require authentication)
-      console.log("Creating free trial subscription before auth...");
+      // First attempt to create the subscription
+      // This relies on our updated RLS policy to allow unauthenticated inserts
+      console.log("Creating free trial subscription...");
       const subscriptionResult = await completeSubscription({
         phoneNumber,
         deliveryTime,
@@ -113,21 +114,32 @@ const SignupForm = () => {
       });
       
       if (!subscriptionResult.success) {
-        console.error("Failed to create subscription:", subscriptionResult.error);
-        throw new Error('Failed to create subscription');
+        const errorMessage = subscriptionResult.error instanceof Error 
+          ? subscriptionResult.error.message 
+          : String(subscriptionResult.error || 'Unknown error');
+          
+        console.error("Failed to create subscription:", errorMessage);
+        
+        toast({
+          title: "Something went wrong",
+          description: `Failed to create subscription: ${errorMessage}`,
+          variant: "destructive"
+        });
+        
+        setIsSubmitting(false);
+        return;
       }
       
       console.log("Subscription created successfully:", subscriptionResult.data);
       
-      // If subscription is successful, proceed with user creation if we have an email
-      if (email) {
+      // If subscription is successful and we have an email, proceed with user creation
+      if (email && password) {
         try {
-          // Generate a random password if not provided
-          const generatedPassword = password || Math.random().toString(36).slice(-8);
+          console.log("Creating user account with email:", email);
           
           const { data, error } = await supabase.auth.signUp({
             email: email,
-            password: generatedPassword,
+            password: password,
             options: {
               data: {
                 first_name: firstName,
@@ -147,16 +159,26 @@ const SignupForm = () => {
             });
           } else {
             console.log("User created successfully:", data);
+            toast({
+              title: "Account created!",
+              description: "Check your email to confirm your account.",
+            });
           }
         } catch (authErr) {
           console.error("Auth error:", authErr);
           // We don't fail the process here since the subscription was already created
+          toast({
+            title: "Note",
+            description: "Your trial was created but there was an issue with account creation. You can still use the service via WhatsApp.",
+          });
         }
+      } else {
+        console.log("No email provided, skipping user creation");
       }
       
-      // Send vocabulary words via WhatsApp immediately upon signup
-      // regardless of the selected delivery time
+      // Now that subscription is created, send vocabulary words via WhatsApp
       try {
+        console.log("Sending initial vocabulary words to:", phoneNumber);
         const messageResult = await sendVocabWords({
           phoneNumber,
           deliveryTime,
@@ -173,10 +195,12 @@ const SignupForm = () => {
         // We don't fail the process here since the subscription was already created
       }
       
+      // Show success message
       setSuccess(true);
       toast({
         title: "You're all set!",
         description: "You'll receive your first words shortly on WhatsApp.",
+        variant: "success"
       });
       
       // Reset form after success
@@ -190,13 +214,14 @@ const SignupForm = () => {
         setStep(1);
         setSuccess(false);
       }, 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error processing subscription:', error);
       toast({
         title: "Something went wrong",
         description: error.message || "We couldn't process your request. Please try again later.",
         variant: "destructive"
       });
+      setIsSubmitting(false);
     } finally {
       setIsSubmitting(false);
     }

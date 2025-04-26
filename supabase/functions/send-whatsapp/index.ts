@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -18,22 +19,30 @@ interface WhatsAppRequest {
 }
 
 function formatWhatsAppNumber(number: string): string {
+  if (!number) {
+    throw new Error('Phone number is required');
+  }
+  
+  // If already properly formatted, return it
   if (number.startsWith('whatsapp:+')) {
     return number;
   }
   
   let cleaned = number.startsWith('whatsapp:') ? number.substring(9) : number;
   
+  // Remove all non-digit characters
   cleaned = cleaned.replace(/\D/g, '');
   
+  // Handle country codes
   if (!cleaned.startsWith('1') && !cleaned.startsWith('91')) {
     if (cleaned.length === 10) {
-      cleaned = '91' + cleaned;
+      cleaned = '91' + cleaned; // Default to India for 10-digit numbers
     } else {
-      cleaned = '1' + cleaned;
+      cleaned = '1' + cleaned; // Default to US for others
     }
   }
   
+  // Ensure plus sign at the beginning
   if (!cleaned.startsWith('+')) {
     cleaned = '+' + cleaned;
   }
@@ -42,12 +51,32 @@ function formatWhatsAppNumber(number: string): string {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
   
   try {
-    const { to, message, category, isPro, skipSubscriptionCheck, userId, scheduledTime, sendImmediately } = await req.json() as WhatsAppRequest;
+    // Parse request body
+    let requestBody;
+    try {
+      requestBody = await req.json() as WhatsAppRequest;
+    } catch (parseError) {
+      console.error('Error parsing request body:', parseError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Invalid JSON in request body',
+          details: String(parseError)
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+    
+    const { to, message, category, isPro, skipSubscriptionCheck, userId, scheduledTime, sendImmediately } = requestBody;
 
     console.log('WhatsApp request received:', { 
       to, 
@@ -58,50 +87,86 @@ serve(async (req) => {
       messageLength: message ? message.length : 0
     });
 
+    // Validate required fields
+    if (!to || to.trim().length < 10) {
+      const errorMessage = 'Invalid phone number provided';
+      console.error(errorMessage, { phoneNumber: to });
+      
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: errorMessage,
+          details: { 
+            message: "Please provide a valid phone number with country code."
+          }
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     // If we're sending immediately as requested from signup, skip scheduling
     if (!sendImmediately && scheduledTime) {
       const scheduledDate = new Date(scheduledTime);
       if (scheduledDate > new Date()) {
-        const supabaseClient = createClient(
-          Deno.env.get('SUPABASE_URL') ?? '',
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-        );
+        try {
+          const supabaseClient = createClient(
+            Deno.env.get('SUPABASE_URL') ?? '',
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+          );
 
-        const { error: scheduleError } = await supabaseClient
-          .from('scheduled_messages')
-          .insert({
-            phone_number: to,
-            message,
-            category,
-            is_pro: isPro,
-            scheduled_time: scheduledTime,
-            user_id: userId
-          });
+          const { error: scheduleError } = await supabaseClient
+            .from('scheduled_messages')
+            .insert({
+              phone_number: to,
+              message,
+              category,
+              is_pro: isPro,
+              scheduled_time: scheduledTime,
+              user_id: userId
+            });
 
-        if (scheduleError) {
-          console.error('Error scheduling message:', scheduleError);
-          throw new Error('Failed to schedule message');
-        }
-
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            scheduled: true,
-            scheduledTime,
-            message: "Message scheduled successfully"
-          }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          if (scheduleError) {
+            console.error('Error scheduling message:', scheduleError);
+            throw new Error(`Failed to schedule message: ${scheduleError.message}`);
           }
-        );
+
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              scheduled: true,
+              scheduledTime,
+              message: "Message scheduled successfully"
+            }),
+            {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        } catch (scheduleErr) {
+          console.error('Error in message scheduling:', scheduleErr);
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: `Failed to schedule message: ${String(scheduleErr)}`,
+            }),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        }
       }
     }
 
+    // Initialize Supabase client for user profile lookups
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    );
 
+    // Get nickname from profile if user ID provided
     let nickname = "there";
     if (userId) {
       const { data: profile } = await supabaseClient
@@ -115,6 +180,7 @@ serve(async (req) => {
       }
     }
 
+    // Check for Twilio credentials
     const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
     const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
     
@@ -122,8 +188,6 @@ serve(async (req) => {
       accountSid: accountSid ? `${accountSid.substring(0, 5)}...${accountSid.substring(accountSid.length - 3)}` : 'missing',
       authToken: authToken ? 'present (hidden)' : 'missing'
     });
-
-    const fromNumber = 'whatsapp:+14155238886';
 
     if (!accountSid || !authToken) {
       const errorMessage = 'Missing Twilio credentials';
@@ -147,16 +211,19 @@ serve(async (req) => {
       );
     }
 
-    if (!to || to.trim().length < 10) {
-      const errorMessage = 'Invalid phone number provided';
-      console.error(errorMessage, { phoneNumber: to });
-      
+    // Format WhatsApp number
+    let toNumber;
+    try {
+      toNumber = formatWhatsAppNumber(to);
+      console.log(`Formatted phone number from ${to} to ${toNumber}`);
+    } catch (formatError) {
+      console.error('Error formatting phone number:', formatError);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: errorMessage,
+          error: String(formatError),
           details: { 
-            message: "Please provide a valid phone number with country code."
+            message: "Could not format phone number properly."
           }
         }),
         {
@@ -165,9 +232,10 @@ serve(async (req) => {
         }
       );
     }
-
-    const toNumber = formatWhatsAppNumber(to);
     
+    const fromNumber = 'whatsapp:+14155238886';
+    
+    // Generate message content
     let finalMessage = message;
     if (!finalMessage && category) {
       const vocabWords = [
@@ -204,6 +272,7 @@ serve(async (req) => {
     console.log(`Sending WhatsApp message from ${fromNumber} to ${toNumber}`);
     console.log(`Message content (first 50 chars): ${finalMessage.substring(0, 50)}...`);
 
+    // Send message via Twilio API
     try {
       const twilioResponse = await fetch(
         `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
@@ -285,7 +354,7 @@ serve(async (req) => {
       );
     }
   } catch (error) {
-    console.error('Error in send-whatsapp function:', error);
+    console.error('Unhandled error in send-whatsapp function:', error);
     return new Response(
       JSON.stringify({ 
         success: false, 

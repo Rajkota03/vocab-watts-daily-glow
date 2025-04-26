@@ -45,6 +45,13 @@ export const createRazorpayOrder = async (data: Omit<PaymentData, 'razorpayOrder
 // Complete subscription after successful payment
 export const completeSubscription = async (data: PaymentData) => {
   try {
+    console.log('Completing subscription with data:', {
+      phoneNumber: data.phoneNumber,
+      isPro: data.isPro,
+      category: data.category || null,
+      deliveryTime: data.deliveryTime || null
+    });
+    
     // Get current authenticated user
     const { data: authData } = await supabase.auth.getSession();
     
@@ -60,9 +67,8 @@ export const completeSubscription = async (data: PaymentData) => {
       ? addDays(new Date(), 30).toISOString() 
       : null;
     
-    // For free trial, we need to ensure the phone number is stored properly
-    // and we're not trying to store any Razorpay information
-    const subscriptionData: any = {
+    // Prepare subscription data
+    let subscriptionData: any = {
       phone_number: data.phoneNumber,
       is_pro: data.isPro,
       category: data.isPro ? data.category : null,
@@ -83,7 +89,8 @@ export const completeSubscription = async (data: PaymentData) => {
 
     console.log('Inserting subscription with data:', JSON.stringify(subscriptionData));
 
-    // Insert the subscription record
+    // Use public access for subscription creation
+    // We're relying on the updated RLS policy that allows all inserts
     const { data: subscription, error } = await supabase
       .from('user_subscriptions')
       .insert(subscriptionData)
@@ -92,14 +99,15 @@ export const completeSubscription = async (data: PaymentData) => {
     
     if (error) {
       console.error('Error creating subscription:', error);
-      return { success: false, error };
+      throw new Error(`Database error: ${error.message}`);
     }
     
-    console.log('Subscription created:', subscription);
+    console.log('Subscription created successfully:', subscription);
     
     // For free trial, also trigger the WhatsApp message to be sent
     if (!data.isPro) {
       try {
+        console.log('Sending welcome WhatsApp message to:', data.phoneNumber);
         const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-whatsapp', {
           body: {
             to: data.phoneNumber,
@@ -121,8 +129,8 @@ export const completeSubscription = async (data: PaymentData) => {
     }
     
     return { success: true, data: subscription };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to create subscription:', error);
-    return { success: false, error };
+    return { success: false, error: error.message || 'Failed to create subscription' };
   }
 };
