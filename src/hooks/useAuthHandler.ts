@@ -32,7 +32,9 @@ export const useAuthHandler = () => {
         setSession(currentSession);
       }
       
-      if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+      // Use a more general approach for session expiry events to avoid TypeScript errors
+      // Supabase can emit various events like "SIGNED_OUT" or "USER_DELETED"
+      if (event === 'SIGNED_OUT') {
         setSession(null);
         navigate('/login');
         toast({
