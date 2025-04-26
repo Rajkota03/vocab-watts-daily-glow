@@ -50,7 +50,10 @@ const SignupForm = () => {
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
-    script.onload = () => setRazorpayLoaded(true);
+    script.onload = () => {
+      setRazorpayLoaded(true);
+      console.log('Razorpay script loaded successfully');
+    };
     document.body.appendChild(script);
 
     // Cleanup
@@ -101,73 +104,73 @@ const SignupForm = () => {
       
       console.log("Submitting form with:", { phoneNumber, email, firstName, lastName, deliveryTime });
       
-      // Use email signup instead of anonymous signup
-      if (!user) {
-        // Generate a random password if not provided
-        const generatedPassword = password || Math.random().toString(36).slice(-8);
-        
-        const { data, error } = await supabase.auth.signUp({
-          email: email || `${phoneNumber.replace(/\+|\s/g, '')}@glintup.app`,
-          password: generatedPassword,
-          options: {
-            data: {
-              first_name: firstName,
-              last_name: lastName || firstName,
-              whatsapp_number: phoneNumber,
-              delivery_time: deliveryTime
-            }
-          }
-        });
-        
-        if (error) {
-          console.error("Error signing up:", error);
-          
-          // If the user already exists, try to sign them in
-          if (error.message.includes('already registered')) {
-            toast({
-              title: "User already exists",
-              description: "We'll sign you in with your existing account.",
-            });
-            
-            // Try to sign in with the provided credentials
-            const { error: signInError } = await supabase.auth.signInWithPassword({
-              email: email || `${phoneNumber.replace(/\+|\s/g, '')}@glintup.app`,
-              password: generatedPassword
-            });
-            
-            if (signInError) {
-              throw new Error('Could not sign in with existing account. Please try again or use the login page.');
-            }
-          } else {
-            throw error;
-          }
-        }
-      }
-      
-      // Default to free trial
-      const isPro = false;
-      
-      // Complete subscription process for free trial (no payment required)
+      // Try to create the subscription first (doesn't require authentication)
+      console.log("Creating free trial subscription before auth...");
       const subscriptionResult = await completeSubscription({
         phoneNumber,
         deliveryTime,
-        isPro,
+        isPro: false, // Free trial
       });
       
       if (!subscriptionResult.success) {
+        console.error("Failed to create subscription:", subscriptionResult.error);
         throw new Error('Failed to create subscription');
+      }
+      
+      console.log("Subscription created successfully:", subscriptionResult.data);
+      
+      // If subscription is successful, proceed with user creation if we have an email
+      if (email) {
+        try {
+          // Generate a random password if not provided
+          const generatedPassword = password || Math.random().toString(36).slice(-8);
+          
+          const { data, error } = await supabase.auth.signUp({
+            email: email,
+            password: generatedPassword,
+            options: {
+              data: {
+                first_name: firstName,
+                last_name: lastName || firstName,
+                whatsapp_number: phoneNumber,
+                delivery_time: deliveryTime
+              }
+            }
+          });
+          
+          if (error) {
+            console.error("Error signing up:", error);
+            // We don't fail the process here since the subscription was already created
+            toast({
+              title: "Note",
+              description: "Your trial was created but we couldn't create an account. You can still use the service via WhatsApp.",
+            });
+          } else {
+            console.log("User created successfully:", data);
+          }
+        } catch (authErr) {
+          console.error("Auth error:", authErr);
+          // We don't fail the process here since the subscription was already created
+        }
       }
       
       // Send vocabulary words via WhatsApp immediately upon signup
       // regardless of the selected delivery time
-      const messageResult = await sendVocabWords({
-        phoneNumber,
-        deliveryTime,
-        sendImmediately: true // Flag to indicate immediate delivery
-      });
-      
-      if (!messageResult) {
-        console.warn('WhatsApp message sending failed, but subscription was created');
+      try {
+        const messageResult = await sendVocabWords({
+          phoneNumber,
+          deliveryTime,
+          sendImmediately: true // Flag to indicate immediate delivery
+        });
+        
+        if (!messageResult) {
+          console.warn('WhatsApp message sending failed, but subscription was created');
+        } else {
+          console.log('WhatsApp message sent successfully');
+        }
+      } catch (whatsappErr) {
+        console.error('Error sending welcome WhatsApp message:', whatsappErr);
+        // We don't fail the process here since the subscription was already created
       }
       
       setSuccess(true);

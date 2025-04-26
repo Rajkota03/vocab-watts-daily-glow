@@ -50,6 +50,7 @@ export const completeSubscription = async (data: PaymentData) => {
     
     // If not authenticated, we'll store the subscription without a user_id
     const userId = authData.session?.user?.id;
+    console.log('Current user ID for subscription:', userId || 'No user ID available');
     
     // Calculate trial end date (3 days from now)
     const trialEndsAt = addDays(new Date(), 3).toISOString();
@@ -62,7 +63,6 @@ export const completeSubscription = async (data: PaymentData) => {
     // For free trial, we need to ensure the phone number is stored properly
     // and we're not trying to store any Razorpay information
     const subscriptionData: any = {
-      user_id: userId,
       phone_number: data.phoneNumber,
       is_pro: data.isPro,
       category: data.isPro ? data.category : null,
@@ -70,11 +70,18 @@ export const completeSubscription = async (data: PaymentData) => {
       subscription_ends_at: subscriptionEndsAt,
     };
     
+    // Add user_id only if we have one
+    if (userId) {
+      subscriptionData.user_id = userId;
+    }
+    
     // Only add Razorpay data for paid subscriptions
     if (data.isPro && data.razorpayOrderId && data.razorpayPaymentId) {
       subscriptionData.razorpay_order_id = data.razorpayOrderId;
       subscriptionData.razorpay_payment_id = data.razorpayPaymentId;
     }
+
+    console.log('Inserting subscription with data:', JSON.stringify(subscriptionData));
 
     // Insert the subscription record
     const { data: subscription, error } = await supabase
