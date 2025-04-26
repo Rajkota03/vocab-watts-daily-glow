@@ -17,7 +17,7 @@ const Dashboard = () => {
   const [subscription, setSubscription] = useState<UserSubscription>({
     is_pro: false,
     category: 'daily-beginner',
-    phone_number: undefined // Set to undefined initially
+    phone_number: undefined // Explicitly set to undefined
   });
   const [loading, setLoading] = useState(true);
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
