@@ -44,7 +44,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
           {/* Add WhatsApp Test Button */}
           <div className="mt-6">
             <h3 className="text-lg font-medium mb-2">WhatsApp Testing</h3>
-            <WhatsAppTestButton category={subscription.category} />
+            <WhatsAppTestButton category={subscription.category} phoneNumber={subscription.phone_number} />
           </div>
         </div>
       </div>

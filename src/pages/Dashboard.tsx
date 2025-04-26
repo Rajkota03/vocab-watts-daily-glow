@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -88,17 +89,19 @@ const Dashboard = () => {
       
       const { data: subscriptionData, error: subscriptionError } = await supabase
         .from('user_subscriptions')
-        .select('is_pro, category')
+        .select('is_pro, category, phone_number')
         .eq('user_id', data.session.user.id)
         .single();
       
       let isPro = false;
       let category = 'daily-beginner';
+      let phoneNumber;
       
       if (subscriptionData) {
         console.log("Found subscription data:", subscriptionData);
         isPro = subscriptionData.is_pro === true;
         category = subscriptionData.category || category;
+        phoneNumber = subscriptionData.phone_number;
       }
       
       const userMetadata = data.session.user.user_metadata;
@@ -124,6 +127,11 @@ const Dashboard = () => {
             
             category = metadataCategory;
           }
+          
+          // Try to get phone number from metadata if not in subscription
+          if (userMetadata.whatsapp_number) {
+            phoneNumber = userMetadata.whatsapp_number;
+          }
         }
       }
       
@@ -131,12 +139,12 @@ const Dashboard = () => {
         category = 'daily-beginner';
       }
       
-      console.log(`User status: ${isPro ? 'PRO' : 'FREE'}, Category: ${category}`);
+      console.log(`User status: ${isPro ? 'PRO' : 'FREE'}, Category: ${category}, Phone: ${phoneNumber || 'Not set'}`);
       
       setSubscription({
         is_pro: isPro,
         category: category,
-        phone_number: subscriptionData?.phone_number || '+1234567890'
+        phone_number: phoneNumber || '+1234567890' // Ensure there's a default value
       });
       
       try {
