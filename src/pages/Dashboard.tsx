@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -10,7 +11,7 @@ import { MOCK_TODAYS_QUIZ, MOCK_RECENT_DROPS } from '@/data/dashboardMockData';
 interface UserSubscription {
   is_pro: boolean;
   category: string;
-  phone_number?: string; // Added phone_number as optional property
+  phone_number?: string; // Define phone_number as optional property
 }
 
 const Dashboard = () => {
@@ -275,7 +276,7 @@ const Dashboard = () => {
         subscription={{
           is_pro: subscription.is_pro,
           category: subscription.category,
-          phone_number: subscription.phone_number || '+1234567890'
+          phone_number: subscription.phone_number || '+1234567890' // Provide a default value if undefined
         }}
         handleCategoryUpdate={handleCategoryUpdate}
         handleNewBatch={handleNewBatch}

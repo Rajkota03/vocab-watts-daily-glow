@@ -2,12 +2,13 @@
 import React from 'react';
 import CategorySelection from './CategorySelection';
 import { cn } from '@/lib/utils';
+import WhatsAppTestButton from './WhatsAppTestButton';
 
 interface DashboardMainProps {
   subscription: {
     is_pro: boolean;
     category: string;
-    phone_number?: string; // Added phone_number as optional property
+    phone_number?: string; // Explicitly make phone_number optional
   };
   handleCategoryUpdate: (primary: string, subcategory: string) => Promise<void>;
   handleNewBatch: () => Promise<void>;
@@ -39,6 +40,12 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
             onNewBatch={handleNewBatch} 
             isLoadingNewBatch={isGeneratingBatch} 
           />
+          
+          {/* Add WhatsApp Test Button */}
+          <div className="mt-6">
+            <h3 className="text-lg font-medium mb-2">WhatsApp Testing</h3>
+            <WhatsAppTestButton category={subscription.category} />
+          </div>
         </div>
       </div>
     </main>
