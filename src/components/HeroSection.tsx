@@ -1,10 +1,38 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Smartphone, ArrowRight, CheckCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import SignupForm from './SignupForm';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useNavigate } from 'react-router-dom';
+
 const HeroSection = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  
+  const handleFreeTrialClick = () => {
+    if (isMobile) {
+      // On mobile, scroll to the mobile signup section
+      const mobileSignup = document.getElementById('mobile-signup');
+      if (mobileSignup) {
+        mobileSignup.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        // Fallback if element not found
+        window.scrollTo({
+          top: document.body.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
+    } else {
+      // On desktop, scroll to the signup element in the hero section
+      document.getElementById('signup')?.scrollIntoView({
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return <section className="min-h-screen py-24 md:py-0 flex items-center bg-gradient-to-br from-white to-primary/5 overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="flex flex-col lg:flex-row gap-12 items-center">
@@ -25,9 +53,10 @@ const HeroSection = () => {
             </p>
             
             <div className="space-y-4 sm:space-y-0 sm:flex sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button onClick={() => document.getElementById('signup')?.scrollIntoView({
-              behavior: 'smooth'
-            })} className="group px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300 hover:translate-y-[-2px]">
+              <Button 
+                onClick={handleFreeTrialClick} 
+                className="group px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300 hover:translate-y-[-2px]"
+              >
                 Start 3-Day Free Trial
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
@@ -48,9 +77,7 @@ const HeroSection = () => {
                     <div className="text-center">
                       <Button onClick={() => {
                       setIsDialogOpen(false);
-                      document.getElementById('signup')?.scrollIntoView({
-                        behavior: 'smooth'
-                      });
+                      handleFreeTrialClick();
                     }}>
                         Get Your First Words
                       </Button>
@@ -90,4 +117,5 @@ const HeroSection = () => {
       </div>
     </section>;
 };
+
 export default HeroSection;

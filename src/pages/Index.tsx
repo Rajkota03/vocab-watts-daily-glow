@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
@@ -13,6 +14,8 @@ import { useNavigate } from 'react-router-dom';
 import SocialProofBar from '@/components/SocialProofBar';
 import PricingToggle from '@/components/PricingToggle';
 import { supabase } from '@/integrations/supabase/client';
+import CTASection from '@/components/CTASection';
+
 const Index = () => {
   const navigate = useNavigate();
   const assignAdminRole = async () => {
@@ -63,12 +66,9 @@ const Index = () => {
       });
     }
   };
+
   return <div className="min-h-screen flex flex-col bg-white font-sans">
       <Navbar />
-      
-      <div className="fixed bottom-4 right-4 z-50">
-        
-      </div>
       
       <main>
         <HeroSection />
@@ -78,17 +78,21 @@ const Index = () => {
         <PricingToggle />
         <Testimonials />
         
-        {/* Mobile signup form (hidden on desktop) */}
+        {/* Mobile signup form with improved visibility and accessibility */}
         <section id="mobile-signup" className="py-16 md:py-24 bg-white lg:hidden">
           <div className="container mx-auto px-4">
             <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md mx-auto border border-gray-100">
+              <h2 className="text-2xl font-bold mb-6 text-center">Start Your Free Trial</h2>
               <SignupForm />
             </div>
           </div>
         </section>
+        
+        <CTASection />
       </main>
       
       <Footer />
     </div>;
 };
+
 export default Index;
