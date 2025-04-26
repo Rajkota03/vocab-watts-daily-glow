@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -16,8 +15,9 @@ interface UserSubscription {
 
 const Dashboard = () => {
   const [subscription, setSubscription] = useState<UserSubscription>({
-    is_pro: false, // Default to free user
-    category: 'daily-beginner', // Default free category
+    is_pro: false,
+    category: 'daily-beginner',
+    phone_number: undefined // Set to undefined initially
   });
   const [loading, setLoading] = useState(true);
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
@@ -200,16 +200,6 @@ const Dashboard = () => {
 
   const handleCategoryUpdate = async (primary: string, subcategory: string) => {
     try {
-      // Restrict non-pro users to daily category only
-      if (!subscription.is_pro && primary !== 'daily') {
-        toast({
-          title: 'Pro Feature',
-          description: 'Upgrade to Pro to access this category',
-          variant: 'destructive'
-        });
-        return;
-      }
-      
       const combinedCategory = `${primary}-${subcategory}`;
       console.log("Updating category to:", combinedCategory);
       
@@ -226,17 +216,17 @@ const Dashboard = () => {
           user_id: (await supabase.auth.getUser()).data.user?.id,
           category: combinedCategory,
           is_pro: subscription.is_pro,
-          phone_number: subscription.phone_number
+          phone_number: subscription.phone_number || '+1234567890'
         });
       
       if (subscriptionError) {
         console.error('Error updating subscription:', subscriptionError);
       }
       
-      setSubscription({
-        ...subscription,
+      setSubscription(prev => ({
+        ...prev,
         category: combinedCategory
-      });
+      }));
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -295,7 +285,11 @@ const Dashboard = () => {
         wordsLearnedThisMonth={wordsLearnedThisMonth}
       />
       <DashboardMain 
-        subscription={subscription}
+        subscription={{
+          is_pro: subscription.is_pro,
+          category: subscription.category,
+          phone_number: subscription.phone_number || '+1234567890'
+        }}
         handleCategoryUpdate={handleCategoryUpdate}
         handleNewBatch={handleNewBatch}
         isGeneratingBatch={isGeneratingBatch}
