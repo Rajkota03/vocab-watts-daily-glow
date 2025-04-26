@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -10,7 +11,7 @@ import { MOCK_TODAYS_QUIZ, MOCK_RECENT_DROPS } from '@/data/dashboardMockData';
 interface UserSubscription {
   is_pro: boolean;
   category: string;
-  phone_number?: string; // Made phone_number optional
+  phone_number?: string; // Added phone_number as optional property
 }
 
 const Dashboard = () => {

@@ -7,7 +7,7 @@ interface DashboardMainProps {
   subscription: {
     is_pro: boolean;
     category: string;
-    phone_number?: string; // Made phone_number optional
+    phone_number?: string; // Added phone_number as optional property
   };
   handleCategoryUpdate: (primary: string, subcategory: string) => Promise<void>;
   handleNewBatch: () => Promise<void>;
