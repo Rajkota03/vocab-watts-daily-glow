@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,21 +6,13 @@ import { toast } from "@/components/ui/use-toast";
 import { Clock, CheckCircle, Info, Send, Loader2, User } from 'lucide-react';
 import { sendVocabWords } from '@/services/whatsappService';
 import { supabase } from '@/integrations/supabase/client';
-import { createRazorpayOrder, completeSubscription } from '@/services/paymentService';
+import { completeSubscription } from '@/services/paymentService';
 
 // Declare Razorpay types
 declare global {
   interface Window {
     Razorpay: any;
   }
-}
-
-// Define the type for payment result
-interface PaymentResult {
-  success: boolean;
-  razorpayPaymentId?: string;
-  razorpayOrderId?: string;
-  error?: string;
 }
 
 const SignupForm = () => {
@@ -55,7 +46,7 @@ const SignupForm = () => {
 
     checkSession();
 
-    // Load Razorpay script
+    // Load Razorpay script for pro users (not needed for free trial, but keeping for future use)
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
@@ -70,58 +61,6 @@ const SignupForm = () => {
       }
     };
   }, []);
-
-  const handlePayment = async (orderData: any): Promise<PaymentResult> => {
-    if (!razorpayLoaded) {
-      toast({
-        title: "Payment system is loading",
-        description: "Please wait a moment and try again.",
-        variant: "destructive"
-      });
-      return { success: false, error: "Payment system not loaded" };
-    }
-
-    // If it's a free trial signup (not pro), skip payment
-    if (orderData.freeSignup) {
-      return { success: true };
-    }
-
-    return new Promise<PaymentResult>((resolve) => {
-      const options = {
-        key: 'rzp_test_YourTestKeyHere', // Replace with your Razorpay test key
-        amount: orderData.amount,
-        currency: 'INR',
-        name: 'GLINTUP',
-        description: 'Vocabulary Pro Subscription',
-        order_id: orderData.id,
-        prefill: {
-          contact: phoneNumber
-        },
-        theme: {
-          color: '#3F3D56'
-        },
-        handler: function(response: any) {
-          // Payment successful
-          console.log('Payment success:', response);
-          resolve({
-            success: true,
-            razorpayPaymentId: response.razorpay_payment_id,
-            razorpayOrderId: response.razorpay_order_id
-          });
-        },
-        modal: {
-          ondismiss: function() {
-            // Payment canceled
-            console.log('Payment canceled');
-            resolve({ success: false, error: 'Payment canceled' });
-          }
-        }
-      };
-
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
-    });
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -208,31 +147,11 @@ const SignupForm = () => {
       // Default to free trial
       const isPro = false;
       
-      // Create Razorpay order
-      const orderResult = await createRazorpayOrder({
-        phoneNumber,
-        deliveryTime,
-        isPro
-      });
-      
-      if (!orderResult.success) {
-        throw new Error('Failed to create payment order');
-      }
-      
-      // Initialize payment if needed
-      const paymentResult = await handlePayment(orderResult.data);
-      
-      if (!paymentResult.success && !orderResult.data.freeSignup) {
-        throw new Error('Payment failed or was canceled');
-      }
-      
-      // Complete subscription process
+      // Complete subscription process for free trial (no payment required)
       const subscriptionResult = await completeSubscription({
         phoneNumber,
         deliveryTime,
         isPro,
-        razorpayOrderId: paymentResult.razorpayOrderId,
-        razorpayPaymentId: paymentResult.razorpayPaymentId
       });
       
       if (!subscriptionResult.success) {
@@ -244,7 +163,7 @@ const SignupForm = () => {
       const messageResult = await sendVocabWords({
         phoneNumber,
         deliveryTime,
-        sendImmediately: true // New flag to indicate immediate delivery
+        sendImmediately: true // Flag to indicate immediate delivery
       });
       
       if (!messageResult) {

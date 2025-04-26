@@ -164,7 +164,7 @@ serve(async (req) => {
     
     // For immediate signup deliveries, add a special welcome message
     if (sendImmediately) {
-      finalMessage = `Welcome to VocabSpark! 🎉\n\n${finalMessage}`;
+      finalMessage = `Welcome to VocabSpark! 🎉\n\n${finalMessage || ''}`;
     }
     
     if (finalMessage) {

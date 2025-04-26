@@ -15,6 +15,12 @@ export interface PaymentData {
 // Create a payment order with Razorpay
 export const createRazorpayOrder = async (data: Omit<PaymentData, 'razorpayOrderId' | 'razorpayPaymentId'>) => {
   try {
+    // For free trial, skip Razorpay order creation
+    if (!data.isPro) {
+      console.log('Free trial signup, skipping Razorpay order creation');
+      return { success: true, data: { freeSignup: true } };
+    }
+
     const { data: orderData, error } = await supabase.functions.invoke('create-razorpay-order', {
       body: {
         phoneNumber: data.phoneNumber,
