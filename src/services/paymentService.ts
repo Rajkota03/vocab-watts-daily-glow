@@ -45,6 +45,7 @@ export const createRazorpayOrder = async (data: Omit<PaymentData, 'razorpayOrder
 // Check if a subscription exists for a phone number
 export const checkSubscriptionExists = async (phoneNumber: string) => {
   try {
+    console.log('Checking if subscription exists for phone number:', phoneNumber);
     const { data, error, count } = await supabase
       .from('user_subscriptions')
       .select('*', { count: 'exact' })
@@ -55,10 +56,11 @@ export const checkSubscriptionExists = async (phoneNumber: string) => {
       throw error;
     }
     
+    console.log('Subscription check result:', { count, exists: count && count > 0 });
     return count && count > 0;
   } catch (error) {
     console.error('Failed to check subscription:', error);
-    return false;
+    throw error;
   }
 };
 
@@ -73,13 +75,19 @@ export const completeSubscription = async (data: PaymentData) => {
     });
     
     // First check if subscription already exists
-    const subscriptionExists = await checkSubscriptionExists(data.phoneNumber);
-    if (subscriptionExists) {
-      console.log('Subscription already exists for phone number:', data.phoneNumber);
-      return { 
-        success: false, 
-        error: 'A subscription already exists for this phone number. Please use a different number.' 
-      };
+    let subscriptionExists = false;
+    try {
+      subscriptionExists = await checkSubscriptionExists(data.phoneNumber);
+      if (subscriptionExists) {
+        console.log('Subscription already exists for phone number:', data.phoneNumber);
+        return { 
+          success: false, 
+          error: 'A subscription already exists for this phone number. Please use a different number.' 
+        };
+      }
+    } catch (checkError) {
+      console.error('Error during subscription check:', checkError);
+      // Continue with subscription creation even if check fails
     }
     
     // Get current authenticated user
@@ -120,7 +128,7 @@ export const completeSubscription = async (data: PaymentData) => {
     console.log('Inserting subscription with data:', JSON.stringify(subscriptionData));
 
     // Use public access for subscription creation
-    // We're relying on the updated RLS policy that allows all inserts
+    // The RLS policy now allows public insertions
     const { data: subscription, error } = await supabase
       .from('user_subscriptions')
       .insert(subscriptionData)

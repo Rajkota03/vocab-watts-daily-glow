@@ -141,6 +141,8 @@ export type Database = {
           id: string
           is_pro: boolean
           phone_number: string
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
           subscription_ends_at: string | null
           trial_ends_at: string | null
           user_id: string | null
@@ -151,6 +153,8 @@ export type Database = {
           id?: string
           is_pro?: boolean
           phone_number: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
           subscription_ends_at?: string | null
           trial_ends_at?: string | null
           user_id?: string | null
@@ -161,6 +165,8 @@ export type Database = {
           id?: string
           is_pro?: boolean
           phone_number?: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
           subscription_ends_at?: string | null
           trial_ends_at?: string | null
           user_id?: string | null
