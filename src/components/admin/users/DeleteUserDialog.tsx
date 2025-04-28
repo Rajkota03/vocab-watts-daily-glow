@@ -25,6 +25,10 @@ export const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
     setIsLoading(true);
     try {
       await onDelete();
+      // Close dialog after successful deletion
+      onClose();
+    } catch (error) {
+      console.error('Error during deletion:', error);
     } finally {
       setIsLoading(false);
     }

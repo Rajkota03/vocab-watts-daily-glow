@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { Database } from '@/integrations/supabase/types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { EditSubscriptionDialog } from '../subscriptions/EditSubscriptionDialog';
@@ -32,6 +31,7 @@ const SubscriptionsTab = () => {
     
     // Listen for user deletion events from UserManagementDashboard
     const handleUserDeleted = () => {
+      console.log("User deleted event received in SubscriptionsTab");
       // Refresh the data when a user is deleted
       setRefreshTrigger(prev => prev + 1);
     };
@@ -54,6 +54,7 @@ const SubscriptionsTab = () => {
       
       if (subsError) throw subsError;
       
+      console.log("Fetched subscriptions:", subsData?.length);
       setSubscriptions(subsData || []);
       
       const totalSubs = subsData?.length || 0;

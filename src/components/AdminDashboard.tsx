@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from './admin/AdminLayout';
 import OverviewTab from './admin/tabs/OverviewTab';
@@ -14,7 +14,22 @@ import PromptManagerTab from './admin/tabs/PromptManagerTab';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [refreshKey, setRefreshKey] = useState(0); // Add refresh key for forcing re-renders
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Listen for user deletion events to refresh relevant tabs
+    const handleUserDeleted = () => {
+      console.log("User deleted event received in AdminDashboard");
+      setRefreshKey(prev => prev + 1);
+    };
+    
+    window.addEventListener('userDeleted', handleUserDeleted);
+    
+    return () => {
+      window.removeEventListener('userDeleted', handleUserDeleted);
+    };
+  }, []);
 
   // Modified to handle navigation to analytics page
   const handleTabChange = (tab: string) => {
@@ -28,25 +43,25 @@ const AdminDashboard = () => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'overview':
-        return <OverviewTab />;
+        return <OverviewTab key={refreshKey} />;
       case 'users':
-        return <UserManagementTab />;
+        return <UserManagementTab key={refreshKey} />;
       case 'vocabulary':
-        return <VocabularyTab />;
+        return <VocabularyTab key={refreshKey} />;
       case 'subscriptions':
-        return <SubscriptionsTab />;
+        return <SubscriptionsTab key={refreshKey} />;
       case 'messages':
-        return <MessagesTab />;
+        return <MessagesTab key={refreshKey} />;
       case 'activity':
-        return <ActivityTab />;
+        return <ActivityTab key={refreshKey} />;
       case 'settings':
-        return <SettingsTab />;
+        return <SettingsTab key={refreshKey} />;
       case 'roles':
-        return <UserRolesTab />;
+        return <UserRolesTab key={refreshKey} />;
       case 'prompts':
-        return <PromptManagerTab />;
+        return <PromptManagerTab key={refreshKey} />;
       default:
-        return <OverviewTab />;
+        return <OverviewTab key={refreshKey} />;
     }
   };
 

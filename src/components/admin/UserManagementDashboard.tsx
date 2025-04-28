@@ -7,7 +7,7 @@ import { AddUserButton } from './users/AddUserButton';
 import { UserDrawer } from './users/UserDrawer';
 import { DeleteUserDialog } from './users/DeleteUserDialog';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 export interface User {
   id: string;
@@ -210,6 +210,26 @@ const UserManagementDashboard = () => {
         throw roleError;
       }
       
+      // Delete the user's sent words
+      const { error: sentWordsError } = await supabase
+        .from('sent_words')
+        .delete()
+        .eq('user_id', selectedUser.id);
+      
+      if (sentWordsError) {
+        console.error('Error deleting sent words:', sentWordsError);
+      }
+      
+      // Delete any scheduled messages
+      const { error: scheduledError } = await supabase
+        .from('scheduled_messages')
+        .delete()
+        .eq('user_id', selectedUser.id);
+      
+      if (scheduledError) {
+        console.error('Error deleting scheduled messages:', scheduledError);
+      }
+      
       // Finally delete the profile
       const { error: profileError } = await supabase
         .from('profiles')
@@ -226,11 +246,17 @@ const UserManagementDashboard = () => {
         description: `User ${selectedUser.email} has been deleted.`,
       });
       
+      // Close the delete dialog
       setIsDeleteDialogOpen(false);
       setSelectedUser(null);
       
-      // Trigger a refresh of the AdminDashboard to update subscriptions tab
-      const event = new CustomEvent('userDeleted', { detail: { userId: selectedUser.id } });
+      // Dispatch a custom event to notify other components
+      const event = new CustomEvent('userDeleted', { 
+        detail: { 
+          userId: selectedUser.id,
+          timestamp: new Date().getTime() // Add timestamp to ensure event is unique
+        } 
+      });
       window.dispatchEvent(event);
       
     } catch (error) {
