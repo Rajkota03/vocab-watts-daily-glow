@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -8,7 +9,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Database } from '@/integrations/supabase/types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { EditSubscriptionDialog } from '../subscriptions/EditSubscriptionDialog';
-import { Pencil } from 'lucide-react';
+import { Pencil, Loader2 } from 'lucide-react';
 
 type Subscription = Database['public']['Tables']['user_subscriptions']['Row'];
 
@@ -24,10 +25,11 @@ const SubscriptionsTab = () => {
   const [conversionData, setConversionData] = useState<any[]>([]);
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     fetchSubscriptionsData();
-  }, []);
+  }, [refreshTrigger]);
 
   const fetchSubscriptionsData = async () => {
     try {
@@ -140,36 +142,14 @@ const SubscriptionsTab = () => {
   };
 
   const handleSubscriptionUpdated = () => {
-    fetchSubscriptionsData();
+    // Use a counter to trigger a refresh
+    setRefreshTrigger(prev => prev + 1);
   };
 
-  const handleDeleteUser = async (subscription: Subscription) => {
-    try {
-      setLoading(true);
-      
-      const { error: subscriptionError } = await supabase
-        .from('user_subscriptions')
-        .delete()
-        .eq('id', subscription.id);
-      
-      if (subscriptionError) throw subscriptionError;
-      
-      toast({
-        title: "Success",
-        description: "User subscription deleted successfully",
-      });
-      
-      fetchSubscriptionsData();
-    } catch (error) {
-      console.error('Error deleting user subscription:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete user subscription",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleDeleteSubscription = () => {
+    // Use a counter to trigger a refresh
+    setRefreshTrigger(prev => prev + 1);
+    setSelectedSubscription(null);
   };
 
   return (
@@ -248,7 +228,12 @@ const SubscriptionsTab = () => {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8">Loading subscriptions...</div>
+            <div className="text-center py-8 flex justify-center">
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-muted-foreground">Loading subscriptions...</p>
+              </div>
+            </div>
           ) : subscriptions.length === 0 ? (
             <div className="text-center py-8 text-gray-500">No subscriptions found</div>
           ) : (
@@ -306,12 +291,7 @@ const SubscriptionsTab = () => {
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         onSubscriptionUpdated={handleSubscriptionUpdated}
-        onDelete={() => {
-          if (selectedSubscription) {
-            handleDeleteUser(selectedSubscription);
-            setEditDialogOpen(false);
-          }
-        }}
+        onDelete={handleDeleteSubscription}
       />
     </div>
   );

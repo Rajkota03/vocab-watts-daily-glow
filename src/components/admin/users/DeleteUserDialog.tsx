@@ -2,19 +2,22 @@
 import React from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { type User } from '../UserManagementDashboard';
+import { Loader2 } from 'lucide-react';
 
 interface DeleteUserDialogProps {
   user: User | null;
   open: boolean;
   onClose: () => void;
   onDelete: () => void;
+  isDeleting?: boolean;
 }
 
 export const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({ 
   user, 
   open, 
   onClose, 
-  onDelete 
+  onDelete,
+  isDeleting = false
 }) => {
   if (!user) return null;
 
@@ -28,12 +31,20 @@ export const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={onDelete}
             className="bg-[#FF6B6B] hover:bg-red-600 text-white"
+            disabled={isDeleting}
           >
-            Delete
+            {isDeleting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Deleting...
+              </>
+            ) : (
+              'Delete'
+            )}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

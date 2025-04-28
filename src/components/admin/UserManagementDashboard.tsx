@@ -174,13 +174,37 @@ const UserManagementDashboard = () => {
     if (!selectedUser) return;
     
     try {
-      // This will cascade delete associated data due to the foreign key constraints
-      const { error } = await supabase
+      // First delete the user's subscription
+      const { error: subError } = await supabase
+        .from('user_subscriptions')
+        .delete()
+        .eq('user_id', selectedUser.id);
+      
+      if (subError) console.error('Error deleting subscription:', subError);
+      
+      // Delete the user's word history
+      const { error: historyError } = await supabase
+        .from('user_word_history')
+        .delete()
+        .eq('user_id', selectedUser.id);
+      
+      if (historyError) console.error('Error deleting word history:', historyError);
+      
+      // Delete the user's roles
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', selectedUser.id);
+      
+      if (roleError) console.error('Error deleting roles:', roleError);
+      
+      // Finally delete the profile
+      const { error: profileError } = await supabase
         .from('profiles')
         .delete()
         .eq('id', selectedUser.id);
         
-      if (error) throw error;
+      if (profileError) throw profileError;
       
       // Update local state
       setUsers(users.filter(user => user.id !== selectedUser.id));
