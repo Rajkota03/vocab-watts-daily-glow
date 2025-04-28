@@ -6,7 +6,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Clock, CheckCircle, Info, Send, Loader2, User } from 'lucide-react';
 import { sendVocabWords } from '@/services/whatsappService';
 import { supabase } from '@/integrations/supabase/client';
-import { completeSubscription } from '@/services/paymentService';
+import { completeSubscription, checkSubscriptionExists } from '@/services/paymentService';
 
 // Declare Razorpay types
 declare global {
@@ -104,6 +104,18 @@ const SignupForm = () => {
       
       console.log("Submitting form with:", { phoneNumber, email, firstName, lastName, deliveryTime });
       
+      // Check if subscription already exists for this phone number
+      const exists = await checkSubscriptionExists(phoneNumber);
+      if (exists) {
+        toast({
+          title: "Phone number already registered",
+          description: "This WhatsApp number already has an active subscription. Please use a different number.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
       // First attempt to create the subscription
       // This relies on our updated RLS policy to allow unauthenticated inserts
       console.log("Creating free trial subscription...");
@@ -122,7 +134,9 @@ const SignupForm = () => {
         
         toast({
           title: "Something went wrong",
-          description: `Failed to create subscription: ${errorMessage}`,
+          description: errorMessage.includes('phone_number_key') 
+            ? "This phone number already has an active subscription. Please use a different number."
+            : `Failed to create subscription: ${errorMessage}`,
           variant: "destructive"
         });
         

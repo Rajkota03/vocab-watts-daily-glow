@@ -42,6 +42,26 @@ export const createRazorpayOrder = async (data: Omit<PaymentData, 'razorpayOrder
   }
 };
 
+// Check if a subscription exists for a phone number
+export const checkSubscriptionExists = async (phoneNumber: string) => {
+  try {
+    const { data, error, count } = await supabase
+      .from('user_subscriptions')
+      .select('*', { count: 'exact' })
+      .eq('phone_number', phoneNumber);
+    
+    if (error) {
+      console.error('Error checking for existing subscription:', error);
+      throw error;
+    }
+    
+    return count && count > 0;
+  } catch (error) {
+    console.error('Failed to check subscription:', error);
+    return false;
+  }
+};
+
 // Complete subscription after successful payment
 export const completeSubscription = async (data: PaymentData) => {
   try {
@@ -51,6 +71,16 @@ export const completeSubscription = async (data: PaymentData) => {
       category: data.category || null,
       deliveryTime: data.deliveryTime || null
     });
+    
+    // First check if subscription already exists
+    const subscriptionExists = await checkSubscriptionExists(data.phoneNumber);
+    if (subscriptionExists) {
+      console.log('Subscription already exists for phone number:', data.phoneNumber);
+      return { 
+        success: false, 
+        error: 'A subscription already exists for this phone number. Please use a different number.' 
+      };
+    }
     
     // Get current authenticated user
     const { data: authData } = await supabase.auth.getSession();
@@ -99,6 +129,12 @@ export const completeSubscription = async (data: PaymentData) => {
     
     if (error) {
       console.error('Error creating subscription:', error);
+      if (error.code === '23505' && error.message?.includes('user_subscriptions_phone_number_key')) {
+        return { 
+          success: false, 
+          error: 'This phone number already has an active subscription. Please use a different number.' 
+        };
+      }
       throw new Error(`Database error: ${error.message}`);
     }
     

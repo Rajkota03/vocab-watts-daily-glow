@@ -274,6 +274,8 @@ serve(async (req) => {
 
     // Send message via Twilio API
     try {
+      console.log('Preparing to send message with Twilio API');
+      
       const twilioResponse = await fetch(
         `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
         {
@@ -290,31 +292,49 @@ serve(async (req) => {
         }
       );
 
-      const twilioData = await twilioResponse.json();
+      console.log('Twilio API response status:', twilioResponse.status);
       
-      console.log('Twilio response status:', twilioResponse.status);
-      console.log('Twilio response data:', JSON.stringify(twilioData).substring(0, 200) + '...');
-
+      // Check if response is ok before attempting to parse JSON
       if (!twilioResponse.ok) {
-        console.error('Twilio API error:', JSON.stringify(twilioData));
-        
-        let errorMessage = twilioData.message || 'Failed to send WhatsApp message';
-        let statusCode = twilioResponse.status || 500;
-        
-        if (twilioData.code === 20003 || statusCode === 401) {
-          errorMessage = "Authentication failed. Please verify your Twilio credentials.";
+        let errorText;
+        try {
+          errorText = await twilioResponse.text();
+          console.error('Twilio error response:', errorText);
+        } catch (textError) {
+          errorText = `Could not get error text: ${String(textError)}`;
         }
         
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: errorMessage,
-            details: twilioData,
-            status: statusCode,
-            troubleshooting: "Verify that your TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN are correct in Supabase environment variables."
+            error: `Twilio API error: ${twilioResponse.status}`,
+            details: {
+              status: twilioResponse.status,
+              statusText: twilioResponse.statusText,
+              responseText: errorText
+            }
           }),
           {
-            status: statusCode,
+            status: twilioResponse.status,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+      
+      let twilioData;
+      try {
+        twilioData = await twilioResponse.json();
+        console.log('Twilio response data:', JSON.stringify(twilioData).substring(0, 200) + '...');
+      } catch (jsonError) {
+        console.error('Error parsing Twilio response:', jsonError);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: `Could not parse Twilio response: ${String(jsonError)}`,
+            twilioStatus: twilioResponse.status
+          }),
+          {
+            status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           }
         );
