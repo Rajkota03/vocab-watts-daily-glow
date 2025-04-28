@@ -8,6 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { addDays } from 'date-fns';
 import { Loader2 } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface EditSubscriptionDialogProps {
   subscription: {
@@ -21,21 +23,25 @@ interface EditSubscriptionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubscriptionUpdated: () => void;
+  onDelete?: () => void;
 }
 
 export function EditSubscriptionDialog({
   subscription,
   open,
   onOpenChange,
-  onSubscriptionUpdated
+  onSubscriptionUpdated,
+  onDelete
 }: EditSubscriptionDialogProps) {
   const [isPro, setIsPro] = React.useState(false);
+  const [category, setCategory] = React.useState<string>('');
   const [isLoading, setIsLoading] = React.useState(false);
   const { toast } = useToast();
 
   React.useEffect(() => {
     if (subscription) {
       setIsPro(subscription.is_pro);
+      setCategory(subscription.category || '');
     }
   }, [subscription]);
 
@@ -46,6 +52,7 @@ export function EditSubscriptionDialog({
     try {
       const updateData: any = {
         is_pro: isPro,
+        category: category || null
       };
 
       // If changing to pro, set subscription end date to 30 days from now
@@ -107,28 +114,55 @@ export function EditSubscriptionDialog({
               disabled={isLoading}
             />
           </div>
-          <div className="text-sm text-muted-foreground">
-            Phone Number: {subscription.phone_number}
-          </div>
+
+          {isPro && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="category">Category</Label>
+              <Input
+                id="category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="Enter category"
+                disabled={isLoading}
+              />
+            </div>
+          )}
+          
+          <Alert>
+            <AlertDescription>
+              Phone Number: {subscription.phone_number}
+            </AlertDescription>
+          </Alert>
         </div>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isLoading}
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              'Save Changes'
-            )}
-          </Button>
+        <DialogFooter className="gap-2">
+          {onDelete && (
+            <Button
+              variant="destructive"
+              onClick={onDelete}
+              disabled={isLoading}
+            >
+              Delete User
+            </Button>
+          )}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

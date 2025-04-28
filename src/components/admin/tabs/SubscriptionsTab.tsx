@@ -143,6 +143,35 @@ const SubscriptionsTab = () => {
     fetchSubscriptionsData();
   };
 
+  const handleDeleteUser = async (subscription: Subscription) => {
+    try {
+      setLoading(true);
+      
+      const { error: subscriptionError } = await supabase
+        .from('user_subscriptions')
+        .delete()
+        .eq('id', subscription.id);
+      
+      if (subscriptionError) throw subscriptionError;
+      
+      toast({
+        title: "Success",
+        description: "User subscription deleted successfully",
+      });
+      
+      fetchSubscriptionsData();
+    } catch (error) {
+      console.error('Error deleting user subscription:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete user subscription",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -277,6 +306,12 @@ const SubscriptionsTab = () => {
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         onSubscriptionUpdated={handleSubscriptionUpdated}
+        onDelete={() => {
+          if (selectedSubscription) {
+            handleDeleteUser(selectedSubscription);
+            setEditDialogOpen(false);
+          }
+        }}
       />
     </div>
   );
