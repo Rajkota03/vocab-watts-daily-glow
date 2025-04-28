@@ -24,6 +24,7 @@ const UserManagementDashboard = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Search and filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -174,13 +175,18 @@ const UserManagementDashboard = () => {
     if (!selectedUser) return;
     
     try {
+      setIsDeleting(true);
+      
       // First delete the user's subscription
       const { error: subError } = await supabase
         .from('user_subscriptions')
         .delete()
         .eq('user_id', selectedUser.id);
       
-      if (subError) console.error('Error deleting subscription:', subError);
+      if (subError) {
+        console.error('Error deleting subscription:', subError);
+        throw subError;
+      }
       
       // Delete the user's word history
       const { error: historyError } = await supabase
@@ -188,7 +194,10 @@ const UserManagementDashboard = () => {
         .delete()
         .eq('user_id', selectedUser.id);
       
-      if (historyError) console.error('Error deleting word history:', historyError);
+      if (historyError) {
+        console.error('Error deleting word history:', historyError);
+        throw historyError;
+      }
       
       // Delete the user's roles
       const { error: roleError } = await supabase
@@ -196,7 +205,10 @@ const UserManagementDashboard = () => {
         .delete()
         .eq('user_id', selectedUser.id);
       
-      if (roleError) console.error('Error deleting roles:', roleError);
+      if (roleError) {
+        console.error('Error deleting roles:', roleError);
+        throw roleError;
+      }
       
       // Finally delete the profile
       const { error: profileError } = await supabase
@@ -207,7 +219,7 @@ const UserManagementDashboard = () => {
       if (profileError) throw profileError;
       
       // Update local state
-      setUsers(users.filter(user => user.id !== selectedUser.id));
+      setUsers(prevUsers => prevUsers.filter(user => user.id !== selectedUser.id));
       
       toast({
         title: "Success",
@@ -216,6 +228,11 @@ const UserManagementDashboard = () => {
       
       setIsDeleteDialogOpen(false);
       setSelectedUser(null);
+      
+      // Trigger a refresh of the AdminDashboard to update subscriptions tab
+      const event = new CustomEvent('userDeleted', { detail: { userId: selectedUser.id } });
+      window.dispatchEvent(event);
+      
     } catch (error) {
       console.error('Error deleting user:', error);
       toast({
@@ -223,6 +240,8 @@ const UserManagementDashboard = () => {
         description: "Failed to delete user. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -326,6 +345,7 @@ const UserManagementDashboard = () => {
           open={isDeleteDialogOpen}
           onClose={() => setIsDeleteDialogOpen(false)}
           onDelete={handleDeleteUser}
+          isDeleting={isDeleting}
         />
       </div>
     </AdminLayout>

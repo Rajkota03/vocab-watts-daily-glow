@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { type User } from '../UserManagementDashboard';
 import { Loader2 } from 'lucide-react';
@@ -8,7 +8,7 @@ interface DeleteUserDialogProps {
   user: User | null;
   open: boolean;
   onClose: () => void;
-  onDelete: () => void;
+  onDelete: () => Promise<void>;
   isDeleting?: boolean;
 }
 
@@ -19,6 +19,17 @@ export const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
   onDelete,
   isDeleting = false
 }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const handleDelete = async () => {
+    setIsLoading(true);
+    try {
+      await onDelete();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   if (!user) return null;
 
   return (
@@ -31,13 +42,13 @@ export const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading || isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            onClick={onDelete}
+            onClick={handleDelete}
             className="bg-[#FF6B6B] hover:bg-red-600 text-white"
-            disabled={isDeleting}
+            disabled={isLoading || isDeleting}
           >
-            {isDeleting ? (
+            {isLoading || isDeleting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Deleting...

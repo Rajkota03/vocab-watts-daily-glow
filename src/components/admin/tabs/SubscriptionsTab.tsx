@@ -29,6 +29,18 @@ const SubscriptionsTab = () => {
 
   useEffect(() => {
     fetchSubscriptionsData();
+    
+    // Listen for user deletion events from UserManagementDashboard
+    const handleUserDeleted = () => {
+      // Refresh the data when a user is deleted
+      setRefreshTrigger(prev => prev + 1);
+    };
+    
+    window.addEventListener('userDeleted', handleUserDeleted);
+    
+    return () => {
+      window.removeEventListener('userDeleted', handleUserDeleted);
+    };
   }, [refreshTrigger]);
 
   const fetchSubscriptionsData = async () => {
