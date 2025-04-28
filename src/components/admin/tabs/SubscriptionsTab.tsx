@@ -1,14 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "@/components/ui/use-toast";
 import { Database } from '@/integrations/supabase/types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { EditSubscriptionDialog } from '../subscriptions/EditSubscriptionDialog';
+import { Pencil } from 'lucide-react';
 
-// Define types based on our database schema
 type Subscription = Database['public']['Tables']['user_subscriptions']['Row'];
 
 interface Metric {
@@ -21,6 +22,8 @@ const SubscriptionsTab = () => {
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [conversionData, setConversionData] = useState<any[]>([]);
+  const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchSubscriptionsData();
@@ -30,7 +33,6 @@ const SubscriptionsTab = () => {
     try {
       setLoading(true);
       
-      // Fetch all subscriptions
       const { data: subsData, error: subsError } = await supabase
         .from('user_subscriptions')
         .select('*')
@@ -40,12 +42,10 @@ const SubscriptionsTab = () => {
       
       setSubscriptions(subsData || []);
       
-      // Calculate metrics
       const totalSubs = subsData?.length || 0;
       const proSubs = subsData?.filter(sub => sub.is_pro).length || 0;
       const trialConversionRate = totalSubs > 0 ? (proSubs / totalSubs * 100).toFixed(1) : '0';
       
-      // Calculate average subscription duration
       const now = new Date();
       const activeSubs = subsData?.filter(sub => {
         const endDate = sub.subscription_ends_at ? new Date(sub.subscription_ends_at) : now;
@@ -64,14 +64,11 @@ const SubscriptionsTab = () => {
       const avgDuration = activeSubs.length > 0 ? 
         (totalMonths / activeSubs.length).toFixed(1) : '0';
       
-      // Calculate Monthly Recurring Revenue (MRR)
-      // Assuming each pro subscription is ₹149/month
       const mrr = (proSubs * 149).toLocaleString('en-IN', {
         style: 'currency',
         currency: 'INR'
       });
       
-      // Calculate churn rate
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
@@ -90,11 +87,10 @@ const SubscriptionsTab = () => {
         { name: 'Churn Rate', value: `${churnRate}%` }
       ]);
       
-      // Calculate conversion rate over time (last 6 months)
       const last6Months = Array.from({ length: 6 }, (_, i) => {
         const date = new Date();
         date.setMonth(date.getMonth() - i);
-        return date.toISOString().slice(0, 7); // YYYY-MM format
+        return date.toISOString().slice(0, 7);
       }).reverse();
       
       const conversionTrend = last6Months.map(month => {
@@ -138,6 +134,15 @@ const SubscriptionsTab = () => {
     });
   };
 
+  const handleEditSubscription = (subscription: Subscription) => {
+    setSelectedSubscription(subscription);
+    setEditDialogOpen(true);
+  };
+
+  const handleSubscriptionUpdated = () => {
+    fetchSubscriptionsData();
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -147,7 +152,6 @@ const SubscriptionsTab = () => {
         </p>
       </div>
 
-      {/* Key Metrics */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {metrics.map((metric, i) => (
           <Card key={i}>
@@ -163,7 +167,6 @@ const SubscriptionsTab = () => {
         ))}
       </div>
 
-      {/* Analytics Visualization */}
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -210,7 +213,6 @@ const SubscriptionsTab = () => {
         </Card>
       </div>
 
-      {/* Subscriptions Table */}
       <Card>
         <CardHeader className="flex justify-between">
           <CardTitle>Subscriptions</CardTitle>
@@ -231,6 +233,7 @@ const SubscriptionsTab = () => {
                     <TableHead>Created</TableHead>
                     <TableHead>Trial Ends</TableHead>
                     <TableHead>Subscription Ends</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -250,6 +253,16 @@ const SubscriptionsTab = () => {
                       <TableCell>{formatDate(sub.created_at)}</TableCell>
                       <TableCell>{formatDate(sub.trial_ends_at)}</TableCell>
                       <TableCell>{formatDate(sub.subscription_ends_at)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditSubscription(sub)}
+                        >
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -258,6 +271,13 @@ const SubscriptionsTab = () => {
           )}
         </CardContent>
       </Card>
+
+      <EditSubscriptionDialog
+        subscription={selectedSubscription}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSubscriptionUpdated={handleSubscriptionUpdated}
+      />
     </div>
   );
 };
