@@ -28,7 +28,6 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
 
     setIsLoading(true);
     try {
-      // Call the Supabase edge function to send a WhatsApp message
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
         body: {
           to: phoneNumber,
@@ -46,7 +45,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
       
       toast({
         title: "Message Sent!",
-        description: `A test message has been sent to ${phoneNumber}. Don't forget to join the Twilio Sandbox by sending 'join part-every' to +1 415 523 8886 on WhatsApp.`,
+        description: `A test message has been sent to ${phoneNumber}`,
       });
     } catch (error: any) {
       console.error('Error sending test message:', error);
@@ -84,18 +83,6 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
           </>
         )}
       </Button>
-
-      <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
-        <h4 className="font-medium text-amber-800">Important: First-time WhatsApp Setup</h4>
-        <p className="text-sm text-amber-700 mt-1">
-          Before receiving messages, you must join the Twilio WhatsApp Sandbox:
-        </p>
-        <ol className="list-decimal ml-5 mt-2 text-sm text-amber-700 space-y-1">
-          <li>Add this number to your contacts: <span className="font-medium">+1 415 523 8886</span></li>
-          <li>Send this exact message on WhatsApp: <span className="font-medium">join part-every</span></li>
-          <li>Wait for confirmation before testing</li>
-        </ol>
-      </div>
 
       <PhoneNumberDialog 
         open={showPhoneDialog}
