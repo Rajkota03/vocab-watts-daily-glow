@@ -34,6 +34,18 @@ export const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
       
       // Close the dialog after successful deletion
       onClose();
+      
+      // Dispatch a custom event with timestamp to notify other components
+      const event = new CustomEvent('userDeleted', { 
+        detail: { 
+          userId: user.id,
+          timestamp: new Date().getTime(),
+          email: user.email
+        } 
+      });
+      window.dispatchEvent(event);
+      
+      console.log('User deleted event dispatched from DeleteUserDialog for:', user.id);
     } catch (error) {
       console.error('Error during deletion:', error);
       toast({

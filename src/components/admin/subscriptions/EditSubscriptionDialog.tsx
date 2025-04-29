@@ -119,15 +119,77 @@ export function EditSubscriptionDialog({
     setIsDeleting(true);
     
     try {
-      // First check if this is a user_id we need to delete fully
+      // If this is linked to a user, we need to perform a full user deletion
       if (subscription.user_id) {
-        // Delete the user subscription
+        console.log("Deleting user with ID:", subscription.user_id);
+        
+        // Delete the user's subscription first
         const { error: subError } = await supabase
           .from('user_subscriptions')
           .delete()
-          .eq('id', subscription.id);
+          .eq('user_id', subscription.user_id);
           
         if (subError) throw subError;
+        
+        // Delete the user's word history
+        const { error: historyError } = await supabase
+          .from('user_word_history')
+          .delete()
+          .eq('user_id', subscription.user_id);
+        
+        if (historyError) {
+          console.error('Error deleting word history:', historyError);
+        }
+        
+        // Delete the user's roles
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', subscription.user_id);
+        
+        if (roleError) {
+          console.error('Error deleting roles:', roleError);
+        }
+        
+        // Delete the user's sent words
+        const { error: sentWordsError } = await supabase
+          .from('sent_words')
+          .delete()
+          .eq('user_id', subscription.user_id);
+        
+        if (sentWordsError) {
+          console.error('Error deleting sent words:', sentWordsError);
+        }
+        
+        // Delete any scheduled messages
+        const { error: scheduledError } = await supabase
+          .from('scheduled_messages')
+          .delete()
+          .eq('user_id', subscription.user_id);
+        
+        if (scheduledError) {
+          console.error('Error deleting scheduled messages:', scheduledError);
+        }
+        
+        // Finally delete the profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', subscription.user_id);
+          
+        if (profileError) {
+          console.error('Error deleting profile:', profileError);
+          throw profileError;
+        }
+        
+        // Dispatch a custom event to notify other components
+        const event = new CustomEvent('userDeleted', { 
+          detail: { 
+            userId: subscription.user_id,
+            timestamp: new Date().getTime() 
+          } 
+        });
+        window.dispatchEvent(event);
       } else {
         // Just delete the subscription entry
         const { error } = await supabase

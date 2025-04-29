@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -32,9 +31,16 @@ const SubscriptionsTab = () => {
     
     // Listen for user deletion events
     const handleUserDeleted = (event: Event) => {
-      console.log("User deleted event received in SubscriptionsTab", (event as CustomEvent).detail);
-      // Refresh the data when a user is deleted
-      setRefreshTrigger(prev => prev + 1);
+      const detail = (event as CustomEvent).detail;
+      console.log("User deleted event received in SubscriptionsTab", detail);
+      
+      if (detail && detail.userId) {
+        // Immediately remove the deleted subscription from the local state
+        setSubscriptions(prev => prev.filter(sub => sub.user_id !== detail.userId));
+        
+        // Also refresh to ensure data consistency
+        setRefreshTrigger(prev => prev + 1);
+      }
     };
     
     window.addEventListener('userDeleted', handleUserDeleted);
@@ -42,7 +48,7 @@ const SubscriptionsTab = () => {
     return () => {
       window.removeEventListener('userDeleted', handleUserDeleted);
     };
-  }, [refreshTrigger]);
+  }, []);
 
   const fetchSubscriptionsData = async () => {
     try {
