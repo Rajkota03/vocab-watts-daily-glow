@@ -10,6 +10,7 @@ export interface PaymentData {
   deliveryTime?: string;
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
+  userId?: string; // Add userId parameter
 }
 
 // Create a payment order with Razorpay
@@ -71,7 +72,8 @@ export const completeSubscription = async (data: PaymentData) => {
       phoneNumber: data.phoneNumber,
       isPro: data.isPro,
       category: data.category || null,
-      deliveryTime: data.deliveryTime || null
+      deliveryTime: data.deliveryTime || null,
+      userId: data.userId || null
     });
     
     // First check if subscription already exists
@@ -90,12 +92,14 @@ export const completeSubscription = async (data: PaymentData) => {
       // Continue with subscription creation even if check fails
     }
     
-    // Get current authenticated user
-    const { data: authData } = await supabase.auth.getSession();
+    // Get current authenticated user if no userId was provided
+    let userId = data.userId;
+    if (!userId) {
+      const { data: authData } = await supabase.auth.getSession();
+      userId = authData.session?.user?.id;
+    }
     
-    // If not authenticated, we'll store the subscription without a user_id
-    const userId = authData.session?.user?.id;
-    console.log('Current user ID for subscription:', userId || 'No user ID available');
+    console.log('User ID for subscription:', userId || 'No user ID available');
     
     // Calculate trial end date (3 days from now)
     const trialEndsAt = addDays(new Date(), 3).toISOString();

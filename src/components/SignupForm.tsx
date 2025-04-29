@@ -116,13 +116,53 @@ const SignupForm = () => {
         return;
       }
       
-      // First attempt to create the subscription
-      // This relies on our updated RLS policy to allow unauthenticated inserts
+      // First create the user account if email and password are provided
+      let userId = null;
+      if (email && password) {
+        try {
+          console.log("Creating user account with email:", email);
+          
+          const { data, error } = await supabase.auth.signUp({
+            email: email,
+            password: password,
+            options: {
+              data: {
+                first_name: firstName,
+                last_name: lastName || firstName,
+                whatsapp_number: phoneNumber,
+                delivery_time: deliveryTime
+              }
+            }
+          });
+          
+          if (error) {
+            console.error("Error signing up:", error);
+            toast({
+              title: "Account creation failed",
+              description: error.message || "We couldn't create your account. Please try again.",
+              variant: "destructive"
+            });
+          } else {
+            console.log("User created successfully:", data);
+            userId = data.user?.id;
+            toast({
+              title: "Account created!",
+              description: "Check your email to confirm your account.",
+            });
+          }
+        } catch (authErr) {
+          console.error("Auth error:", authErr);
+          // We don't fail the process here, we'll still create the subscription
+        }
+      }
+      
+      // Then attempt to create the subscription
       console.log("Creating free trial subscription...");
       const subscriptionResult = await completeSubscription({
         phoneNumber,
         deliveryTime,
         isPro: false, // Free trial
+        userId: userId // Pass the user ID if we have it
       });
       
       if (!subscriptionResult.success) {
@@ -145,50 +185,6 @@ const SignupForm = () => {
       }
       
       console.log("Subscription created successfully:", subscriptionResult.data);
-      
-      // If subscription is successful and we have an email, proceed with user creation
-      if (email && password) {
-        try {
-          console.log("Creating user account with email:", email);
-          
-          const { data, error } = await supabase.auth.signUp({
-            email: email,
-            password: password,
-            options: {
-              data: {
-                first_name: firstName,
-                last_name: lastName || firstName,
-                whatsapp_number: phoneNumber,
-                delivery_time: deliveryTime
-              }
-            }
-          });
-          
-          if (error) {
-            console.error("Error signing up:", error);
-            // We don't fail the process here since the subscription was already created
-            toast({
-              title: "Note",
-              description: "Your trial was created but we couldn't create an account. You can still use the service via WhatsApp.",
-            });
-          } else {
-            console.log("User created successfully:", data);
-            toast({
-              title: "Account created!",
-              description: "Check your email to confirm your account.",
-            });
-          }
-        } catch (authErr) {
-          console.error("Auth error:", authErr);
-          // We don't fail the process here since the subscription was already created
-          toast({
-            title: "Note",
-            description: "Your trial was created but there was an issue with account creation. You can still use the service via WhatsApp.",
-          });
-        }
-      } else {
-        console.log("No email provided, skipping user creation");
-      }
       
       // Now that subscription is created, send vocabulary words via WhatsApp
       try {
@@ -235,7 +231,6 @@ const SignupForm = () => {
         description: error.message || "We couldn't process your request. Please try again later.",
         variant: "destructive"
       });
-      setIsSubmitting(false);
     } finally {
       setIsSubmitting(false);
     }
