@@ -218,6 +218,7 @@ const UserManagementDashboard = () => {
       
       if (sentWordsError) {
         console.error('Error deleting sent words:', sentWordsError);
+        throw sentWordsError;
       }
       
       // Delete any scheduled messages
@@ -228,6 +229,7 @@ const UserManagementDashboard = () => {
       
       if (scheduledError) {
         console.error('Error deleting scheduled messages:', scheduledError);
+        throw scheduledError;
       }
       
       // Finally delete the profile
@@ -236,28 +238,26 @@ const UserManagementDashboard = () => {
         .delete()
         .eq('id', selectedUser.id);
         
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Error deleting profile:', profileError);
+        throw profileError;
+      }
       
       // Update local state
       setUsers(prevUsers => prevUsers.filter(user => user.id !== selectedUser.id));
       
-      toast({
-        title: "Success",
-        description: `User ${selectedUser.email} has been deleted.`,
-      });
-      
-      // Close the delete dialog
-      setIsDeleteDialogOpen(false);
-      setSelectedUser(null);
-      
-      // Dispatch a custom event to notify other components
+      // Dispatch a custom event with unique timestamp to notify other components
       const event = new CustomEvent('userDeleted', { 
         detail: { 
           userId: selectedUser.id,
-          timestamp: new Date().getTime() // Add timestamp to ensure event is unique
+          timestamp: new Date().getTime() 
         } 
       });
       window.dispatchEvent(event);
+      
+      // Close the delete dialog and reset selected user
+      setIsDeleteDialogOpen(false);
+      setSelectedUser(null);
       
     } catch (error) {
       console.error('Error deleting user:', error);

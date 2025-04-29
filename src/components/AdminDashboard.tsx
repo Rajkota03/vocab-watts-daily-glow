@@ -19,8 +19,9 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     // Listen for user deletion events to refresh relevant tabs
-    const handleUserDeleted = () => {
-      console.log("User deleted event received in AdminDashboard");
+    const handleUserDeleted = (event: Event) => {
+      console.log("User deleted event received in AdminDashboard", (event as CustomEvent).detail);
+      // Force a re-render of all tabs by incrementing the refresh key
       setRefreshKey(prev => prev + 1);
     };
     

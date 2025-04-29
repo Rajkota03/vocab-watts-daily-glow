@@ -1,8 +1,9 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { type User } from '../UserManagementDashboard';
 import { Loader2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 interface DeleteUserDialogProps {
   user: User | null;
@@ -19,22 +20,29 @@ export const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
   onDelete,
   isDeleting = false
 }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  
+  if (!user) return null;
+
   const handleDelete = async () => {
-    setIsLoading(true);
     try {
+      // Call the delete function provided by the parent
       await onDelete();
-      // Close dialog after successful deletion
+      
+      toast({
+        title: "Success",
+        description: `User ${user.email} has been deleted successfully.`,
+      });
+      
+      // Close the dialog after successful deletion
       onClose();
     } catch (error) {
       console.error('Error during deletion:', error);
-    } finally {
-      setIsLoading(false);
+      toast({
+        title: "Error",
+        description: "Failed to delete user. Please try again.",
+        variant: "destructive"
+      });
     }
   };
-  
-  if (!user) return null;
 
   return (
     <AlertDialog open={open} onOpenChange={onClose}>
@@ -46,13 +54,13 @@ export const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading || isDeleting}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             className="bg-[#FF6B6B] hover:bg-red-600 text-white"
-            disabled={isLoading || isDeleting}
+            disabled={isDeleting}
           >
-            {isLoading || isDeleting ? (
+            {isDeleting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Deleting...

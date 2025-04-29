@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -29,9 +30,9 @@ const SubscriptionsTab = () => {
   useEffect(() => {
     fetchSubscriptionsData();
     
-    // Listen for user deletion events from UserManagementDashboard
-    const handleUserDeleted = () => {
-      console.log("User deleted event received in SubscriptionsTab");
+    // Listen for user deletion events
+    const handleUserDeleted = (event: Event) => {
+      console.log("User deleted event received in SubscriptionsTab", (event as CustomEvent).detail);
       // Refresh the data when a user is deleted
       setRefreshTrigger(prev => prev + 1);
     };
