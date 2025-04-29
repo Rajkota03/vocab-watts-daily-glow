@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
@@ -31,7 +30,10 @@ export function useSubscriptionsData(): SubscriptionsData {
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const refreshData = () => setRefreshTrigger(prev => prev + 1);
+  const refreshData = useCallback(() => {
+    console.log("Refreshing subscription data...");
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
 
   useEffect(() => {
     fetchSubscriptionsData();
@@ -40,6 +42,7 @@ export function useSubscriptionsData(): SubscriptionsData {
   const fetchSubscriptionsData = async () => {
     try {
       setLoading(true);
+      console.log("Fetching subscription data...");
       
       const { data: subsData, error: subsError } = await supabase
         .from('user_subscriptions')
@@ -121,6 +124,7 @@ export function useSubscriptionsData(): SubscriptionsData {
       });
       
       setConversionData(conversionTrend);
+      console.log("Subscription data processed successfully");
       
     } catch (error) {
       console.error('Error fetching subscription data:', error);

@@ -40,13 +40,48 @@ const SubscriptionsTab = () => {
         
         // Refresh data to ensure consistency
         refreshData();
+        
+        // Show confirmation toast
+        toast({
+          title: "Success",
+          description: `User and subscription deleted successfully`,
+          variant: "success"
+        });
+      }
+    };
+    
+    // Listen for standalone subscription deletion events
+    const handleSubscriptionDeleted = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      console.log("Subscription deleted event received in SubscriptionsTab", detail);
+      
+      if (detail && detail.subscriptionId) {
+        console.log("Subscription deleted:", detail.subscriptionId);
+        
+        // Close the dialog if it was open for the deleted subscription
+        if (selectedSubscription && selectedSubscription.id === detail.subscriptionId) {
+          setEditDialogOpen(false);
+          setSelectedSubscription(null);
+        }
+        
+        // Refresh data to ensure consistency
+        refreshData();
+        
+        // Show confirmation toast
+        toast({
+          title: "Success",
+          description: "Subscription deleted successfully",
+          variant: "success"
+        });
       }
     };
     
     window.addEventListener('userDeleted', handleUserDeleted);
+    window.addEventListener('subscriptionDeleted', handleSubscriptionDeleted);
     
     return () => {
       window.removeEventListener('userDeleted', handleUserDeleted);
+      window.removeEventListener('subscriptionDeleted', handleSubscriptionDeleted);
     };
   }, [selectedSubscription, refreshData]);
 

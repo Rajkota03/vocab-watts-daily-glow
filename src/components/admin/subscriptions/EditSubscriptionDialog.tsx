@@ -85,6 +85,13 @@ export function EditSubscriptionDialog({
     setIsDeleting(false);
   };
 
+  const handleSubscriptionDeleted = () => {
+    if (onDelete) {
+      onDelete();
+    }
+    onOpenChange(false);
+  };
+
   if (!subscription) return null;
   
   return (
@@ -107,12 +114,7 @@ export function EditSubscriptionDialog({
             isLoading={isLoading}
             isDeleting={isDeleting}
             onCancel={() => onOpenChange(false)}
-            onDelete={() => {
-              if (onDelete) {
-                onDelete();
-              }
-              onOpenChange(false);
-            }}
+            onDelete={handleSubscriptionDeleted}
             onDeleteError={handleDeleteError}
           />
         </DialogFooter>

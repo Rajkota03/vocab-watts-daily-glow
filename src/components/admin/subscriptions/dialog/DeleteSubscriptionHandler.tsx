@@ -111,6 +111,7 @@ export function DeleteSubscriptionHandler({
         const event = new CustomEvent('userDeleted', { 
           detail: { 
             userId: subscription.user_id,
+            subscriptionId: subscription.id,
             timestamp: new Date().getTime(),
             email: subscription.phone_number // Using phone as identifier since email isn't available
           } 
@@ -133,6 +134,16 @@ export function DeleteSubscriptionHandler({
         }
         
         console.log("Successfully deleted subscription:", data);
+
+        // Dispatch event for standalone subscription deletion
+        const event = new CustomEvent('subscriptionDeleted', { 
+          detail: { 
+            subscriptionId: subscription.id,
+            timestamp: new Date().getTime() 
+          } 
+        });
+        window.dispatchEvent(event);
+        console.log("Subscription deleted event dispatched", event);
       }
       
       toast({
@@ -140,6 +151,7 @@ export function DeleteSubscriptionHandler({
         description: "Subscription deleted successfully"
       });
       
+      // Call the onDeleted callback to update the parent component
       onDeleted();
       
     } catch (error: any) {

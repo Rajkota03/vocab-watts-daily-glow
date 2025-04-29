@@ -16,7 +16,7 @@ export function SubscriptionMetricsGrid({ metrics }: SubscriptionMetricsGridProp
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
       {metrics.map((metric, i) => (
         <SubscriptionMetricCard 
-          key={i} 
+          key={`metric-${i}-${metric.name}`} 
           title={metric.name} 
           value={metric.value} 
         />
