@@ -25,6 +25,8 @@ export function DialogFooterActions({
   onDelete,
   onDeleteError
 }: DialogFooterActionsProps) {
+  if (!subscription) return null;
+  
   return (
     <div className="gap-2 flex-col sm:flex-row">
       <DeleteSubscriptionHandler 

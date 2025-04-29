@@ -66,13 +66,6 @@ const SubscriptionsTab = () => {
         
         // Refresh data to ensure consistency
         refreshData();
-        
-        // Show confirmation toast
-        toast({
-          title: "Success",
-          description: "Subscription deleted successfully",
-          variant: "success"
-        });
       }
     };
     
@@ -92,6 +85,10 @@ const SubscriptionsTab = () => {
 
   const handleSubscriptionUpdated = () => {
     refreshData();
+    toast({
+      title: "Success",
+      description: "Subscription updated successfully",
+    });
   };
 
   return (

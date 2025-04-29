@@ -41,7 +41,7 @@ export function EditSubscriptionDialog({
     try {
       const updateData: any = {
         is_pro: values.isPro,
-        category: values.category || null
+        category: values.isPro ? (values.category || null) : null
       };
 
       // If changing to pro, set subscription end date to 30 days from now
@@ -52,8 +52,9 @@ export function EditSubscriptionDialog({
       // If changing to free, clear subscription end date
       if (!values.isPro && subscription.is_pro) {
         updateData.subscription_ends_at = null;
-        updateData.category = null;
       }
+      
+      console.log('Updating subscription:', subscription.id, 'with data:', updateData);
       
       const { error } = await supabase
         .from('user_subscriptions')

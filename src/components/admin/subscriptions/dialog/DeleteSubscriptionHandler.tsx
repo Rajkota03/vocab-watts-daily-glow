@@ -12,12 +12,14 @@ interface DeleteSubscriptionHandlerProps {
   };
   onDeleted: () => void;
   onError: (error: Error) => void;
+  disabled?: boolean; // Add disabled prop
 }
 
 export const DeleteSubscriptionHandler = ({ 
   subscription, 
   onDeleted,
-  onError
+  onError,
+  disabled = false // Default to false if not provided
 }: DeleteSubscriptionHandlerProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
@@ -70,7 +72,7 @@ export const DeleteSubscriptionHandler = ({
       onClick={handleDeleteClick}
       variant="destructive"
       size="sm"
-      disabled={isDeleting}
+      disabled={isDeleting || disabled}
     >
       {isDeleting ? (
         <>
