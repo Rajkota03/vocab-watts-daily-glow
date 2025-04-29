@@ -117,6 +117,9 @@ export const completeSubscription = async (data: PaymentData) => {
     // Add user_id only if we have one
     if (userId) {
       subscriptionData.user_id = userId;
+      console.log(`Associating subscription with user ID: ${userId}`);
+    } else {
+      console.log('Creating subscription without user ID (unauthenticated)');
     }
     
     // Only add Razorpay data for paid subscriptions
