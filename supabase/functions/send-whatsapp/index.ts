@@ -176,7 +176,7 @@ serve(async (req) => {
         .single();
 
       if (profile) {
-        nickname = profile.nick_name || profile.first_name;
+        nickname = profile.nick_name || profile.first_name || nickname;
       }
     }
 
@@ -233,7 +233,10 @@ serve(async (req) => {
       );
     }
     
-    const fromNumber = 'whatsapp:+14155238886';
+    // NOTE: For Meta-connected WhatsApp, you don't need "whatsapp:" prefix in the from number
+    // Using your default Twilio number here - this will be your Meta-connected WhatsApp number
+    const fromNumber = Deno.env.get('TWILIO_FROM_NUMBER') || 'whatsapp:+14155238886';
+    console.log('Using from number:', fromNumber);
     
     // Generate message content
     let finalMessage = message;
@@ -263,10 +266,18 @@ serve(async (req) => {
       console.log('Sending immediate welcome message to new signup:', toNumber);
     }
     
+    // Add sandbox instructions only for the Twilio sandbox number
+    const isTwilioSandbox = fromNumber === 'whatsapp:+14155238886';
     if (finalMessage) {
-      finalMessage += `\n\n---\nFirst time? You need to join the Twilio Sandbox first!\nSend 'join part-every' to +1 415 523 8886 on WhatsApp.`;
+      if (isTwilioSandbox) {
+        finalMessage += `\n\n---\nFirst time? You need to join the Twilio Sandbox first!\nSend 'join part-every' to +1 415 523 8886 on WhatsApp.`;
+      }
     } else {
-      finalMessage = `Hello ${nickname}! This is a test message from VocabSpark.\n\n---\nFirst time? You need to join the Twilio Sandbox first!\nSend 'join part-every' to +1 415 523 8886 on WhatsApp.`;
+      if (isTwilioSandbox) {
+        finalMessage = `Hello ${nickname}! This is a test message from VocabSpark.\n\n---\nFirst time? You need to join the Twilio Sandbox first!\nSend 'join part-every' to +1 415 523 8886 on WhatsApp.`;
+      } else {
+        finalMessage = `Hello ${nickname}! This is a test message from VocabSpark.`;
+      }
     }
     
     console.log(`Sending WhatsApp message from ${fromNumber} to ${toNumber}`);
@@ -348,7 +359,7 @@ serve(async (req) => {
           messageId: twilioData.sid,
           status: twilioData.status,
           details: twilioData,
-          sandboxMode: true,
+          usingMetaIntegration: !isTwilioSandbox,
           to: toNumber,
           from: fromNumber
         }),
