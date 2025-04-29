@@ -119,20 +119,25 @@ export function EditSubscriptionDialog({
     setIsDeleting(true);
     
     try {
+      console.log("Starting deletion process for subscription:", subscription.id);
+      
       // If this is linked to a user, we need to perform a full user deletion
       if (subscription.user_id) {
         console.log("Deleting user with ID:", subscription.user_id);
         
         // Delete the user's subscription first
-        const { error: subError } = await supabase
+        const { error: subError, data: subData } = await supabase
           .from('user_subscriptions')
           .delete()
-          .eq('user_id', subscription.user_id);
+          .eq('user_id', subscription.user_id)
+          .select();
           
         if (subError) {
           console.error('Error deleting subscription:', subError);
           throw subError;
         }
+        
+        console.log("Successfully deleted subscription:", subData);
         
         // Delete the user's word history
         const { error: historyError } = await supabase
@@ -203,13 +208,20 @@ export function EditSubscriptionDialog({
         
         console.log("Event dispatched:", event);
       } else {
+        console.log("Deleting standalone subscription with ID:", subscription.id);
         // Just delete the subscription entry
-        const { error } = await supabase
+        const { error, data } = await supabase
           .from('user_subscriptions')
           .delete()
-          .eq('id', subscription.id);
+          .eq('id', subscription.id)
+          .select();
           
-        if (error) throw error;
+        if (error) {
+          console.error('Error deleting subscription:', error);
+          throw error;
+        }
+        
+        console.log("Successfully deleted subscription:", data);
       }
       
       toast({
@@ -225,11 +237,11 @@ export function EditSubscriptionDialog({
       // Then close the dialog
       onOpenChange(false);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting subscription:', error);
       toast({
         title: "Error",
-        description: "Failed to delete subscription",
+        description: error.message || "Failed to delete subscription",
         variant: "destructive"
       });
     } finally {
