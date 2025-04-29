@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -35,10 +36,18 @@ const SubscriptionsTab = () => {
       console.log("User deleted event received in SubscriptionsTab", detail);
       
       if (detail && detail.userId) {
+        console.log("Removing subscription for user:", detail.userId);
+        
         // Immediately remove the deleted subscription from the local state
         setSubscriptions(prev => prev.filter(sub => sub.user_id !== detail.userId));
         
-        // Also refresh to ensure data consistency
+        // Close the dialog if it was open for the deleted subscription
+        if (selectedSubscription && selectedSubscription.user_id === detail.userId) {
+          setEditDialogOpen(false);
+          setSelectedSubscription(null);
+        }
+        
+        // Also refresh data to ensure consistency
         setRefreshTrigger(prev => prev + 1);
       }
     };
@@ -48,7 +57,14 @@ const SubscriptionsTab = () => {
     return () => {
       window.removeEventListener('userDeleted', handleUserDeleted);
     };
-  }, []);
+  }, [selectedSubscription]);
+
+  // Effect to fetch data when refresh trigger changes
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      fetchSubscriptionsData();
+    }
+  }, [refreshTrigger]);
 
   const fetchSubscriptionsData = async () => {
     try {
@@ -167,9 +183,9 @@ const SubscriptionsTab = () => {
   };
 
   const handleDeleteSubscription = () => {
-    // Use a counter to trigger a refresh
+    console.log("Subscription deletion handled in parent component");
+    // Refresh data after deletion
     setRefreshTrigger(prev => prev + 1);
-    setSelectedSubscription(null);
   };
 
   return (

@@ -129,7 +129,10 @@ export function EditSubscriptionDialog({
           .delete()
           .eq('user_id', subscription.user_id);
           
-        if (subError) throw subError;
+        if (subError) {
+          console.error('Error deleting subscription:', subError);
+          throw subError;
+        }
         
         // Delete the user's word history
         const { error: historyError } = await supabase
@@ -139,6 +142,7 @@ export function EditSubscriptionDialog({
         
         if (historyError) {
           console.error('Error deleting word history:', historyError);
+          // Continue with deletion even if this fails
         }
         
         // Delete the user's roles
@@ -149,6 +153,7 @@ export function EditSubscriptionDialog({
         
         if (roleError) {
           console.error('Error deleting roles:', roleError);
+          // Continue with deletion even if this fails
         }
         
         // Delete the user's sent words
@@ -159,6 +164,7 @@ export function EditSubscriptionDialog({
         
         if (sentWordsError) {
           console.error('Error deleting sent words:', sentWordsError);
+          // Continue with deletion even if this fails
         }
         
         // Delete any scheduled messages
@@ -169,6 +175,7 @@ export function EditSubscriptionDialog({
         
         if (scheduledError) {
           console.error('Error deleting scheduled messages:', scheduledError);
+          // Continue with deletion even if this fails
         }
         
         // Finally delete the profile
@@ -182,14 +189,19 @@ export function EditSubscriptionDialog({
           throw profileError;
         }
         
-        // Dispatch a custom event to notify other components
+        console.log("User deleted successfully, dispatching event");
+        
+        // Dispatch a custom event with complete details to notify other components
         const event = new CustomEvent('userDeleted', { 
           detail: { 
             userId: subscription.user_id,
-            timestamp: new Date().getTime() 
+            timestamp: new Date().getTime(),
+            email: subscription.phone_number // Using phone as identifier since email isn't available
           } 
         });
         window.dispatchEvent(event);
+        
+        console.log("Event dispatched:", event);
       } else {
         // Just delete the subscription entry
         const { error } = await supabase
@@ -205,11 +217,14 @@ export function EditSubscriptionDialog({
         description: "Subscription deleted successfully"
       });
       
-      onOpenChange(false);
-      
+      // First call onDelete to update the parent component's state
       if (onDelete) {
         onDelete();
       }
+      
+      // Then close the dialog
+      onOpenChange(false);
+      
     } catch (error) {
       console.error('Error deleting subscription:', error);
       toast({
