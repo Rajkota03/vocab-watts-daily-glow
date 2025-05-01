@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -16,6 +17,8 @@ interface WhatsAppRequest {
   scheduledTime?: string;
   sendImmediately?: boolean;
   checkOnly?: boolean;
+  debugMode?: boolean;
+  testTwilioConnection?: boolean;
 }
 
 function formatWhatsAppNumber(number: string): string {
@@ -80,30 +83,121 @@ serve(async (req) => {
       );
     }
     
-    const { to, message, category, isPro, skipSubscriptionCheck, userId, scheduledTime, sendImmediately, checkOnly } = requestBody;
+    const { 
+      to, 
+      message, 
+      category, 
+      isPro, 
+      skipSubscriptionCheck, 
+      userId, 
+      scheduledTime, 
+      sendImmediately, 
+      checkOnly,
+      debugMode,
+      testTwilioConnection
+    } = requestBody;
+
+    // Check for Twilio credentials with detailed logging
+    const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+    const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+    const storedFromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
+    const verifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN');
+    
+    console.log('Twilio credentials check:', { 
+      accountSid: accountSid ? `${accountSid.substring(0, 5)}...${accountSid.substring(accountSid.length - 3)}` : 'missing',
+      authToken: authToken ? 'present (hidden)' : 'missing',
+      fromNumber: storedFromNumber ? 'present' : 'missing',
+      verifyToken: verifyToken ? 'present' : 'missing'
+    });
 
     // If only checking configuration, return status
     if (checkOnly) {
-      const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-      const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-      const fromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
-      const verifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN');
-      
       return new Response(
         JSON.stringify({ 
           success: true, 
-          twilioConfigured: !!(twilioAccountSid && twilioAuthToken),
-          fromNumberConfigured: !!fromNumber,
+          twilioConfigured: !!(accountSid && authToken),
+          fromNumberConfigured: !!storedFromNumber,
           verifyTokenConfigured: !!verifyToken,
           configStatus: {
-            accountSid: twilioAccountSid ? 'configured' : 'missing',
-            authToken: twilioAuthToken ? 'configured' : 'missing',
-            fromNumber: fromNumber ? 'configured' : 'missing',
+            accountSid: accountSid ? 'configured' : 'missing',
+            authToken: authToken ? 'configured' : 'missing',
+            fromNumber: storedFromNumber ? 'configured' : 'missing',
             verifyToken: verifyToken ? 'configured' : 'missing'
           }
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Handle connection test request
+    if (testTwilioConnection) {
+      if (!accountSid || !authToken) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: "Missing Twilio credentials",
+            configStatus: {
+              accountSid: accountSid ? 'configured' : 'missing',
+              authToken: authToken ? 'configured' : 'missing',
+              fromNumber: storedFromNumber ? 'configured' : 'missing',
+              verifyToken: verifyToken ? 'configured' : 'missing'
+            }
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      try {
+        console.log("Testing direct Twilio API connection");
+        
+        // Fetch account information to test connection
+        const accountInfoResponse = await fetch(
+          `https://api.twilio.com/2010-04-01/Accounts/${accountSid}.json`,
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+              'Content-Type': 'application/json',
+            }
+          }
+        );
+        
+        if (!accountInfoResponse.ok) {
+          const errorText = await accountInfoResponse.text();
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: `Failed to connect to Twilio API: ${accountInfoResponse.status}`,
+              details: errorText
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        const accountInfo = await accountInfoResponse.json();
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: "Successfully connected to Twilio API",
+            accountInfo: {
+              friendlyName: accountInfo.friendly_name,
+              status: accountInfo.status,
+              type: accountInfo.type,
+              createdAt: accountInfo.date_created
+            }
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } catch (connErr) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: `Connection test failed: ${String(connErr)}`,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     console.log('WhatsApp request received:', { 
@@ -112,6 +206,7 @@ serve(async (req) => {
       isPro, 
       scheduledTime, 
       sendImmediately,
+      debugMode,
       messageLength: message ? message.length : 0,
       toFormatted: to ? to.substring(0, 5) + '...' : undefined
     });
@@ -132,6 +227,32 @@ serve(async (req) => {
         }),
         {
           status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    if (!accountSid || !authToken) {
+      const errorMessage = 'Missing Twilio credentials';
+      console.error(errorMessage, { 
+        hasSid: !!accountSid, 
+        hasToken: !!authToken 
+      });
+      
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: errorMessage,
+          details: { 
+            message: "Please check that TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN are set in Supabase environment variables.",
+            configurationStatus: {
+              TWILIO_ACCOUNT_SID: accountSid ? "configured" : "missing",
+              TWILIO_AUTH_TOKEN: authToken ? "configured" : "missing"
+            }
+          }
+        }),
+        {
+          status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
@@ -207,41 +328,6 @@ serve(async (req) => {
       }
     }
 
-    // Check for Twilio credentials with detailed logging
-    const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-    const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-    
-    console.log('Twilio credentials check:', { 
-      accountSid: accountSid ? `${accountSid.substring(0, 5)}...${accountSid.substring(accountSid.length - 3)}` : 'missing',
-      authToken: authToken ? 'present (hidden)' : 'missing'
-    });
-
-    if (!accountSid || !authToken) {
-      const errorMessage = 'Missing Twilio credentials';
-      console.error(errorMessage, { 
-        hasSid: !!accountSid, 
-        hasToken: !!authToken 
-      });
-      
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: errorMessage,
-          details: { 
-            message: "Please check that TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN are set in Supabase environment variables.",
-            configurationStatus: {
-              TWILIO_ACCOUNT_SID: accountSid ? "configured" : "missing",
-              TWILIO_AUTH_TOKEN: authToken ? "configured" : "missing"
-            }
-          }
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
     // Format WhatsApp number for recipient with enhanced error handling
     let toNumber;
     try {
@@ -267,7 +353,6 @@ serve(async (req) => {
     }
     
     // Get the from number from environment variables with better logging
-    const storedFromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
     console.log('TWILIO_FROM_NUMBER from environment:', storedFromNumber);
     
     if (!storedFromNumber) {
@@ -359,6 +444,10 @@ serve(async (req) => {
       }
     }
     
+    if (debugMode) {
+      console.log(`Debug mode enabled. Extra logging will be performed.`);
+    }
+    
     console.log(`Sending WhatsApp message from ${fromNumber} to ${toNumber}`);
     console.log(`Message content (first 50 chars): ${finalMessage.substring(0, 50)}...`);
     
@@ -374,14 +463,26 @@ serve(async (req) => {
       requestBody.append('From', fromNumber);
       requestBody.append('Body', finalMessage);
       
+      const apiUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+      
       console.log('Twilio API request:', {
+        url: apiUrl,
         to: toNumber,
         from: fromNumber,
         messageLength: finalMessage.length,
       });
       
+      if (debugMode) {
+        console.log('Full request details:', {
+          method: 'POST',
+          auth: `${accountSid}:${authToken.substring(0, 3)}...`,
+          contentType: 'application/x-www-form-urlencoded',
+          requestBody: requestBody.toString()
+        });
+      }
+      
       const twilioResponse = await fetch(
-        `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+        apiUrl,
         {
           method: 'POST',
           headers: {
@@ -466,6 +567,15 @@ serve(async (req) => {
           "Make sure the recipient number is properly formatted with country code."
         ]; 
       }
+
+      // Get current URL for hostname construction for webhook information
+      const requestUrl = new URL(req.url);
+      const hostname = requestUrl.hostname;
+      const protocol = hostname.includes('localhost') ? 'http' : 'https';
+      const baseUrl = `${protocol}://${hostname}`;
+      const webhookUrl = `${baseUrl}/functions/v1/whatsapp-webhook`;
+      
+      responseData.webhookUrl = webhookUrl;
 
       return new Response(
         JSON.stringify(responseData),

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, AlertCircle, Info, Settings, ExternalLink, HelpCircle, CheckCircle } from 'lucide-react';
+import { Send, Loader2, AlertCircle, Info, Settings, ExternalLink, HelpCircle, CheckCircle, PhoneCall } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PhoneNumberDialog } from '@/components/payment/PhoneNumberDialog'; 
 import { supabase } from '@/integrations/supabase/client';
@@ -27,6 +27,8 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
     fromNumber: '',
     verifyToken: '',
   });
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [connectionTestResult, setConnectionTestResult] = useState<any>(null);
   const { toast } = useToast();
 
   // Check config status when component loads
@@ -68,6 +70,62 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
     }
   };
 
+  const testTwilioConnection = async () => {
+    setTestingConnection(true);
+    setConnectionTestResult(null);
+    
+    try {
+      // First check if configuration exists
+      const { data: configData, error: configError } = await supabase.functions.invoke('send-whatsapp', {
+        body: { checkOnly: true }
+      });
+      
+      if (configError) {
+        throw new Error(`Configuration check failed: ${configError.message}`);
+      }
+      
+      // If we have valid configuration, try to test the direct Twilio connection
+      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+        body: {
+          testTwilioConnection: true
+        }
+      });
+      
+      if (error) {
+        throw new Error(`Connection test failed: ${error.message}`);
+      }
+      
+      setConnectionTestResult({
+        success: true,
+        configStatus: configData,
+        connectionDetails: data
+      });
+      
+      toast({
+        title: "Connection Test Complete",
+        description: data?.success ? 
+          "Successfully connected to Twilio API" : 
+          "Connection test completed with issues",
+        variant: data?.success ? "success" : "destructive"
+      });
+      
+    } catch (err: any) {
+      console.error('Error testing Twilio connection:', err);
+      setConnectionTestResult({
+        success: false,
+        error: err.message || "Unknown error testing connection"
+      });
+      
+      toast({
+        title: "Connection Test Failed",
+        description: err.message || "Failed to test Twilio connection",
+        variant: "destructive"
+      });
+    } finally {
+      setTestingConnection(false);
+    }
+  };
+
   const handleSendTest = async () => {
     if (!phoneNumber) {
       setShowPhoneDialog(true);
@@ -86,7 +144,8 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
           to: phoneNumber,
           category: category || 'general',
           isPro: false,
-          sendImmediately: true
+          sendImmediately: true,
+          debugMode: true // Enable detailed logging
         }
       });
       
@@ -240,11 +299,11 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
 
         {!configuring ? (
           <>
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap gap-2">
               <Button 
                 onClick={handleSendTest} 
-                disabled={isLoading}
-                className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                disabled={isLoading || testingConnection}
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
                 {isLoading ? (
                   <>
@@ -254,12 +313,33 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
                 ) : (
                   <>
                     <Send className="mr-2 h-4 w-4" />
-                    Send Test WhatsApp Message
+                    Send Test Message
                   </>
                 )}
               </Button>
+              
+              <Button
+                onClick={testTwilioConnection}
+                disabled={isLoading || testingConnection}
+                variant="secondary"
+                className="border-green-300"
+              >
+                {testingConnection ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Testing...
+                  </>
+                ) : (
+                  <>
+                    <PhoneCall className="mr-2 h-4 w-4" />
+                    Test Connection
+                  </>
+                )}
+              </Button>
+              
               <Button
                 onClick={() => setConfiguring(true)}
+                disabled={isLoading || testingConnection}
                 variant="outline"
                 className="border-gray-300"
               >
@@ -267,7 +347,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
               </Button>
             </div>
 
-            {phoneNumber && !isLoading && !error && !debugInfo && (
+            {phoneNumber && !isLoading && !error && !debugInfo && !connectionTestResult && (
               <div className="flex items-center text-sm text-gray-600 mt-1">
                 <Info className="h-4 w-4 mr-1" />
                 <span>Will send to: {phoneNumber}</span>
@@ -347,6 +427,54 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
           </div>
         )}
         
+        {/* Show connection test results */}
+        {connectionTestResult && (
+          <div className={`p-3 ${connectionTestResult.success ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'} border rounded-lg text-xs`}>
+            <div className="flex items-center mb-2">
+              {connectionTestResult.success ? 
+                <CheckCircle className="h-4 w-4 mr-2" /> : 
+                <AlertCircle className="h-4 w-4 mr-2" />
+              }
+              <p className="font-medium">
+                {connectionTestResult.success ? 'Connection Test Successful' : 'Connection Test Failed'}
+              </p>
+            </div>
+            
+            {connectionTestResult.success ? (
+              <div className="space-y-2">
+                <div className="mt-2">
+                  <p className="font-medium">Twilio Configuration:</p>
+                  <ul className="list-disc pl-4 mt-1 space-y-1">
+                    <li>Account SID: {connectionTestResult.configStatus?.configStatus?.accountSid || 'Not configured'}</li>
+                    <li>Auth Token: {connectionTestResult.configStatus?.configStatus?.authToken || 'Not configured'}</li>
+                    <li>From Number: {connectionTestResult.configStatus?.configStatus?.fromNumber || 'Not configured'}</li>
+                    <li>Verify Token: {connectionTestResult.configStatus?.configStatus?.verifyToken || 'Not configured'}</li>
+                  </ul>
+                </div>
+                
+                <div>
+                  <p className="font-medium">API Connection:</p>
+                  <p>{connectionTestResult.connectionDetails?.message || 'Connection established'}</p>
+                </div>
+                
+                {connectionTestResult.connectionDetails?.accountInfo && (
+                  <div>
+                    <p className="font-medium">Account Information:</p>
+                    <pre className="bg-green-100 p-1 rounded overflow-x-auto text-xs mt-1">
+                      {JSON.stringify(connectionTestResult.connectionDetails.accountInfo, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div>
+                <p>{connectionTestResult.error}</p>
+                <p className="mt-2">Please check your Twilio configuration in Supabase secrets and try again.</p>
+              </div>
+            )}
+          </div>
+        )}
+        
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800 flex items-start space-x-2">
             <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
@@ -356,7 +484,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
               {debugInfo && (
                 <details className="mt-2">
                   <summary className="cursor-pointer text-xs font-medium">Debug information</summary>
-                  <pre className="mt-2 whitespace-pre-wrap text-xs overflow-x-auto max-h-40">
+                  <pre className="mt-2 whitespace-pre-wrap text-xs overflow-x-auto max-h-40 bg-red-100 p-2 rounded">
                     {JSON.stringify(debugInfo, null, 2)}
                   </pre>
                 </details>
@@ -393,6 +521,17 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
             {/* Always show sandbox instructions if using the sandbox number */}
             {isUsingSandbox() && renderSandboxInstructions()}
             
+            <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-blue-800">
+              <p className="font-medium text-xs mb-1">Message Delivery Details:</p>
+              <p className="text-xs mb-2">If your message shows as "queued" but you haven't received it:</p>
+              <ol className="text-xs list-decimal pl-4 space-y-1">
+                <li>Check that your phone has a working internet connection</li>
+                <li>Make sure your WhatsApp is open and can receive messages</li>
+                <li>Verify your phone number is formatted correctly with country code</li>
+                <li>Check if your WhatsApp Business API provider is properly set up</li>
+              </ol>
+            </div>
+            
             {debugInfo.webhookUrl && (
               <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-blue-800">
                 <p className="font-medium text-xs">WhatsApp Webhook Configuration</p>
@@ -414,7 +553,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
             
             <details className="mt-2">
               <summary className="cursor-pointer text-xs font-medium">Debug information</summary>
-              <pre className="mt-2 whitespace-pre-wrap text-xs overflow-x-auto max-h-40">
+              <pre className="mt-2 whitespace-pre-wrap text-xs overflow-x-auto max-h-40 bg-green-100 p-2 rounded">
                 {JSON.stringify(debugInfo, null, 2)}
               </pre>
             </details>

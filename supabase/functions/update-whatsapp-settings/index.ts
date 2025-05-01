@@ -15,7 +15,11 @@ serve(async (req) => {
 
   try {
     // Parse request body
-    const { fromNumber, verifyToken, checkOnly } = await req.json();
+    const { fromNumber, verifyToken, checkOnly, debugMode } = await req.json();
+    
+    if (debugMode) {
+      console.log('Debug mode enabled. Extra logging will be performed.');
+    }
     
     if (checkOnly) {
       // Just check current configuration without making changes
@@ -33,6 +37,38 @@ serve(async (req) => {
       // Calculate webhook URL
       const webhookUrl = `${baseUrl}/functions/v1/whatsapp-webhook`;
       
+      // Test if we can access Twilio API
+      let twilioApiAccessible = false;
+      let twilioApiError = null;
+      
+      if (twilioAccountSid && twilioAuthToken) {
+        try {
+          const testResponse = await fetch(
+            `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}.json`,
+            {
+              method: 'GET',
+              headers: {
+                'Authorization': `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
+              }
+            }
+          );
+          
+          twilioApiAccessible = testResponse.ok;
+          
+          if (!testResponse.ok) {
+            const errorText = await testResponse.text();
+            twilioApiError = {
+              status: testResponse.status,
+              text: errorText
+            };
+          }
+        } catch (err) {
+          twilioApiError = {
+            message: String(err)
+          };
+        }
+      }
+      
       return new Response(
         JSON.stringify({
           success: true,
@@ -41,6 +77,8 @@ serve(async (req) => {
           currentFromNumber: currentFromNumber || null,
           twilioConfigured: !!(twilioAccountSid && twilioAuthToken),
           verifyTokenConfigured: !!currentVerifyToken,
+          twilioApiAccessible,
+          twilioApiError,
           configStatus: {
             accountSid: twilioAccountSid ? 'configured' : 'missing',
             authToken: twilioAuthToken ? 'configured' : 'missing',
@@ -108,24 +146,63 @@ serve(async (req) => {
         hasAuthToken: twilioAuthToken ? true : false
       });
       
+      // Test if we can access Twilio API
+      let twilioApiAccessible = false;
+      let twilioApiError = null;
+      
+      if (twilioAccountSid && twilioAuthToken) {
+        try {
+          const testResponse = await fetch(
+            `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}.json`,
+            {
+              method: 'GET',
+              headers: {
+                'Authorization': `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
+              }
+            }
+          );
+          
+          twilioApiAccessible = testResponse.ok;
+          
+          if (!testResponse.ok) {
+            const errorText = await testResponse.text();
+            twilioApiError = {
+              status: testResponse.status,
+              text: errorText
+            };
+          } else {
+            console.log('Twilio API access successful');
+          }
+        } catch (err) {
+          console.error('Error accessing Twilio API:', err);
+          twilioApiError = {
+            message: String(err)
+          };
+        }
+      }
+      
       // Success response with webhook URLs and explicit instructions
+      const response = {
+        success: true, 
+        webhookUrl,
+        fromNumber: phoneNumber,
+        currentFromNumber: currentFromNumber || null,
+        usingMetaIntegration: true,
+        twilioConfigured: !!(twilioAccountSid && twilioAuthToken),
+        twilioApiAccessible,
+        twilioApiError,
+        // Include instructions for manual steps with specific values
+        instructions: [
+          `1. Set the TWILIO_FROM_NUMBER in Supabase secrets to: ${phoneNumber} (without 'whatsapp:' prefix)`,
+          `2. Configure this webhook URL in your WhatsApp Business account: ${webhookUrl}`,
+          verifyToken ? 
+            `3. Set WHATSAPP_VERIFY_TOKEN in Supabase secrets to: ${verifyToken}` : 
+            "3. Create a WHATSAPP_VERIFY_TOKEN in Supabase secrets (any secure random string)"
+        ]
+      };
+      
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          webhookUrl,
-          fromNumber: phoneNumber,
-          currentFromNumber: currentFromNumber || null,
-          usingMetaIntegration: true,
-          twilioConfigured: !!(twilioAccountSid && twilioAuthToken),
-          // Include instructions for manual steps with specific values
-          instructions: [
-            `1. Set the TWILIO_FROM_NUMBER in Supabase secrets to: ${phoneNumber} (without 'whatsapp:' prefix)`,
-            `2. Configure this webhook URL in your WhatsApp Business account: ${webhookUrl}`,
-            verifyToken ? 
-              `3. Set WHATSAPP_VERIFY_TOKEN in Supabase secrets to: ${verifyToken}` : 
-              "3. Create a WHATSAPP_VERIFY_TOKEN in Supabase secrets (any secure random string)"
-          ]
-        }),
+        JSON.stringify(response),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     } catch (storageError) {
