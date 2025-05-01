@@ -17,9 +17,12 @@ serve(async (req) => {
     // Parse request body
     const { fromNumber, verifyToken } = await req.json();
     
-    console.log("Updating WhatsApp settings", { fromNumber: fromNumber ? "provided" : "not provided" });
+    console.log("Updating WhatsApp settings", { 
+      fromNumber: fromNumber ? fromNumber : "not provided",
+      verifyToken: verifyToken ? "provided" : "not provided" 
+    });
     
-    // If no number is provided, use the default number (without whatsapp: prefix)
+    // If no number is provided, use the default number
     const phoneNumber = fromNumber || '+918978354242';
     
     // Get current URL for hostname construction
@@ -28,7 +31,7 @@ serve(async (req) => {
     const protocol = hostname.includes('localhost') ? 'http' : 'https';
     const baseUrl = `${protocol}://${hostname}`;
     
-    // Calculate webhook URLs
+    // Calculate webhook URL
     const webhookUrl = `${baseUrl}/functions/v1/whatsapp-webhook`;
     
     console.log("Generated webhook URLs", { webhookUrl });
@@ -40,22 +43,30 @@ serve(async (req) => {
     );
     
     try {
-      if (verifyToken) {
-        console.log("New verify token provided, this should be set in environment variables");
-      }
+      // Check if current environment variables are set
+      const currentFromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
+      const currentVerifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN');
       
-      // Success response with webhook URLs
+      console.log("Current configuration:", { 
+        currentFromNumber: currentFromNumber || "not set", 
+        hasVerifyToken: currentVerifyToken ? true : false 
+      });
+      
+      // Success response with webhook URLs and explicit instructions
       return new Response(
         JSON.stringify({ 
           success: true, 
           webhookUrl,
           fromNumber: phoneNumber,
+          currentFromNumber: currentFromNumber || null,
           usingMetaIntegration: true,
-          // Include instructions for manual steps
+          // Include instructions for manual steps with specific values
           instructions: [
-            "1. Set the TWILIO_FROM_NUMBER in Supabase secrets to the number provided (without 'whatsapp:' prefix)",
-            `2. Configure the webhook URL (${webhookUrl}) in your WhatsApp Business account`,
-            "3. If you provided a verify token, set WHATSAPP_VERIFY_TOKEN in Supabase secrets"
+            `1. Set the TWILIO_FROM_NUMBER in Supabase secrets to: ${phoneNumber} (without 'whatsapp:' prefix)`,
+            `2. Configure this webhook URL in your WhatsApp Business account: ${webhookUrl}`,
+            verifyToken ? 
+              `3. Set WHATSAPP_VERIFY_TOKEN in Supabase secrets to: ${verifyToken}` : 
+              "3. Create a WHATSAPP_VERIFY_TOKEN in Supabase secrets (any secure random string)"
           ]
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

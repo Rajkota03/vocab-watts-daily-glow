@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -109,54 +108,51 @@ serve(async (req) => {
 
     // If we're sending immediately as requested from signup, skip scheduling
     if (!sendImmediately && scheduledTime) {
-      const scheduledDate = new Date(scheduledTime);
-      if (scheduledDate > new Date()) {
-        try {
-          const supabaseClient = createClient(
-            Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-          );
+      try {
+        const supabaseClient = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        );
 
-          const { error: scheduleError } = await supabaseClient
-            .from('scheduled_messages')
-            .insert({
-              phone_number: to,
-              message,
-              category,
-              is_pro: isPro,
-              scheduled_time: scheduledTime,
-              user_id: userId
-            });
+        const { error: scheduleError } = await supabaseClient
+          .from('scheduled_messages')
+          .insert({
+            phone_number: to,
+            message,
+            category,
+            is_pro: isPro,
+            scheduled_time: scheduledTime,
+            user_id: userId
+          });
 
-          if (scheduleError) {
-            console.error('Error scheduling message:', scheduleError);
-            throw new Error(`Failed to schedule message: ${scheduleError.message}`);
-          }
-
-          return new Response(
-            JSON.stringify({ 
-              success: true, 
-              scheduled: true,
-              scheduledTime,
-              message: "Message scheduled successfully"
-            }),
-            {
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            }
-          );
-        } catch (scheduleErr) {
-          console.error('Error in message scheduling:', scheduleErr);
-          return new Response(
-            JSON.stringify({ 
-              success: false, 
-              error: `Failed to schedule message: ${String(scheduleErr)}`,
-            }),
-            {
-              status: 500,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            }
-          );
+        if (scheduleError) {
+          console.error('Error scheduling message:', scheduleError);
+          throw new Error(`Failed to schedule message: ${scheduleError.message}`);
         }
+
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            scheduled: true,
+            scheduledTime,
+            message: "Message scheduled successfully"
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      } catch (scheduleErr) {
+        console.error('Error in message scheduling:', scheduleErr);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: `Failed to schedule message: ${String(scheduleErr)}`,
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
       }
     }
 
@@ -211,11 +207,11 @@ serve(async (req) => {
       );
     }
 
-    // Format WhatsApp number
+    // Format WhatsApp number for recipient
     let toNumber;
     try {
       toNumber = formatWhatsAppNumber(to);
-      console.log(`Formatted phone number from ${to} to ${toNumber}`);
+      console.log(`Formatted recipient phone number from ${to} to ${toNumber}`);
     } catch (formatError) {
       console.error('Error formatting phone number:', formatError);
       return new Response(
@@ -233,35 +229,30 @@ serve(async (req) => {
       );
     }
     
-    // Get the from number from environment variables - use the WhatsApp Business number
-    // IMPORTANT: For WhatsApp Business API integration, we use the number WITHOUT "whatsapp:" prefix
+    // Get the from number from environment variables
     const storedFromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
+    console.log('TWILIO_FROM_NUMBER from environment:', storedFromNumber);
     
-    let fromNumber;
-    // For WhatsApp Business number, we need to use the number directly
-    // For Twilio sandbox, we need to add the whatsapp: prefix
+    // Default to WhatsApp Business number if no number is provided
     const defaultNumber = '+918978354242';
+    let fromNumber;
+    let isTwilioSandbox = false;
     
     if (!storedFromNumber) {
       console.log(`No TWILIO_FROM_NUMBER set in environment, using default: ${defaultNumber}`);
       fromNumber = `whatsapp:${defaultNumber}`;
     } else {
-      // Check if the stored number already has the whatsapp: prefix
-      if (storedFromNumber.startsWith('whatsapp:')) {
-        fromNumber = storedFromNumber;
+      // Check if using Twilio sandbox number
+      isTwilioSandbox = storedFromNumber === '+14155238886';
+      
+      // For Twilio sandbox, we need to add the whatsapp: prefix
+      if (isTwilioSandbox) {
+        fromNumber = `whatsapp:${storedFromNumber}`;
       } else {
-        // Only add the whatsapp: prefix if it's the Twilio sandbox number
-        if (storedFromNumber === '+14155238886') {
-          fromNumber = `whatsapp:${storedFromNumber}`;
-        } else {
-          // For WhatsApp Business API, don't use the whatsapp: prefix
-          fromNumber = storedFromNumber;
-        }
+        // For WhatsApp Business API, we'll add the prefix later in the API call
+        fromNumber = storedFromNumber;
       }
     }
-    
-    // Check if we're using the Twilio sandbox
-    const isTwilioSandbox = fromNumber.includes('+14155238886');
     
     console.log('Using from number:', fromNumber, isTwilioSandbox ? '(Twilio Sandbox)' : '(WhatsApp Business)');
     
@@ -306,32 +297,28 @@ serve(async (req) => {
     
     console.log(`Sending WhatsApp message from ${fromNumber} to ${toNumber}`);
     console.log(`Message content (first 50 chars): ${finalMessage.substring(0, 50)}...`);
-    console.log('Using WhatsApp Business API:', !isTwilioSandbox);
-
+    
     // Send message via Twilio API
     try {
       console.log('Preparing to send message with Twilio API');
       
-      // Create the request body - need to handle different ways of sending based on if it's sandbox or WhatsApp Business API
+      // Create the request body
       const requestBody = new URLSearchParams();
+      
+      // For WhatsApp Business API through Twilio, both numbers need the whatsapp: prefix
+      requestBody.append('To', toNumber);
       
       if (isTwilioSandbox) {
         // For Twilio Sandbox, both numbers must have whatsapp: prefix
-        requestBody.append('To', toNumber);
         requestBody.append('From', fromNumber);
       } else {
-        // For WhatsApp Business API through Twilio, we need to use the appropriate format
-        // To number needs the whatsapp: prefix, From number should NOT have the prefix
-        requestBody.append('To', toNumber);
-        
-        // Make sure fromNumber doesn't have the whatsapp: prefix for WhatsApp Business
+        // For WhatsApp Business API, ensure the From number has the whatsapp: prefix
         const cleanFromNumber = fromNumber.startsWith('whatsapp:') 
-          ? fromNumber.substring(9) 
-          : fromNumber;
+          ? fromNumber 
+          : `whatsapp:${fromNumber}`;
         
-        // For WhatsApp Business API, we need to set the From number without the prefix
-        // but ensure the message is delivered through WhatsApp
-        requestBody.append('From', `whatsapp:${cleanFromNumber}`);
+        requestBody.append('From', cleanFromNumber);
+        console.log('Final From number with prefix:', cleanFromNumber);
       }
       
       requestBody.append('Body', finalMessage);
@@ -406,7 +393,7 @@ serve(async (req) => {
           details: twilioData,
           usingMetaIntegration: !isTwilioSandbox,
           to: toNumber,
-          from: fromNumber
+          from: requestBody.get('From')
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

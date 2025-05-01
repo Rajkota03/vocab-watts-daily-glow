@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, AlertCircle, Info, Settings } from 'lucide-react';
+import { Send, Loader2, AlertCircle, Info, Settings, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PhoneNumberDialog } from '@/components/payment/PhoneNumberDialog'; 
 import { supabase } from '@/integrations/supabase/client';
@@ -116,7 +116,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
       console.log('WhatsApp settings updated:', data);
       toast({
         title: "Settings Updated",
-        description: "WhatsApp webhook settings have been updated. Remember to update your Supabase secrets!",
+        description: "WhatsApp webhook settings have been generated. Follow the next steps shown below.",
         variant: "success"
       });
       
@@ -196,7 +196,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
             
             <div className="space-y-2">
               <label className="block text-xs text-gray-700">
-                Webhook Verification Token (optional)
+                Webhook Verification Token (required)
               </label>
               <input
                 type="text"
@@ -205,6 +205,21 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
                 placeholder="Create a unique verification token"
                 className="w-full p-2 border border-gray-300 rounded text-sm"
               />
+              <p className="text-xs text-gray-500">
+                You'll need this same token when setting up the webhook in WhatsApp
+              </p>
+            </div>
+            
+            <div className="mt-1">
+              <a 
+                href="https://supabase.com/dashboard/project/pbpmtqcffhqwzboviqfw/settings/functions" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-xs flex items-center text-blue-600 hover:text-blue-800"
+              >
+                <span>Go to Supabase Secrets</span>
+                <ExternalLink className="h-3 w-3 ml-1" />
+              </a>
             </div>
             
             <div className="flex space-x-2 pt-2">
@@ -284,13 +299,26 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
                 <code className="block bg-blue-100 p-1 rounded mt-1 text-xs break-all">
                   {debugInfo.webhookUrl}
                 </code>
-                <div className="mt-2">
-                  <p className="font-medium text-xs">Required Steps:</p>
-                  <ul className="text-xs list-disc pl-4 mt-1">
+                
+                <div className="mt-3 border-t border-blue-200 pt-2">
+                  <p className="font-medium text-xs mb-1">Required Steps:</p>
+                  <ol className="text-xs list-decimal pl-4 mt-1 space-y-1">
                     {debugInfo.instructions?.map((instruction: string, i: number) => (
                       <li key={i}>{instruction}</li>
                     ))}
-                  </ul>
+                  </ol>
+                </div>
+                
+                <div className="mt-3">
+                  <a 
+                    href="https://supabase.com/dashboard/project/pbpmtqcffhqwzboviqfw/settings/functions" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs flex items-center font-medium"
+                  >
+                    <span>Set Supabase Secrets</span>
+                    <ExternalLink className="h-3 w-3 ml-1" />
+                  </a>
                 </div>
               </div>
             )}
