@@ -62,12 +62,27 @@ serve(async (req) => {
               status: testResponse.status,
               text: errorText
             };
+            console.error("Twilio API test failed:", twilioApiError);
+          } else {
+            console.log("Twilio API test successful");
           }
         } catch (err) {
           twilioApiError = {
             message: String(err)
           };
+          console.error("Error testing Twilio API connection:", err);
         }
+      } else {
+        console.log("Twilio credentials not configured, skipping API test");
+      }
+      
+      // Check if the auth token is valid (not empty string)
+      const validAuthToken = twilioAuthToken && twilioAuthToken.trim() !== '';
+      
+      if (validAuthToken) {
+        console.log("Auth token is configured and not empty");
+      } else {
+        console.log("Auth token is missing or empty");
       }
       
       return new Response(
@@ -77,26 +92,26 @@ serve(async (req) => {
           fromNumber: currentFromNumber || '+918978354242',
           currentFromNumber: currentFromNumber || null,
           messagingServiceSid: currentMessagingServiceSid || null,
-          twilioConfigured: !!(twilioAccountSid && twilioAuthToken),
+          twilioConfigured: !!(twilioAccountSid && validAuthToken),
           verifyTokenConfigured: !!currentVerifyToken,
           twilioApiAccessible,
           twilioApiError,
           configStatus: {
             accountSid: twilioAccountSid ? 'configured' : 'missing',
-            authToken: twilioAuthToken ? 'configured' : 'missing',
+            authToken: validAuthToken ? 'configured' : 'missing',
             fromNumber: currentFromNumber ? 'configured' : 'missing',
             messagingServiceSid: currentMessagingServiceSid ? 'configured' : 'missing',
             verifyToken: currentVerifyToken ? 'configured' : 'missing'
           },
           configRequired: {
             TWILIO_ACCOUNT_SID: twilioAccountSid ? false : true,
-            TWILIO_AUTH_TOKEN: twilioAuthToken ? false : true,
+            TWILIO_AUTH_TOKEN: validAuthToken ? false : true,
             TWILIO_FROM_NUMBER: currentFromNumber ? false : true,
             TWILIO_MESSAGING_SERVICE_SID: messagingServiceSid ? false : true,
             WHATSAPP_VERIFY_TOKEN: verifyToken ? false : true
           },
           missingConfigHints: {
-            TWILIO_AUTH_TOKEN: twilioAuthToken ? null : 
+            TWILIO_AUTH_TOKEN: validAuthToken ? null : 
               "The Twilio Auth Token is required. Find it in your Twilio Console at https://console.twilio.com/."
           }
         }),

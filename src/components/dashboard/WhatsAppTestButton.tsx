@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Send, Loader2, AlertCircle, Info, Settings, ExternalLink, HelpCircle, CheckCircle, PhoneCall } from 'lucide-react';
@@ -44,7 +43,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
     try {
       setIsLoading(true);
       const { data, error } = await supabase.functions.invoke('update-whatsapp-settings', {
-        body: { checkOnly: true }
+        body: { checkOnly: true, debugMode: true }
       });
       
       if (error) {
@@ -63,6 +62,15 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
           setConfigInputs(prev => ({...prev, messagingServiceSid: data.messagingServiceSid}));
         }
         console.log("WhatsApp configuration status:", data);
+        
+        // Check if auth token is configured
+        if (data?.configRequired?.TWILIO_AUTH_TOKEN) {
+          toast({
+            title: "Twilio Auth Token Missing",
+            description: "Please configure your Twilio Auth Token in Supabase secrets to enable WhatsApp messaging.",
+            variant: "destructive"
+          });
+        }
       }
     } catch (err) {
       console.error('Error checking Twilio config:', err);
@@ -345,6 +353,39 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
     return null;
   };
 
+  // Add a connection status indicator in the test results section
+  const renderConnectionStatus = () => {
+    if (!configStatus) return null;
+    
+    const authTokenConfigured = !configStatus.configRequired?.TWILIO_AUTH_TOKEN;
+    
+    if (!authTokenConfigured) {
+      return (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800 flex items-start space-x-2 mt-2">
+          <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-medium">Twilio Auth Token Missing</p>
+            <p>The Twilio Auth Token is not configured in your Supabase secrets.</p>
+            <p className="mt-1">Please add it in your Supabase project settings under Functions → Secrets.</p>
+            <div className="mt-2">
+              <a 
+                href="https://supabase.com/dashboard/project/pbpmtqcffhqwzboviqfw/settings/functions" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-xs flex items-center text-red-800 hover:text-red-700 font-medium"
+              >
+                <span>Configure Supabase Secrets</span>
+                <ExternalLink className="h-3 w-3 ml-1" />
+              </a>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    return null;
+  };
+
   return (
     <>
       <div className="flex flex-col space-y-4">
@@ -381,6 +422,9 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
 
         {/* Phone Number Format Guidance */}
         {renderPhoneNumberGuidance()}
+        
+        {/* Add Connection Status Indicator */}
+        {renderConnectionStatus()}
 
         {!configuring ? (
           <>
