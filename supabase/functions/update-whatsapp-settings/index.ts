@@ -46,10 +46,14 @@ serve(async (req) => {
       // Check if current environment variables are set
       const currentFromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
       const currentVerifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN');
+      const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+      const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
       
       console.log("Current configuration:", { 
         currentFromNumber: currentFromNumber || "not set", 
-        hasVerifyToken: currentVerifyToken ? true : false 
+        hasVerifyToken: currentVerifyToken ? true : false,
+        hasSid: twilioAccountSid ? true : false,
+        hasAuthToken: twilioAuthToken ? true : false
       });
       
       // Success response with webhook URLs and explicit instructions
@@ -60,6 +64,7 @@ serve(async (req) => {
           fromNumber: phoneNumber,
           currentFromNumber: currentFromNumber || null,
           usingMetaIntegration: true,
+          twilioConfigured: !!(twilioAccountSid && twilioAuthToken),
           // Include instructions for manual steps with specific values
           instructions: [
             `1. Set the TWILIO_FROM_NUMBER in Supabase secrets to: ${phoneNumber} (without 'whatsapp:' prefix)`,

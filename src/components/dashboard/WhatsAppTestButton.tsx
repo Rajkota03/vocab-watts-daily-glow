@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, AlertCircle, Info, Settings, ExternalLink } from 'lucide-react';
+import { Send, Loader2, AlertCircle, Info, Settings, ExternalLink, HelpCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PhoneNumberDialog } from '@/components/payment/PhoneNumberDialog'; 
 import { supabase } from '@/integrations/supabase/client';
@@ -22,11 +22,44 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
   const [debugInfo, setDebugInfo] = useState<any>(null);
   const [fromNumber, setFromNumber] = useState<string | null>(null);
   const [configuring, setConfiguring] = useState(false);
+  const [configStatus, setConfigStatus] = useState<any>(null);
   const [configInputs, setConfigInputs] = useState({
     fromNumber: '+918978354242',
     verifyToken: '',
   });
   const { toast } = useToast();
+
+  // Check config status when component loads
+  React.useEffect(() => {
+    if (!configuring) {
+      checkTwilioConfig();
+    }
+  }, []);
+
+  const checkTwilioConfig = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('update-whatsapp-settings', {
+        body: { checkOnly: true }
+      });
+      
+      if (error) {
+        console.error('Failed to check Twilio config:', error);
+        setConfigStatus({
+          error: true,
+          message: "Failed to check Twilio configuration"
+        });
+      } else {
+        setConfigStatus(data);
+        console.log("WhatsApp configuration status:", data);
+      }
+    } catch (err) {
+      console.error('Error checking Twilio config:', err);
+      setConfigStatus({
+        error: true,
+        message: String(err)
+      });
+    }
+  };
 
   const handleSendTest = async () => {
     if (!phoneNumber) {
@@ -122,6 +155,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
       
       setConfiguring(false);
       setDebugInfo(data);
+      setConfigStatus(data);
     } catch (error: any) {
       console.error('Error updating WhatsApp settings:', error);
       setError(error.message || 'Failed to update WhatsApp settings');
@@ -138,6 +172,37 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
   return (
     <>
       <div className="flex flex-col space-y-4">
+        {configStatus && configStatus.error && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 flex items-start space-x-2">
+            <HelpCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Twilio Configuration Check</p>
+              <p>There was an error checking your Twilio configuration. This may affect message delivery.</p>
+            </div>
+          </div>
+        )}
+
+        {configStatus && !configStatus.error && !configStatus.twilioConfigured && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 flex items-start space-x-2">
+            <HelpCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Twilio Not Fully Configured</p>
+              <p>Your Twilio WhatsApp integration is not fully configured. Please set the required secrets in Supabase.</p>
+              <div className="mt-2">
+                <a 
+                  href="https://supabase.com/dashboard/project/pbpmtqcffhqwzboviqfw/settings/functions" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-xs flex items-center text-amber-900 hover:text-amber-800 font-medium"
+                >
+                  <span>Configure Supabase Secrets</span>
+                  <ExternalLink className="h-3 w-3 ml-1" />
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
         {!configuring ? (
           <>
             <div className="flex space-x-2">

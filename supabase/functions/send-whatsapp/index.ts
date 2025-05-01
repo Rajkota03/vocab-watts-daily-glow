@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -15,6 +16,7 @@ interface WhatsAppRequest {
   userId?: string;
   scheduledTime?: string;
   sendImmediately?: boolean;
+  checkOnly?: boolean;
 }
 
 function formatWhatsAppNumber(number: string): string {
@@ -27,23 +29,23 @@ function formatWhatsAppNumber(number: string): string {
     return number;
   }
   
+  // Remove any "whatsapp:" prefix if present
   let cleaned = number.startsWith('whatsapp:') ? number.substring(9) : number;
   
-  // Remove all non-digit characters
-  cleaned = cleaned.replace(/\D/g, '');
-  
-  // Handle country codes
-  if (!cleaned.startsWith('1') && !cleaned.startsWith('91')) {
-    if (cleaned.length === 10) {
-      cleaned = '91' + cleaned; // Default to India for 10-digit numbers
-    } else {
-      cleaned = '1' + cleaned; // Default to US for others
+  // Remove all non-digit characters except the + at the beginning
+  if (cleaned.startsWith('+')) {
+    cleaned = '+' + cleaned.substring(1).replace(/\D/g, '');
+  } else {
+    cleaned = cleaned.replace(/\D/g, '');
+    // Ensure + sign at the beginning
+    if (!cleaned.startsWith('+')) {
+      cleaned = '+' + cleaned;
     }
   }
   
-  // Ensure plus sign at the beginning
-  if (!cleaned.startsWith('+')) {
-    cleaned = '+' + cleaned;
+  // Validate minimum length (country code + at least 8 digits)
+  if (cleaned.length < 9) {
+    throw new Error('Phone number is too short, please include country code');
   }
   
   return `whatsapp:${cleaned}`;
@@ -75,7 +77,31 @@ serve(async (req) => {
       );
     }
     
-    const { to, message, category, isPro, skipSubscriptionCheck, userId, scheduledTime, sendImmediately } = requestBody;
+    const { to, message, category, isPro, skipSubscriptionCheck, userId, scheduledTime, sendImmediately, checkOnly } = requestBody;
+
+    // If only checking configuration, return status
+    if (checkOnly) {
+      const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+      const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+      const fromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
+      const verifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN');
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          twilioConfigured: !!(twilioAccountSid && twilioAuthToken),
+          fromNumberConfigured: !!fromNumber,
+          verifyTokenConfigured: !!verifyToken,
+          configStatus: {
+            accountSid: twilioAccountSid ? 'configured' : 'missing',
+            authToken: twilioAuthToken ? 'configured' : 'missing',
+            fromNumber: fromNumber ? 'configured' : 'missing',
+            verifyToken: verifyToken ? 'configured' : 'missing'
+          }
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     console.log('WhatsApp request received:', { 
       to, 
@@ -87,7 +113,7 @@ serve(async (req) => {
     });
 
     // Validate required fields
-    if (!to || to.trim().length < 10) {
+    if (!to || to.trim().length < 9) {
       const errorMessage = 'Invalid phone number provided';
       console.error(errorMessage, { phoneNumber: to });
       
@@ -96,7 +122,8 @@ serve(async (req) => {
           success: false, 
           error: errorMessage,
           details: { 
-            message: "Please provide a valid phone number with country code."
+            message: "Please provide a valid phone number with country code.",
+            providedNumber: to
           }
         }),
         {
@@ -197,7 +224,11 @@ serve(async (req) => {
           success: false, 
           error: errorMessage,
           details: { 
-            message: "Please check that TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN are set in Supabase environment variables."
+            message: "Please check that TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN are set in Supabase environment variables.",
+            configurationStatus: {
+              TWILIO_ACCOUNT_SID: accountSid ? "configured" : "missing",
+              TWILIO_AUTH_TOKEN: authToken ? "configured" : "missing"
+            }
           }
         }),
         {
@@ -219,7 +250,8 @@ serve(async (req) => {
           success: false, 
           error: String(formatError),
           details: { 
-            message: "Could not format phone number properly."
+            message: "Could not format phone number properly.",
+            providedNumber: to
           }
         }),
         {
@@ -245,12 +277,26 @@ serve(async (req) => {
       // Check if using Twilio sandbox number
       isTwilioSandbox = storedFromNumber === '+14155238886';
       
-      // For Twilio sandbox, we need to add the whatsapp: prefix
-      if (isTwilioSandbox) {
-        fromNumber = `whatsapp:${storedFromNumber}`;
-      } else {
-        // For WhatsApp Business API, we'll add the prefix later in the API call
-        fromNumber = storedFromNumber;
+      // Format the from number properly
+      try {
+        fromNumber = formatWhatsAppNumber(storedFromNumber);
+        console.log(`Formatted sender phone number from ${storedFromNumber} to ${fromNumber}`);
+      } catch (formatError) {
+        console.error('Error formatting from number:', formatError);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: `Invalid sender phone number: ${String(formatError)}`,
+            details: { 
+              message: "The configured TWILIO_FROM_NUMBER is invalid.",
+              providedNumber: storedFromNumber
+            }
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
       }
     }
     
@@ -305,23 +351,16 @@ serve(async (req) => {
       // Create the request body
       const requestBody = new URLSearchParams();
       
-      // For WhatsApp Business API through Twilio, both numbers need the whatsapp: prefix
+      // Set To and From numbers
       requestBody.append('To', toNumber);
-      
-      if (isTwilioSandbox) {
-        // For Twilio Sandbox, both numbers must have whatsapp: prefix
-        requestBody.append('From', fromNumber);
-      } else {
-        // For WhatsApp Business API, ensure the From number has the whatsapp: prefix
-        const cleanFromNumber = fromNumber.startsWith('whatsapp:') 
-          ? fromNumber 
-          : `whatsapp:${fromNumber}`;
-        
-        requestBody.append('From', cleanFromNumber);
-        console.log('Final From number with prefix:', cleanFromNumber);
-      }
-      
+      requestBody.append('From', fromNumber);
       requestBody.append('Body', finalMessage);
+      
+      console.log('Twilio API request:', {
+        to: toNumber,
+        from: fromNumber,
+        messageLength: finalMessage.length,
+      });
       
       const twilioResponse = await fetch(
         `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
@@ -393,7 +432,7 @@ serve(async (req) => {
           details: twilioData,
           usingMetaIntegration: !isTwilioSandbox,
           to: toNumber,
-          from: requestBody.get('From')
+          from: fromNumber
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
