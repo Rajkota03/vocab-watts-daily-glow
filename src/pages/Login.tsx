@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import type { LoginFormValues, RegisterFormValues } from '@/types/auth';
 const Login = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [configStatus, setConfigStatus] = useState<any>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -24,6 +26,24 @@ const Login = () => {
       }
     };
     checkUser();
+
+    // Check WhatsApp configuration status when login page loads
+    const checkWhatsAppConfig = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('update-whatsapp-settings', {
+          body: { checkOnly: true }
+        });
+        
+        if (!error) {
+          setConfigStatus(data);
+          console.log("WhatsApp configuration status:", data);
+        }
+      } catch (err) {
+        console.error("Error checking WhatsApp config:", err);
+      }
+    };
+    
+    checkWhatsAppConfig();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -122,6 +142,12 @@ const Login = () => {
         </CardHeader>
         
         <CardContent className="space-y-6 pt-4">
+          {configStatus && configStatus.configRequired?.TWILIO_AUTH_TOKEN === false && (
+            <div className="bg-green-50 text-green-700 p-2 rounded-md text-xs mb-4">
+              WhatsApp messaging is configured and ready to use
+            </div>
+          )}
+          
           {isSignUp ? (
             <RegisterForm onSubmit={handleRegister} isLoading={isLoading} />
           ) : (
