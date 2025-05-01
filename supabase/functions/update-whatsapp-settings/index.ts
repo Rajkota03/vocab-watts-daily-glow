@@ -87,6 +87,17 @@ serve(async (req) => {
             fromNumber: currentFromNumber ? 'configured' : 'missing',
             messagingServiceSid: currentMessagingServiceSid ? 'configured' : 'missing',
             verifyToken: currentVerifyToken ? 'configured' : 'missing'
+          },
+          configRequired: {
+            TWILIO_ACCOUNT_SID: twilioAccountSid ? false : true,
+            TWILIO_AUTH_TOKEN: twilioAuthToken ? false : true,
+            TWILIO_FROM_NUMBER: currentFromNumber ? false : true,
+            TWILIO_MESSAGING_SERVICE_SID: messagingServiceSid ? false : true,
+            WHATSAPP_VERIFY_TOKEN: verifyToken ? false : true
+          },
+          missingConfigHints: {
+            TWILIO_AUTH_TOKEN: twilioAuthToken ? null : 
+              "The Twilio Auth Token is required. Find it in your Twilio Console at https://console.twilio.com/."
           }
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -198,15 +209,21 @@ serve(async (req) => {
         twilioConfigured: !!(twilioAccountSid && twilioAuthToken),
         twilioApiAccessible,
         twilioApiError,
+        configRequired: {
+          TWILIO_ACCOUNT_SID: twilioAccountSid ? false : true,
+          TWILIO_AUTH_TOKEN: twilioAuthToken ? false : true,
+          TWILIO_FROM_NUMBER: currentFromNumber ? false : messagingServiceSid ? false : true,
+          TWILIO_MESSAGING_SERVICE_SID: messagingServiceSid ? false : currentMessagingServiceSid ? false : currentFromNumber ? false : true,
+          WHATSAPP_VERIFY_TOKEN: verifyToken ? false : currentVerifyToken ? false : true
+        },
         // Include instructions for manual steps with specific values
         instructions: [
-          `1. Set the TWILIO_FROM_NUMBER in Supabase secrets to: ${phoneNumber} (without 'whatsapp:' prefix)`,
-          messagingServiceSid ? 
-            `2. Set TWILIO_MESSAGING_SERVICE_SID in Supabase secrets to: ${messagingServiceSid}` : 
-            `2. Configure this webhook URL in your WhatsApp Business account: ${webhookUrl}`,
-          verifyToken ? 
-            `3. Set WHATSAPP_VERIFY_TOKEN in Supabase secrets to: ${verifyToken}` : 
-            "3. Create a WHATSAPP_VERIFY_TOKEN in Supabase secrets (any secure random string)"
+          `1. ${twilioAccountSid ? '✅' : '⚠️'} ${twilioAccountSid ? 'TWILIO_ACCOUNT_SID is configured' : 'Set TWILIO_ACCOUNT_SID in Supabase secrets'}`,
+          `2. ${twilioAuthToken ? '✅' : '⚠️'} ${twilioAuthToken ? 'TWILIO_AUTH_TOKEN is configured' : 'Set TWILIO_AUTH_TOKEN in Supabase secrets - Find this in your Twilio console'}`,
+          `3. ${currentFromNumber || messagingServiceSid ? '✅' : '⚠️'} ${currentFromNumber ? `TWILIO_FROM_NUMBER is set to: ${currentFromNumber}` : messagingServiceSid ? 'Will use Messaging Service instead of From Number' : 'Set TWILIO_FROM_NUMBER in Supabase secrets to: ' + phoneNumber}`,
+          `4. ${currentMessagingServiceSid || messagingServiceSid ? '✅' : '⚠️'} ${currentMessagingServiceSid ? `TWILIO_MESSAGING_SERVICE_SID is set to: ${currentMessagingServiceSid}` : messagingServiceSid ? `Set TWILIO_MESSAGING_SERVICE_SID in Supabase secrets to: ${messagingServiceSid}` : 'Either TWILIO_MESSAGING_SERVICE_SID or TWILIO_FROM_NUMBER must be configured'}`,
+          `5. ${currentVerifyToken || verifyToken ? '✅' : '⚠️'} ${currentVerifyToken ? 'WHATSAPP_VERIFY_TOKEN is configured' : verifyToken ? `Set WHATSAPP_VERIFY_TOKEN in Supabase secrets to: ${verifyToken}` : 'Create a WHATSAPP_VERIFY_TOKEN in Supabase secrets (any secure random string)'}`,
+          `6. ${twilioApiAccessible ? '✅ Twilio API connection successful' : '⚠️ Could not connect to Twilio API - check your credentials'}`
         ]
       };
       
