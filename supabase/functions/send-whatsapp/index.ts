@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -24,7 +23,10 @@ function formatWhatsAppNumber(number: string): string {
     throw new Error('Phone number is required');
   }
   
-  // If already properly formatted, return it
+  // For debugging - log the input number
+  console.log(`Formatting number: ${number}`);
+  
+  // If already properly formatted with whatsapp: prefix, return it
   if (number.startsWith('whatsapp:+')) {
     return number;
   }
@@ -32,21 +34,22 @@ function formatWhatsAppNumber(number: string): string {
   // Remove any "whatsapp:" prefix if present
   let cleaned = number.startsWith('whatsapp:') ? number.substring(9) : number;
   
-  // Remove all non-digit characters except the + at the beginning
-  if (cleaned.startsWith('+')) {
-    cleaned = '+' + cleaned.substring(1).replace(/\D/g, '');
+  // Ensure we have a plus sign
+  cleaned = cleaned.trim();
+  if (!cleaned.startsWith('+')) {
+    cleaned = '+' + cleaned.replace(/^\+*/, '').replace(/\D/g, '');
   } else {
-    cleaned = cleaned.replace(/\D/g, '');
-    // Ensure + sign at the beginning
-    if (!cleaned.startsWith('+')) {
-      cleaned = '+' + cleaned;
-    }
+    // Keep the plus sign but remove non-digits
+    cleaned = '+' + cleaned.substring(1).replace(/\D/g, '');
   }
   
   // Validate minimum length (country code + at least 8 digits)
   if (cleaned.length < 9) {
-    throw new Error('Phone number is too short, please include country code');
+    throw new Error(`Phone number ${cleaned} is too short, please include country code`);
   }
+  
+  // Log the formatted number for debugging
+  console.log(`Formatted to: whatsapp:${cleaned}`);
   
   return `whatsapp:${cleaned}`;
 }
@@ -109,7 +112,8 @@ serve(async (req) => {
       isPro, 
       scheduledTime, 
       sendImmediately,
-      messageLength: message ? message.length : 0
+      messageLength: message ? message.length : 0,
+      toFormatted: to ? to.substring(0, 5) + '...' : undefined
     });
 
     // Validate required fields
@@ -203,7 +207,7 @@ serve(async (req) => {
       }
     }
 
-    // Check for Twilio credentials
+    // Check for Twilio credentials with detailed logging
     const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
     const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
     
@@ -238,7 +242,7 @@ serve(async (req) => {
       );
     }
 
-    // Format WhatsApp number for recipient
+    // Format WhatsApp number for recipient with enhanced error handling
     let toNumber;
     try {
       toNumber = formatWhatsAppNumber(to);
@@ -251,7 +255,8 @@ serve(async (req) => {
           error: String(formatError),
           details: { 
             message: "Could not format phone number properly.",
-            providedNumber: to
+            providedNumber: to,
+            tip: "Make sure your number includes the country code (e.g., +1 for US, +91 for India)"
           }
         }),
         {
@@ -261,43 +266,56 @@ serve(async (req) => {
       );
     }
     
-    // Get the from number from environment variables
+    // Get the from number from environment variables with better logging
     const storedFromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
     console.log('TWILIO_FROM_NUMBER from environment:', storedFromNumber);
+    
+    if (!storedFromNumber) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Missing sender WhatsApp number",
+          details: { 
+            message: "The TWILIO_FROM_NUMBER is not set in Supabase environment variables.",
+            required: "Set TWILIO_FROM_NUMBER in Supabase secrets"
+          }
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
     
     // Default to WhatsApp Business number if no number is provided
     const defaultNumber = '+918978354242';
     let fromNumber;
     let isTwilioSandbox = false;
     
-    if (!storedFromNumber) {
-      console.log(`No TWILIO_FROM_NUMBER set in environment, using default: ${defaultNumber}`);
-      fromNumber = `whatsapp:${defaultNumber}`;
-    } else {
-      // Check if using Twilio sandbox number
-      isTwilioSandbox = storedFromNumber === '+14155238886';
-      
-      // Format the from number properly
-      try {
-        fromNumber = formatWhatsAppNumber(storedFromNumber);
-        console.log(`Formatted sender phone number from ${storedFromNumber} to ${fromNumber}`);
-      } catch (formatError) {
-        console.error('Error formatting from number:', formatError);
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: `Invalid sender phone number: ${String(formatError)}`,
-            details: { 
-              message: "The configured TWILIO_FROM_NUMBER is invalid.",
-              providedNumber: storedFromNumber
-            }
-          }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    // Check if using Twilio sandbox number
+    isTwilioSandbox = storedFromNumber === '+14155238886';
+    
+    // Format the from number properly with error handling
+    try {
+      fromNumber = formatWhatsAppNumber(storedFromNumber);
+      console.log(`Formatted sender phone number from ${storedFromNumber} to ${fromNumber}`);
+    } catch (formatError) {
+      console.error('Error formatting from number:', formatError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Invalid sender phone number: ${String(formatError)}`,
+          details: { 
+            message: "The configured TWILIO_FROM_NUMBER is invalid.",
+            providedNumber: storedFromNumber,
+            suggestion: "Make sure the number includes the country code (e.g. +1 for US or +91 for India)"
           }
-        );
-      }
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
     
     console.log('Using from number:', fromNumber, isTwilioSandbox ? '(Twilio Sandbox)' : '(WhatsApp Business)');
@@ -344,7 +362,7 @@ serve(async (req) => {
     console.log(`Sending WhatsApp message from ${fromNumber} to ${toNumber}`);
     console.log(`Message content (first 50 chars): ${finalMessage.substring(0, 50)}...`);
     
-    // Send message via Twilio API
+    // Send message via Twilio API with enhanced error handling
     try {
       console.log('Preparing to send message with Twilio API');
       
@@ -424,16 +442,33 @@ serve(async (req) => {
 
       console.log('WhatsApp message sent successfully:', twilioData.sid);
 
+      // Add clearer instructions based on response
+      const responseData = {
+        success: true, 
+        messageId: twilioData.sid,
+        status: twilioData.status,
+        details: twilioData,
+        usingMetaIntegration: !isTwilioSandbox,
+        to: toNumber,
+        from: fromNumber
+      };
+      
+      if (isTwilioSandbox) {
+        responseData.instructions = [
+          "You must join the Twilio sandbox first!",
+          "Send 'join part-every' to +1 415 523 8886 on WhatsApp",
+          "Then try sending the test message again"
+        ];
+      } else if (twilioData.status === "queued") {
+        responseData.instructions = [
+          "Message is queued for delivery.",
+          "If you don't receive it, verify your WhatsApp Business Provider is properly set up.",
+          "Make sure the recipient number is properly formatted with country code."
+        ]; 
+      }
+
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          messageId: twilioData.sid,
-          status: twilioData.status,
-          details: twilioData,
-          usingMetaIntegration: !isTwilioSandbox,
-          to: toNumber,
-          from: fromNumber
-        }),
+        JSON.stringify(responseData),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }

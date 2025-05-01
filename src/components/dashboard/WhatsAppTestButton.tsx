@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, AlertCircle, Info, Settings, ExternalLink, HelpCircle } from 'lucide-react';
+import { Send, Loader2, AlertCircle, Info, Settings, ExternalLink, HelpCircle, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PhoneNumberDialog } from '@/components/payment/PhoneNumberDialog'; 
 import { supabase } from '@/integrations/supabase/client';
@@ -24,7 +24,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
   const [configuring, setConfiguring] = useState(false);
   const [configStatus, setConfigStatus] = useState<any>(null);
   const [configInputs, setConfigInputs] = useState({
-    fromNumber: '+918978354242',
+    fromNumber: '',
     verifyToken: '',
   });
   const { toast } = useToast();
@@ -38,6 +38,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
 
   const checkTwilioConfig = async () => {
     try {
+      setIsLoading(true);
       const { data, error } = await supabase.functions.invoke('update-whatsapp-settings', {
         body: { checkOnly: true }
       });
@@ -50,6 +51,10 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
         });
       } else {
         setConfigStatus(data);
+        // If we have a from number, pre-fill it
+        if (data?.fromNumber) {
+          setConfigInputs(prev => ({...prev, fromNumber: data.fromNumber}));
+        }
         console.log("WhatsApp configuration status:", data);
       }
     } catch (err) {
@@ -58,6 +63,8 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
         error: true,
         message: String(err)
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -169,6 +176,34 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
     }
   };
 
+  // Helper to determine if we're using the Twilio sandbox
+  const isUsingSandbox = () => {
+    if (configStatus?.currentFromNumber === '+14155238886') {
+      return true;
+    }
+    if (debugInfo?.from === 'whatsapp:+14155238886') {
+      return true;
+    }
+    return false;
+  };
+
+  // Render the sandbox join instructions if needed
+  const renderSandboxInstructions = () => {
+    if (!isUsingSandbox()) return null;
+    
+    return (
+      <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800">
+        <p className="font-medium text-xs">Important: Join the Twilio Sandbox First</p>
+        <ol className="text-xs mt-2 space-y-1 list-decimal pl-4">
+          <li>Open WhatsApp on your phone</li>
+          <li>Send the message <strong>"join part-every"</strong> to <strong>+1 415 523 8886</strong></li>
+          <li>Wait for confirmation that you've joined</li>
+          <li>Then try sending the test message again</li>
+        </ol>
+      </div>
+    );
+  };
+
   return (
     <>
       <div className="flex flex-col space-y-4">
@@ -245,7 +280,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
             
             <div className="space-y-2">
               <label className="block text-xs text-gray-700">
-                WhatsApp Business Phone Number (without "whatsapp:" prefix)
+                WhatsApp Business Phone Number (with country code)
               </label>
               <input
                 type="text"
@@ -255,7 +290,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
                 className="w-full p-2 border border-gray-300 rounded text-sm"
               />
               <p className="text-xs text-gray-500">
-                This number should be registered with WhatsApp Business API
+                Enter with country code (e.g., +1 for US, +91 for India)
               </p>
             </div>
             
@@ -330,9 +365,16 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
           </div>
         )}
         
+        {/* Render sandbox instructions if needed */}
+        {isUsingSandbox() && renderSandboxInstructions()}
+        
         {debugInfo && !error && (
           <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-xs text-green-800">
-            <p className="font-medium">Message sent successfully!</p>
+            <div className="flex items-center mb-2">
+              <CheckCircle className="h-4 w-4 mr-2" />
+              <p className="font-medium">Message sent successfully!</p>
+            </div>
+            
             <div className="mt-2 space-y-2">
               <div className="flex flex-col">
                 <span className="font-medium">From:</span> 
@@ -348,17 +390,11 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
               </div>
             </div>
             
-            {!debugInfo.usingMetaIntegration && (
-              <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800">
-                <p className="font-medium text-xs">Using Twilio Sandbox</p>
-                <p className="text-xs mt-1">
-                  You need to join the Twilio Sandbox first by sending 'join part-every' to +1 415 523 8886 on WhatsApp.
-                </p>
-              </div>
-            )}
+            {/* Always show sandbox instructions if using the sandbox number */}
+            {isUsingSandbox() && renderSandboxInstructions()}
             
             {debugInfo.webhookUrl && (
-              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-blue-800">
+              <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-blue-800">
                 <p className="font-medium text-xs">WhatsApp Webhook Configuration</p>
                 <p className="text-xs mt-1">Use this webhook URL in your WhatsApp Business account:</p>
                 <code className="block bg-blue-100 p-1 rounded mt-1 text-xs break-all">
@@ -373,20 +409,9 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
                     ))}
                   </ol>
                 </div>
-                
-                <div className="mt-3">
-                  <a 
-                    href="https://supabase.com/dashboard/project/pbpmtqcffhqwzboviqfw/settings/functions" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-xs flex items-center font-medium"
-                  >
-                    <span>Set Supabase Secrets</span>
-                    <ExternalLink className="h-3 w-3 ml-1" />
-                  </a>
-                </div>
               </div>
             )}
+            
             <details className="mt-2">
               <summary className="cursor-pointer text-xs font-medium">Debug information</summary>
               <pre className="mt-2 whitespace-pre-wrap text-xs overflow-x-auto max-h-40">

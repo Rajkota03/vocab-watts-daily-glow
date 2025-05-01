@@ -15,15 +15,67 @@ serve(async (req) => {
 
   try {
     // Parse request body
-    const { fromNumber, verifyToken } = await req.json();
+    const { fromNumber, verifyToken, checkOnly } = await req.json();
+    
+    if (checkOnly) {
+      // Just check current configuration without making changes
+      const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+      const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+      const currentFromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
+      const currentVerifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN');
+      
+      // Get current URL for hostname construction
+      const requestUrl = new URL(req.url);
+      const hostname = requestUrl.hostname;
+      const protocol = hostname.includes('localhost') ? 'http' : 'https';
+      const baseUrl = `${protocol}://${hostname}`;
+      
+      // Calculate webhook URL
+      const webhookUrl = `${baseUrl}/functions/v1/whatsapp-webhook`;
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          webhookUrl,
+          fromNumber: currentFromNumber || '+918978354242',
+          currentFromNumber: currentFromNumber || null,
+          twilioConfigured: !!(twilioAccountSid && twilioAuthToken),
+          verifyTokenConfigured: !!currentVerifyToken,
+          configStatus: {
+            accountSid: twilioAccountSid ? 'configured' : 'missing',
+            authToken: twilioAuthToken ? 'configured' : 'missing',
+            fromNumber: currentFromNumber ? 'configured' : 'missing',
+            verifyToken: currentVerifyToken ? 'configured' : 'missing'
+          }
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     console.log("Updating WhatsApp settings", { 
       fromNumber: fromNumber ? fromNumber : "not provided",
       verifyToken: verifyToken ? "provided" : "not provided" 
     });
     
-    // If no number is provided, use the default number
-    const phoneNumber = fromNumber || '+918978354242';
+    // Format phone number correctly
+    let phoneNumber = fromNumber;
+    if (phoneNumber) {
+      // Remove any "whatsapp:" prefix if present
+      if (phoneNumber.startsWith('whatsapp:')) {
+        phoneNumber = phoneNumber.substring(9);
+      }
+      
+      // Ensure it has a plus sign
+      if (!phoneNumber.startsWith('+')) {
+        phoneNumber = '+' + phoneNumber.replace(/^\+*/, '').replace(/\D/g, '');
+      }
+      
+      console.log(`Formatted phone number to: ${phoneNumber}`);
+    } else {
+      // If no number is provided, use the default number
+      phoneNumber = '+918978354242';
+      console.log(`Using default phone number: ${phoneNumber}`);
+    }
     
     // Get current URL for hostname construction
     const requestUrl = new URL(req.url);
