@@ -7,11 +7,12 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface WhatsAppTestButtonProps {
   category: string;
+  phoneNumber?: string; // Make phoneNumber optional
 }
 
-const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => {
+const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phoneNumber }) => {
   const [loading, setLoading] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [inputPhoneNumber, setInputPhoneNumber] = useState('');
   const [showPhoneInput, setShowPhoneInput] = useState(false);
   const { toast } = useToast();
   const [configStatus, setConfigStatus] = useState<any>(null);
@@ -38,7 +39,8 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
 
   const handleSendTest = async () => {
     try {
-      if (showPhoneInput && (!phoneNumber || phoneNumber.trim().length < 10)) {
+      // Use either the provided phone number prop, or the input phone number
+      if (showPhoneInput && (!inputPhoneNumber || inputPhoneNumber.trim().length < 10)) {
         toast({
           title: "Valid phone number required",
           description: "Please enter a valid WhatsApp number with country code.",
@@ -47,7 +49,8 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
         return;
       }
 
-      const phoneToUse = showPhoneInput ? phoneNumber : '';
+      // Use phoneNumber prop if available, otherwise use inputPhoneNumber
+      const phoneToUse = showPhoneInput ? inputPhoneNumber : (phoneNumber || '');
       
       if (!phoneToUse && !showPhoneInput) {
         setShowPhoneInput(true);
@@ -97,7 +100,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
         description: `Test message for ${category || "general"} vocabulary sent to ${phoneToUse}.`,
       });
 
-      setPhoneNumber('');
+      setInputPhoneNumber('');
       setShowPhoneInput(false);
     } catch (err: any) {
       console.error("Error sending WhatsApp message:", err);
@@ -151,13 +154,13 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category }) => 
                 id="phoneNumber"
                 type="tel"
                 placeholder="+1234567890"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                value={inputPhoneNumber}
+                onChange={(e) => setInputPhoneNumber(e.target.value)}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <Button 
                 onClick={handleSendTest}
-                disabled={loading || !phoneNumber || phoneNumber.trim().length < 10}
+                disabled={loading || !inputPhoneNumber || inputPhoneNumber.trim().length < 10}
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <MessageSquare className="h-4 w-4 mr-2" />}
                 Send

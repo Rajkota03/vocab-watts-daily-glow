@@ -273,6 +273,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_whatsapp_tables: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       current_user_phone_number: {
         Args: Record<PropertyKey, never>
         Returns: string
