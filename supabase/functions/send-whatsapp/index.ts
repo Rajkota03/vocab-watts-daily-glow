@@ -18,6 +18,7 @@ interface WhatsAppRequest {
   sendImmediately?: boolean;
   checkOnly?: boolean;
   debugMode?: boolean;
+  extraDebugging?: boolean;
   testTwilioConnection?: boolean;
 }
 
@@ -94,6 +95,7 @@ serve(async (req) => {
       sendImmediately, 
       checkOnly,
       debugMode,
+      extraDebugging,
       testTwilioConnection
     } = requestBody;
 
@@ -207,6 +209,7 @@ serve(async (req) => {
       scheduledTime, 
       sendImmediately,
       debugMode,
+      extraDebugging,
       messageLength: message ? message.length : 0,
       toFormatted: to ? to.substring(0, 5) + '...' : undefined
     });
@@ -333,6 +336,16 @@ serve(async (req) => {
     try {
       toNumber = formatWhatsAppNumber(to);
       console.log(`Formatted recipient phone number from ${to} to ${toNumber}`);
+      
+      if (extraDebugging) {
+        console.log('Recipient number details:', {
+          original: to,
+          formatted: toNumber,
+          length: toNumber.length,
+          hasCountryCode: toNumber.includes('+'),
+          hasWhatsAppPrefix: toNumber.startsWith('whatsapp:')
+        });
+      }
     } catch (formatError) {
       console.error('Error formatting phone number:', formatError);
       return new Response(
@@ -444,7 +457,7 @@ serve(async (req) => {
       }
     }
     
-    if (debugMode) {
+    if (debugMode || extraDebugging) {
       console.log(`Debug mode enabled. Extra logging will be performed.`);
     }
     
@@ -472,7 +485,7 @@ serve(async (req) => {
         messageLength: finalMessage.length,
       });
       
-      if (debugMode) {
+      if (debugMode || extraDebugging) {
         console.log('Full request details:', {
           method: 'POST',
           auth: `${accountSid}:${authToken.substring(0, 3)}...`,
@@ -526,6 +539,10 @@ serve(async (req) => {
       try {
         twilioData = await twilioResponse.json();
         console.log('Twilio response data:', JSON.stringify(twilioData).substring(0, 200) + '...');
+        
+        if (extraDebugging) {
+          console.log('Complete Twilio response:', JSON.stringify(twilioData));
+        }
       } catch (jsonError) {
         console.error('Error parsing Twilio response:', jsonError);
         return new Response(
@@ -551,7 +568,9 @@ serve(async (req) => {
         details: twilioData,
         usingMetaIntegration: !isTwilioSandbox,
         to: toNumber,
-        from: fromNumber
+        from: fromNumber,
+        rawTo: to, // Include the original number for comparison
+        rawFrom: storedFromNumber
       };
       
       if (isTwilioSandbox) {
@@ -576,6 +595,15 @@ serve(async (req) => {
       const webhookUrl = `${baseUrl}/functions/v1/whatsapp-webhook`;
       
       responseData.webhookUrl = webhookUrl;
+
+      // Include common troubleshooting info in the response
+      responseData.troubleshooting = {
+        checkPhoneFormat: !to.includes('+') ? "Add country code with + to your phone number" : "Phone format looks good",
+        checkSandbox: isTwilioSandbox ? "You're using Twilio Sandbox - send 'join part-every' to +1 415 523 8886" : "You're using WhatsApp Business API",
+        messageWillAppear: "Messages appear in WhatsApp, not as SMS/text",
+        verifyInternet: "Ensure recipient's phone has internet connection",
+        appNeeded: "Make sure recipient has WhatsApp installed"
+      };
 
       return new Response(
         JSON.stringify(responseData),

@@ -29,6 +29,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
   });
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionTestResult, setConnectionTestResult] = useState<any>(null);
+  const [deliveryStatus, setDeliveryStatus] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Check config status when component loads
@@ -136,16 +137,27 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
     setError(null);
     setDebugInfo(null);
     setFromNumber(null);
+    setDeliveryStatus('sending');
     
     try {
       console.log('Sending WhatsApp test message to:', phoneNumber);
+      
+      // Add more detailed logs about the phone number format
+      console.log('Phone number details:', {
+        original: phoneNumber,
+        length: phoneNumber.length,
+        hasCountryCode: phoneNumber.startsWith('+'),
+        digits: phoneNumber.replace(/[^\d]/g, '').length
+      });
+      
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
         body: {
           to: phoneNumber,
           category: category || 'general',
           isPro: false,
           sendImmediately: true,
-          debugMode: true // Enable detailed logging
+          debugMode: true, // Enable detailed logging
+          extraDebugging: true // Request additional debugging info
         }
       });
       
@@ -153,11 +165,13 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
         console.error('Edge function error:', error);
         setError(`Edge function error: ${error.message}`);
         setDebugInfo(error);
+        setDeliveryStatus('failed');
         throw new Error(error.message || 'Failed to send test message');
       }
       
       if (!data) {
         setError('No response data from Twilio API');
+        setDeliveryStatus('failed');
         throw new Error('No response data from Twilio API');
       }
       
@@ -165,21 +179,38 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
         console.error('Twilio API error:', data.error);
         setError(`Twilio API error: ${data.error}`);
         setDebugInfo(data);
+        setDeliveryStatus('failed');
         throw new Error(data.error || 'Failed to send test message');
       }
       
       // Store the debug info for display
       setDebugInfo(data);
       setFromNumber(data.from || null);
+      setDeliveryStatus(data.status || 'unknown');
       console.log('WhatsApp test send response:', data);
       
       toast({
         title: "Message Sent!",
-        description: `A test message has been sent to ${phoneNumber}`,
+        description: `A test message has been sent to ${phoneNumber} (Status: ${data.status || 'unknown'})`,
         variant: "success"
       });
+      
+      // Show more detailed information about the message in the console
+      console.log('Message delivery details:', {
+        messageId: data.messageId,
+        status: data.status,
+        to: data.to,
+        from: data.from,
+        usingMetaIntegration: data.usingMetaIntegration
+      });
+      
+      // If there are delivery instructions, log them too
+      if (data.instructions) {
+        console.log('Delivery instructions:', data.instructions);
+      }
     } catch (error: any) {
       console.error('Error sending test message:', error);
+      setDeliveryStatus('error');
       toast({
         title: "Error",
         description: error.message || "Failed to send test message",
@@ -246,6 +277,31 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
     return false;
   };
 
+  // Format phone number for display with country code highlighting
+  const formatPhoneForDisplay = (phone: string) => {
+    if (!phone) return '';
+    
+    // Remove any 'whatsapp:' prefix
+    const cleanPhone = phone.replace(/^whatsapp:/, '');
+    
+    // If it doesn't have a + sign, it might be missing country code
+    if (!cleanPhone.startsWith('+')) {
+      return <span className="text-red-600">{cleanPhone} <span className="text-xs">(missing country code)</span></span>;
+    }
+    
+    // Split country code from the rest
+    const match = cleanPhone.match(/^(\+\d{1,3})(.*)$/);
+    if (match) {
+      return (
+        <span>
+          <span className="font-semibold">{match[1]}</span>{match[2]}
+        </span>
+      );
+    }
+    
+    return cleanPhone;
+  };
+
   // Render the sandbox join instructions if needed
   const renderSandboxInstructions = () => {
     if (!isUsingSandbox()) return null;
@@ -261,6 +317,26 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
         </ol>
       </div>
     );
+  };
+
+  // Show phone number format guidance
+  const renderPhoneNumberGuidance = () => {
+    if (!phoneNumber) return null;
+    
+    const hasCountryCode = phoneNumber.startsWith('+');
+    const isProperlyFormatted = hasCountryCode && phoneNumber.replace(/[^\d+]/g, '').length >= 10;
+    
+    if (!isProperlyFormatted) {
+      return (
+        <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+          <p className="font-medium">Phone Number Format</p>
+          <p>Your phone number should include the country code with a + sign.</p>
+          <p className="mt-1"><strong>Correct format:</strong> +[country code][number]</p>
+          <p><strong>Examples:</strong> +12025550123 (US), +447911123456 (UK), +919876543210 (India)</p>
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
@@ -296,6 +372,9 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
             </div>
           </div>
         )}
+
+        {/* Phone Number Format Guidance */}
+        {renderPhoneNumberGuidance()}
 
         {!configuring ? (
           <>
@@ -350,7 +429,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
             {phoneNumber && !isLoading && !error && !debugInfo && !connectionTestResult && (
               <div className="flex items-center text-sm text-gray-600 mt-1">
                 <Info className="h-4 w-4 mr-1" />
-                <span>Will send to: {phoneNumber}</span>
+                <span>Will send to: {formatPhoneForDisplay(phoneNumber)}</span>
               </div>
             )}
           </>
@@ -510,11 +589,28 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
               </div>
               <div className="flex flex-col">
                 <span className="font-medium">To:</span> 
-                <span className="text-xs break-all">{(debugInfo.to || "").replace("whatsapp:", "")}</span>
+                <span className="text-xs break-all">{formatPhoneForDisplay((debugInfo.to || "").replace("whatsapp:", ""))}</span>
               </div>
               <div className="flex flex-col">
                 <span className="font-medium">Status:</span> 
-                <span className="text-xs">{debugInfo.status || "unknown"}</span>
+                <span className={`text-xs font-medium ${
+                  debugInfo.status === 'queued' ? 'text-yellow-600' :
+                  debugInfo.status === 'sent' ? 'text-green-600' :
+                  debugInfo.status === 'delivered' ? 'text-green-700' : 'text-blue-600'
+                }`}>
+                  {debugInfo.status || "unknown"}
+                </span>
+              </div>
+              
+              {debugInfo.status === 'queued' && (
+                <div className="text-xs bg-yellow-50 p-2 border border-yellow-200 rounded">
+                  Message is queued but not yet delivered. This is normal - delivery typically takes a few seconds.
+                </div>
+              )}
+              
+              <div className="flex flex-col">
+                <span className="font-medium">Message ID:</span> 
+                <span className="text-xs break-all font-mono">{debugInfo.messageId}</span>
               </div>
             </div>
             
@@ -522,13 +618,15 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
             {isUsingSandbox() && renderSandboxInstructions()}
             
             <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-blue-800">
-              <p className="font-medium text-xs mb-1">Message Delivery Details:</p>
-              <p className="text-xs mb-2">If your message shows as "queued" but you haven't received it:</p>
+              <p className="font-medium text-xs mb-1">Troubleshooting Delivery Issues:</p>
               <ol className="text-xs list-decimal pl-4 space-y-1">
-                <li>Check that your phone has a working internet connection</li>
-                <li>Make sure your WhatsApp is open and can receive messages</li>
-                <li>Verify your phone number is formatted correctly with country code</li>
-                <li>Check if your WhatsApp Business API provider is properly set up</li>
+                <li>Make sure your phone has a working internet connection</li>
+                <li>Check that your WhatsApp is open and notifications are enabled</li>
+                <li><strong>Verify your phone number includes the country code</strong> (e.g., +1 for US)</li>
+                <li>If using Twilio Sandbox: Send "join part-every" to +1 415 523 8886</li>
+                <li>If using WhatsApp Business API: Verify your template messages are approved</li>
+                <li>Try restarting your WhatsApp application</li>
+                <li>Wait a few minutes as sometimes there are delays in delivery</li>
               </ol>
             </div>
             
