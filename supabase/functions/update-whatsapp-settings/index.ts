@@ -15,7 +15,7 @@ serve(async (req) => {
 
   try {
     // Parse request body
-    const { fromNumber, verifyToken, checkOnly, debugMode } = await req.json();
+    const { fromNumber, verifyToken, messagingServiceSid, checkOnly, debugMode } = await req.json();
     
     if (debugMode) {
       console.log('Debug mode enabled. Extra logging will be performed.');
@@ -27,6 +27,7 @@ serve(async (req) => {
       const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
       const currentFromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
       const currentVerifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN');
+      const currentMessagingServiceSid = Deno.env.get('TWILIO_MESSAGING_SERVICE_SID');
       
       // Get current URL for hostname construction
       const requestUrl = new URL(req.url);
@@ -75,6 +76,7 @@ serve(async (req) => {
           webhookUrl,
           fromNumber: currentFromNumber || '+918978354242',
           currentFromNumber: currentFromNumber || null,
+          messagingServiceSid: currentMessagingServiceSid || null,
           twilioConfigured: !!(twilioAccountSid && twilioAuthToken),
           verifyTokenConfigured: !!currentVerifyToken,
           twilioApiAccessible,
@@ -83,6 +85,7 @@ serve(async (req) => {
             accountSid: twilioAccountSid ? 'configured' : 'missing',
             authToken: twilioAuthToken ? 'configured' : 'missing',
             fromNumber: currentFromNumber ? 'configured' : 'missing',
+            messagingServiceSid: currentMessagingServiceSid ? 'configured' : 'missing',
             verifyToken: currentVerifyToken ? 'configured' : 'missing'
           }
         }),
@@ -92,6 +95,7 @@ serve(async (req) => {
     
     console.log("Updating WhatsApp settings", { 
       fromNumber: fromNumber ? fromNumber : "not provided",
+      messagingServiceSid: messagingServiceSid ? "provided" : "not provided",
       verifyToken: verifyToken ? "provided" : "not provided" 
     });
     
@@ -136,11 +140,13 @@ serve(async (req) => {
       // Check if current environment variables are set
       const currentFromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
       const currentVerifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN');
+      const currentMessagingServiceSid = Deno.env.get('TWILIO_MESSAGING_SERVICE_SID');
       const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
       const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
       
       console.log("Current configuration:", { 
         currentFromNumber: currentFromNumber || "not set", 
+        currentMessagingServiceSid: currentMessagingServiceSid || "not set",
         hasVerifyToken: currentVerifyToken ? true : false,
         hasSid: twilioAccountSid ? true : false,
         hasAuthToken: twilioAuthToken ? true : false
@@ -187,6 +193,7 @@ serve(async (req) => {
         webhookUrl,
         fromNumber: phoneNumber,
         currentFromNumber: currentFromNumber || null,
+        messagingServiceSid: messagingServiceSid || currentMessagingServiceSid || null,
         usingMetaIntegration: true,
         twilioConfigured: !!(twilioAccountSid && twilioAuthToken),
         twilioApiAccessible,
@@ -194,7 +201,9 @@ serve(async (req) => {
         // Include instructions for manual steps with specific values
         instructions: [
           `1. Set the TWILIO_FROM_NUMBER in Supabase secrets to: ${phoneNumber} (without 'whatsapp:' prefix)`,
-          `2. Configure this webhook URL in your WhatsApp Business account: ${webhookUrl}`,
+          messagingServiceSid ? 
+            `2. Set TWILIO_MESSAGING_SERVICE_SID in Supabase secrets to: ${messagingServiceSid}` : 
+            `2. Configure this webhook URL in your WhatsApp Business account: ${webhookUrl}`,
           verifyToken ? 
             `3. Set WHATSAPP_VERIFY_TOKEN in Supabase secrets to: ${verifyToken}` : 
             "3. Create a WHATSAPP_VERIFY_TOKEN in Supabase secrets (any secure random string)"

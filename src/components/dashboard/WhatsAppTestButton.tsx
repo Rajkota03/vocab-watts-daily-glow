@@ -26,6 +26,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
   const [configInputs, setConfigInputs] = useState({
     fromNumber: '',
     verifyToken: '',
+    messagingServiceSid: ''
   });
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionTestResult, setConnectionTestResult] = useState<any>(null);
@@ -54,9 +55,12 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
         });
       } else {
         setConfigStatus(data);
-        // If we have a from number, pre-fill it
+        // If we have a from number or messaging service SID, pre-fill it
         if (data?.fromNumber) {
           setConfigInputs(prev => ({...prev, fromNumber: data.fromNumber}));
+        }
+        if (data?.messagingServiceSid) {
+          setConfigInputs(prev => ({...prev, messagingServiceSid: data.messagingServiceSid}));
         }
         console.log("WhatsApp configuration status:", data);
       }
@@ -201,6 +205,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
         status: data.status,
         to: data.to,
         from: data.from,
+        usingMessagingService: data.usingMessagingService,
         usingMetaIntegration: data.usingMetaIntegration
       });
       
@@ -235,6 +240,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
         body: {
           fromNumber: configInputs.fromNumber,
           verifyToken: configInputs.verifyToken || undefined,
+          messagingServiceSid: configInputs.messagingServiceSid || undefined,
         }
       });
       
@@ -455,6 +461,22 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
             
             <div className="space-y-2">
               <label className="block text-xs text-gray-700">
+                Messaging Service SID (recommended)
+              </label>
+              <input
+                type="text"
+                value={configInputs.messagingServiceSid}
+                onChange={(e) => setConfigInputs({...configInputs, messagingServiceSid: e.target.value})}
+                placeholder="Example: MGcb7619c5f8e219d6adfcb1336e790863"
+                className="w-full p-2 border border-gray-300 rounded text-sm"
+              />
+              <p className="text-xs text-gray-500">
+                Using a Messaging Service SID is recommended over directly using a phone number
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="block text-xs text-gray-700">
                 Webhook Verification Token (required)
               </label>
               <input
@@ -527,6 +549,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
                     <li>Account SID: {connectionTestResult.configStatus?.configStatus?.accountSid || 'Not configured'}</li>
                     <li>Auth Token: {connectionTestResult.configStatus?.configStatus?.authToken || 'Not configured'}</li>
                     <li>From Number: {connectionTestResult.configStatus?.configStatus?.fromNumber || 'Not configured'}</li>
+                    <li>Messaging Service: {connectionTestResult.configStatus?.configStatus?.messagingServiceSid || 'Not configured'}</li>
                     <li>Verify Token: {connectionTestResult.configStatus?.configStatus?.verifyToken || 'Not configured'}</li>
                   </ul>
                 </div>
@@ -583,10 +606,17 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
             </div>
             
             <div className="mt-2 space-y-2">
-              <div className="flex flex-col">
-                <span className="font-medium">From:</span> 
-                <span className="text-xs break-all">{(debugInfo.from || "").replace("whatsapp:", "")} {debugInfo.usingMetaIntegration ? "(WhatsApp Business)" : "(Twilio Sandbox)"}</span>
-              </div>
+              {debugInfo.usingMessagingService ? (
+                <div className="flex flex-col">
+                  <span className="font-medium">Using Messaging Service:</span> 
+                  <span className="text-xs break-all">{debugInfo.messagingServiceSid || "Unknown"}</span>
+                </div>
+              ) : (
+                <div className="flex flex-col">
+                  <span className="font-medium">From:</span> 
+                  <span className="text-xs break-all">{(debugInfo.from || "").replace("whatsapp:", "")} {debugInfo.usingMetaIntegration ? "(WhatsApp Business)" : "(Twilio Sandbox)"}</span>
+                </div>
+              )}
               <div className="flex flex-col">
                 <span className="font-medium">To:</span> 
                 <span className="text-xs break-all">{formatPhoneForDisplay((debugInfo.to || "").replace("whatsapp:", ""))}</span>

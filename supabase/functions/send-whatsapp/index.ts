@@ -104,12 +104,14 @@ serve(async (req) => {
     const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
     const storedFromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
     const verifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN');
+    const messagingServiceSid = Deno.env.get('TWILIO_MESSAGING_SERVICE_SID') || 'MGcb7619c5f8e219d6adfcb1336e790863';
     
     console.log('Twilio credentials check:', { 
       accountSid: accountSid ? `${accountSid.substring(0, 5)}...${accountSid.substring(accountSid.length - 3)}` : 'missing',
       authToken: authToken ? 'present (hidden)' : 'missing',
       fromNumber: storedFromNumber ? 'present' : 'missing',
-      verifyToken: verifyToken ? 'present' : 'missing'
+      verifyToken: verifyToken ? 'present' : 'missing',
+      messagingServiceSid: messagingServiceSid ? `${messagingServiceSid.substring(0, 5)}...` : 'missing'
     });
 
     // If only checking configuration, return status
@@ -120,11 +122,13 @@ serve(async (req) => {
           twilioConfigured: !!(accountSid && authToken),
           fromNumberConfigured: !!storedFromNumber,
           verifyTokenConfigured: !!verifyToken,
+          messagingServiceConfigured: !!messagingServiceSid,
           configStatus: {
             accountSid: accountSid ? 'configured' : 'missing',
             authToken: authToken ? 'configured' : 'missing',
             fromNumber: storedFromNumber ? 'configured' : 'missing',
-            verifyToken: verifyToken ? 'configured' : 'missing'
+            verifyToken: verifyToken ? 'configured' : 'missing',
+            messagingServiceSid: messagingServiceSid ? 'configured' : 'missing'
           }
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -142,7 +146,8 @@ serve(async (req) => {
               accountSid: accountSid ? 'configured' : 'missing',
               authToken: authToken ? 'configured' : 'missing',
               fromNumber: storedFromNumber ? 'configured' : 'missing',
-              verifyToken: verifyToken ? 'configured' : 'missing'
+              verifyToken: verifyToken ? 'configured' : 'missing',
+              messagingServiceSid: messagingServiceSid ? 'configured' : 'missing'
             }
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -211,7 +216,8 @@ serve(async (req) => {
       debugMode,
       extraDebugging,
       messageLength: message ? message.length : 0,
-      toFormatted: to ? to.substring(0, 5) + '...' : undefined
+      toFormatted: to ? to.substring(0, 5) + '...' : undefined,
+      usingMessagingService: !!messagingServiceSid
     });
 
     // Validate required fields
@@ -367,15 +373,17 @@ serve(async (req) => {
     
     // Get the from number from environment variables with better logging
     console.log('TWILIO_FROM_NUMBER from environment:', storedFromNumber);
+    console.log('TWILIO_MESSAGING_SERVICE_SID from environment:', messagingServiceSid);
     
-    if (!storedFromNumber) {
+    // Check if we have a messaging service ID configured (preferred) or a from number
+    if (!messagingServiceSid && !storedFromNumber) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: "Missing sender WhatsApp number",
+          error: "Missing sender configuration",
           details: { 
-            message: "The TWILIO_FROM_NUMBER is not set in Supabase environment variables.",
-            required: "Set TWILIO_FROM_NUMBER in Supabase secrets"
+            message: "Neither TWILIO_MESSAGING_SERVICE_SID nor TWILIO_FROM_NUMBER is set in Supabase environment variables.",
+            required: "Set either TWILIO_MESSAGING_SERVICE_SID or TWILIO_FROM_NUMBER in Supabase secrets"
           }
         }),
         {
@@ -386,37 +394,43 @@ serve(async (req) => {
     }
     
     // Default to WhatsApp Business number if no number is provided
-    const defaultNumber = '+918978354242';
     let fromNumber;
     let isTwilioSandbox = false;
     
-    // Check if using Twilio sandbox number
-    isTwilioSandbox = storedFromNumber === '+14155238886';
-    
-    // Format the from number properly with error handling
-    try {
-      fromNumber = formatWhatsAppNumber(storedFromNumber);
-      console.log(`Formatted sender phone number from ${storedFromNumber} to ${fromNumber}`);
-    } catch (formatError) {
-      console.error('Error formatting from number:', formatError);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: `Invalid sender phone number: ${String(formatError)}`,
-          details: { 
-            message: "The configured TWILIO_FROM_NUMBER is invalid.",
-            providedNumber: storedFromNumber,
-            suggestion: "Make sure the number includes the country code (e.g. +1 for US or +91 for India)"
+    // Check if we're using a direct from number or the messaging service
+    if (!messagingServiceSid) {
+      // Format the from number properly with error handling
+      try {
+        // Check if using Twilio sandbox number
+        isTwilioSandbox = storedFromNumber === '+14155238886';
+        
+        fromNumber = formatWhatsAppNumber(storedFromNumber);
+        console.log(`Formatted sender phone number from ${storedFromNumber} to ${fromNumber}`);
+      } catch (formatError) {
+        console.error('Error formatting from number:', formatError);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: `Invalid sender phone number: ${String(formatError)}`,
+            details: { 
+              message: "The configured TWILIO_FROM_NUMBER is invalid.",
+              providedNumber: storedFromNumber,
+              suggestion: "Make sure the number includes the country code (e.g. +1 for US or +91 for India)"
+            }
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           }
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+        );
+      }
     }
     
-    console.log('Using from number:', fromNumber, isTwilioSandbox ? '(Twilio Sandbox)' : '(WhatsApp Business)');
+    if (messagingServiceSid) {
+      console.log('Using Messaging Service SID:', messagingServiceSid);
+    } else {
+      console.log('Using from number:', fromNumber, isTwilioSandbox ? '(Twilio Sandbox)' : '(WhatsApp Business)');
+    }
     
     // Generate message content
     let finalMessage = message;
@@ -461,7 +475,12 @@ serve(async (req) => {
       console.log(`Debug mode enabled. Extra logging will be performed.`);
     }
     
-    console.log(`Sending WhatsApp message from ${fromNumber} to ${toNumber}`);
+    if (messagingServiceSid) {
+      console.log(`Sending WhatsApp message using Messaging Service: ${messagingServiceSid} to ${toNumber}`);
+    } else {
+      console.log(`Sending WhatsApp message from ${fromNumber} to ${toNumber}`);
+    }
+    
     console.log(`Message content (first 50 chars): ${finalMessage.substring(0, 50)}...`);
     
     // Send message via Twilio API with enhanced error handling
@@ -471,9 +490,16 @@ serve(async (req) => {
       // Create the request body
       const requestBody = new URLSearchParams();
       
-      // Set To and From numbers
+      // Set To number
       requestBody.append('To', toNumber);
-      requestBody.append('From', fromNumber);
+      
+      // Set either MessagingServiceSid or From number
+      if (messagingServiceSid) {
+        requestBody.append('MessagingServiceSid', messagingServiceSid);
+      } else {
+        requestBody.append('From', fromNumber);
+      }
+      
       requestBody.append('Body', finalMessage);
       
       const apiUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
@@ -481,7 +507,8 @@ serve(async (req) => {
       console.log('Twilio API request:', {
         url: apiUrl,
         to: toNumber,
-        from: fromNumber,
+        messagingService: messagingServiceSid || 'not used',
+        from: !messagingServiceSid ? fromNumber : 'using messaging service',
         messageLength: finalMessage.length,
       });
       
@@ -566,9 +593,11 @@ serve(async (req) => {
         messageId: twilioData.sid,
         status: twilioData.status,
         details: twilioData,
+        usingMessagingService: !!messagingServiceSid,
+        messagingServiceSid: messagingServiceSid || null,
         usingMetaIntegration: !isTwilioSandbox,
         to: toNumber,
-        from: fromNumber,
+        from: twilioData.from || (messagingServiceSid ? 'via messaging service' : fromNumber),
         rawTo: to, // Include the original number for comparison
         rawFrom: storedFromNumber
       };
