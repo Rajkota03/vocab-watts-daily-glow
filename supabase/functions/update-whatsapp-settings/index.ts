@@ -19,12 +19,8 @@ serve(async (req) => {
     
     console.log("Updating WhatsApp settings", { fromNumber: fromNumber ? "provided" : "not provided" });
     
-    if (!fromNumber) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'From number is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // If no number is provided, use the default number
+    const phoneNumber = fromNumber || '+918978354242';
     
     // Get current URL for hostname construction
     const requestUrl = new URL(req.url);
@@ -43,8 +39,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
     
-    // Try to store settings in user_subscriptions table instead
-    // This avoids the system_settings table issue
     try {
       if (verifyToken) {
         console.log("New verify token provided, this should be set in environment variables");
@@ -55,7 +49,7 @@ serve(async (req) => {
         JSON.stringify({ 
           success: true, 
           webhookUrl,
-          fromNumber,
+          fromNumber: phoneNumber,
           usingMetaIntegration: true,
           // Include instructions for manual steps
           instructions: [
