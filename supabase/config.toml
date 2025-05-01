@@ -30,3 +30,4 @@ enabled = true
 [edge_functions]
 [edge_functions.whatsapp-webhook]
 verify_jwt = false
+
