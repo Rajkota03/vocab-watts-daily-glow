@@ -19,7 +19,7 @@ serve(async (req) => {
     
     console.log("Updating WhatsApp settings", { fromNumber: fromNumber ? "provided" : "not provided" });
     
-    // If no number is provided, use the default number
+    // If no number is provided, use the default number (without whatsapp: prefix)
     const phoneNumber = fromNumber || '+918978354242';
     
     // Get current URL for hostname construction

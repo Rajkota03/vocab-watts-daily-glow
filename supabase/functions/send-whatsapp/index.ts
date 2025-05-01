@@ -233,10 +233,37 @@ serve(async (req) => {
       );
     }
     
-    // NOTE: For Meta-connected WhatsApp, you don't need "whatsapp:" prefix in the from number
-    // Using your default Twilio number here - this will be your Meta-connected WhatsApp number
-    const fromNumber = Deno.env.get('TWILIO_FROM_NUMBER') || 'whatsapp:+14155238886';
-    console.log('Using from number:', fromNumber);
+    // Get the from number from environment variables - use the WhatsApp Business number
+    // IMPORTANT: For WhatsApp Business API integration, we use the number WITHOUT "whatsapp:" prefix
+    const storedFromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
+    
+    let fromNumber;
+    // For WhatsApp Business number, we need to use the number directly
+    // For Twilio sandbox, we need to add the whatsapp: prefix
+    const defaultNumber = '+918978354242';
+    
+    if (!storedFromNumber) {
+      console.log(`No TWILIO_FROM_NUMBER set in environment, using default: ${defaultNumber}`);
+      fromNumber = `whatsapp:${defaultNumber}`;
+    } else {
+      // Check if the stored number already has the whatsapp: prefix
+      if (storedFromNumber.startsWith('whatsapp:')) {
+        fromNumber = storedFromNumber;
+      } else {
+        // Only add the whatsapp: prefix if it's the Twilio sandbox number
+        if (storedFromNumber === '+14155238886') {
+          fromNumber = `whatsapp:${storedFromNumber}`;
+        } else {
+          // For WhatsApp Business API, don't use the whatsapp: prefix
+          fromNumber = storedFromNumber;
+        }
+      }
+    }
+    
+    // Check if we're using the Twilio sandbox
+    const isTwilioSandbox = fromNumber.includes('+14155238886');
+    
+    console.log('Using from number:', fromNumber, isTwilioSandbox ? '(Twilio Sandbox)' : '(WhatsApp Business)');
     
     // Generate message content
     let finalMessage = message;
@@ -267,12 +294,9 @@ serve(async (req) => {
     }
     
     // Add sandbox instructions only for the Twilio sandbox number
-    const isTwilioSandbox = fromNumber === 'whatsapp:+14155238886';
-    if (finalMessage) {
-      if (isTwilioSandbox) {
-        finalMessage += `\n\n---\nFirst time? You need to join the Twilio Sandbox first!\nSend 'join part-every' to +1 415 523 8886 on WhatsApp.`;
-      }
-    } else {
+    if (finalMessage && isTwilioSandbox) {
+      finalMessage += `\n\n---\nFirst time? You need to join the Twilio Sandbox first!\nSend 'join part-every' to +1 415 523 8886 on WhatsApp.`;
+    } else if (!finalMessage) {
       if (isTwilioSandbox) {
         finalMessage = `Hello ${nickname}! This is a test message from VocabSpark.\n\n---\nFirst time? You need to join the Twilio Sandbox first!\nSend 'join part-every' to +1 415 523 8886 on WhatsApp.`;
       } else {
@@ -282,10 +306,35 @@ serve(async (req) => {
     
     console.log(`Sending WhatsApp message from ${fromNumber} to ${toNumber}`);
     console.log(`Message content (first 50 chars): ${finalMessage.substring(0, 50)}...`);
+    console.log('Using WhatsApp Business API:', !isTwilioSandbox);
 
     // Send message via Twilio API
     try {
       console.log('Preparing to send message with Twilio API');
+      
+      // Create the request body - need to handle different ways of sending based on if it's sandbox or WhatsApp Business API
+      const requestBody = new URLSearchParams();
+      
+      if (isTwilioSandbox) {
+        // For Twilio Sandbox, both numbers must have whatsapp: prefix
+        requestBody.append('To', toNumber);
+        requestBody.append('From', fromNumber);
+      } else {
+        // For WhatsApp Business API through Twilio, we need to use the appropriate format
+        // To number needs the whatsapp: prefix, From number should NOT have the prefix
+        requestBody.append('To', toNumber);
+        
+        // Make sure fromNumber doesn't have the whatsapp: prefix for WhatsApp Business
+        const cleanFromNumber = fromNumber.startsWith('whatsapp:') 
+          ? fromNumber.substring(9) 
+          : fromNumber;
+        
+        // For WhatsApp Business API, we need to set the From number without the prefix
+        // but ensure the message is delivered through WhatsApp
+        requestBody.append('From', `whatsapp:${cleanFromNumber}`);
+      }
+      
+      requestBody.append('Body', finalMessage);
       
       const twilioResponse = await fetch(
         `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
@@ -295,11 +344,7 @@ serve(async (req) => {
             'Authorization': `Basic ${btoa(`${accountSid}:${authToken}`)}`,
             'Content-Type': 'application/x-www-form-urlencoded',
           },
-          body: new URLSearchParams({
-            To: toNumber,
-            From: fromNumber,
-            Body: finalMessage,
-          }).toString(),
+          body: requestBody.toString(),
         }
       );
 

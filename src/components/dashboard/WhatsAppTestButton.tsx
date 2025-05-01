@@ -23,7 +23,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
   const [fromNumber, setFromNumber] = useState<string | null>(null);
   const [configuring, setConfiguring] = useState(false);
   const [configInputs, setConfigInputs] = useState({
-    fromNumber: '',
+    fromNumber: '+918978354242',
     verifyToken: '',
   });
   const { toast } = useToast();
@@ -186,9 +186,12 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
                 type="text"
                 value={configInputs.fromNumber}
                 onChange={(e) => setConfigInputs({...configInputs, fromNumber: e.target.value})}
-                placeholder="Example: +14155551234"
+                placeholder="Example: +918978354242"
                 className="w-full p-2 border border-gray-300 rounded text-sm"
               />
+              <p className="text-xs text-gray-500">
+                This number should be registered with WhatsApp Business API
+              </p>
             </div>
             
             <div className="space-y-2">
@@ -253,7 +256,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
             <div className="mt-2 space-y-2">
               <div className="flex flex-col">
                 <span className="font-medium">From:</span> 
-                <span className="text-xs break-all">{(debugInfo.from || "").replace("whatsapp:", "")} {debugInfo.usingMetaIntegration ? "(Meta Business Account)" : "(Twilio Sandbox)"}</span>
+                <span className="text-xs break-all">{(debugInfo.from || "").replace("whatsapp:", "")} {debugInfo.usingMetaIntegration ? "(WhatsApp Business)" : "(Twilio Sandbox)"}</span>
               </div>
               <div className="flex flex-col">
                 <span className="font-medium">To:</span> 
@@ -264,7 +267,8 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
                 <span className="text-xs">{debugInfo.status || "unknown"}</span>
               </div>
             </div>
-            {debugInfo.usingMetaIntegration === false && (
+            
+            {!debugInfo.usingMetaIntegration && (
               <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800">
                 <p className="font-medium text-xs">Using Twilio Sandbox</p>
                 <p className="text-xs mt-1">
@@ -272,6 +276,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({
                 </p>
               </div>
             )}
+            
             {debugInfo.webhookUrl && (
               <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-blue-800">
                 <p className="font-medium text-xs">WhatsApp Webhook Configuration</p>
