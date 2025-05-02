@@ -3,6 +3,7 @@ import React from 'react';
 import CategorySelection from './CategorySelection';
 import { cn } from '@/lib/utils';
 import WhatsAppTestButton from './WhatsAppTestButton';
+import SendDailyWordsButton from './SendDailyWordsButton'; // Import the new component
 
 interface DashboardMainProps {
   subscription: {
@@ -32,23 +33,53 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
   return (
     <main className="min-h-[calc(100vh-80px)] bg-gray-50/50 flex flex-col items-center w-full">
       <div className="w-full max-w-6xl px-4 md:px-6 lg:px-8 py-6 md:py-12">
-        <div id="dashboardCard" className="w-full mx-auto">
-          <CategorySelection 
-            isPro={subscription.is_pro} 
-            currentCategory={subscription.category} 
-            onCategoryUpdate={handleCategoryUpdate} 
-            onNewBatch={handleNewBatch} 
-            isLoadingNewBatch={isGeneratingBatch} 
-          />
+        <div id="dashboardCard" className="w-full mx-auto space-y-8">
+          {/* Section for Daily Words */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 className="text-xl font-semibold mb-4 text-gray-800">Your Daily Words</h3>
+            <p className="text-gray-600 mb-4">
+              Ready for today's vocabulary boost? Click the button below to receive your words via WhatsApp.
+            </p>
+            <SendDailyWordsButton 
+              phoneNumber={subscription.phone_number}
+              category={subscription.category}
+              isPro={subscription.is_pro}
+            />
+          </div>
+
+          {/* Section for Category Selection */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+             <h3 className="text-xl font-semibold mb-4 text-gray-800">Learning Settings</h3>
+            <CategorySelection 
+              isPro={subscription.is_pro} 
+              currentCategory={subscription.category} 
+              onCategoryUpdate={handleCategoryUpdate} 
+              onNewBatch={handleNewBatch} // Assuming this is related to category/word generation?
+              isLoadingNewBatch={isGeneratingBatch} 
+            />
+          </div>
           
-          {/* Add WhatsApp Test Button */}
-          <div className="mt-6">
-            <h3 className="text-lg font-medium mb-2">WhatsApp Testing</h3>
+          {/* Section for WhatsApp Testing (Optional - maybe only for admin or specific users) */}
+          {/* Consider adding conditional rendering based on isAdmin or a feature flag */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 className="text-xl font-semibold mb-4 text-gray-800">WhatsApp Integration Test</h3>
+             <p className="text-gray-600 mb-4">
+              Use this button to send a generic test message and verify the connection.
+            </p>
             <WhatsAppTestButton 
               category={subscription.category} 
               phoneNumber={subscription.phone_number} 
             />
           </div>
+
+          {/* Placeholder for other dashboard sections like Quiz, Recent Drops etc. */}
+          {/* You would integrate MOCK_TODAYS_QUIZ and MOCK_RECENT_DROPS here */}
+          {/* Example: */}
+          {/* <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200"> */}
+          {/*   <h3 className="text-xl font-semibold mb-4 text-gray-800">Today's Quiz</h3> */}
+          {/*   Render quiz component using MOCK_TODAYS_QUIZ */}
+          {/* </div> */}
+          
         </div>
       </div>
     </main>
@@ -56,3 +87,4 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
 };
 
 export default DashboardMain;
+

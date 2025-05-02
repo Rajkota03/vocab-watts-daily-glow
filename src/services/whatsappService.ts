@@ -1,353 +1,159 @@
 
-import { createSubscription, getVocabWordsByCategory } from './subscriptionService';
-import { Database } from '@/integrations/supabase/types';
-import { supabase } from '@/integrations/supabase/client';
+// Removed unused imports: createSubscription, getVocabWordsByCategory
+import { Database } from "@/integrations/supabase/types";
+import { supabase } from "@/integrations/supabase/client";
+import { generateNewWordBatch } from "./wordService"; // Import the correct function for getting words
 
 /**
  * WhatsApp Service
  * 
  * This service handles sending vocabulary words to users via WhatsApp.
- * It now integrates with Supabase to store subscriptions.
  */
 
 export interface SendWordsRequest {
   phoneNumber: string;
   category?: string;
-  isPro?: boolean;
-  deliveryTime?: string;
-  sendImmediately?: boolean; // New flag for immediate delivery
+  isPro?: boolean; // This might be redundant if we fetch status based on userId
+  userId: string; // Make userId mandatory for fetching words and status
+  sendImmediately?: boolean; // Flag for immediate delivery (e.g., welcome message)
+  messageOverride?: string; // Optional: Use this specific message instead of generating words
 }
 
 // Define types based on our database schema
-type VocabWord = Database['public']['Tables']['vocabulary_words']['Row'];
+type VocabWord = Database["public"]["Tables"]["vocabulary_words"]["Row"];
 
-// Demo word lists by category - now with all required properties
-const wordsByCategory: Record<string, VocabWord[]> = {
-  business: [
-    { 
-      id: '1',
-      word: "Leverage", 
-      definition: "Use something to maximum advantage", 
-      example: "We can leverage our existing customer base to launch the new product.",
-      category: "business",
-      created_at: new Date().toISOString()
-    },
-    { 
-      id: '2',
-      word: "Synergy", 
-      definition: "Interaction of multiple elements that produces an effect greater than the sum of individual effects", 
-      example: "The merger created synergy between the marketing and product teams.",
-      category: "business",
-      created_at: new Date().toISOString()
-    },
-    { 
-      id: '3',
-      word: "Scalable", 
-      definition: "Able to be changed in size or scale", 
-      example: "We need a more scalable solution to handle increasing user demand.",
-      category: "business",
-      created_at: new Date().toISOString()
-    },
-    { 
-      id: '4',
-      word: "Robust", 
-      definition: "Strong and effective in all or most situations", 
-      example: "The company has built a robust infrastructure for its digital services.",
-      category: "business",
-      created_at: new Date().toISOString()
-    },
-    { 
-      id: '5',
-      word: "Pivot", 
-      definition: "A significant business strategy change", 
-      example: "The startup decided to pivot from B2C to B2B sales model.",
-      category: "business",
-      created_at: new Date().toISOString()
-    }
-  ],
-  academic: [
-    { 
-      id: '6',
-      word: "Cogent", 
-      definition: "Clear, logical, and convincing", 
-      example: "She made a cogent argument during the debate.",
-      category: "academic",
-      created_at: new Date().toISOString()
-    },
-    { 
-      id: '7',
-      word: "Empirical", 
-      definition: "Based on observation or experience rather than theory", 
-      example: "The study provides empirical evidence supporting the hypothesis.",
-      category: "academic",
-      created_at: new Date().toISOString()
-    },
-    { 
-      id: '8',
-      word: "Paradigm", 
-      definition: "A typical example or pattern of something", 
-      example: "This discovery represents a paradigm shift in our understanding.",
-      category: "academic",
-      created_at: new Date().toISOString()
-    },
-    { 
-      id: '9',
-      word: "Ubiquitous", 
-      definition: "Present, appearing, or found everywhere", 
-      example: "Smartphones have become ubiquitous in modern society.",
-      category: "academic",
-      created_at: new Date().toISOString()
-    },
-    { 
-      id: '10',
-      word: "Elucidate", 
-      definition: "Make clear; explain", 
-      example: "The professor elucidated the complex theory with simple examples.",
-      category: "academic",
-      created_at: new Date().toISOString()
-    }
-  ],
-  creative: [
-    { 
-      id: '11',
-      word: "Ephemeral", 
-      definition: "Lasting for a very short time", 
-      example: "The artist creates ephemeral installations that exist only for a day.",
-      category: "creative",
-      created_at: new Date().toISOString()
-    },
-    { 
-      id: '12',
-      word: "Serendipity", 
-      definition: "The occurrence of events by chance in a beneficial way", 
-      example: "Their meeting was pure serendipity; now they're business partners.",
-      category: "creative",
-      created_at: new Date().toISOString()
-    },
-    { 
-      id: '13',
-      word: "Mellifluous", 
-      definition: "Sweet or musical; pleasant to hear", 
-      example: "The singer's mellifluous voice captivated the audience.",
-      category: "creative",
-      created_at: new Date().toISOString()
-    },
-    { 
-      id: '14',
-      word: "Quintessential", 
-      definition: "Representing the most perfect example of a quality", 
-      example: "This cafe is the quintessential Paris experience.",
-      category: "creative",
-      created_at: new Date().toISOString()
-    },
-    { 
-      id: '15',
-      word: "Ethereal", 
-      definition: "Extremely delicate and light in a way that seems not of this world", 
-      example: "The painting had an ethereal quality, seeming to glow from within.",
-      category: "creative",
-      created_at: new Date().toISOString()
-    }
-  ],
-  general: [
-    { 
-      id: '16',
-      word: "Eloquent", 
-      definition: "Fluent or persuasive in speaking or writing", 
-      example: "Her eloquent speech moved the entire audience.",
-      category: "general",
-      created_at: new Date().toISOString()
-    },
-    { 
-      id: '17',
-      word: "Resilient", 
-      definition: "Able to withstand or recover quickly from difficult conditions", 
-      example: "Children are remarkably resilient in the face of challenges.",
-      category: "general",
-      created_at: new Date().toISOString()
-    },
-    { 
-      id: '18',
-      word: "Meticulous", 
-      definition: "Showing great attention to detail; very careful and precise", 
-      example: "He's known for his meticulous research and preparation.",
-      category: "general",
-      created_at: new Date().toISOString()
-    },
-    { 
-      id: '19',
-      word: "Pragmatic", 
-      definition: "Dealing with things sensibly and realistically", 
-      example: "We need a pragmatic approach to solve this problem.",
-      category: "general",
-      created_at: new Date().toISOString()
-    },
-    { 
-      id: '20',
-      word: "Benevolent", 
-      definition: "Well meaning and kindly", 
-      example: "The benevolent organization provides food and shelter to those in need.",
-      category: "general",
-      created_at: new Date().toISOString()
-    }
-  ]
-};
-
-// Default word list for non-Pro users
-const defaultWords: VocabWord[] = [
-  { 
-    id: '21',
-    word: "Ameliorate", 
-    definition: "Make something bad or unsatisfactory better", 
-    example: "The measures taken should ameliorate the situation.",
-    category: "general",
-    created_at: new Date().toISOString()
-  },
-  { 
-    id: '22',
-    word: "Brevity", 
-    definition: "Concise and exact use of words in writing or speech", 
-    example: "The speech was notable for its brevity and wit.",
-    category: "general",
-    created_at: new Date().toISOString()
-  },
-  { 
-    id: '23',
-    word: "Cacophony", 
-    definition: "A harsh, discordant mixture of sounds", 
-    example: "The cacophony of the city streets made it hard to hear the conversation.",
-    category: "general",
-    created_at: new Date().toISOString()
-  },
-  { 
-    id: '24',
-    word: "Diligent", 
-    definition: "Having or showing care and conscientiousness in one's work or duties", 
-    example: "The diligent student always completed assignments before the deadline.",
-    category: "general",
-    created_at: new Date().toISOString()
-  },
-  { 
-    id: '25',
-    word: "Eloquent", 
-    definition: "Fluent or persuasive in speaking or writing", 
-    example: "Her eloquent speech moved the entire audience.",
-    category: "general",
-    created_at: new Date().toISOString()
-  }
-];
-
-// Get sample words based on category
-const getSampleWords = async (category?: string): Promise<VocabWord[]> => {
-  // Try to get words from Supabase first
-  const dbWords = await getVocabWordsByCategory(category);
-  
-  if (dbWords && dbWords.length > 0) {
-    return dbWords;
-  }
-  
-  // Fall back to hardcoded words if database fetch fails
-  if (!category) {
-    return defaultWords;
-  }
-  
-  return wordsByCategory[category] || defaultWords;
-};
+// Removed outdated hardcoded word lists and getSampleWords function
 
 // Format words for WhatsApp message
 const formatWhatsAppMessage = (words: VocabWord[], isPro: boolean, firstName?: string): string => {
   const name = firstName || "there";
   const header = `🌟 *Hi ${name}! Here are Your VocabSpark Words* 🌟\n\n`;
   
+  if (!words || words.length === 0) {
+     return `Hi ${name}, we couldn't find any new words for your selected category right now. Please try again later or check your settings!`;
+  }
+  
   const formattedWords = words.map((word, index) => {
     return `*${index + 1}. ${word.word}*\n` +
            `Definition: ${word.definition}\n` +
-           `Example: _"${word.example}"_` +
-           (isPro ? '\n\n' : '\n');
-  }).join('\n');
+           `Example: _"${word.example}"_\n\n`; // Add double newline for spacing
+  }).join(""); // Join without extra newline
   
   const footer = isPro 
-    ? '\n🚀 *Pro Subscription Active* - Thank you for supporting VocabSpark!'
-    : '\n👉 Upgrade to Pro for custom word categories and more features!';
+    ? `\n🚀 *Pro Subscription Active* - Thank you for supporting VocabSpark!`
+    : `\n👉 Upgrade to Pro for custom word categories and more features!`;
   
   return header + formattedWords + footer;
 };
 
 /**
- * Send vocabulary words via WhatsApp and store subscription in Supabase
+ * Send vocabulary words via WhatsApp using the send-whatsapp edge function.
  */
 export const sendVocabWords = async (request: SendWordsRequest): Promise<boolean> => {
   try {
-    console.log("[WhatsApp] Sending vocabulary words via WhatsApp", request);
+    console.log("[WhatsApp] Sending vocabulary words via WhatsApp", { 
+      userId: request.userId, 
+      phoneNumber: request.phoneNumber, 
+      category: request.category, 
+      sendImmediately: request.sendImmediately,
+      hasMessageOverride: !!request.messageOverride
+    });
     
-    // Validate phone number (basic validation)
+    // Validate phone number and userId
     if (!request.phoneNumber || request.phoneNumber.trim().length < 10) {
       console.error("[WhatsApp] Invalid phone number:", request.phoneNumber);
-      return false;
+      throw new Error("Invalid phone number provided.");
+    }
+    if (!request.userId) {
+       console.error("[WhatsApp] Missing userId.");
+       throw new Error("User ID is required to send words.");
     }
     
-    // Create subscription in Supabase
-    const subscriptionCreated = await createSubscription({
-      phoneNumber: request.phoneNumber,
-      category: request.isPro ? request.category : undefined,
-      isPro: request.isPro || false,
-      deliveryTime: request.deliveryTime
-    });
+    // --- Subscription creation is NO LONGER handled here --- 
+    // It's handled by signup or payment verification flows.
     
-    if (!subscriptionCreated) {
-      console.error("[WhatsApp] Failed to create subscription");
-      return false;
-    }
-    
-    // Get words based on category (or default words)
-    const words = await getSampleWords(request.category);
-    
-    // Try to get user profile info if available
-    let firstName: string | undefined;
-    
+    let finalMessage: string;
+    let isProUser = false; // Assume not Pro unless determined otherwise
+    let userFirstName: string | undefined;
+
+    // Try to get user profile info (including name and Pro status)
     try {
-      // Get session to find the current user
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user?.id) {
-        // Get profile to find name
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('first_name')
-          .eq('id', session.user.id)
-          .single();
-          
-        if (profile?.first_name) {
-          firstName = profile.first_name;
-        }
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("first_name, nick_name")
+        .eq("id", request.userId)
+        .single();
+        
+      if (profileError) {
+         console.warn(`[WhatsApp] Could not fetch profile for user ${request.userId}:`, profileError.message);
+      } else if (profile) {
+         userFirstName = profile.first_name || profile.nick_name;
       }
+      
+      // Check Pro status using the function from subscriptionService
+      // Note: This assumes subscriptionService is correctly updated and exported
+      // We might need to re-import checkUserProStatus if it wasn't already
+      const { checkUserProStatus } = await import("./subscriptionService"); 
+      isProUser = await checkUserProStatus(request.userId);
+      console.log(`[WhatsApp] User ${request.userId} Pro status: ${isProUser}`);
+
     } catch (err) {
-      console.warn("[WhatsApp] Could not retrieve user profile:", err);
+      console.error("[WhatsApp] Error retrieving user profile or status:", err);
+      // Proceed without name/status if necessary, or throw error if critical
     }
-    
-    // Format message for WhatsApp
-    const message = formatWhatsAppMessage(words || [], request.isPro || false, firstName);
+
+    // Determine the message content
+    if (request.messageOverride) {
+       finalMessage = request.messageOverride;
+       console.log("[WhatsApp] Using message override.");
+    } else {
+       // Fetch words using the new service function
+       const categoryToFetch = request.category || "general"; // Default to general if no category
+       console.log(`[WhatsApp] Fetching words for category: ${categoryToFetch}`);
+       const words = await generateNewWordBatch(request.userId, categoryToFetch);
+       
+       // Format the message using fetched words
+       finalMessage = formatWhatsAppMessage(words || [], isProUser, userFirstName);
+    }
     
     // Call our edge function to send the WhatsApp message
-    const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+    console.log(`[WhatsApp] Invoking send-whatsapp function for ${request.phoneNumber}`);
+    const { data: functionResult, error: functionError } = await supabase.functions.invoke("send-whatsapp", {
       body: {
         to: request.phoneNumber,
-        message: message,
-        category: request.category,
-        isPro: request.isPro || false,
-        deliveryTime: request.deliveryTime,
-        sendImmediately: request.sendImmediately || false
-      }
+        message: finalMessage,
+        // Pass necessary info, but the function itself might re-verify status/details
+        userId: request.userId, 
+        category: request.category, // Pass category for potential logging/context
+        isPro: isProUser, // Pass the determined Pro status
+        sendImmediately: request.sendImmediately || false // Ensure this flag is passed
+      },
     });
     
-    if (error) {
-      console.error("[WhatsApp] Error sending message:", error);
-      return false;
+    if (functionError) {
+      console.error("[WhatsApp] Error invoking send-whatsapp function:", functionError);
+      // Attempt to parse Supabase function error details if available
+      let details = functionError.message;
+      if (functionError.context && functionError.context.details) {
+         details = functionError.context.details;
+      }
+      throw new Error(`Failed to send message via Edge Function: ${details}`);
     }
     
-    console.log("[WhatsApp] Successfully sent message:", data);
+    // Check the success flag from the function's response
+    if (!functionResult || !functionResult.success) {
+       console.error("[WhatsApp] send-whatsapp function returned failure:", functionResult?.error);
+       throw new Error(functionResult?.error || "send-whatsapp function failed without specific error.");
+    }
+
+    console.log("[WhatsApp] Successfully invoked send-whatsapp function:", functionResult);
     return true;
+
   } catch (error) {
     console.error("[WhatsApp] Failed to send WhatsApp message:", error);
-    return false;
+    // Consider more specific error handling or re-throwing
+    // return false;
+    throw error; // Re-throw error so calling components can handle it
   }
 };
+

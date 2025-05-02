@@ -1,333 +1,311 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
+import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
+import { checkUserProStatus } from "./subscriptionService"; // Import the status check function
 
-type VocabularyWord = Database['public']['Tables']['vocabulary_words']['Row'];
+type VocabularyWord = Database["public"]["Tables"]["vocabulary_words"]["Row"];
+type UserSubscription = Database["public"]["Tables"]["user_subscriptions"]["Row"];
 
 /**
- * Fetches new vocabulary words that haven't been sent to the user yet
- * @param category The category of words to fetch
- * @param limit The number of words to fetch
- * @returns An array of new vocabulary words
+ * Fetches new vocabulary words that haven't been sent to the user yet.
+ * Respects the provided limit.
+ * @param userId The ID of the user.
+ * @param phoneNumber The phone number of the user.
+ * @param category The category of words to fetch.
+ * @param limit The maximum number of words to fetch.
+ * @returns An array of new vocabulary words.
  */
 export const fetchNewWords = async (
+  userId: string,
+  phoneNumber: string,
   category: string,
-  limit: number = 5
+  limit: number
 ): Promise<VocabularyWord[]> => {
   try {
-    console.log(`Fetching new words for category: ${category}`);
-    
-    // Get the current user's session
-    const { data: sessionData } = await supabase.auth.getSession();
-    const userId = sessionData.session?.user?.id;
-    
-    if (!userId) {
-      console.error('No authenticated user found');
-      throw new Error('Authentication required');
-    }
-    
-    // Get user's phone number
-    const { data: userData, error: userError } = await supabase
-      .from('user_subscriptions')
-      .select('phone_number')
-      .eq('user_id', userId)
-      .single();
-      
-    if (userError) {
-      console.error('Error fetching user data:', userError);
-      throw new Error('Failed to retrieve user information');
-    }
-    
-    const phoneNumber = userData?.phone_number;
-    
-    if (!phoneNumber) {
-      console.error('No phone number found for user');
-      throw new Error('User profile incomplete');
-    }
-    
-    // Get IDs of words already sent to this user/phone - using a direct query to sent_words table
-    // Using 'from' with 'sent_words' as string literal to bypass TypeScript checks
+    console.log(`fetchNewWords: Fetching up to ${limit} new words for user ${userId}, category: ${category}`);
+
+    // Get IDs of words already sent to this user/phone
     const { data: sentWordsData, error: sentWordsError } = await supabase
-      .from('sent_words' as any)
-      .select('word_id')
-      .eq('category', category)
-      .eq('phone_number', phoneNumber);
-      
+      .from("sent_words") // Assuming 'sent_words' table exists
+      .select("word_id")
+      .eq("user_id", userId)
+      .eq("category", category);
+      // Consider filtering by phone_number too if user_id isn't always the primary key
+
     if (sentWordsError) {
-      console.error('Error fetching sent words:', sentWordsError);
-      throw new Error('Failed to check word history');
+      console.error("fetchNewWords: Error fetching sent words:", sentWordsError);
+      throw new Error("Failed to check word history");
     }
-    
-    // Extract the word IDs from the sent words - using type assertion for sentWordsData
-    const sentWordIds = (sentWordsData as any[])?.map(row => row.word_id) || [];
-    console.log(`Found ${sentWordIds.length} previously sent words`);
-    
+
+    const sentWordIds = sentWordsData?.map((row) => row.word_id) || [];
+    console.log(`fetchNewWords: Found ${sentWordIds.length} previously sent words for user ${userId} in category ${category}`);
+
     // Query for words in the specified category that haven't been sent yet
     let query = supabase
-      .from('vocabulary_words')
-      .select('*')
-      .eq('category', category)
+      .from("vocabulary_words")
+      .select("*")
+      .eq("category", category)
       .limit(limit);
-      
-    // If there are sent words, exclude them
+
     if (sentWordIds.length > 0) {
-      query = query.not('id', 'in', `(${sentWordIds.join(',')})`);
+      query = query.not("id", "in", `(${sentWordIds.join(",")})`);
     }
-    
+
     const { data: words, error: wordsError } = await query;
-    
+
     if (wordsError) {
-      console.error('Error fetching new words:', wordsError);
-      throw new Error('Failed to fetch vocabulary words');
+      console.error("fetchNewWords: Error fetching new words:", wordsError);
+      throw new Error("Failed to fetch vocabulary words");
     }
-    
-    console.log(`Retrieved ${words?.length || 0} new words from database`);
-    
-    // If not enough words found in the database, generate new ones with OpenAI
+
+    console.log(`fetchNewWords: Retrieved ${words?.length || 0} new words from database`);
+
+    // If not enough words found, try generating new ones with OpenAI
     if (!words || words.length < limit) {
-      console.log('Not enough words in database, generating with OpenAI');
+      console.log("fetchNewWords: Not enough words in DB, attempting AI generation...");
       const newWordsNeeded = limit - (words?.length || 0);
-      
-      // Call the OpenAI function to generate new words
-      const { data: generatedData, error: generatedError } = await supabase.functions.invoke('generate-vocab-words', {
-        body: { 
-          category: category,
-          count: newWordsNeeded
+
+      try {
+        const generatedWords = await generateWordsWithAI(category, newWordsNeeded);
+        if (generatedWords && generatedWords.length > 0) {
+           console.log(`fetchNewWords: Successfully generated and saved ${generatedWords.length} new words.`);
+           // Combine existing words with newly generated ones
+           const combinedWords = [...(words || []), ...generatedWords];
+           // Ensure we don't exceed the limit
+           return combinedWords.slice(0, limit);
         }
-      });
-      
-      if (generatedError) {
-        console.error('Error generating words with OpenAI:', generatedError);
-        // If generating fails, fallback to existing words or previously sent words
-      } else if (generatedData && generatedData.words) {
-        console.log(`Successfully generated ${generatedData.words.length} new words with OpenAI`);
-        
-        // Insert the generated words into the database
-        const { data: insertedWords, error: insertError } = await supabase
-          .from('vocabulary_words')
-          .insert(generatedData.words)
-          .select();
-          
-        if (insertError) {
-          console.error('Error inserting generated words:', insertError);
-        } else if (insertedWords) {
-          console.log(`Inserted ${insertedWords.length} generated words into database`);
-          // Combine existing words with new generated words
-          return [...(words || []), ...insertedWords];
-        }
+      } catch (aiError) {
+        console.error("fetchNewWords: AI generation failed:", aiError);
+        // Fall through to fetch fallback words if AI fails
       }
     }
     
-    // If we still don't have enough words (generation failed or insertion failed)
+    // If still not enough words (DB + AI failed/insufficient), fetch fallback (e.g., older words)
     if (!words || words.length < limit) {
-      console.log('Still not enough words, fetching some previously sent words');
-      
-      // Get some previously sent words as fallback
-      const { data: fallbackWords, error: fallbackError } = await supabase
-        .from('vocabulary_words')
-        .select('*')
-        .eq('category', category)
-        .order('created_at', { ascending: false })
-        .limit(limit - (words?.length || 0));
-        
-      if (fallbackError) {
-        console.error('Error fetching fallback words:', fallbackError);
-      } else if (fallbackWords) {
-        // Combine the new words with fallback words
-        return [...(words || []), ...fallbackWords];
-      }
+       console.warn(`fetchNewWords: Could only find ${words?.length || 0} unique words for category ${category}. Fetching fallback words.`);
+       // Example: Fetch most recent words as fallback, even if sent before, up to the limit
+       const fallbackLimit = limit - (words?.length || 0);
+       const { data: fallbackWords, error: fallbackError } = await supabase
+         .from("vocabulary_words")
+         .select("*")
+         .eq("category", category)
+         .order("created_at", { ascending: false })
+         .limit(fallbackLimit);
+         
+       if (fallbackError) {
+         console.error("fetchNewWords: Error fetching fallback words:", fallbackError);
+       } else if (fallbackWords) {
+         console.log(`fetchNewWords: Using ${fallbackWords.length} fallback words.`);
+         // Combine unique words with fallback words
+         const combinedFallback = [...(words || []), ...fallbackWords];
+         // Remove duplicates just in case, although fallback logic might allow repeats
+         const uniqueFallback = Array.from(new Map(combinedFallback.map(w => [w.id, w])).values());
+         return uniqueFallback.slice(0, limit);
+       }
     }
-    
-    return words || [];
+
+    return words || []; // Return whatever was found up to the limit
+
   } catch (error) {
-    console.error('Error in fetchNewWords:', error);
+    console.error("fetchNewWords: Unexpected error:", error);
     throw error;
   }
 };
 
 /**
- * Marks words as sent to the user to avoid repetition
- * @param words The vocabulary words to mark as sent
- * @param category The category of the words
- * @returns Whether the operation was successful
+ * Marks words as sent to the user to avoid repetition.
+ * @param userId The ID of the user.
+ * @param phoneNumber The phone number of the user.
+ * @param words The vocabulary words to mark as sent.
+ * @param category The category of the words.
+ * @returns True if successful, false otherwise.
  */
 export const markWordsAsSent = async (
+  userId: string,
+  phoneNumber: string,
   words: VocabularyWord[],
   category: string
 ): Promise<boolean> => {
   try {
     if (!words || words.length === 0) {
-      console.log('No words to mark as sent');
+      console.log("markWordsAsSent: No words provided to mark.");
       return true;
     }
-    
-    // Get the current user's session
-    const { data: sessionData } = await supabase.auth.getSession();
-    const userId = sessionData.session?.user?.id;
-    
-    if (!userId) {
-      console.error('No authenticated user found');
-      throw new Error('Authentication required');
+    if (!userId || !phoneNumber) {
+       console.error("markWordsAsSent: Missing userId or phoneNumber.");
+       throw new Error("User identification required to mark words as sent.");
     }
-    
-    // Get user's phone number
-    const { data: userData, error: userError } = await supabase
-      .from('user_subscriptions')
-      .select('phone_number')
-      .eq('user_id', userId)
-      .single();
-      
-    if (userError) {
-      console.error('Error fetching user data:', userError);
-      
-      // Create a user subscription if it doesn't exist yet
-      const { data: newUserData, error: createError } = await supabase
-        .from('user_subscriptions')
-        .insert({
-          user_id: userId,
-          phone_number: `+${Math.floor(Math.random() * 10000000000)}`, // Generate a random phone number as placeholder
-          is_pro: true,
-          category: category
-        })
-        .select()
-        .single();
-        
-      if (createError) {
-        console.error('Error creating user subscription:', createError);
-        throw new Error('Failed to create user profile');
-      }
-      
-      // If we successfully created the subscription, proceed with the new phone number
-      var phoneNumber = newUserData.phone_number;
-    } else {
-      var phoneNumber = userData?.phone_number;
-    }
-    
-    // Make sure we now have a phone number to work with
-    if (!phoneNumber) {
-      console.error('No phone number found for user');
-      throw new Error('User profile incomplete');
-    }
-    
-    // For any words that don't exist in the vocabulary_words table yet, insert them first
-    const wordsToInsert = words.filter(word => !word.id.includes('-')); // Assume UUIDs have hyphens
-    
-    if (wordsToInsert.length > 0) {
-      // Add proper UUIDs to the words
-      wordsToInsert.forEach(word => {
-        if (!word.id) {
-          word.id = crypto.randomUUID();
-        }
-      });
-      
-      const { error: insertError } = await supabase
-        .from('vocabulary_words')
-        .insert(wordsToInsert);
-        
-      if (insertError) {
-        console.error('Error inserting new vocabulary words:', insertError);
-        // Continue anyway to try to mark the existing words as sent
-      }
-    }
-    
-    // Prepare records to insert into sent_words table
-    const sentWordsRecords = words.map(word => ({
+
+    // Prepare records for the 'sent_words' table
+    const sentWordsRecords = words.map((word) => ({
       word_id: word.id,
       user_id: userId,
-      phone_number: phoneNumber,
-      category: category
+      phone_number: phoneNumber, // Include phone number for potential lookups
+      category: category,
+      sent_at: new Date().toISOString(), // Record when it was sent
     }));
-    
-    // Insert records into sent_words table - using 'from' with string literal to bypass TypeScript checks
-    const { error: insertError } = await supabase
-      .from('sent_words' as any)
+
+    // Insert records into sent_words table
+    const { error } = await supabase
+      .from("sent_words") // Assuming 'sent_words' table exists
       .insert(sentWordsRecords);
-      
-    if (insertError) {
-      console.error('Error marking words as sent:', insertError);
-      throw new Error('Failed to update word history');
+
+    if (error) {
+      // Handle potential duplicate errors gracefully if needed (e.g., if retrying)
+      if (error.code === '23505') { // Unique violation
+         console.warn(`markWordsAsSent: Attempted to mark already sent words for user ${userId}. Error: ${error.message}`);
+         return true; // Consider this a success if they were already marked
+      }
+      console.error("markWordsAsSent: Error inserting into sent_words:", error);
+      throw new Error("Failed to update word history");
     }
-    
-    console.log(`Successfully marked ${words.length} words as sent`);
+
+    console.log(`markWordsAsSent: Successfully marked ${words.length} words as sent for user ${userId}`);
     return true;
   } catch (error) {
-    console.error('Error in markWordsAsSent:', error);
+    console.error("markWordsAsSent: Unexpected error:", error);
     throw error;
   }
 };
 
 /**
- * Fetches and processes a new batch of words for the user
- * @param category The category of words to fetch
- * @returns The new batch of vocabulary words
+ * Fetches and processes a new batch of words for the user based on their subscription.
+ * @param userId The ID of the user.
+ * @param category The category of words to fetch.
+ * @returns The new batch of vocabulary words.
  */
 export const generateNewWordBatch = async (
+  userId: string,
   category: string
 ): Promise<VocabularyWord[]> => {
   try {
-    console.log(`Generating new word batch for category: ${category}`);
-    
-    // Fetch new words
-    const newWords = await fetchNewWords(category);
-    
-    if (!newWords || newWords.length === 0) {
-      console.error('No words found for category:', category);
-      throw new Error(`No vocabulary words available for ${category}`);
+    console.log(`generateNewWordBatch: Starting for user ${userId}, category: ${category}`);
+
+    if (!userId) {
+      throw new Error("Authentication required to generate word batch.");
     }
-    
-    // Mark words as sent
-    await markWordsAsSent(newWords, category);
-    
+
+    // 1. Get User Subscription Details (including phone number and word count preference)
+    const { data: subscriptionData, error: subError } = await supabase
+      .from("user_subscriptions")
+      .select("phone_number, is_pro, subscription_ends_at, word_count_preference") // Assume word_count_preference column exists
+      .eq("user_id", userId)
+      .single();
+
+    if (subError || !subscriptionData) {
+      console.error(`generateNewWordBatch: Error fetching subscription for user ${userId}:`, subError);
+      throw new Error("Could not retrieve user subscription details.");
+    }
+
+    const { phone_number: phoneNumber, is_pro, subscription_ends_at, word_count_preference } = subscriptionData;
+
+    if (!phoneNumber) {
+      throw new Error("User subscription is missing a phone number.");
+    }
+
+    // 2. Determine if Pro is Active
+    const isProActive = is_pro === true && 
+                        subscription_ends_at && 
+                        isAfter(new Date(subscription_ends_at), new Date());
+
+    // 3. Determine Word Limit based on Pro status and preference
+    const preferredCount = word_count_preference ?? (isProActive ? 3 : 1); // Default: 3 for Pro, 1 for Free
+    const maxLimit = isProActive ? 5 : 3; // Max allowed: 5 for Pro, 3 for Free
+    const actualLimit = Math.min(preferredCount, maxLimit);
+
+    console.log(`generateNewWordBatch: User ${userId} - Pro Active: ${isProActive}, Preferred Count: ${preferredCount}, Actual Limit: ${actualLimit}`);
+
+    // 4. Fetch New Words using the determined limit
+    const newWords = await fetchNewWords(userId, phoneNumber, category, actualLimit);
+
+    if (!newWords || newWords.length === 0) {
+      console.warn(`generateNewWordBatch: No words found or generated for user ${userId}, category: ${category}`);
+      // Depending on requirements, could return empty array or throw error
+      return []; 
+      // throw new Error(`No vocabulary words available for ${category}`);
+    }
+
+    console.log(`generateNewWordBatch: Fetched ${newWords.length} words for user ${userId}.`);
+
+    // 5. Mark Words as Sent
+    await markWordsAsSent(userId, phoneNumber, newWords, category);
+
     return newWords;
+
   } catch (error) {
-    console.error('Error generating new word batch:', error);
-    throw error;
+    console.error(`generateNewWordBatch: Error for user ${userId}:`, error);
+    throw error; // Re-throw the error for the caller to handle
   }
 };
 
 /**
- * Generates new vocabulary words using OpenAI API
- * @param category The category of words to generate
- * @param count The number of words to generate
- * @returns The newly generated vocabulary words
+ * Generates new vocabulary words using OpenAI API and saves them to the DB.
+ * @param category The category of words to generate.
+ * @param count The number of words to generate.
+ * @returns The newly generated and saved vocabulary words.
  */
 export const generateWordsWithAI = async (
   category: string,
   count: number = 5
 ): Promise<VocabularyWord[]> => {
+  if (count <= 0) {
+     console.log("generateWordsWithAI: Count is zero or less, skipping generation.");
+     return [];
+  }
   try {
-    console.log(`Generating ${count} words for ${category} using OpenAI`);
-    
-    const { data, error } = await supabase.functions.invoke('generate-vocab-words', {
-      body: { category, count }
-    });
-    
-    if (error) {
-      console.error('Error calling OpenAI generation function:', error);
-      throw new Error('Failed to generate words with AI');
+    console.log(`generateWordsWithAI: Generating ${count} words for ${category} using AI function...`);
+
+    // Call the Supabase Edge Function responsible for AI generation
+    const { data: functionResult, error: functionError } = await supabase.functions.invoke(
+      "generate-vocab-words", // Ensure this is the correct function name
+      {
+        body: { category, count },
+      }
+    );
+
+    if (functionError) {
+      console.error("generateWordsWithAI: Error invoking AI generation function:", functionError);
+      throw new Error(`AI function invocation failed: ${functionError.message}`);
     }
-    
-    if (!data || !data.words || !Array.isArray(data.words)) {
-      console.error('Invalid response from OpenAI function:', data);
-      throw new Error('Invalid response from AI word generation');
+
+    // Validate the response from the Edge Function
+    if (!functionResult || !Array.isArray(functionResult.words) || functionResult.words.length === 0) {
+      console.error("generateWordsWithAI: Invalid or empty response from AI function:", functionResult);
+      throw new Error("AI generation returned no valid words.");
     }
-    
-    console.log(`Successfully generated ${data.words.length} words with OpenAI`);
-    
+
+    console.log(`generateWordsWithAI: Received ${functionResult.words.length} words from AI function.`);
+
+    // Prepare words for insertion (ensure they have necessary fields, maybe assign UUIDs if not done by function)
+    const wordsToInsert = functionResult.words.map((word: any) => ({
+      // Map fields from AI response to DB schema
+      word: word.word,
+      definition: word.definition,
+      example: word.example,
+      category: category, // Ensure category is set
+      // Add other fields like difficulty, source='AI', etc. if needed
+    }));
+
     // Insert the new words into the database
     const { data: insertedWords, error: insertError } = await supabase
-      .from('vocabulary_words')
-      .insert(data.words)
-      .select();
-      
+      .from("vocabulary_words")
+      .insert(wordsToInsert)
+      .select(); // Select the inserted rows to return them
+
     if (insertError) {
-      console.error('Error inserting AI-generated words:', insertError);
-      throw new Error('Failed to save generated words');
+      console.error("generateWordsWithAI: Error inserting AI-generated words:", insertError);
+      // Decide if partial insert is acceptable or if it should throw
+      throw new Error(`Failed to save generated words: ${insertError.message}`);
     }
-    
-    return insertedWords || [];
+
+    console.log(`generateWordsWithAI: Successfully inserted ${insertedWords?.length || 0} AI-generated words.`);
+    return insertedWords || []; // Return the newly inserted words
+
   } catch (error) {
-    console.error('Error in generateWordsWithAI:', error);
-    throw error;
+    console.error("generateWordsWithAI: Unexpected error:", error);
+    // Avoid throwing if AI generation is optional, maybe return empty array
+    // throw error; 
+    return []; // Return empty array on failure
   }
 };
+

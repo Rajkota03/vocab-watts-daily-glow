@@ -12,32 +12,33 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
-
+  
   try {
+    // Initialize Supabase client
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
-
-    // Execute the create_whatsapp_tables() function
+    
+    // Create tables if they don't exist
     const { data, error } = await supabaseAdmin.rpc('create_whatsapp_tables');
-
+    
     if (error) {
-      console.error('Error creating WhatsApp tables:', error);
+      console.error("Error creating WhatsApp tables:", error);
       return new Response(
         JSON.stringify({ success: false, error: error.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
+    
     return new Response(
-      JSON.stringify({ success: true, data }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: true, message: "WhatsApp tables created successfully", data }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } catch (err) {
-    console.error('Unexpected error:', err);
+  } catch (error) {
+    console.error("Unexpected error creating WhatsApp tables:", error);
     return new Response(
-      JSON.stringify({ success: false, error: String(err) }),
+      JSON.stringify({ success: false, error: String(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

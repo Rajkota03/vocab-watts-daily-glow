@@ -1,18 +1,19 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, ArrowLeft } from 'lucide-react';
+import { Brain, ArrowLeft, Mail, Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { RegisterForm } from '@/components/auth/RegisterForm';
+import { PhoneLoginForm } from '@/components/auth/PhoneLoginForm'; // Import the new component
 import type { LoginFormValues, RegisterFormValues } from '@/types/auth';
 
 const Login = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [configStatus, setConfigStatus] = useState<any>(null);
+  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email'); // State to toggle login method
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -30,6 +31,7 @@ const Login = () => {
     // Check WhatsApp configuration status when login page loads
     const checkWhatsAppConfig = async () => {
       try {
+        // Assuming 'update-whatsapp-settings' can check config
         const { data, error } = await supabase.functions.invoke('update-whatsapp-settings', {
           body: { checkOnly: true }
         });
@@ -49,7 +51,10 @@ const Login = () => {
       (event, session) => {
         console.log("Auth state change:", event, session);
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          navigate('/dashboard');
+          if (window.location.pathname.includes('/login')) {
+             console.log("Signed in, navigating to dashboard from login page.");
+             navigate('/dashboard');
+          }
         }
       }
     );
@@ -71,6 +76,7 @@ const Login = () => {
         title: "Login successful",
         description: "Welcome back!",
       });
+      // Navigation is handled by onAuthStateChange
     } catch (error: any) {
       toast({
         title: "Error",
@@ -102,7 +108,7 @@ const Login = () => {
         title: "Account created successfully",
         description: "Please check your email for a confirmation link or proceed to login.",
       });
-      setIsSignUp(false);
+      setIsSignUp(false); // Switch back to login view after registration
     } catch (error: any) {
       toast({
         title: "Registration Error",
@@ -112,6 +118,12 @@ const Login = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePhoneLoginSuccess = () => {
+    console.log("Phone login successful, navigating to dashboard.");
+    // Navigation should be handled by onAuthStateChange, but force it if needed
+    navigate('/dashboard');
   };
 
   return (
@@ -137,7 +149,7 @@ const Login = () => {
           <CardDescription className="text-gray-500 text-base">
             {isSignUp 
               ? 'Create your account to get started' 
-              : 'Sign in to access your GLINTUP dashboard'}
+              : `Sign in via ${loginMethod === 'email' ? 'Email' : 'WhatsApp OTP'} to access your GLINTUP dashboard`}
           </CardDescription>
         </CardHeader>
         
@@ -151,11 +163,27 @@ const Login = () => {
           {isSignUp ? (
             <RegisterForm onSubmit={handleRegister} isLoading={isLoading} />
           ) : (
-            <LoginForm onSubmit={handleLogin} isLoading={isLoading} />
+            loginMethod === 'email' ? (
+              <LoginForm onSubmit={handleLogin} isLoading={isLoading} />
+            ) : (
+              <PhoneLoginForm onLoginSuccess={handlePhoneLoginSuccess} />
+            )
           )}
         </CardContent>
         
         <CardFooter className="flex flex-col space-y-4 pt-2">
+          {!isSignUp && (
+            <div className="text-center text-sm">
+              <button
+                type="button"
+                className="text-[#9b87f5] hover:text-[#7E69AB] font-medium transition-colors inline-flex items-center"
+                onClick={() => setLoginMethod(loginMethod === 'email' ? 'phone' : 'email')}
+              >
+                {loginMethod === 'email' ? <Phone className="h-4 w-4 mr-1"/> : <Mail className="h-4 w-4 mr-1"/>}
+                Sign in with {loginMethod === 'email' ? 'WhatsApp OTP' : 'Email/Password'} instead
+              </button>
+            </div>
+          )}
           <div className="text-center text-sm">
             <span className="text-gray-500">
               {isSignUp ? 'Already have an account?' : "Don't have an account?"}
@@ -175,3 +203,4 @@ const Login = () => {
 };
 
 export default Login;
+

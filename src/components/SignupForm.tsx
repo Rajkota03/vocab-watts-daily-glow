@@ -1,229 +1,125 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label"; // Use Label component
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "@/components/ui/use-toast";
-import { Clock, CheckCircle, Info, Send, Loader2, User } from 'lucide-react';
-import { sendVocabWords } from '@/services/whatsappService';
+import { useToast } from "@/components/ui/use-toast";
+import { Clock, CheckCircle, Info, Send, Loader2, User, Mail, Phone } from 'lucide-react'; // Added Mail, Phone icons
+// Removed unused import: import { sendVocabWords } from '@/services/whatsappService';
 import { supabase } from '@/integrations/supabase/client';
-import { completeSubscription, checkSubscriptionExists } from '@/services/paymentService';
-
-// Declare Razorpay types
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
+// Removed unused imports: import { completeSubscription, checkSubscriptionExists } from '@/services/paymentService';
+import { cn } from '@/lib/utils'; // Import cn utility
 
 const SignupForm = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [password, setPassword] = useState('');
   const [deliveryTime, setDeliveryTime] = useState('evening'); // Default delivery time
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState(1);
   const [success, setSuccess] = useState(false);
-  const [user, setUser] = useState(null);
-  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+  const [user, setUser] = useState<any>(null); // Use 'any' or a proper User type
+  const { toast } = useToast();
 
-  // Check for existing session on component mount
+  // Simplified session check
   useEffect(() => {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
-      if (data.session?.user) {
-        setUser(data.session.user);
-      }
+      setUser(data.session?.user ?? null);
     };
-
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user || null);
-      }
-    );
-
     checkSession();
 
-    // Load Razorpay script for pro users (not needed for free trial, but keeping for future use)
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    script.onload = () => {
-      setRazorpayLoaded(true);
-      console.log('Razorpay script loaded successfully');
-    };
-    document.body.appendChild(script);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
 
-    // Cleanup
     return () => {
       subscription.unsubscribe();
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
     };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
+    // --- Input Validations ---
+    if (!firstName.trim()) {
+      toast({ title: "Missing information", description: "Please enter your first name.", variant: "destructive" });
+      setIsSubmitting(false);
+      return;
+    }
+    if (!phoneNumber.trim() || !/^\+?[1-9]\d{1,14}$/.test(phoneNumber.replace(/\s+/g, ''))) { // Basic E.164 format check
+      toast({ title: "Invalid phone number", description: "Please enter a valid WhatsApp number including country code (e.g., +91...).", variant: "destructive" });
+      setIsSubmitting(false);
+      return;
+    }
+    if (step === 2 && !deliveryTime) {
+      toast({ title: "Please select a delivery time", description: "Choose when you want to receive your daily words.", variant: "destructive" });
+      setIsSubmitting(false);
+      return;
+    }
+
+    console.log("Submitting free trial request:", { phoneNumber, firstName, lastName, deliveryTime });
+
     try {
-      // Validate phone number (basic validation)
-      if (!phoneNumber.trim() || phoneNumber.length < 10) {
-        toast({
-          title: "Invalid phone number",
-          description: "Please enter a valid WhatsApp number.",
-          variant: "destructive"
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Validate required name fields
-      if (!firstName.trim()) {
-        toast({
-          title: "Missing information",
-          description: "Please enter your first name.",
-          variant: "destructive"
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      
-      if (step === 2 && !deliveryTime) {
-        toast({
-          title: "Please select a delivery time",
-          description: "Choose when you want to receive your daily words.",
-          variant: "destructive"
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      
-      console.log("Submitting form with:", { phoneNumber, email, firstName, lastName, deliveryTime });
-      
-      // Check if subscription already exists for this phone number
-      const exists = await checkSubscriptionExists(phoneNumber);
-      if (exists) {
-        toast({
-          title: "Phone number already registered",
-          description: "This WhatsApp number already has an active subscription. Please use a different number.",
-          variant: "destructive"
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // First create the user account if email and password are provided
-      let userId = null;
-      if (email && password) {
-        try {
-          console.log("Creating user account with email:", email);
-          
-          const { data, error } = await supabase.auth.signUp({
-            email: email,
-            password: password,
-            options: {
-              data: {
-                first_name: firstName,
-                last_name: lastName || firstName,
-                whatsapp_number: phoneNumber,
-                delivery_time: deliveryTime
-              }
-            }
-          });
-          
-          if (error) {
-            console.error("Error signing up:", error);
-            toast({
-              title: "Account creation failed",
-              description: error.message || "We couldn't create your account. Please try again.",
-              variant: "destructive"
-            });
-          } else {
-            console.log("User created successfully:", data);
-            userId = data.user?.id;
-            toast({
-              title: "Account created!",
-              description: "Check your email to confirm your account.",
-            });
+      // --- Call Backend Function to Create Subscription ---
+      console.log("Invoking create-free-subscription function...");
+      const { data: functionResult, error: functionError } = await supabase.functions.invoke(
+        'create-free-subscription',
+        {
+          body: {
+            phoneNumber: phoneNumber.replace(/\s+/g, ''), // Ensure no spaces
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            deliveryTime: deliveryTime,
+            // email: email.trim() // Pass email if the backend function uses it
           }
-        } catch (authErr) {
-          console.error("Auth error:", authErr);
-          // We don't fail the process here, we'll still create the subscription
         }
+      );
+
+      if (functionError) {
+        console.error("Error invoking create-free-subscription function:", functionError);
+        throw new Error(`Failed to invoke subscription function: ${functionError.message}`);
       }
-      
-      // Then attempt to create the subscription
-      console.log("Creating free trial subscription...");
-      const subscriptionResult = await completeSubscription({
-        phoneNumber,
-        deliveryTime,
-        isPro: false, // Free trial
-        userId: userId // Pass the user ID if we have it
-      });
-      
-      if (!subscriptionResult.success) {
-        const errorMessage = subscriptionResult.error instanceof Error 
-          ? subscriptionResult.error.message 
-          : String(subscriptionResult.error || 'Unknown error');
-          
-        console.error("Failed to create subscription:", errorMessage);
-        
+
+      // Check the response from the function itself
+      if (!functionResult?.success) {
+        const errorMessage = functionResult?.error || 'Unknown error during subscription creation';
+        console.error("Function returned error:", errorMessage);
         toast({
-          title: "Something went wrong",
-          description: errorMessage.includes('phone_number_key') 
-            ? "This phone number already has an active subscription. Please use a different number."
+          title: "Subscription Failed",
+          description: errorMessage.includes('already has an active subscription')
+            ? "This phone number already has an active subscription."
             : `Failed to create subscription: ${errorMessage}`,
           variant: "destructive"
         });
-        
         setIsSubmitting(false);
         return;
       }
-      
-      console.log("Subscription created successfully:", subscriptionResult.data);
-      
-      // Now that subscription is created, send vocabulary words via WhatsApp
-      try {
-        console.log("Sending initial vocabulary words to:", phoneNumber);
-        const messageResult = await sendVocabWords({
-          phoneNumber,
-          deliveryTime,
-          sendImmediately: true // Flag to indicate immediate delivery
-        });
-        
-        if (!messageResult) {
-          console.warn('WhatsApp message sending failed, but subscription was created');
-        } else {
-          console.log('WhatsApp message sent successfully');
-        }
-      } catch (whatsappErr) {
-        console.error('Error sending welcome WhatsApp message:', whatsappErr);
-        // We don't fail the process here since the subscription was already created
-      }
-      
-      // Show success message
+
+      console.log("Subscription function executed successfully:", functionResult);
+
+      // --- Show Success State ---
+      // Welcome message is now handled by the backend function
       setSuccess(true);
       toast({
         title: "You're all set!",
-        description: "You'll receive your first words shortly on WhatsApp.",
+        description: "Your free trial has started. Check WhatsApp for your first words!",
         variant: "success"
       });
-      
-      // Reset form after success
+
+      // Reset form fields after a delay
       setTimeout(() => {
         setPhoneNumber('');
         setEmail('');
         setFirstName('');
         setLastName('');
-        setPassword('');
         setDeliveryTime('evening');
         setStep(1);
         setSuccess(false);
-      }, 3000);
+      }, 4000);
+
     } catch (error: any) {
       console.error('Error processing subscription:', error);
       toast({
@@ -236,192 +132,193 @@ const SignupForm = () => {
     }
   };
 
-  // Show success message if form was submitted successfully
+  // --- Render Success State ---
   if (success) {
     return (
-      <div className="text-center">
+      <div className="text-center p-4 md:p-6">
         <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
           <CheckCircle className="h-8 w-8 text-green-600" />
         </div>
-        <h3 className="text-2xl font-bold mb-2">Success!</h3>
+        <h3 className="text-xl md:text-2xl font-bold mb-2">Success!</h3>
         <p className="text-gray-600 mb-6">
-          Your first vocabulary words will be sent to your WhatsApp shortly.
+          Your free trial is active. Your first vocabulary words are on their way to WhatsApp!
         </p>
-        <Button 
+        <Button
+          variant="outline" // Use outline for secondary action
           onClick={() => {
-            setPhoneNumber('');
-            setEmail('');
-            setFirstName('');
-            setLastName('');
-            setPassword('');
-            setDeliveryTime('evening');
-            setStep(1);
             setSuccess(false);
+            setStep(1);
+            // Fields are reset by the timeout in handleSubmit
           }}
         >
-          Sign up another number
+          Start Another Trial
         </Button>
       </div>
     );
   }
 
+  // --- Render Form Steps ---
   return (
-    <div className="relative z-10">
-      <div className="space-y-2 mb-6">
-        <h3 className="text-2xl font-bold mb-2 text-center">Get Started with GLINTUP</h3>
-        <div className="flex items-center justify-center gap-2 bg-accent/10 text-dark px-3 py-2 rounded-lg">
-          <Clock className="h-5 w-5" />
-          <p className="font-medium">3-Day Free Trial</p>
+    <div className="relative z-10 p-4 md:p-0">
+      {/* Header Section */} 
+      <div className="text-center mb-6">
+        <h3 className="text-xl md:text-2xl font-bold mb-2">Get Started with Glintup</h3>
+        <div className="inline-flex items-center justify-center gap-2 bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-sm">
+          <Clock className="h-4 w-4" />
+          <span>3-Day Free Trial</span>
         </div>
       </div>
-      
-      <form onSubmit={handleSubmit}>
+
+      {/* Form */} 
+      <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
+        {/* --- Step 1: User Info --- */} 
         {step === 1 && (
-          <div className="space-y-5">
+          <div className="space-y-4 animate-fade-in">
+            {/* First Name */} 
             <div>
-              <label htmlFor="firstName" className="block text-sm font-medium mb-1.5">
-                First Name
-              </label>
+              <Label htmlFor="firstName" className="mb-1.5">First Name</Label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-4 w-4 text-gray-400" />
-                </div>
-                <Input 
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
                   id="firstName"
-                  type="text" 
-                  placeholder="Your first name" 
+                  type="text"
+                  placeholder="Your first name"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   required
-                  className="h-12 pl-10"
+                  className="pl-10 h-11 md:h-12" // Consistent height
+                  aria-label="First Name"
                 />
               </div>
             </div>
-            
+
+            {/* Last Name (Optional) */} 
             <div>
-              <label htmlFor="lastName" className="block text-sm font-medium mb-1.5">
-                Last Name (Optional)
-              </label>
+              <Label htmlFor="lastName" className="mb-1.5">Last Name <span className="text-gray-500">(Optional)</span></Label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-4 w-4 text-gray-400" />
-                </div>
-                <Input 
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
                   id="lastName"
-                  type="text" 
-                  placeholder="Your last name" 
+                  type="text"
+                  placeholder="Your last name"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="h-12 pl-10"
+                  className="pl-10 h-11 md:h-12"
+                  aria-label="Last Name"
                 />
               </div>
             </div>
-            
+
+            {/* Phone Number */} 
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium mb-1.5">
-                Enter WhatsApp number (+91...)
-              </label>
-              <Input 
-                id="phone"
-                type="tel" 
-                placeholder="+91 your WhatsApp number" 
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                required
-                className="h-12"
-              />
-              <p className="mt-1.5 text-xs text-gray-500 flex items-start">
-                <Info className="h-3.5 w-3.5 mr-1 flex-shrink-0 mt-0.5" />
-                We never spam or share your number
+              <Label htmlFor="phone" className="mb-1.5">WhatsApp Number</Label>
+              <div className="relative">
+                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+91... (with country code)"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  required
+                  className="pl-10 h-11 md:h-12"
+                  aria-label="WhatsApp phone number"
+                />
+              </div>
+              <p className="mt-1.5 text-xs text-gray-500 flex items-center">
+                <Info className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                We need this to send your words. Never shared.
               </p>
             </div>
-            
+
+            {/* Email (Optional) */} 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-1.5">
-                Email (optional)
-              </label>
-              <Input 
-                id="email"
-                type="email" 
-                placeholder="Your email address" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="h-12"
-              />
+              <Label htmlFor="email" className="mb-1.5">Email <span className="text-gray-500">(Optional)</span></Label>
+               <div className="relative">
+                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your.email@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10 h-11 md:h-12"
+                  aria-label="Email Address"
+                />
+              </div>
+               <p className="mt-1.5 text-xs text-gray-500 flex items-center">
+                <Info className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                Used for account recovery or updates if provided.
+              </p>
             </div>
-            
-            <Button 
-              type="button" 
-              className="w-full py-6 h-auto text-base"
-              disabled={!phoneNumber || phoneNumber.trim().length < 10 || !firstName.trim()}
+
+            {/* Continue Button */} 
+            <Button
+              type="button"
+              className="w-full h-11 md:h-12 text-base font-semibold"
+              disabled={!phoneNumber || !firstName}
               onClick={() => {
-                if(phoneNumber && phoneNumber.trim().length >= 10 && firstName.trim()) {
-                  setStep(2);
-                } else if (!firstName.trim()) {
-                  toast({
-                    title: "Missing information",
-                    description: "Please enter your first name.",
-                    variant: "destructive"
-                  });
+                // Re-validate before proceeding
+                if (!firstName.trim()) {
+                  toast({ title: "Missing information", description: "Please enter your first name.", variant: "destructive" });
+                } else if (!phoneNumber.trim() || !/^\+?[1-9]\d{1,14}$/.test(phoneNumber.replace(/\s+/g, ''))) {
+                  toast({ title: "Invalid phone number", description: "Please enter a valid WhatsApp number including country code.", variant: "destructive" });
                 } else {
-                  toast({
-                    title: "Invalid phone number",
-                    description: "Please enter a valid WhatsApp number.",
-                    variant: "destructive"
-                  });
+                  setStep(2);
                 }
               }}
             >
               Continue
             </Button>
-            
-            <div className="pt-2 text-center">
+
+            {/* Terms Text */} 
+            <div className="pt-1 text-center">
               <p className="text-xs text-gray-500">
-                By continuing, you agree to our Terms of Service and Privacy Policy.
+                By continuing, you agree to our Terms & Privacy Policy.
               </p>
             </div>
           </div>
         )}
-        
+
+        {/* --- Step 2: Delivery Time --- */} 
         {step === 2 && (
-          <div className="space-y-5">
-            <div className="mb-2 animate-fade-in">
-              <label htmlFor="deliveryTime" className="block text-sm font-medium mb-1.5">
-                Choose delivery time
-              </label>
+          <div className="space-y-5 animate-fade-in">
+            {/* Delivery Time Select */} 
+            <div>
+              <Label htmlFor="deliveryTime" className="mb-1.5">Choose Delivery Time</Label>
               <Select value={deliveryTime} onValueChange={setDeliveryTime} required>
-                <SelectTrigger id="deliveryTime" className="h-12">
+                <SelectTrigger id="deliveryTime" className="h-11 md:h-12 text-base">
                   <SelectValue placeholder="Select delivery time" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="morning">7:00 AM - Morning boost</SelectItem>
-                  <SelectItem value="noon">12:00 PM - Lunch break learning</SelectItem>
-                  <SelectItem value="evening">7:00 PM - Evening review</SelectItem>
+                  <SelectItem value="morning">Morning (around 7 AM)</SelectItem>
+                  <SelectItem value="noon">Noon (around 12 PM)</SelectItem>
+                  <SelectItem value="evening">Evening (around 7 PM)</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="mt-1.5 text-xs text-gray-500 flex items-start">
-                <Info className="h-3.5 w-3.5 mr-1 flex-shrink-0 mt-0.5" />
-                Pick when you want to receive your daily words
+              <p className="mt-1.5 text-xs text-gray-500 flex items-center">
+                <Info className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                When do you prefer your daily words?
               </p>
-              <p className="mt-1.5 text-xs text-green-600 flex items-start">
-                <Info className="h-3.5 w-3.5 mr-1 flex-shrink-0 mt-0.5" />
-                You'll get your first words immediately after signup!
+              <p className="mt-1 text-xs text-green-600 flex items-center">
+                <CheckCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                First words sent immediately after signup!
               </p>
             </div>
-            
-            <div className="flex gap-3">
-              <Button 
-                type="button" 
+
+            {/* Action Buttons */} 
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                type="button"
                 variant="outline"
-                className="flex-1"
+                className="w-full sm:w-auto flex-1 h-11 md:h-12"
                 onClick={() => setStep(1)}
               >
                 Back
               </Button>
-              
-              <Button 
-                type="submit" 
-                className="flex-1"
+              <Button
+                type="submit"
+                className="w-full sm:w-auto flex-1 h-11 md:h-12 font-semibold"
                 disabled={isSubmitting || !deliveryTime}
               >
                 {isSubmitting ? (
@@ -437,11 +334,12 @@ const SignupForm = () => {
                 )}
               </Button>
             </div>
-            
-            <div className="pt-2 text-center">
-              <p className="text-sm font-medium text-gray-800 mb-1">3-day free trial</p>
+
+            {/* Trial Info */} 
+            <div className="pt-1 text-center">
+              <p className="text-sm font-medium text-gray-800 mb-1">3-Day Free Trial</p>
               <p className="text-xs text-gray-600">
-                No credit card required. 5 words daily for 3 days.
+                No credit card required. Get daily words via WhatsApp.
               </p>
             </div>
           </div>
@@ -452,3 +350,4 @@ const SignupForm = () => {
 };
 
 export default SignupForm;
+
