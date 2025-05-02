@@ -31,3 +31,6 @@ enabled = true
 [edge_functions.whatsapp-webhook]
 verify_jwt = false
 
+[edge_functions.create-whatsapp-tables]
+verify_jwt = false
+
