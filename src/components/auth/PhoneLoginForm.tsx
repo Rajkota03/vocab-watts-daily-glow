@@ -1,10 +1,13 @@
+
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"; 
 
 interface PhoneLoginFormProps {
   onLoginSuccess: () => void;
@@ -16,29 +19,49 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
   const [otpSent, setOtpSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    
+    // Basic validation
     if (!phone) {
-      toast({ title: "Phone number required", variant: "destructive" });
+      setError("Phone number is required");
       return;
     }
+
+    // Ensure phone number starts with +
+    const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+    
     setIsLoading(true);
     try {
-      // TODO: Implement Supabase function call 'send-otp'
+      console.log("Sending OTP to:", formattedPhone);
+      
       const { data, error } = await supabase.functions.invoke('send-otp', {
-        body: { phoneNumber: phone }
+        body: { phoneNumber: formattedPhone }
       });
 
       if (error) throw new Error(error.message);
       if (!data?.success) throw new Error(data?.error || 'Failed to send OTP.');
 
       setOtpSent(true);
-      toast({ title: "OTP Sent", description: "Check your WhatsApp for the OTP." });
+      setSuccess("OTP sent! Check your WhatsApp for the verification code.");
+      toast({ 
+        title: "OTP Sent", 
+        description: "Check your WhatsApp for the verification code",
+        variant: "default" 
+      });
     } catch (error: any) {
       console.error("Send OTP error:", error);
-      toast({ title: "Error Sending OTP", description: error.message, variant: "destructive" });
+      setError(error.message || "Failed to send OTP. Please try again.");
+      toast({ 
+        title: "Error Sending OTP", 
+        description: error.message, 
+        variant: "destructive" 
+      });
     } finally {
       setIsLoading(false);
     }
@@ -46,13 +69,17 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!otp) {
-      toast({ title: "OTP required", variant: "destructive" });
+    setError(null);
+    
+    if (!otp || otp.length < 6) {
+      setError("Please enter the complete 6-digit OTP");
       return;
     }
+    
     setIsVerifying(true);
     try {
-      // TODO: Implement Supabase function call 'verify-otp'
+      console.log("Verifying OTP for:", phone);
+      
       const { data, error } = await supabase.functions.invoke('verify-otp', {
         body: { phoneNumber: phone, otp: otp }
       });
@@ -60,81 +87,137 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
       if (error) throw new Error(error.message);
       if (!data?.success) throw new Error(data?.error || 'Failed to verify OTP.');
       
-      // Assuming verify-otp returns session info on success
-      // Need to manually set the session if verify-otp doesn't handle it
-      if (data.session) {
-         const { error: sessionError } = await supabase.auth.setSession(data.session);
-         if (sessionError) {
-            throw new Error(`Failed to set session: ${sessionError.message}`);
-         }
-         console.log("Session set successfully after OTP verification.");
-         toast({ title: "Login Successful", description: "Welcome!" });
-         onLoginSuccess(); // Callback to navigate to dashboard
-      } else {
-         // Fallback if verify-otp doesn't return session but confirms success
-         // This might require a page reload or further action
-         console.warn("OTP verified, but no session returned from function.");
-         toast({ title: "Verification Successful", description: "Attempting to refresh session..." });
-         // Attempt to refresh or get session manually
-         const { data: { session }, error: getSessionError } = await supabase.auth.getSession();
-         if (session) {
-            onLoginSuccess();
-         } else {
-            throw new Error("Could not establish session after OTP verification.");
-         }
-      }
-
+      // Show success message
+      setSuccess("Verification successful! Logging you in...");
+      toast({ 
+        title: "Verification Successful", 
+        description: "Logging you in...",
+        variant: "default"
+      });
+      
+      // Wait a moment before redirect to show success state
+      setTimeout(() => {
+        if (data.session) {
+          onLoginSuccess();
+        } else {
+          throw new Error("Authentication successful but no session returned");
+        }
+      }, 1500);
+      
     } catch (error: any) {
       console.error("Verify OTP error:", error);
-      toast({ title: "Error Verifying OTP", description: error.message, variant: "destructive" });
+      setError(error.message || "Failed to verify OTP. Please try again.");
+      toast({ 
+        title: "Verification Failed", 
+        description: error.message, 
+        variant: "destructive" 
+      });
     } finally {
       setIsVerifying(false);
     }
   };
 
   return (
-    <form onSubmit={otpSent ? handleVerifyOtp : handleSendOtp} className="space-y-4">
-      {!otpSent ? (
-        <div className="space-y-2">
-          <Label htmlFor="phone">WhatsApp Number</Label>
-          <Input 
-            id="phone" 
-            type="tel" 
-            placeholder="+91... (with country code)" 
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required 
-            disabled={isLoading}
-          />
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <Label htmlFor="otp">Enter OTP</Label>
-          <Input 
-            id="otp" 
-            type="text" 
-            inputMode="numeric" 
-            autoComplete="one-time-code"
-            placeholder="Enter OTP received on WhatsApp" 
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            required 
-            disabled={isVerifying}
-          />
-        </div>
+    <div className="space-y-4">
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
       
-      <Button type="submit" className="w-full bg-gradient-to-r from-[#9b87f5] to-[#7E69AB] hover:opacity-90 text-white" disabled={isLoading || isVerifying}>
-        {(isLoading || isVerifying) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {otpSent ? (isVerifying ? 'Verifying...' : 'Verify OTP') : (isLoading ? 'Sending OTP...' : 'Send OTP')}
-      </Button>
-
-      {otpSent && (
-         <Button variant="link" type="button" onClick={() => { setOtpSent(false); setOtp(''); }} className="text-sm text-gray-500 w-full">
-            Use a different phone number?
-         </Button>
+      {success && (
+        <Alert variant="default" className="bg-green-50 text-green-800 border-green-200">
+          <Check className="h-4 w-4" />
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
       )}
-    </form>
+
+      <form onSubmit={otpSent ? handleVerifyOtp : handleSendOtp} className="space-y-4">
+        {!otpSent ? (
+          <div className="space-y-2">
+            <Label htmlFor="phone">WhatsApp Number</Label>
+            <Input 
+              id="phone" 
+              type="tel" 
+              placeholder="+91... (with country code)" 
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required 
+              disabled={isLoading}
+              className="focus-visible:ring-[#9b87f5]"
+            />
+            <p className="text-xs text-muted-foreground">
+              Enter your phone number with country code (e.g., +1 for US)
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="otp" className="block mb-1">Enter 6-Digit OTP</Label>
+            <InputOTP 
+              maxLength={6} 
+              value={otp} 
+              onChange={setOtp}
+              disabled={isVerifying}
+              className="gap-2 justify-center"
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} className="border-[#9b87f5]/50 focus-within:border-[#9b87f5] h-12 w-10 text-lg" />
+                <InputOTPSlot index={1} className="border-[#9b87f5]/50 focus-within:border-[#9b87f5] h-12 w-10 text-lg" />
+                <InputOTPSlot index={2} className="border-[#9b87f5]/50 focus-within:border-[#9b87f5] h-12 w-10 text-lg" />
+                <InputOTPSlot index={3} className="border-[#9b87f5]/50 focus-within:border-[#9b87f5] h-12 w-10 text-lg" />
+                <InputOTPSlot index={4} className="border-[#9b87f5]/50 focus-within:border-[#9b87f5] h-12 w-10 text-lg" />
+                <InputOTPSlot index={5} className="border-[#9b87f5]/50 focus-within:border-[#9b87f5] h-12 w-10 text-lg" />
+              </InputOTPGroup>
+            </InputOTP>
+            <p className="text-xs text-muted-foreground">
+              Enter the verification code sent to your WhatsApp
+            </p>
+          </div>
+        )}
+        
+        <Button 
+          type="submit" 
+          className="w-full bg-gradient-to-r from-[#9b87f5] to-[#7E69AB] hover:opacity-90 text-white" 
+          disabled={isLoading || isVerifying}
+        >
+          {(isLoading || isVerifying) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {otpSent ? (isVerifying ? 'Verifying...' : 'Verify OTP') : (isLoading ? 'Sending OTP...' : 'Send OTP')}
+        </Button>
+
+        {otpSent && (
+          <div className="space-y-2">
+            <p className="text-center text-sm text-gray-500">
+              Didn't receive the code? 
+            </p>
+            <Button 
+              variant="link" 
+              type="button" 
+              onClick={() => { setOtpSent(false); setOtp(''); setSuccess(null); }} 
+              className="text-sm text-[#9b87f5] w-full"
+              disabled={isVerifying}
+            >
+              Use a different phone number
+            </Button>
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={handleSendOtp}
+              className="text-sm text-gray-500 w-full"
+              disabled={isLoading || isVerifying}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                  Resending OTP...
+                </>
+              ) : (
+                'Resend OTP'
+              )}
+            </Button>
+          </div>
+        )}
+      </form>
+    </div>
   );
 };
-

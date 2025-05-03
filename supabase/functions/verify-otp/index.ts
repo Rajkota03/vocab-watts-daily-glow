@@ -1,3 +1,4 @@
+
 // /home/ubuntu/glintup_project/supabase/functions/verify-otp/index.ts
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -16,7 +17,9 @@ serve(async (req) => {
       throw new Error("Phone number and OTP are required.");
     }
 
-    console.log(`Received OTP verification request for: ${phoneNumber}, OTP: ${otp}`);
+    // Format phone number if needed (ensure it has + prefix)
+    const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
+    console.log(`Received OTP verification request for: ${formattedPhone}, OTP: ${otp}`);
 
     // --- Initialize Supabase Admin Client ---
     const supabaseAdmin = createClient(
@@ -29,12 +32,12 @@ serve(async (req) => {
     const now = new Date();
     const { data: otpRecord, error: findError } = await supabaseAdmin
       .from("otp_codes")
-      .select("id, otp_code") // Select the stored OTP code (potentially hashed)
-      .eq("phone_number", phoneNumber)
-      .eq("otp_code", otp) // Compare with the provided OTP (adjust if hashing)
+      .select("id, otp_code") 
+      .eq("phone_number", formattedPhone)
+      .eq("otp_code", otp) 
       .eq("used", false)
-      .gt("expires_at", now.toISOString()) // Check if not expired
-      .order("created_at", { ascending: false }) // Get the latest valid OTP
+      .gt("expires_at", now.toISOString()) 
+      .order("created_at", { ascending: false }) 
       .maybeSingle();
 
     if (findError) {
@@ -43,7 +46,7 @@ serve(async (req) => {
     }
 
     if (!otpRecord) {
-      console.log("Invalid, expired, or already used OTP for:", phoneNumber);
+      console.log("Invalid, expired, or already used OTP for:", formattedPhone);
       throw new Error("Invalid or expired OTP.");
     }
 
@@ -57,41 +60,96 @@ serve(async (req) => {
 
     if (updateError) {
       console.error("Error marking OTP as used:", updateError);
-      // Proceed with login attempt even if marking fails? Or throw error?
-      // For now, log error and continue.
+      // Log error but continue
     } else {
       console.log("OTP marked as used successfully.");
     }
 
-    // --- Verify with Supabase Auth (Phone OTP Sign-in) ---
-    // This uses the built-in Supabase phone auth flow
-    console.log(`Attempting Supabase Auth sign-in for ${phoneNumber}`);
-    const { data: authData, error: authError } = await supabaseAdmin.auth.verifyOtp({
-      phone: phoneNumber,
-      token: otp,
-      type: "sms", // or "whatsapp" if Supabase supports it directly in verifyOtp
-    });
-
-    if (authError) {
-      console.error("Supabase Auth OTP verification error:", authError);
-      throw new Error(`Authentication failed: ${authError.message}`);
+    // --- Create or get user and session ---
+    let userId: string | null = null;
+    let session: any = null;
+    
+    // Check if a user with this phone number already exists
+    const { data: existingUser, error: userLookupError } = await supabaseAdmin.auth
+      .admin
+      .listUsers({
+        filter: {
+          identities: {
+            identity_data: {
+              phone: formattedPhone
+            }
+          }
+        }
+      });
+      
+    if (userLookupError) {
+      console.error("Error looking up user:", userLookupError);
+      // Continue to try creating user
     }
 
-    if (!authData || !authData.session) {
-      console.error("Supabase Auth verification succeeded but no session returned.");
-      // This might happen if the user doesn't exist yet and needs to be created
-      // Or if the flow requires an additional step.
-      // For now, treat as an error.
-      throw new Error("Authentication succeeded but failed to establish a session.");
+    if (existingUser && existingUser.users && existingUser.users.length > 0) {
+      // User exists, create a new session for them
+      userId = existingUser.users[0].id;
+      console.log("Found existing user with ID:", userId);
+      
+      const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.createSession({
+        userId: userId,
+        properties: {
+          provider: "phone",
+        }
+      });
+      
+      if (sessionError) {
+        console.error("Error creating session for existing user:", sessionError);
+        throw new Error(`Failed to create session: ${sessionError.message}`);
+      }
+      
+      session = sessionData;
+      console.log("Created new session for existing user");
+      
+    } else {
+      // User doesn't exist, create a new user with this phone number
+      console.log("No existing user found, creating new user with phone:", formattedPhone);
+      
+      const { data: userData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
+        phone: formattedPhone,
+        phone_confirm: true,
+        user_metadata: {
+          phone_verified: true,
+          provider: "whatsapp"
+        }
+      });
+      
+      if (createUserError) {
+        console.error("Error creating new user:", createUserError);
+        throw new Error(`Failed to create user: ${createUserError.message}`);
+      }
+      
+      userId = userData.user.id;
+      
+      // Create session for the new user
+      const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.createSession({
+        userId: userData.user.id,
+        properties: {
+          provider: "phone",
+        }
+      });
+      
+      if (sessionError) {
+        console.error("Error creating session for new user:", sessionError);
+        throw new Error(`Failed to create session for new user: ${sessionError.message}`);
+      }
+      
+      session = sessionData;
+      console.log("Created new user and session");
     }
-
-    console.log("Supabase Auth sign-in successful, session obtained.");
 
     // --- Return Success Response with Session ---
     return new Response(JSON.stringify({ 
         success: true, 
         message: "OTP verified successfully.",
-        session: authData.session // Return the session object
+        session: session, // Return the session object
+        userId: userId
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
@@ -105,4 +163,3 @@ serve(async (req) => {
     });
   }
 });
-

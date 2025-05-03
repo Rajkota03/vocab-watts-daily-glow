@@ -250,11 +250,14 @@ serve(async (req) => {
     
     // Handle OTP message type
     if (messageType === 'otp' && otpCode) {
-      messageContent = `Your VocabSpark verification code is: ${otpCode}. This code will expire in 10 minutes.`;
+      // If a specific message is already provided, use that
+      if (!messageContent) {
+        messageContent = `Your VocabSpark verification code is: *${otpCode}*\n\nThis code will expire in 10 minutes. Do not share this code with anyone.`;
+      }
     }
     
     // If no message content is provided and it's not an OTP, throw an error
-    if (!messageContent && messageType !== 'otp') {
+    if (!messageContent) {
       throw new Error('Missing required parameter: message');
     }
     
@@ -312,6 +315,12 @@ serve(async (req) => {
         messageId: twilioResponse.sid,
         status: twilioResponse.status
       };
+      
+      // For OTP messages, add additional context
+      if (messageType === 'otp') {
+        responseData.otpSent = true;
+        responseData.phoneNumber = to;
+      }
       
       // Add debugging information if requested
       if (debugMode) {

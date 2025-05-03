@@ -22,7 +22,9 @@ serve(async (req) => {
       throw new Error("Phone number is required.");
     }
 
-    console.log(`Received OTP request for: ${phoneNumber}`);
+    // Format phone number if needed (ensure it has + prefix)
+    const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
+    console.log(`Received OTP request for: ${formattedPhone}`);
 
     // --- Initialize Supabase Admin Client ---
     const supabaseAdmin = createClient(
@@ -35,14 +37,14 @@ serve(async (req) => {
     const otp = generateOtp();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // OTP expires in 10 minutes
 
-    console.log(`Generated OTP: ${otp} for ${phoneNumber}, expires at ${expiresAt.toISOString()}`);
+    console.log(`Generated OTP: ${otp} for ${formattedPhone}, expires at ${expiresAt.toISOString()}`);
 
     // --- Store OTP in database (assuming an otp_codes table exists) ---
     // Table structure suggestion: id (uuid), phone_number (text), otp_code (text), expires_at (timestamptz), used (boolean)
     const { error: storeError } = await supabaseAdmin
       .from("otp_codes")
       .insert({
-        phone_number: phoneNumber,
+        phone_number: formattedPhone,
         otp_code: otp, // Consider hashing the OTP before storing for better security
         expires_at: expiresAt.toISOString(),
         used: false,
@@ -55,25 +57,22 @@ serve(async (req) => {
     console.log("OTP stored successfully.");
 
     // --- Send OTP via WhatsApp (Invoke send-whatsapp function) ---
-    // This assumes send-whatsapp can handle an OTP message type/template
-    console.log(`Invoking send-whatsapp to send OTP ${otp} to ${phoneNumber}`);
+    const otpMessage = `Your VocabSpark verification code is: *${otp}*\n\nThis code will expire in 10 minutes. Do not share this code with anyone.`;
+    
+    console.log(`Invoking send-whatsapp to send OTP ${otp} to ${formattedPhone}`);
     const { data: whatsappResult, error: whatsappError } = await supabaseAdmin.functions.invoke(
       "send-whatsapp",
       {
         body: {
-          to: phoneNumber,
-          messageType: "otp", // Add a flag to indicate OTP message type
-          otpCode: otp,      // Pass the OTP code
-          // Potentially include template name/variables if required by send-whatsapp
-          // templateName: "your_otp_template_name",
-          // templateVariables: { "1": otp, "2": "10" } // Example: Variable 1 is OTP, Variable 2 is expiry time in minutes
+          to: formattedPhone,
+          messageType: "otp", 
+          message: otpMessage,
         },
       }
     );
 
     if (whatsappError) {
       console.error("Error invoking send-whatsapp for OTP:", whatsappError);
-      // NOTE: Consider if you should delete the stored OTP if sending fails
       throw new Error(`Failed to send OTP via WhatsApp: ${whatsappError.message}`);
     }
 
