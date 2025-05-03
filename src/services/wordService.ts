@@ -1,4 +1,3 @@
-
 import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { checkUserProStatus } from "./subscriptionService"; // Import the correct function
@@ -219,8 +218,8 @@ export const generateNewWordBatch = async (
 
     // 2. Determine if Pro is Active
     const isProActive = is_pro === true && 
-                        subscription_ends_at && 
-                        isAfter(new Date(subscription_ends_at), new Date());
+                      subscription_ends_at && 
+                      isAfter(new Date(subscription_ends_at), new Date());
 
     // 3. Determine Word Limit based on Pro status and preference
     const preferredCount = word_count_preference ?? (isProActive ? 3 : 1); // Default: 3 for Pro, 1 for Free
@@ -321,4 +320,3 @@ export const generateWordsWithAI = async (
     return []; // Return empty array on failure
   }
 };
-

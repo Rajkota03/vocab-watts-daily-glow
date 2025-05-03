@@ -208,6 +208,14 @@ function prepareOtpPayload(toNumber: string, otpCode: string) {
 }
 
 /**
+ * Check if a date is after the current date without using date-fns
+ */
+function isDateAfter(dateToCheck: string | Date, compareDate: Date = new Date()): boolean {
+  const checkDate = typeof dateToCheck === 'string' ? new Date(dateToCheck) : dateToCheck;
+  return checkDate > compareDate;
+}
+
+/**
  * Generate message content
  */
 function generateMessageContent(message: string | undefined, 

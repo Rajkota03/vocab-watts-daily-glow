@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import WordHistory from '@/components/dashboard/WordHistory';
+import { useAuthHandler } from '@/hooks/useAuthHandler';
 
 interface HistoryTabProps {
   isPro: boolean;
@@ -9,6 +10,9 @@ interface HistoryTabProps {
 }
 
 const HistoryTab: React.FC<HistoryTabProps> = ({ isPro, category }) => {
+  const { session } = useAuthHandler();
+  const userId = session?.user?.id || '';
+
   return (
     <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl overflow-hidden">
       <CardHeader className="bg-white border-b border-gray-50 p-4">
@@ -18,9 +22,8 @@ const HistoryTab: React.FC<HistoryTabProps> = ({ isPro, category }) => {
       </CardHeader>
       <CardContent className="p-4 md:p-6">
         <WordHistory
-          isPro={isPro}
-          isTrialExpired={false}
           category={category}
+          userId={userId}
         />
       </CardContent>
     </Card>

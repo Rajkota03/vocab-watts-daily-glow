@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -162,7 +163,13 @@ const Dashboard = () => {
     
     setIsGeneratingBatch(true);
     try {
-      const newWords = await generateNewWordBatch(subscription.category);
+      // Get the current user ID from the session
+      const userId = session?.user?.id;
+      if (!userId) {
+        throw new Error("User must be logged in to generate words");
+      }
+      
+      const newWords = await generateNewWordBatch(userId, subscription.category);
       console.log("New batch generated:", newWords);
       
       const wordHistoryElement = document.getElementById('word-history');
@@ -172,6 +179,15 @@ const Dashboard = () => {
           wordHistoryElement.classList.remove('refresh-triggered');
         }, 100);
       }
+      
+      // Dispatch an event to refresh word history
+      document.dispatchEvent(new CustomEvent('refresh-word-history', { 
+        detail: { 
+          force: true,
+          category: subscription.category
+        }
+      }));
+      
     } catch (error: any) {
       console.error("Error generating new batch:", error);
       toast({
