@@ -1,7 +1,16 @@
 
-import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
-import { checkUserProStatus } from "./subscriptionService"; // Import the status check function
+import { supabase } from "@/integrations/supabase/client";
+import { checkUserProStatus } from "./subscriptionService"; // Import the correct function
+
+// Add the isAfter function since it's missing (from date-fns)
+import { isAfter } from 'date-fns';
+
+/**
+ * Word Service
+ * 
+ * This service handles vocabulary word operations.
+ */
 
 type VocabularyWord = Database["public"]["Tables"]["vocabulary_words"]["Row"];
 type UserSubscription = Database["public"]["Tables"]["user_subscriptions"]["Row"];
@@ -188,13 +197,18 @@ export const generateNewWordBatch = async (
     // 1. Get User Subscription Details (including phone number and word count preference)
     const { data: subscriptionData, error: subError } = await supabase
       .from("user_subscriptions")
-      .select("phone_number, is_pro, subscription_ends_at, word_count_preference") // Assume word_count_preference column exists
+      .select("phone_number, is_pro, subscription_ends_at, word_count_preference") 
       .eq("user_id", userId)
       .single();
 
-    if (subError || !subscriptionData) {
+    if (subError) {
       console.error(`generateNewWordBatch: Error fetching subscription for user ${userId}:`, subError);
       throw new Error("Could not retrieve user subscription details.");
+    }
+
+    if (!subscriptionData) {
+      console.warn(`generateNewWordBatch: No subscription found for user ${userId}`);
+      throw new Error("User subscription not found.");
     }
 
     const { phone_number: phoneNumber, is_pro, subscription_ends_at, word_count_preference } = subscriptionData;
@@ -222,7 +236,6 @@ export const generateNewWordBatch = async (
       console.warn(`generateNewWordBatch: No words found or generated for user ${userId}, category: ${category}`);
       // Depending on requirements, could return empty array or throw error
       return []; 
-      // throw new Error(`No vocabulary words available for ${category}`);
     }
 
     console.log(`generateNewWordBatch: Fetched ${newWords.length} words for user ${userId}.`);

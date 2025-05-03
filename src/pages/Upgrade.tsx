@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react'; // Added useState for loading state
+import React, { useState, useEffect } from 'react'; // Added useState and useEffect for loading state
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RegisterForm } from '@/components/auth/RegisterForm'; // Assuming this handles user input
 import { Button } from '@/components/ui/button'; // Import Button if RegisterForm doesn't handle submit
@@ -9,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { RegisterFormValues } from '@/types/auth';
 import { completeSubscription } from '@/services/paymentService'; // Import completeSubscription
+import { CheckCircle } from 'lucide-react'; // Added import for CheckCircle
 
 // Declare Razorpay types
 declare global {
@@ -218,4 +218,3 @@ const Upgrade = () => {
 };
 
 export default Upgrade;
-

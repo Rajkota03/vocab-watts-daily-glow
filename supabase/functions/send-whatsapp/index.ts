@@ -2,7 +2,7 @@
 // /home/ubuntu/glintup_project/supabase/functions/send-whatsapp/index.ts
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,6 +25,27 @@ interface WhatsAppRequest {
   // Added for OTP
   messageType?: 'otp' | 'regular'; // Distinguish message types
   otpCode?: string; // OTP code to send
+}
+
+interface FunctionErrorDetails {
+  status?: number;
+  statusText?: string;
+  responseText?: string;
+  message?: string;
+  providedNumber?: string;
+  tip?: string;
+  suggestion?: string;
+  configurationStatus?: Record<string, string>;
+  originalError?: string;
+  twilioError?: any;
+}
+
+interface TwilioConfigStatus {
+  accountSid?: string | null;
+  authToken?: string | null;
+  storedFromNumber?: string | null;
+  verifyToken?: string | null;
+  messagingServiceSid?: string | null;
 }
 
 /**
@@ -55,7 +76,7 @@ function formatWhatsAppNumber(number: string): string {
 /**
  * Validate Twilio configuration
  */
-function validateTwilioConfig() {
+function validateTwilioConfig(): TwilioConfigStatus {
   const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
   const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
   const storedFromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
@@ -82,7 +103,7 @@ function validateTwilioConfig() {
 /**
  * Get configuration status
  */
-function getConfigStatus(twilioConfig: ReturnType<typeof validateTwilioConfig>) {
+function getConfigStatus(twilioConfig: TwilioConfigStatus) {
   const { accountSid, authToken, storedFromNumber, verifyToken, messagingServiceSid } = twilioConfig;
   
   return {
@@ -274,6 +295,14 @@ async function sendTwilioMessage(twilioPayload: Record<string, string>, accountS
   if (extraDebugging) {
     // Only log full payload if extra debugging is enabled
     console.log('Twilio Payload:', JSON.stringify(twilioPayload));
+    
+    // Add detailed debugging of request
+    console.log('Full request details:', {
+      method: 'POST',
+      auth: `${accountSid}:${authToken.substring(0, 3)}...`,
+      contentType: 'application/x-www-form-urlencoded',
+      requestBody: new URLSearchParams(twilioPayload).toString()
+    });
   }
 
   try {
@@ -292,7 +321,9 @@ async function sendTwilioMessage(twilioPayload: Record<string, string>, accountS
     let responseData;
     try {
       responseData = await response.json();
-      console.log('Twilio response data:', JSON.stringify(responseData).substring(0, 200) + '...');
+      if (extraDebugging) {
+        console.log('Twilio response data:', JSON.stringify(responseData).substring(0, 200) + '...');
+      }
     } catch (jsonError) {
       // If we can't parse the response as JSON, get the text instead
       const responseText = await response.text();
@@ -490,7 +521,19 @@ serve(async (req) => {
     let toNumber;
     try {
       toNumber = formatWhatsAppNumber(to);
-      console.log(`Formatted recipient phone number from ${to} to ${toNumber}`);
+      
+      // Add more detailed debugging for recipient number
+      if (extraDebugging) {
+        console.log(`Recipient number details:`, {
+          original: to,
+          formatted: toNumber,
+          length: toNumber.length,
+          hasCountryCode: to.includes('+'),
+          hasWhatsAppPrefix: toNumber.startsWith('whatsapp:')
+        });
+      } else {
+        console.log(`Formatted recipient phone number from ${to} to ${toNumber}`);
+      }
     } catch (formatError) {
       console.error("Error formatting recipient number:", formatError);
       return new Response(
@@ -525,7 +568,7 @@ serve(async (req) => {
     let fromNumber;
     if (!messagingServiceSid) {
       try {
-        fromNumber = formatWhatsAppNumber(storedFromNumber);
+        fromNumber = formatWhatsAppNumber(storedFromNumber || '');
         console.log(`Formatted sender phone number from ${storedFromNumber} to ${fromNumber}`);
       } catch (formatError) {
         console.error("Error formatting sender number:", formatError);

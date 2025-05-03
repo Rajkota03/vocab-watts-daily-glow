@@ -121,13 +121,12 @@ const Dashboard = () => {
     }
   };
 
-  const handleCategoryUpdate = async (primary: string, subcategory: string) => {
+  const handleCategoryUpdate = async (primary: string, subcategory: string = "") => {
     try {
-      const combinedCategory = `${primary}-${subcategory}`;
-      console.log("Updating category to:", combinedCategory);
+      console.log(`Updating category to: ${primary}, subcategory: ${subcategory}`);
       
       const { error } = await supabase.auth.updateUser({
-        data: { category: combinedCategory }
+        data: { category: primary }
       });
       
       if (error) throw error;
@@ -136,7 +135,7 @@ const Dashboard = () => {
         .from('user_subscriptions')
         .upsert({
           user_id: (await supabase.auth.getUser()).data.user?.id,
-          category: combinedCategory,
+          category: primary,
           is_pro: subscription.is_pro,
           phone_number: subscription.phone_number || '+1234567890'
         });
@@ -147,7 +146,7 @@ const Dashboard = () => {
       
       setSubscription(prev => ({
         ...prev,
-        category: combinedCategory
+        category: primary
       }));
     } catch (error: any) {
       toast({
