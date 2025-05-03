@@ -84,7 +84,6 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
           title: errorTitle,
           description: "See details below the button.",
           variant: "destructive",
-          duration: 7000,
         });
         return;
       }
@@ -99,7 +98,6 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
       toast({
         title: "Daily Words Sent!",
         description: successDescription,
-        duration: 9000,
       });
 
       // Display troubleshooting tips if provided
@@ -119,7 +117,6 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
         title: "Failed to Send Words",
         description: "See details below the button.",
         variant: "destructive",
-        duration: 7000,
       });
     } finally {
       setLoading(false);
@@ -138,7 +135,7 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
         Send Today's Words Now
       </Button>
       {!phoneNumber && (
-         <Alert variant="warning">
+         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Missing Phone Number</AlertTitle>
           <AlertDescription>Please ensure your WhatsApp number is saved in your profile/subscription to receive words.</AlertDescription>
@@ -157,4 +154,3 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
 };
 
 export default SendDailyWordsButton;
-

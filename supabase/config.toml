@@ -32,3 +32,7 @@ enabled = true
 verify_jwt = false
 [edge_functions.send-whatsapp]
 verify_jwt = false
+[edge_functions.send-otp]
+verify_jwt = false
+[edge_functions.create-whatsapp-logs-table]
+verify_jwt = false

@@ -122,7 +122,6 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
       toast({
         title: "Twilio Connection Successful",
         description: `Connected to account: ${data.accountName || 'Unknown'}`,
-        variant: "success",
       });
       
     } catch (err) {
@@ -180,7 +179,6 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
           title: "Function Error",
           description: "Could not call the send-whatsapp function. Check console for details.",
           variant: "destructive",
-          duration: 7000,
         });
         setLastErrorDetails(`Function call error: ${String(error)}`);
         return;
@@ -211,7 +209,6 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
           title: errorTitle,
           description: "See details below the button.",
           variant: "destructive",
-          duration: 7000, // Show longer
         });
         return; // Stop processing on function error
       }
@@ -226,7 +223,6 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
       toast({
         title: "WhatsApp Message Sent",
         description: successDescription,
-        duration: 9000, // Show longer for instructions
         variant: "success",
       });
 
@@ -255,7 +251,6 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
         title: "Failed to Send",
         description: "See details below the button.",
         variant: "destructive",
-        duration: 7000,
       });
     } finally {
       setLoading(false);
@@ -280,7 +275,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
     <div className="space-y-4">
       {/* Configuration Status */}
       {!hasTwilioConfig && (
-        <Alert variant="warning">
+        <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Configuration Issue</AlertTitle>
           <AlertDescription>
@@ -390,7 +385,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm">Twilio Status</CardTitle>
               {twilioDetails.success ? 
-                <Badge variant="success">Connected</Badge> :
+                <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-200">Connected</Badge> :
                 <Badge variant="destructive">Error</Badge>
               }
             </div>

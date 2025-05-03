@@ -35,7 +35,6 @@ const MessagesSetupTab = () => {
       toast({
         title: "Setup Successful",
         description: "WhatsApp database tables created successfully",
-        variant: "success",
       });
       
     } catch (err) {
@@ -73,7 +72,7 @@ const MessagesSetupTab = () => {
       toast({
         title: "Setup Successful",
         description: "WhatsApp message_logs table created successfully",
-        variant: "success",
+        variant: "default",
       });
       
     } catch (err) {
@@ -162,8 +161,8 @@ const MessagesSetupTab = () => {
       
       {/* Setup Result */}
       {setupResult && (
-        <Alert variant="success" className="mt-4">
-          <Check className="h-4 w-4" />
+        <Alert variant="default" className="mt-4 border-green-500 bg-green-50">
+          <Check className="h-4 w-4 text-green-600" />
           <AlertTitle>Setup Successful</AlertTitle>
           <AlertDescription>
             Database tables were created successfully. You can now use the WhatsApp integration.
