@@ -1,9 +1,9 @@
-
 import React from 'react';
 import CategorySelection from './CategorySelection';
 import { cn } from '@/lib/utils';
 import WhatsAppTestButton from './WhatsAppTestButton';
-import SendDailyWordsButton from './SendDailyWordsButton'; // Import the new component
+import SendDailyWordsButton from './SendDailyWordsButton';
+import { Link } from 'react-router-dom';
 
 interface DashboardMainProps {
   subscription: {
@@ -80,6 +80,13 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
           {/*   Render quiz component using MOCK_TODAYS_QUIZ */}
           {/* </div> */}
           
+          {/* Add this somewhere in the dashboard, perhaps near existing admin links or settings */}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <Link to="/twilio-test" className="text-sm text-blue-600 hover:text-blue-800 flex items-center">
+              <span className="mr-1">Test Twilio Connection</span>
+            </Link>
+          </div>
+
         </div>
       </div>
     </main>
@@ -87,4 +94,3 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
 };
 
 export default DashboardMain;
-
