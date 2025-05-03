@@ -1,4 +1,3 @@
-
 import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { checkUserProStatus } from "./subscriptionService"; // Import the correct function
@@ -197,7 +196,7 @@ export const generateNewWordBatch = async (
     // 1. Get User Subscription Details (including phone number and word count preference)
     const { data: subscriptionData, error: subError } = await supabase
       .from("user_subscriptions")
-      .select("phone_number, is_pro, subscription_ends_at, word_count_preference") 
+      .select("phone_number, is_pro, subscription_ends_at") 
       .eq("user_id", userId)
       .single();
 
@@ -215,7 +214,8 @@ export const generateNewWordBatch = async (
     const phoneNumber = subscriptionData.phone_number;
     const isPro = subscriptionData.is_pro || false;
     const subscriptionEndsAt = subscriptionData.subscription_ends_at;
-    const wordCountPreference = subscriptionData.word_count_preference;
+    // Set a default word count preference since the column doesn't exist
+    const wordCountPreference = null;
 
     if (!phoneNumber) {
       throw new Error("User subscription is missing a phone number.");
