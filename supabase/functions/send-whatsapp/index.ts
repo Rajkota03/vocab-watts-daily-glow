@@ -108,6 +108,10 @@ function getConfigStatus(twilioConfig: TwilioConfigStatus) {
   
   return {
     success: true, 
+    webhookUrl: "https://pbpmtqcffhqwzboviqfw.supabase.co/functions/v1/whatsapp-webhook",
+    fromNumber: storedFromNumber,
+    currentFromNumber: storedFromNumber,
+    messagingServiceSid,
     twilioConfigured: !!(accountSid && authToken),
     fromNumberConfigured: !!storedFromNumber,
     messagingServiceConfigured: !!messagingServiceSid,
@@ -119,6 +123,16 @@ function getConfigStatus(twilioConfig: TwilioConfigStatus) {
       fromNumber: storedFromNumber || 'not configured',
       messagingServiceSid: messagingServiceSid || 'not configured',
       verifyToken: verifyToken ? 'configured' : 'not configured'
+    },
+    configRequired: {
+      TWILIO_ACCOUNT_SID: false,
+      TWILIO_AUTH_TOKEN: false,
+      TWILIO_FROM_NUMBER: false,
+      TWILIO_MESSAGING_SERVICE_SID: true,
+      WHATSAPP_VERIFY_TOKEN: true
+    },
+    missingConfigHints: {
+      TWILIO_AUTH_TOKEN: null
     },
     troubleshooting: {
       missingCredentials: "Set the TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in your Supabase project secrets",
@@ -208,7 +222,7 @@ function prepareOtpPayload(toNumber: string, otpCode: string) {
 }
 
 /**
- * Check if a date is after the current date without using date-fns
+ * Check if a date is after the current date
  */
 function isDateAfter(dateToCheck: string | Date, compareDate: Date = new Date()): boolean {
   const checkDate = typeof dateToCheck === 'string' ? new Date(dateToCheck) : dateToCheck;
@@ -267,18 +281,27 @@ function prepareMessagePayload(toNumber: string, message: string) {
 
 /**
  * Add sender information to payload
+ * Fixed to prioritize fromNumber when messagingServiceSid causes issues
  */
 function addSenderToPayload(payload: Record<string, string>, 
                           fromNumber: string | undefined, 
-                          messagingServiceSid: string | undefined) {
-  if (messagingServiceSid) {
-    console.log(`Using Messaging Service SID: ${messagingServiceSid}`);
-    console.log(`Sending WhatsApp message using Messaging Service: ${messagingServiceSid} to ${payload.To}`);
-    return { ...payload, MessagingServiceSid: messagingServiceSid };
-  } else if (fromNumber) {
-    console.log(`Using From Number: ${fromNumber}`);
+                          messagingServiceSid: string | undefined,
+                          extraDebugging: boolean | undefined) {
+                          
+  // Always prioritize using the from number if it exists to avoid messaging service issues
+  if (fromNumber) {
+    if (extraDebugging) {
+      console.log(`Using From Number: ${fromNumber} (prioritized to avoid Messaging Service issues)`);
+    }
     console.log(`Sending WhatsApp message from ${fromNumber} to ${payload.To}`);
     return { ...payload, From: fromNumber };
+  } else if (messagingServiceSid) {
+    if (extraDebugging) {
+      console.log(`Using Messaging Service SID: ${messagingServiceSid} (only when From Number not available)`);
+      console.log(`WARNING: Messaging Service may cause Error 21701 if not correctly configured`);
+    }
+    console.log(`Sending WhatsApp message using Messaging Service: ${messagingServiceSid} to ${payload.To}`);
+    return { ...payload, MessagingServiceSid: messagingServiceSid };
   }
   
   throw new Error("Missing sender configuration (both fromNumber and messagingServiceSid)");
@@ -506,6 +529,20 @@ serve(async (req) => {
       );
     }
 
+    // Validate that we have at least a from number
+    if (!storedFromNumber && !messagingServiceSid) {
+      console.error("Missing sender configuration");
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Missing sender configuration", 
+          details: "Either TWILIO_FROM_NUMBER or TWILIO_MESSAGING_SERVICE_SID must be configured in your Supabase secrets",
+          suggestion: "Set up at least one of these in your Supabase project secrets" 
+        }), 
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Handle scheduled messages
     if (!sendImmediately && scheduledTime) {
       // Store the message in the database for later sending
@@ -558,25 +595,11 @@ serve(async (req) => {
     console.log('TWILIO_FROM_NUMBER from environment:', storedFromNumber);
     console.log('TWILIO_MESSAGING_SERVICE_SID from environment:', messagingServiceSid);
     
-    // Validate that we have either a from number or messaging service SID
-    if (!messagingServiceSid && !storedFromNumber) {
-      console.error("Missing sender configuration");
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "Missing sender configuration", 
-          details: "Either TWILIO_FROM_NUMBER or TWILIO_MESSAGING_SERVICE_SID must be configured in your Supabase secrets",
-          suggestion: "Set up at least one of these in your Supabase project secrets" 
-        }), 
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // Format the sender's number if using a from number instead of messaging service
+    // Format the sender's number if we have one
     let fromNumber;
-    if (!messagingServiceSid) {
+    if (storedFromNumber) {
       try {
-        fromNumber = formatWhatsAppNumber(storedFromNumber || '');
+        fromNumber = formatWhatsAppNumber(storedFromNumber);
         console.log(`Formatted sender phone number from ${storedFromNumber} to ${fromNumber}`);
       } catch (formatError) {
         console.error("Error formatting sender number:", formatError);
@@ -621,9 +644,9 @@ serve(async (req) => {
       twilioPayload = prepareMessagePayload(toNumber, finalMessage);
     }
     
-    // Add sender information (either From number or MessagingServiceSid)
+    // Add sender information (prioritize From number over MessagingServiceSid)
     try {
-      twilioPayload = addSenderToPayload(twilioPayload, fromNumber, messagingServiceSid);
+      twilioPayload = addSenderToPayload(twilioPayload, fromNumber, messagingServiceSid, extraDebugging);
     } catch (senderError) {
       console.error("Error adding sender information:", senderError);
       throw new Error("Missing sender configuration (fromNumber or messagingServiceSid)");

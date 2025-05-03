@@ -22,8 +22,6 @@ export interface SendWordsRequest {
 // Define types based on our database schema
 type VocabWord = Database["public"]["Tables"]["vocabulary_words"]["Row"];
 
-// Removed outdated hardcoded word lists and getSampleWords function
-
 // Format words for WhatsApp message
 const formatWhatsAppMessage = (words: VocabWord[], isPro: boolean, firstName?: string): string => {
   const name = firstName || "there";
@@ -69,9 +67,6 @@ export const sendVocabWords = async (request: SendWordsRequest): Promise<boolean
        throw new Error("User ID is required to send words.");
     }
     
-    // --- Subscription creation is NO LONGER handled here --- 
-    // It's handled by signup or payment verification flows.
-    
     let finalMessage: string;
     let isProUser = false; // Assume not Pro unless determined otherwise
     let userFirstName: string | undefined;
@@ -91,8 +86,6 @@ export const sendVocabWords = async (request: SendWordsRequest): Promise<boolean
       }
       
       // Check Pro status using the function from subscriptionService
-      // Note: This assumes subscriptionService is correctly updated and exported
-      // We might need to re-import checkUserProStatus if it wasn't already
       const { checkUserProStatus } = await import("./subscriptionService"); 
       isProUser = await checkUserProStatus(request.userId);
       console.log(`[WhatsApp] User ${request.userId} Pro status: ${isProUser}`);
@@ -151,9 +144,6 @@ export const sendVocabWords = async (request: SendWordsRequest): Promise<boolean
 
   } catch (error) {
     console.error("[WhatsApp] Failed to send WhatsApp message:", error);
-    // Consider more specific error handling or re-throwing
-    // return false;
     throw error; // Re-throw error so calling components can handle it
   }
 };
-
