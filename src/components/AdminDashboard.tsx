@@ -7,6 +7,7 @@ import UserManagementTab from './admin/tabs/UserManagementTab';
 import VocabularyTab from './admin/tabs/VocabularyTab';
 import SubscriptionsTab from './admin/tabs/SubscriptionsTab';
 import MessagesTab from './admin/tabs/MessagesTab';
+import MessagesSetupTab from './admin/tabs/MessagesSetupTab';
 import ActivityTab from './admin/tabs/ActivityTab';
 import SettingsTab from './admin/tabs/SettingsTab';
 import UserRolesTab from './admin/tabs/UserRolesTab';
@@ -60,6 +61,8 @@ const AdminDashboard = () => {
         return <SubscriptionsTab key={refreshKey} />;
       case 'messages':
         return <MessagesTab key={refreshKey} />;
+      case 'messages-setup':
+        return <MessagesSetupTab key={refreshKey} />;
       case 'activity':
         return <ActivityTab key={refreshKey} />;
       case 'settings':

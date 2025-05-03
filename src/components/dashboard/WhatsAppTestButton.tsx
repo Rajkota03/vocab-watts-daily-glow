@@ -1,10 +1,12 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Loader2, AlertCircle } from "lucide-react";
+import { MessageSquare, Loader2, AlertCircle, Info, ExternalLink, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface WhatsAppTestButtonProps {
   category: string;
@@ -21,53 +23,125 @@ interface FunctionErrorDetails {
   suggestion?: string;
   configurationStatus?: Record<string, string>;
   originalError?: string;
+  twilioError?: any;
 }
 
 interface FunctionResponse {
   success: boolean;
   error?: string;
-  details?: FunctionErrorDetails | any; // Allow for various detail structures
+  details?: FunctionErrorDetails | any;
   messageId?: string;
   status?: string;
   instructions?: string[];
   troubleshooting?: Record<string, string>;
   webhookUrl?: string;
+  twilioResponse?: any;
 }
 
 const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phoneNumber }) => {
   const [loading, setLoading] = useState(false);
+  const [configLoading, setConfigLoading] = useState(false);
   const [inputPhoneNumber, setInputPhoneNumber] = useState('');
   const [showPhoneInput, setShowPhoneInput] = useState(false);
   const { toast } = useToast();
   const [configStatus, setConfigStatus] = useState<any>(null);
   const [lastErrorDetails, setLastErrorDetails] = useState<string | null>(null);
+  const [twilioDetails, setTwilioDetails] = useState<any>(null);
+  const [showAdvancedDiagnostics, setShowAdvancedDiagnostics] = useState(false);
 
   // Check WhatsApp configuration status when component mounts
   React.useEffect(() => {
-    const checkConfig = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke('send-whatsapp', {
-          body: { checkOnly: true }
-        });
-        
-        if (!error && data) {
-          setConfigStatus(data);
-          console.log("WhatsApp configuration status:", data);
-        } else if (error) {
-          console.error("Error checking WhatsApp config:", error);
-          setConfigStatus({ success: false, error: 'Failed to check config' });
-        }
-      } catch (err) {
-        console.error("Exception checking WhatsApp config:", err);
-        setConfigStatus({ success: false, error: 'Exception during config check' });
-      }
-    };
-    
     checkConfig();
   }, []);
 
+  // Function to check Twilio configuration
+  const checkConfig = async () => {
+    try {
+      setConfigLoading(true);
+      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+        body: { checkOnly: true }
+      });
+      
+      if (!error && data) {
+        setConfigStatus(data);
+        console.log("WhatsApp configuration status:", data);
+      } else if (error) {
+        console.error("Error checking WhatsApp config:", error);
+        setConfigStatus({ 
+          success: false, 
+          error: 'Failed to check config',
+          details: String(error)
+        });
+      }
+    } catch (err) {
+      console.error("Exception checking WhatsApp config:", err);
+      setConfigStatus({ 
+        success: false, 
+        error: 'Exception during config check',
+        details: String(err)
+      });
+    } finally {
+      setConfigLoading(false);
+    }
+  };
+
+  // Test the Twilio connection directly
+  const testTwilioConnection = async () => {
+    try {
+      setLoading(true);
+      setLastErrorDetails(null);
+      setTwilioDetails(null);
+      
+      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+        body: { testTwilioConnection: true }
+      });
+      
+      if (error) {
+        console.error("Error testing Twilio connection:", error);
+        toast({
+          title: "Connection Test Failed",
+          description: "Could not connect to Twilio API",
+          variant: "destructive",
+        });
+        setLastErrorDetails(`Failed to test Twilio connection: ${String(error)}`);
+        return;
+      }
+      
+      if (!data.success) {
+        toast({
+          title: "Twilio Connection Failed",
+          description: data.error || "Could not connect to Twilio API",
+          variant: "destructive",
+        });
+        setLastErrorDetails(data.details?.responseText || data.error || "Unknown error");
+        setTwilioDetails(data.twilioResponse || null);
+        return;
+      }
+      
+      setTwilioDetails(data);
+      toast({
+        title: "Twilio Connection Successful",
+        description: `Connected to account: ${data.accountName || 'Unknown'}`,
+        variant: "success",
+      });
+      
+    } catch (err) {
+      console.error("Exception testing Twilio connection:", err);
+      toast({
+        title: "Connection Test Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+      setLastErrorDetails(String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSendTest = async () => {
     setLastErrorDetails(null); // Clear previous errors
+    setTwilioDetails(null);
+    
     try {
       const phoneToUse = showPhoneInput ? inputPhoneNumber : (phoneNumber || '');
       
@@ -102,7 +176,14 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
       // Handle function invocation error (network, permissions etc.)
       if (error) {
         console.error("Supabase function invocation error:", error);
-        throw new Error(error.message || "Failed to invoke the send-whatsapp function.");
+        toast({
+          title: "Function Error",
+          description: "Could not call the send-whatsapp function. Check console for details.",
+          variant: "destructive",
+          duration: 7000,
+        });
+        setLastErrorDetails(`Function call error: ${String(error)}`);
+        return;
       }
 
       // Handle errors reported by the function itself
@@ -118,12 +199,14 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
             errorDescription = data.details.message;
             if (data.details.tip) errorDescription += ` Tip: ${data.details.tip}`;
             if (data.details.suggestion) errorDescription += ` Suggestion: ${data.details.suggestion}`;
-            if (data.details.responseText) errorDescription += ` Response: ${data.details.responseText.substring(0, 100)}...`;
           } else if (data.details.responseText) {
              errorDescription = `Twilio API Error: ${data.details.responseText.substring(0, 150)}...`;
           }
         }
+        
         setLastErrorDetails(errorDescription); // Store detailed error for display
+        setTwilioDetails(data.details?.twilioError || null);
+        
         toast({
           title: errorTitle,
           description: "See details below the button.",
@@ -137,13 +220,14 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
       console.log("WhatsApp test send response:", data);
       let successDescription = `Test message accepted by Twilio (ID: ${data.messageId || 'N/A'}). Status: ${data.status || 'unknown'}.`;
       if (data.instructions && data.instructions.length > 0) {
-        successDescription += ` Instructions: ${data.instructions.join(' ')}`;
+        successDescription += ` ${data.instructions[0]}`;
       }
       
       toast({
         title: "WhatsApp Message Sent",
         description: successDescription,
         duration: 9000, // Show longer for instructions
+        variant: "success",
       });
 
       // Optionally display troubleshooting tips even on success
@@ -152,6 +236,11 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
           .map(([key, value]) => `- ${value}`)
           .join('\n');
         setLastErrorDetails(`Troubleshooting Tips:\n${tips}`);
+      }
+
+      // Store any Twilio details for advanced diagnostics
+      if (data.twilioResponse) {
+        setTwilioDetails(data.twilioResponse);
       }
 
       setInputPhoneNumber('');
@@ -175,25 +264,43 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
 
   // Display configuration status issues if any
   const getTwilioIssues = () => {
-    if (!configStatus) return null;
+    if (!configStatus) return "Loading configuration status...";
     if (configStatus.success === false) return configStatus.error || 'Failed to check configuration.';
-    if (configStatus.twilioConfigured === false) return "Twilio credentials (SID/Token) missing in Supabase.";
-    if (configStatus.fromNumberConfigured === false && configStatus.messagingServiceConfigured === false) return "Neither TWILIO_FROM_NUMBER nor TWILIO_MESSAGING_SERVICE_SID is set in Supabase.";
+    if (!configStatus.twilioConfigured) return "Twilio credentials (SID/Token) missing in Supabase.";
+    if (!configStatus.fromNumberConfigured && !configStatus.messagingServiceConfigured) 
+      return "Neither TWILIO_FROM_NUMBER nor TWILIO_MESSAGING_SERVICE_SID is set in Supabase.";
     return null;
   };
 
   const twilioIssue = getTwilioIssues();
+  const hasTwilioConfig = configStatus?.twilioConfigured && 
+    (configStatus?.fromNumberConfigured || configStatus?.messagingServiceConfigured);
 
   return (
     <div className="space-y-4">
-      {twilioIssue && (
+      {/* Configuration Status */}
+      {!hasTwilioConfig && (
         <Alert variant="warning">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Configuration Issue</AlertTitle>
-          <AlertDescription>{twilioIssue}</AlertDescription>
+          <AlertDescription>
+            {twilioIssue}
+            <div className="mt-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={checkConfig}
+                disabled={configLoading}
+              >
+                {configLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+                Refresh Status
+              </Button>
+            </div>
+          </AlertDescription>
         </Alert>
       )}
       
+      {/* Phone Input Form */}
       {showPhoneInput ? (
         <div className="space-y-3">
           <div className="flex flex-col gap-2">
@@ -212,7 +319,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
               />
               <Button 
                 onClick={handleSendTest}
-                disabled={loading || !inputPhoneNumber || inputPhoneNumber.trim().length < 10}
+                disabled={loading || !inputPhoneNumber || inputPhoneNumber.trim().length < 10 || !hasTwilioConfig}
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <MessageSquare className="h-4 w-4 mr-2" />}
                 Send
@@ -237,13 +344,35 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
         <Button
           onClick={handleSendTest}
           variant="default"
-          disabled={loading || !!twilioIssue} // Disable if config issue
+          disabled={loading || !hasTwilioConfig} // Disable if config issue
           className="w-full"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <MessageSquare className="h-4 w-4 mr-2" />}
           Test WhatsApp Message
         </Button>
       )}
+      
+      {/* Helper Actions */}
+      <div className="flex flex-wrap gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={testTwilioConnection}
+          disabled={loading || configLoading || !configStatus?.twilioConfigured}
+        >
+          {loading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <ExternalLink className="h-3 w-3 mr-1" />}
+          Test Twilio Connection
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowAdvancedDiagnostics(!showAdvancedDiagnostics)}
+        >
+          <Info className="h-3 w-3 mr-1" />
+          {showAdvancedDiagnostics ? "Hide" : "Show"} Diagnostics
+        </Button>
+      </div>
       
       {/* Display last error details */} 
       {lastErrorDetails && (
@@ -252,6 +381,49 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
           <AlertTitle>Details</AlertTitle>
           <AlertDescription style={{ whiteSpace: 'pre-wrap' }}>{lastErrorDetails}</AlertDescription>
         </Alert>
+      )}
+      
+      {/* Twilio Connection Status */}
+      {twilioDetails && (
+        <Card>
+          <CardHeader className="py-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm">Twilio Status</CardTitle>
+              {twilioDetails.success ? 
+                <Badge variant="success">Connected</Badge> :
+                <Badge variant="destructive">Error</Badge>
+              }
+            </div>
+            <CardDescription className="text-xs">
+              {twilioDetails.accountName ? `Account: ${twilioDetails.accountName}` : 
+               twilioDetails.error ? `Error: ${twilioDetails.error}` : "Connection details"}
+            </CardDescription>
+          </CardHeader>
+          {showAdvancedDiagnostics && (
+            <CardContent className="py-2">
+              <pre className="text-xs overflow-auto max-h-32 bg-muted p-2 rounded">
+                {JSON.stringify(twilioDetails, null, 2)}
+              </pre>
+            </CardContent>
+          )}
+        </Card>
+      )}
+      
+      {/* Advanced Configuration Status */}
+      {showAdvancedDiagnostics && configStatus && (
+        <Card>
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm">Configuration Details</CardTitle>
+          </CardHeader>
+          <CardContent className="py-2">
+            <pre className="text-xs overflow-auto max-h-32 bg-muted p-2 rounded">
+              {JSON.stringify(configStatus, null, 2)}
+            </pre>
+          </CardContent>
+          <CardFooter className="pt-0 pb-3 text-xs text-muted-foreground">
+            These details can help troubleshoot WhatsApp integration issues.
+          </CardFooter>
+        </Card>
       )}
 
       {/* Display success/config info */} 
@@ -265,4 +437,3 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
 };
 
 export default WhatsAppTestButton;
-
