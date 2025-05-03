@@ -1,3 +1,4 @@
+
 // /home/ubuntu/glintup_project/supabase/functions/send-whatsapp/index.ts
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -245,7 +246,7 @@ function prepareOtpPayload(toNumber: string, otpCode: string) {
 }
 
 /**
- * Check if a date is after the current date - without using date-fns
+ * Check if a date is after the current date - custom implementation without date-fns
  */
 function isDateAfter(dateToCheck: string | Date, compareDate: Date = new Date()): boolean {
   const checkDate = typeof dateToCheck === 'string' ? new Date(dateToCheck) : dateToCheck;
@@ -597,7 +598,7 @@ serve(async (req) => {
       );
     }
 
-    // Handle scheduled messages (without date-fns dependency)
+    // Handle scheduled messages (custom implementation without date-fns)
     if (!sendImmediately && scheduledTime) {
       // Store the message in the database for later sending
       // This is just a placeholder - actual implementation would store this for scheduled sending

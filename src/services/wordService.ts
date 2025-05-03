@@ -3,7 +3,7 @@ import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { checkUserProStatus } from "./subscriptionService"; // Import the correct function
 
-// Add the isAfter function since it's missing (from date-fns)
+// Add the isAfter function from date-fns
 import { isAfter } from 'date-fns';
 
 /**
