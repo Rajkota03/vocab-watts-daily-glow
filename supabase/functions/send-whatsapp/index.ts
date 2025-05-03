@@ -125,14 +125,11 @@ function getConfigStatus(twilioConfig: TwilioConfigStatus) {
       verifyToken: verifyToken ? 'configured' : 'not configured'
     },
     configRequired: {
-      TWILIO_ACCOUNT_SID: false,
-      TWILIO_AUTH_TOKEN: false,
+      TWILIO_ACCOUNT_SID: true,
+      TWILIO_AUTH_TOKEN: true,
       TWILIO_FROM_NUMBER: false,
-      TWILIO_MESSAGING_SERVICE_SID: true,
+      TWILIO_MESSAGING_SERVICE_SID: false,
       WHATSAPP_VERIFY_TOKEN: true
-    },
-    missingConfigHints: {
-      TWILIO_AUTH_TOKEN: null
     },
     troubleshooting: {
       missingCredentials: "Set the TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in your Supabase project secrets",
@@ -222,7 +219,7 @@ function prepareOtpPayload(toNumber: string, otpCode: string) {
 }
 
 /**
- * Check if a date is after the current date
+ * Check if a date is after the current date - without using date-fns
  */
 function isDateAfter(dateToCheck: string | Date, compareDate: Date = new Date()): boolean {
   const checkDate = typeof dateToCheck === 'string' ? new Date(dateToCheck) : dateToCheck;
@@ -543,7 +540,7 @@ serve(async (req) => {
       );
     }
 
-    // Handle scheduled messages
+    // Handle scheduled messages (without date-fns dependency)
     if (!sendImmediately && scheduledTime) {
       // Store the message in the database for later sending
       // This is just a placeholder - actual implementation would store this for scheduled sending

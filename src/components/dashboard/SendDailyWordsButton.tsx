@@ -44,15 +44,13 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
     console.log(`Requesting daily words for ${phoneNumber}, category: ${category}, isPro: ${isPro}`);
 
     try {
-      // Use the direct from number approach rather than messaging service to avoid the Error 21701
       const { data, error } = await supabase.functions.invoke<FunctionResponse>('send-whatsapp', {
         body: {
           to: phoneNumber,
           category: category,
           isPro: isPro,
           sendImmediately: true, // Send now as it's a manual trigger
-          debugMode: true, // Keep debug for now
-          extraDebugging: true // Keep extra debug for now
+          debugMode: true // Include additional debug information
         }
       });
 
