@@ -1,3 +1,4 @@
+
 // /home/ubuntu/glintup_project/supabase/functions/send-whatsapp/index.ts
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";

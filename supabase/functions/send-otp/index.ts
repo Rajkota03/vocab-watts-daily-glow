@@ -35,7 +35,8 @@ serve(async (req) => {
 
     // --- Generate OTP and Expiry ---
     const otp = generateOtp();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // OTP expires in 10 minutes
+    // Create expiry time 10 minutes from now using standard JavaScript Date
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     console.log(`Generated OTP: ${otp} for ${formattedPhone}, expires at ${expiresAt.toISOString()}`);
 
