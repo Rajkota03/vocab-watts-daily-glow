@@ -1,3 +1,4 @@
+
 import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { checkUserProStatus } from "./subscriptionService"; // Import the correct function
@@ -210,19 +211,23 @@ export const generateNewWordBatch = async (
       throw new Error("User subscription not found.");
     }
 
-    const { phone_number: phoneNumber, is_pro, subscription_ends_at, word_count_preference } = subscriptionData;
+    // Safely extract values from the subscription data
+    const phoneNumber = subscriptionData.phone_number;
+    const isPro = subscriptionData.is_pro || false;
+    const subscriptionEndsAt = subscriptionData.subscription_ends_at;
+    const wordCountPreference = subscriptionData.word_count_preference;
 
     if (!phoneNumber) {
       throw new Error("User subscription is missing a phone number.");
     }
 
     // 2. Determine if Pro is Active
-    const isProActive = is_pro === true && 
-                      subscription_ends_at && 
-                      isAfter(new Date(subscription_ends_at), new Date());
+    const isProActive = isPro === true && 
+                      subscriptionEndsAt && 
+                      isAfter(new Date(subscriptionEndsAt), new Date());
 
     // 3. Determine Word Limit based on Pro status and preference
-    const preferredCount = word_count_preference ?? (isProActive ? 3 : 1); // Default: 3 for Pro, 1 for Free
+    const preferredCount = wordCountPreference ?? (isProActive ? 3 : 1); // Default: 3 for Pro, 1 for Free
     const maxLimit = isProActive ? 5 : 3; // Max allowed: 5 for Pro, 3 for Free
     const actualLimit = Math.min(preferredCount, maxLimit);
 
