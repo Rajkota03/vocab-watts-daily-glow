@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Loader2, AlertCircle, Info, ExternalLink, RefreshCw } from "lucide-react";
+import { MessageSquare, Loader2, AlertCircle, Info, ExternalLink, RefreshCw, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -48,23 +48,59 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
   const [lastErrorDetails, setLastErrorDetails] = useState<string | null>(null);
   const [twilioDetails, setTwilioDetails] = useState<any>(null);
   const [showAdvancedDiagnostics, setShowAdvancedDiagnostics] = useState(false);
+  const [accountSidPrefix, setAccountSidPrefix] = useState<string | null>(null);
 
   // Check WhatsApp configuration status when component mounts
   React.useEffect(() => {
     checkConfig();
   }, []);
 
-  // Function to check Twilio configuration
+  // Function to check Twilio configuration and detect issues
   const checkConfig = async () => {
     try {
       setConfigLoading(true);
+      setLastErrorDetails(null);
+      
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
-        body: { checkOnly: true }
+        body: { 
+          checkOnly: true,
+          verifyCredentials: true // Add flag to request credential verification
+        }
       });
       
       if (!error && data) {
         setConfigStatus(data);
+        
+        // Check for account SID prefix to help with troubleshooting
+        if (data.configStatus?.accountSid) {
+          const sid = data.configStatus.accountSid;
+          if (typeof sid === 'string' && sid.startsWith('AC')) {
+            setAccountSidPrefix(sid.substring(0, 6) + '...');
+          }
+        }
+        
         console.log("WhatsApp configuration status:", data);
+        
+        // Show appropriate notifications based on config
+        if (data.success === false) {
+          toast({
+            title: "WhatsApp Configuration Issue",
+            description: data.error || "There's a problem with your WhatsApp configuration",
+            variant: "destructive"
+          });
+        } else if (data.twilioConfigured && data.accountVerified === false) {
+          toast({
+            title: "Account Verification Failed",
+            description: "Your Twilio account credentials could not be verified",
+            variant: "destructive"
+          });
+        } else if (data.twilioConfigured && data.accountVerified === true) {
+          toast({
+            title: "Twilio Account Verified",
+            description: data.accountName ? `Connected to: ${data.accountName}` : "Your Twilio account is active",
+            variant: "success"
+          });
+        }
       } else if (error) {
         console.error("Error checking WhatsApp config:", error);
         setConfigStatus({ 
@@ -93,7 +129,10 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
       setTwilioDetails(null);
       
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
-        body: { testTwilioConnection: true }
+        body: { 
+          testTwilioConnection: true,
+          detailed: true
+        }
       });
       
       if (error) {
@@ -113,7 +152,14 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
           description: data.error || "Could not connect to Twilio API",
           variant: "destructive",
         });
-        setLastErrorDetails(data.details?.responseText || data.error || "Unknown error");
+        
+        // Provide more specific error details
+        if (data.errorCode === 20404) {
+          setLastErrorDetails(`Account SID Error: The Twilio Account SID (${data.accountSidPrefix || 'unknown'}...) does not exist or has been deactivated. Please verify your Account SID in the Twilio Console.`);
+        } else {
+          setLastErrorDetails(data.details?.responseText || data.error || "Unknown error");
+        }
+        
         setTwilioDetails(data.twilioResponse || null);
         return;
       }
@@ -121,7 +167,8 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
       setTwilioDetails(data);
       toast({
         title: "Twilio Connection Successful",
-        description: `Connected to account: ${data.accountName || 'Unknown'}`,
+        description: `Connected to account: ${data.accountName || 'Unknown'} (${data.accountStatus || 'status unknown'})`,
+        variant: "success"
       });
       
     } catch (err) {
@@ -164,7 +211,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
       const { data, error } = await supabase.functions.invoke<FunctionResponse>('send-whatsapp', {
         body: {
           to: phoneToUse,
-          category: category || "general", // Use general if category is empty
+          category: category || "general", 
           isPro: false,
           sendImmediately: true,
           debugMode: true,
@@ -172,7 +219,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
         }
       });
 
-      // Handle function invocation error (network, permissions etc.)
+      // Handle function invocation error
       if (error) {
         console.error("Supabase function invocation error:", error);
         toast({
@@ -190,7 +237,12 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
         const errorTitle = data?.error || "Failed to send WhatsApp message";
         let errorDescription = "An unknown error occurred.";
         
-        if (data?.details) {
+        // Parse error details for 20404 error specifically
+        if (data?.details?.twilioError?.code === 20404) {
+          errorDescription = "The Twilio Account SID doesn't exist or is invalid. Check your credentials in Supabase secrets.";
+          setLastErrorDetails("Error 20404: The requested resource was not found. This typically means your Twilio Account SID is incorrect or your account has been deactivated. Please verify your Account SID in the Twilio Console.");
+        }
+        else if (data?.details) {
           if (typeof data.details === 'string') {
             errorDescription = data.details;
           } else if (data.details.message) {
@@ -202,7 +254,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
           }
         }
         
-        setLastErrorDetails(errorDescription); // Store detailed error for display
+        setLastErrorDetails(errorDescription || "Unknown error"); 
         setTwilioDetails(data.details?.twilioError || null);
         
         toast({
@@ -210,7 +262,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
           description: "See details below the button.",
           variant: "destructive",
         });
-        return; // Stop processing on function error
+        return; 
       }
 
       // Handle successful send
@@ -226,7 +278,6 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
         variant: "success",
       });
 
-      // Optionally display troubleshooting tips even on success
       if (data.troubleshooting) {
         const tips = Object.entries(data.troubleshooting)
           .map(([key, value]) => `- ${value}`)
@@ -234,7 +285,6 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
         setLastErrorDetails(`Troubleshooting Tips:\n${tips}`);
       }
 
-      // Store any Twilio details for advanced diagnostics
       if (data.twilioResponse) {
         setTwilioDetails(data.twilioResponse);
       }
@@ -243,7 +293,6 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
       setShowPhoneInput(false);
 
     } catch (err: any) {
-      // Catch client-side errors (e.g., network issues before function call)
       console.error("Client-side error sending WhatsApp message:", err);
       const errorMessage = err.message || "An unexpected error occurred. Check the browser console.";
       setLastErrorDetails(errorMessage);
@@ -262,6 +311,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
     if (!configStatus) return "Loading configuration status...";
     if (configStatus.success === false) return configStatus.error || 'Failed to check configuration.';
     if (!configStatus.twilioConfigured) return "Twilio credentials (SID/Token) missing in Supabase.";
+    if (configStatus.accountVerified === false) return "Invalid Twilio credentials. Account could not be verified.";
     if (!configStatus.fromNumberConfigured && !configStatus.messagingServiceConfigured) 
       return "Neither TWILIO_FROM_NUMBER nor TWILIO_MESSAGING_SERVICE_SID is set in Supabase.";
     return null;
@@ -270,9 +320,32 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
   const twilioIssue = getTwilioIssues();
   const hasTwilioConfig = configStatus?.twilioConfigured && 
     (configStatus?.fromNumberConfigured || configStatus?.messagingServiceConfigured);
+  const isAccountVerified = configStatus?.accountVerified === true;
 
   return (
     <div className="space-y-4">
+      {/* Account Status Badge */}
+      {configStatus && (
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-muted-foreground">Twilio Account Status:</span>
+          {isAccountVerified ? (
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Verified
+            </Badge>
+          ) : hasTwilioConfig ? (
+            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+              <AlertCircle className="h-3 w-3 mr-1" />
+              Unverified
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+              Not Configured
+            </Badge>
+          )}
+        </div>
+      )}
+      
       {/* Configuration Status */}
       {!hasTwilioConfig && (
         <Alert>
@@ -289,6 +362,30 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
               >
                 {configLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
                 Refresh Status
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Account specific issue */}
+      {hasTwilioConfig && !isAccountVerified && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Account Verification Failed</AlertTitle>
+          <AlertDescription>
+            The Twilio Account SID {accountSidPrefix ? `(${accountSidPrefix}...)` : ""} could not be verified. 
+            This typically means the Account SID is incorrect or the account has been deactivated.
+            <div className="mt-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={testTwilioConnection}
+                disabled={loading}
+                className="bg-white text-red-600 border-red-300 hover:bg-red-50"
+              >
+                {loading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+                Test Connection
               </Button>
             </div>
           </AlertDescription>
@@ -422,9 +519,9 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
       )}
 
       {/* Display success/config info */} 
-      {configStatus && configStatus.success && configStatus.twilioConfigured && !twilioIssue && !lastErrorDetails && (
+      {configStatus && configStatus.success && configStatus.twilioConfigured && isAccountVerified && !twilioIssue && !lastErrorDetails && (
         <div className="text-xs text-green-600 mt-1">
-          ✓ WhatsApp configuration seems OK.
+          ✓ WhatsApp configuration is verified and ready.
         </div>
       )}
     </div>

@@ -1,4 +1,3 @@
-
 // /home/ubuntu/glintup_project/supabase/functions/send-whatsapp/index.ts
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -22,6 +21,8 @@ interface WhatsAppRequest {
   debugMode?: boolean;
   extraDebugging?: boolean;
   testTwilioConnection?: boolean;
+  verifyCredentials?: boolean;
+  detailed?: boolean;
   // Added for OTP
   messageType?: 'otp' | 'regular'; // Distinguish message types
   otpCode?: string; // OTP code to send
@@ -140,28 +141,52 @@ function getConfigStatus(twilioConfig: TwilioConfigStatus) {
 }
 
 /**
- * Test connection to Twilio API
+ * Test connection to Twilio API and verify account status
  */
-async function testTwilioConnection(accountSid: string, authToken: string) {
+async function testTwilioConnection(accountSid: string, authToken: string, detailed: boolean = false) {
   try {
     // Make a simple API call to Twilio to test credentials
     const basicAuth = btoa(`${accountSid}:${authToken}`);
     const twilioTestUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}.json`;
     
     console.log('Testing Twilio API connection...');
+    console.log(`Using Account SID: ${accountSid.substring(0, 6)}...`);
+    
     const testResponse = await fetch(twilioTestUrl, {
       headers: { 'Authorization': `Basic ${basicAuth}` }
     });
     
-    const testResponseData = await testResponse.json();
     console.log(`Twilio API connection test result: ${testResponse.status}`);
     
+    let testResponseData;
+    try {
+      testResponseData = await testResponse.json();
+    } catch (jsonError) {
+      console.error("Error parsing Twilio response:", jsonError);
+      const responseText = await testResponse.text();
+      testResponseData = { error: "Failed to parse response", text: responseText };
+    }
+    
     if (!testResponse.ok) {
+      // Special handling for 404 errors (invalid account SID)
+      if (testResponse.status === 404) {
+        return {
+          success: false,
+          error: "Twilio Account Not Found",
+          errorCode: 20404,
+          accountSidPrefix: accountSid.substring(0, 6),
+          message: "The provided Account SID doesn't exist or was entered incorrectly",
+          status: testResponse.status,
+          tip: "Check your Account SID carefully in your Twilio Console",
+          twilioResponse: detailed ? testResponseData : undefined
+        };
+      }
+      
       return {
         success: false,
         error: "Failed to connect to Twilio API with provided credentials",
         status: testResponse.status,
-        twilioResponse: testResponseData
+        twilioResponse: detailed ? testResponseData : undefined
       };
     }
     
@@ -170,7 +195,8 @@ async function testTwilioConnection(accountSid: string, authToken: string) {
       message: "Successfully connected to Twilio API",
       accountName: testResponseData.friendly_name,
       accountStatus: testResponseData.status,
-      twilioResponse: testResponseData
+      accountSid: accountSid.substring(0, 6) + '...',
+      twilioResponse: detailed ? testResponseData : undefined
     };
   } catch (error) {
     console.error("Error testing Twilio API connection:", error);
@@ -454,6 +480,8 @@ serve(async (req) => {
       debugMode,
       extraDebugging,
       testTwilioConnection: shouldTestConnection,
+      verifyCredentials,
+      detailed,
       messageType, 
       otpCode
     } = requestBody;
@@ -465,6 +493,35 @@ serve(async (req) => {
     // Check Twilio configuration first - return detailed status
     if (checkOnly) {
       const configStatus = getConfigStatus(twilioConfig);
+      
+      // Add account verification if requested
+      if (verifyCredentials && accountSid && authToken) {
+        try {
+          const verificationResult = await testTwilioConnection(accountSid, authToken);
+          return new Response(
+            JSON.stringify({
+              ...configStatus,
+              accountVerified: verificationResult.success,
+              accountName: verificationResult.accountName,
+              accountStatus: verificationResult.accountStatus,
+              accountSidPrefix: accountSid.substring(0, 6),
+              verificationError: verificationResult.success ? undefined : verificationResult.error
+            }), 
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        } catch (verifyError) {
+          console.error("Error verifying credentials:", verifyError);
+          return new Response(
+            JSON.stringify({
+              ...configStatus,
+              accountVerified: false,
+              verificationError: String(verifyError)
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+      
       return new Response(
         JSON.stringify(configStatus), 
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -473,7 +530,7 @@ serve(async (req) => {
 
     // Test Twilio API connection
     if (shouldTestConnection && accountSid && authToken) {
-      const testResult = await testTwilioConnection(accountSid, authToken);
+      const testResult = await testTwilioConnection(accountSid, authToken, detailed);
       return new Response(
         JSON.stringify(testResult),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
