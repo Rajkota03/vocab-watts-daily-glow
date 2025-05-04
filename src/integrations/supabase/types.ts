@@ -165,6 +165,7 @@ export type Database = {
         Row: {
           category: string | null
           created_at: string
+          delivery_time: string | null
           id: string
           is_pro: boolean
           phone_number: string
@@ -177,6 +178,7 @@ export type Database = {
         Insert: {
           category?: string | null
           created_at?: string
+          delivery_time?: string | null
           id?: string
           is_pro?: boolean
           phone_number: string
@@ -189,6 +191,7 @@ export type Database = {
         Update: {
           category?: string | null
           created_at?: string
+          delivery_time?: string | null
           id?: string
           is_pro?: boolean
           phone_number?: string

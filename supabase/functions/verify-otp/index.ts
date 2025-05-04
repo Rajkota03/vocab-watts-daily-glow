@@ -28,129 +28,67 @@ serve(async (req) => {
       { global: { headers: { Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` } } }
     );
 
-    // --- Find Valid OTP in Database ---
-    const now = new Date();
-    const { data: otpRecord, error: findError } = await supabaseAdmin
+    // --- Check if OTP is valid ---
+    const { data: otpData, error: otpError } = await supabaseAdmin
       .from("otp_codes")
-      .select("id, otp_code") 
+      .select("*")
       .eq("phone_number", formattedPhone)
-      .eq("otp_code", otp) 
+      .eq("otp_code", otp)
       .eq("used", false)
-      .gt("expires_at", now.toISOString()) 
-      .order("created_at", { ascending: false }) 
-      .maybeSingle();
+      .gt("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
 
-    if (findError) {
-      console.error("Error finding OTP:", findError);
-      throw new Error(`Database error finding OTP: ${findError.message}`);
+    if (otpError) {
+      console.error("Error retrieving OTP:", otpError);
+      throw new Error("Invalid or expired OTP code.");
     }
 
-    if (!otpRecord) {
-      console.log("Invalid, expired, or already used OTP for:", formattedPhone);
-      throw new Error("Invalid or expired OTP.");
+    if (!otpData) {
+      throw new Error("Invalid or expired OTP code.");
     }
 
-    console.log("Valid OTP found, ID:", otpRecord.id);
+    console.log("Valid OTP found:", otpData);
 
-    // --- Mark OTP as used --- 
+    // --- Mark OTP as used ---
     const { error: updateError } = await supabaseAdmin
       .from("otp_codes")
       .update({ used: true })
-      .eq("id", otpRecord.id);
+      .eq("id", otpData.id);
 
     if (updateError) {
-      console.error("Error marking OTP as used:", updateError);
-      // Log error but continue
+      console.error("Error updating OTP status:", updateError);
+      throw new Error("Database error updating OTP status.");
+    }
+
+    console.log("OTP marked as used.");
+
+    // --- Check for existing user subscription ---
+    const { data: subscriptionData, error: subError } = await supabaseAdmin
+      .from("user_subscriptions")
+      .select("*")
+      .eq("phone_number", formattedPhone)
+      .limit(1)
+      .single();
+
+    // --- Create session or return subscription data ---
+    let responseData = { success: true };
+
+    if (subError) {
+      console.log("No existing subscription found.");
+      responseData.subscriptionExists = false;
     } else {
-      console.log("OTP marked as used successfully.");
+      console.log("Existing subscription found:", subscriptionData);
+      responseData.subscriptionExists = true;
+      responseData.subscription = subscriptionData;
     }
 
-    // --- Create or get user and session ---
-    let userId: string | null = null;
-    let session: any = null;
-    
-    // Check if a user with this phone number already exists
-    const { data: existingUser, error: userLookupError } = await supabaseAdmin.auth
-      .admin
-      .listUsers({
-        filter: {
-          identities: {
-            identity_data: {
-              phone: formattedPhone
-            }
-          }
-        }
-      });
-      
-    if (userLookupError) {
-      console.error("Error looking up user:", userLookupError);
-      // Continue to try creating user
-    }
+    // --- Create or sign in user if needed (optional) ---
+    // This would involve creating a custom JWT token or similar
+    // For now, we'll just return the success status and subscription info
 
-    if (existingUser && existingUser.users && existingUser.users.length > 0) {
-      // User exists, create a new session for them
-      userId = existingUser.users[0].id;
-      console.log("Found existing user with ID:", userId);
-      
-      const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.createSession({
-        userId: userId,
-        properties: {
-          provider: "phone",
-        }
-      });
-      
-      if (sessionError) {
-        console.error("Error creating session for existing user:", sessionError);
-        throw new Error(`Failed to create session: ${sessionError.message}`);
-      }
-      
-      session = sessionData;
-      console.log("Created new session for existing user");
-      
-    } else {
-      // User doesn't exist, create a new user with this phone number
-      console.log("No existing user found, creating new user with phone:", formattedPhone);
-      
-      const { data: userData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-        phone: formattedPhone,
-        phone_confirm: true,
-        user_metadata: {
-          phone_verified: true,
-          provider: "whatsapp"
-        }
-      });
-      
-      if (createUserError) {
-        console.error("Error creating new user:", createUserError);
-        throw new Error(`Failed to create user: ${createUserError.message}`);
-      }
-      
-      userId = userData.user.id;
-      
-      // Create session for the new user
-      const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.createSession({
-        userId: userData.user.id,
-        properties: {
-          provider: "phone",
-        }
-      });
-      
-      if (sessionError) {
-        console.error("Error creating session for new user:", sessionError);
-        throw new Error(`Failed to create session for new user: ${sessionError.message}`);
-      }
-      
-      session = sessionData;
-      console.log("Created new user and session");
-    }
-
-    // --- Return Success Response with Session ---
-    return new Response(JSON.stringify({ 
-        success: true, 
-        message: "OTP verified successfully.",
-        session: session, // Return the session object
-        userId: userId
-    }), {
+    return new Response(JSON.stringify(responseData), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

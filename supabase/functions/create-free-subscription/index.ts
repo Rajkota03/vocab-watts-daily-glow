@@ -1,13 +1,20 @@
+
 // /home/ubuntu/glintup_project/supabase/functions/create-free-subscription/index.ts
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { addDays } from "https://deno.land/x/date_fns@v2.22.1/index.js";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*", // Allow requests from any origin (adjust in production)
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Helper function to add days to a date without using date-fns
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
 
 serve(async (req) => {
   // Handle CORS preflight request
@@ -130,4 +137,3 @@ serve(async (req) => {
     });
   }
 });
-

@@ -38,3 +38,5 @@ verify_jwt = false
 verify_jwt = false
 [edge_functions.create-whatsapp-logs-table]
 verify_jwt = false
+[edge_functions.create-free-subscription]
+verify_jwt = false

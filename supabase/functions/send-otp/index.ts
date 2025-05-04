@@ -36,7 +36,8 @@ serve(async (req) => {
     // --- Generate OTP and Expiry ---
     const otp = generateOtp();
     // Create expiry time 10 minutes from now using standard JavaScript Date
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 10);
 
     console.log(`Generated OTP: ${otp} for ${formattedPhone}, expires at ${expiresAt.toISOString()}`);
 
@@ -73,7 +74,7 @@ serve(async (req) => {
     );
 
     if (whatsappError) {
-      console.error("Error invoking send-whatsapp for OTP:", whatsappError);
+      console.error("Error invoking send-whatsapp function:", whatsappError);
       throw new Error(`Failed to send OTP via WhatsApp: ${whatsappError.message}`);
     }
 
