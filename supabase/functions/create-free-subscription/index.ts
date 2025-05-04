@@ -80,6 +80,7 @@ serve(async (req) => {
       delivery_time: deliveryTime,
       first_name: firstName,
       last_name: lastName || '',
+      category: 'general' // Set default category
     };
 
     console.log("Inserting free trial subscription with service role client:", JSON.stringify(subscriptionData));
