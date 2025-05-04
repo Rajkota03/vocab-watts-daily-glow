@@ -38,7 +38,7 @@ serve(async (req) => {
 
     // --- Generate OTP and Expiry ---
     const otp = generateOtp();
-    // Create expiry time 10 minutes from now using standard JavaScript Date
+    // Create expiry time 10 minutes from now using native JavaScript Date
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 10);
 
