@@ -101,6 +101,9 @@ const Index = () => {
                   Join on WhatsApp
                 </Button>
               </a>
+              <p className="text-center text-sm font-medium text-gray-600 mt-3">
+                Free 3-day trial. No credit card required.
+              </p>
             </div>
           </div>
         </section>

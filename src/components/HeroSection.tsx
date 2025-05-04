@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useIsMobile } from '@/hooks/use-mobile';
+import WhatsAppQRCode from './WhatsAppQRCode';
 
 const HeroSection = () => {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
@@ -30,20 +31,27 @@ const HeroSection = () => {
             </p>
             
             <div className="space-y-4 sm:space-y-0 sm:flex sm:flex-row gap-4 justify-center lg:justify-start">
-              <a 
-                href={whatsappLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block w-full sm:w-auto"
-              >
-                <Button 
-                  className="group px-6 py-6 h-auto w-full transition-all duration-300 hover:translate-y-[-2px] flex items-center justify-center"
+              {isMobile ? (
+                <a 
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block w-full sm:w-auto"
                 >
-                  <img src="/lovable-uploads/164886d6-c431-4caf-9f94-f4729aa2698b.png" alt="WhatsApp" className="w-5 h-5 mr-2" />
-                  Join on WhatsApp
-                  <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </Button>
-              </a>
+                  <Button 
+                    className="group px-6 py-6 h-auto w-full transition-all duration-300 hover:translate-y-[-2px] flex items-center justify-center"
+                  >
+                    <img src="/lovable-uploads/164886d6-c431-4caf-9f94-f4729aa2698b.png" alt="WhatsApp" className="w-5 h-5 mr-2" />
+                    Join on WhatsApp
+                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </Button>
+                </a>
+              ) : (
+                <div className="flex flex-col items-center sm:items-start">
+                  <WhatsAppQRCode whatsappLink={whatsappLink} size={150} />
+                  <p className="text-sm mt-2">Scan to join</p>
+                </div>
+              )}
               
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
@@ -107,6 +115,7 @@ const HeroSection = () => {
                       Join on WhatsApp
                     </Button>
                   </a>
+                  <p className="mt-3 text-sm font-medium text-green-600">Free 3-day trial, no credit card required</p>
                 </div>
               </div>
             </div>
