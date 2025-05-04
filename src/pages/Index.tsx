@@ -6,6 +6,7 @@ import HowItWorks from '@/components/HowItWorks';
 import SampleWords from '@/components/SampleWords';
 import Testimonials from '@/components/Testimonials';
 import Footer from '@/components/Footer';
+import SignupForm from '@/components/SignupForm';
 import { Button } from "@/components/ui/button";
 import { Shield } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
@@ -66,9 +67,6 @@ const Index = () => {
     }
   };
 
-  // WhatsApp direct link with pre-filled message
-  const whatsappLink = "https://wa.me/918978354242?text=JOIN%20GlintUp";
-
   return <div className="min-h-screen flex flex-col bg-white font-sans">
       <Navbar />
       
@@ -80,30 +78,12 @@ const Index = () => {
         <PricingToggle />
         <Testimonials />
         
-        {/* Mobile WhatsApp CTA section */}
-        <section id="mobile-whatsapp-cta" className="py-16 md:py-24 bg-white lg:hidden">
+        {/* Mobile signup form with improved visibility and accessibility */}
+        <section id="mobile-signup" className="py-16 md:py-24 bg-white lg:hidden">
           <div className="container mx-auto px-4">
             <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md mx-auto border border-gray-100">
               <h2 className="text-2xl font-bold mb-6 text-center">Start Your Free Trial</h2>
-              <img 
-                src="/lovable-uploads/abe19db1-a4de-45f3-8a79-3e5ae08951d8.png" 
-                alt="WhatsApp Flow" 
-                className="rounded-lg shadow-md w-full mb-6"
-              />
-              <a 
-                href={whatsappLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full"
-              >
-                <Button className="w-full py-6 h-auto flex items-center justify-center">
-                  <img src="/lovable-uploads/164886d6-c431-4caf-9f94-f4729aa2698b.png" alt="WhatsApp" className="w-5 h-5 mr-2" />
-                  Join on WhatsApp
-                </Button>
-              </a>
-              <p className="text-center text-sm font-medium text-gray-600 mt-3">
-                Free 3-day trial. No credit card required.
-              </p>
+              <SignupForm />
             </div>
           </div>
         </section>

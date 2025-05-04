@@ -1,25 +1,47 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle } from 'lucide-react';
+import { Smartphone, ArrowRight, CheckCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import SignupForm from './SignupForm';
 import { useIsMobile } from '@/hooks/use-mobile';
-import WhatsAppQRCode from './WhatsAppQRCode';
+import { useNavigate } from 'react-router-dom';
 
 const HeroSection = () => {
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   
-  // WhatsApp direct link with pre-filled message
-  const whatsappLink = "https://wa.me/918978354242?text=JOIN%20GlintUp";
-  
+  const handleFreeTrialClick = () => {
+    if (isMobile) {
+      // On mobile, scroll to the mobile signup section
+      const mobileSignup = document.getElementById('mobile-signup');
+      if (mobileSignup) {
+        mobileSignup.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        // Fallback if element not found
+        window.scrollTo({
+          top: document.body.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
+    } else {
+      // On desktop, scroll to the signup element in the hero section
+      document.getElementById('signup')?.scrollIntoView({
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return <section className="min-h-screen py-24 md:py-0 flex items-center bg-gradient-to-br from-white to-primary/5 overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="flex flex-col lg:flex-row gap-12 items-center">
           <div className="flex-1 text-center lg:text-left px-[49px]">
             <div className="inline-flex items-center mb-6 py-1.5 rounded-full text-dark text-sm font-medium shadow-sm bg-green-500 px-[13px]">
+              
               <img src="/lovable-uploads/164886d6-c431-4caf-9f94-f4729aa2698b.png" alt="WhatsApp" className="w-5 h-5 mr-2" />
               <span className="font-bold">Learn directly on Whatsapp</span>
+              
             </div>
             
             <h1 className="sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6 text-2xl px-0 mx-0">
@@ -31,28 +53,13 @@ const HeroSection = () => {
             </p>
             
             <div className="space-y-4 sm:space-y-0 sm:flex sm:flex-row gap-4 justify-center lg:justify-start">
-              {isMobile ? (
-                <a 
-                  href={whatsappLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block w-full sm:w-auto"
-                >
-                  <Button 
-                    className="group px-6 py-6 h-auto w-full transition-all duration-300 hover:translate-y-[-2px] flex items-center justify-center"
-                  >
-                    <img src="/lovable-uploads/164886d6-c431-4caf-9f94-f4729aa2698b.png" alt="WhatsApp" className="w-5 h-5 mr-2" />
-                    Join on WhatsApp
-                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                  </Button>
-                </a>
-              ) : (
-                <div className="flex flex-col items-center sm:items-start">
-                  <WhatsAppQRCode whatsappLink={whatsappLink} size={150} />
-                  <p className="text-sm mt-2">Scan to join</p>
-                </div>
-              )}
-              
+              <Button 
+                onClick={handleFreeTrialClick} 
+                className="group px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300 hover:translate-y-[-2px]"
+              >
+                Start 3-Day Free Trial
+                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </Button>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="ghost" className="border-2 border-dark text-dark hover:bg-dark/5 text-base px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300">
@@ -68,11 +75,12 @@ const HeroSection = () => {
                       <p className="text-sm italic text-gray-600 border-l-2 border-primary pl-2">It was pure serendipity that I met my business partner at a random coffee shop.</p>
                     </div>
                     <div className="text-center">
-                      <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
-                        <Button onClick={() => setIsDialogOpen(false)}>
-                          Join on WhatsApp
-                        </Button>
-                      </a>
+                      <Button onClick={() => {
+                      setIsDialogOpen(false);
+                      handleFreeTrialClick();
+                    }}>
+                        Get Your First Words
+                      </Button>
                     </div>
                   </div>
                 </DialogContent>
@@ -95,28 +103,13 @@ const HeroSection = () => {
             </div>
           </div>
           
-          <div className="flex-1 max-w-md hidden lg:block">
+          <div id="signup" className="flex-1 max-w-md hidden lg:block">
             <div className="relative">
               <div className="absolute -top-8 -left-8 w-20 h-20 bg-primary/10 rounded-full blur-xl"></div>
               <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-dark/10 rounded-full blur-xl"></div>
               
               <div className="relative bg-white rounded-2xl shadow-xl p-8 border border-gray-100 px-[24px]">
-                <img 
-                  src="/lovable-uploads/abe19db1-a4de-45f3-8a79-3e5ae08951d8.png" 
-                  alt="WhatsApp Flow" 
-                  className="rounded-lg shadow-md w-full"
-                />
-                <div className="mt-6 text-center">
-                  <h3 className="text-xl font-bold mb-2">WhatsApp-First Flow</h3>
-                  <p className="text-gray-600 mb-4">Join and get your first words in seconds!</p>
-                  <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
-                    <Button className="w-full flex items-center justify-center">
-                      <img src="/lovable-uploads/164886d6-c431-4caf-9f94-f4729aa2698b.png" alt="WhatsApp" className="w-5 h-5 mr-2" />
-                      Join on WhatsApp
-                    </Button>
-                  </a>
-                  <p className="mt-3 text-sm font-medium text-green-600">Free 3-day trial, no credit card required</p>
-                </div>
+                <SignupForm />
               </div>
             </div>
           </div>
