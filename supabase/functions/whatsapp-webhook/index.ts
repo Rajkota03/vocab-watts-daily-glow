@@ -1,3 +1,4 @@
+
 // /home/ubuntu/glintup_project/supabase/functions/whatsapp-webhook/index.ts
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -10,6 +11,37 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-twilio-signature',
 };
 
+// Onboarding flow states
+enum OnboardingState {
+  Initial = "initial",
+  WelcomeSent = "welcome_sent", 
+  AskingDeliveryTime = "asking_delivery_time",
+  AskingName = "asking_name",
+  Complete = "complete"
+}
+
+// Helper function for delivery time options
+function mapDeliveryTimeResponse(response: string): string | null {
+  const lowercaseResponse = response.toLowerCase().trim();
+  
+  if (lowercaseResponse.includes('1') || lowercaseResponse.includes('morning')) {
+    return 'morning';
+  } else if (lowercaseResponse.includes('2') || lowercaseResponse.includes('noon')) {
+    return 'noon';
+  } else if (lowercaseResponse.includes('3') || lowercaseResponse.includes('evening')) {
+    return 'evening';
+  }
+  
+  return null;
+}
+
+// Helper function to add days to a date without using date-fns
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
 // Helper function to parse form-encoded data from raw text
 function parseFormDataFromText(text: string): URLSearchParams | null {
   try {
@@ -18,6 +50,173 @@ function parseFormDataFromText(text: string): URLSearchParams | null {
     console.error("Error parsing form data from text:", e);
     return null;
   }
+}
+
+// Helper function to handle the onboarding process
+async function handleOnboarding(
+  supabaseAdmin: any, 
+  fromNumber: string, 
+  messageBody: string, 
+  onboardingData: any
+): Promise<{response: string, updatedState: any}> {
+  // Default to initial state if none exists
+  const currentState = onboardingData?.state || OnboardingState.Initial;
+  let response = "";
+  let updatedState = { ...onboardingData };
+  
+  console.log(`Processing message in state ${currentState} for ${fromNumber}: "${messageBody}"`);
+  
+  // Handle based on current state
+  switch(currentState) {
+    case OnboardingState.Initial:
+      // Check if this is a JOIN message
+      if (messageBody.toUpperCase().includes('JOIN')) {
+        response = "👋 *Welcome to VocabSpark!*\n\nWhen would you like to receive your daily words?\n\n1️⃣ Morning (around 7 AM)\n2️⃣ Noon (around 12 PM)\n3️⃣ Evening (around 7 PM)\n\nReply with 1, 2, or 3.";
+        updatedState = {
+          state: OnboardingState.AskingDeliveryTime,
+          phone_number: fromNumber,
+          created_at: new Date().toISOString()
+        };
+      } else {
+        // Regular message, not part of onboarding
+        response = "👋 Welcome to VocabSpark! Reply with JOIN to start your free trial and receive vocabulary words daily.";
+      }
+      break;
+      
+    case OnboardingState.AskingDeliveryTime:
+      const deliveryTime = mapDeliveryTimeResponse(messageBody);
+      
+      if (deliveryTime) {
+        updatedState.delivery_time = deliveryTime;
+        updatedState.state = OnboardingState.AskingName;
+        response = "Great choice! What's your name so we can personalize your experience?";
+      } else {
+        response = "I didn't understand that choice. Please reply with 1 (Morning), 2 (Noon), or 3 (Evening).";
+      }
+      break;
+      
+    case OnboardingState.AskingName:
+      // Parse name (could be more sophisticated)
+      const name = messageBody.trim();
+      if (name.length < 1) {
+        response = "Please share your name so we can personalize your experience.";
+      } else {
+        // Store the name
+        const firstName = name.split(' ')[0];
+        const lastName = name.split(' ').slice(1).join(' ');
+        
+        updatedState.first_name = firstName;
+        updatedState.last_name = lastName || '';
+        updatedState.state = OnboardingState.Complete;
+        
+        // Create the subscription
+        try {
+          // Check if subscription already exists
+          const { data: existingSub, error: checkError, count } = await supabaseAdmin
+            .from("user_subscriptions")
+            .select("id", { count: "exact" })
+            .eq("phone_number", fromNumber);
+
+          if (checkError) {
+            console.error("Error checking for existing subscription:", checkError);
+            throw new Error("Database error checking subscription.");
+          }
+
+          if (count && count > 0) {
+            console.log("Subscription already exists for phone number:", fromNumber);
+            
+            // Update the existing subscription with new data
+            const { error: updateError } = await supabaseAdmin
+              .from("user_subscriptions")
+              .update({
+                delivery_time: updatedState.delivery_time, 
+                first_name: firstName,
+                last_name: lastName || '',
+                // Don't update trial period if it already exists
+              })
+              .eq("phone_number", fromNumber);
+              
+            if (updateError) {
+              console.error("Error updating subscription data:", updateError);
+              throw new Error("Failed to update subscription data.");
+            }
+            
+            response = `Welcome back, ${firstName}! Your VocabSpark preferences have been updated. Your daily words will be delivered in the ${updatedState.delivery_time}.`;
+          } else {
+            // Create new subscription
+            const trialEndsAt = addDays(new Date(), 3).toISOString(); // Free trial lasts 3 days
+            
+            const subscriptionData = {
+              phone_number: fromNumber,
+              is_pro: false,
+              trial_ends_at: trialEndsAt,
+              delivery_time: updatedState.delivery_time,
+              first_name: firstName,
+              last_name: lastName || '',
+            };
+
+            const { data: newSubscription, error: insertError } = await supabaseAdmin
+              .from("user_subscriptions")
+              .insert(subscriptionData)
+              .select()
+              .single();
+
+            if (insertError) {
+              console.error("Error inserting free trial subscription:", insertError);
+              throw new Error(`Failed to create subscription: ${insertError.message}`);
+            }
+
+            console.log("Free trial subscription created successfully:", newSubscription);
+            
+            response = `✨ *Congratulations, ${firstName}!* ✨\n\nYour 3-day free trial is now active. You'll receive 5 fresh vocabulary words ${updatedState.delivery_time === 'morning' ? 'every morning' : updatedState.delivery_time === 'noon' ? 'every noon' : 'every evening'}.\n\n🎁 *Your first words will be sent right away!*`;
+            
+            // Send first words immediately
+            try {
+              console.log("Invoking send-whatsapp function for welcome message...");
+              await supabaseAdmin.functions.invoke("send-whatsapp", {
+                body: {
+                  to: fromNumber,
+                  category: "general", // Or a default category
+                  isPro: false,
+                  sendImmediately: true,
+                  firstName: firstName, // Pass name for personalization
+                  debugMode: true
+                },
+              });
+            } catch (invokeErr) {
+              console.error("Failed to invoke send-whatsapp function:", invokeErr);
+              // We'll continue even if this fails, the subscription is still created
+            }
+          }
+        } catch (error) {
+          console.error("Error processing subscription:", error);
+          response = "I'm sorry, we encountered an issue setting up your subscription. Please try again or contact support.";
+          updatedState.state = OnboardingState.Initial; // Reset state
+        }
+      }
+      break;
+      
+    case OnboardingState.Complete:
+      // They've already completed onboarding
+      // Here we can either provide help or take other actions based on their message
+      
+      const lowercaseMsg = messageBody.toLowerCase().trim();
+      
+      if (lowercaseMsg.includes('help') || lowercaseMsg === 'menu') {
+        response = "*VocabSpark Commands*\n\n• *CHANGE TIME* - Update your delivery time\n• *PAUSE* - Temporarily pause your words\n• *RESUME* - Resume your daily words\n• *UPGRADE* - Get Pro features\n• *HELP* - See this menu";
+      } 
+      else if (lowercaseMsg.includes('change time') || lowercaseMsg.includes('time')) {
+        response = "When would you like to receive your daily words?\n\n1️⃣ Morning (around 7 AM)\n2️⃣ Noon (around 12 PM)\n3️⃣ Evening (around 7 PM)\n\nReply with 1, 2, or 3.";
+        updatedState.state = OnboardingState.AskingDeliveryTime;
+      }
+      else {
+        // Default response
+        response = `Hi ${updatedState.first_name || 'there'}! You're all set up with VocabSpark. Your daily words will be delivered ${updatedState.delivery_time === 'morning' ? 'every morning' : updatedState.delivery_time === 'noon' ? 'every noon' : 'every evening'}. Reply with HELP to see available commands.`;
+      }
+      break;
+  }
+  
+  return { response, updatedState };
 }
 
 serve(async (req) => {
@@ -50,9 +249,6 @@ serve(async (req) => {
     }
 
     // Convert rawBody (string) to a format validateRequest expects (Record<string, string> for form data)
-    // Note: Twilio validation works on the raw body string for JSON, but needs parsed params for form data.
-    // We'll pass the rawBody and let the validator handle it if it's JSON, 
-    // or parse it if it's form-urlencoded.
     let params: Record<string, string> = {};
     const contentType = req.headers.get('content-type') || '';
     if (contentType.includes('application/x-www-form-urlencoded')) {
@@ -63,21 +259,13 @@ serve(async (req) => {
             });
         } else {
              console.error('Failed to parse form data for validation.');
-             // Fallback or error? Let's try validating with empty params, might work if Twilio lib is robust
         }
-    } else {
-        // For JSON or other types, Twilio expects the raw body string, but the library wants a Record.
-        // This part is tricky. Let's assume for status webhooks (form-urlencoded) the above works.
-        // If incoming messages are JSON, this validation might need adjustment based on library behavior.
-        // For now, we prioritize fixing the status webhook (form-urlencoded).
     }
 
     const isValid = twilio.validateRequest(
       twilioAuthToken,
       signature,
       url,
-      // Pass the parsed params for form-urlencoded, or the raw body for JSON? 
-      // The library expects Record<string, string | string[]>. Let's stick with parsed params for form data.
       params 
     );
 
@@ -93,15 +281,18 @@ serve(async (req) => {
 
     // Initialize Supabase client (only after validation)
     const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? 
-      '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: { persistSession: false },
+        global: { headers: { Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` } }
+      }
     );
 
     // Get verification token from env
     const verifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN');
 
-    // --- Handle GET for Webhook Verification (Should ideally not require signature validation, but keep logic) ---
+    // --- Handle GET for Webhook Verification ---
     if (req.method === 'GET') {
       const getUrl = new URL(req.url);
       const mode = getUrl.searchParams.get('hub.mode');
@@ -131,7 +322,6 @@ serve(async (req) => {
           console.log('Received JSON payload:', rawBody.substring(0, 200) + '...');
         } catch (parseError) {
           console.error('Error parsing JSON webhook body:', parseError);
-          // Should not happen if validation passed, but good to keep
           return new Response(JSON.stringify({ success: false, error: 'Invalid JSON request body' }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -142,19 +332,17 @@ serve(async (req) => {
         if (formData) {
           console.log('Received Form payload:', rawBody.substring(0, 200) + '...');
         } else {
-           // Should not happen if validation passed
            return new Response(JSON.stringify({ success: false, error: 'Could not parse form data' }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
       } else {
-        // Should not happen if validation passed
         console.warn(`Unsupported content type: ${contentType}`);
-         return new Response(JSON.stringify({ success: false, error: `Unsupported content type: ${contentType}` }), {
-            status: 415, // Unsupported Media Type
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
+        return new Response(JSON.stringify({ success: false, error: `Unsupported content type: ${contentType}` }), {
+          status: 415, // Unsupported Media Type
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
       }
 
       // Check if it's a Twilio Status Update (form-encoded)
@@ -165,91 +353,135 @@ serve(async (req) => {
         const errorMessage = formData.get('ErrorMessage'); // Optional error message
 
         console.log(`Processing Twilio Status Update for SID: ${messageSid}, Status: ${messageStatus}`);
+        console.log(`Placeholder: Logged status '${messageStatus}' for SID ${messageSid}. ErrorCode: ${errorCode || 'N/A'}`);
 
-        try {
-          // --- LOG STATUS UPDATE TO DATABASE ---
-          // Example: Update a 'message_logs' table (assuming it exists)
-          /*
-          const { error: updateError } = await supabaseAdmin
-            .from('message_logs') // Replace with your actual log table name
-            .update({ 
-              status: messageStatus,
-              error_code: errorCode,
-              error_message: errorMessage,
-              updated_at: new Date().toISOString()
-             })
-            .eq('message_sid', messageSid); // Match the message by its SID
-
-          if (updateError) {
-            console.error(`Error updating message log for SID ${messageSid}:`, updateError);
-          } else {
-            console.log(`Successfully logged status '${messageStatus}' for SID ${messageSid}`);
-          }
-          */
-          // Placeholder log until DB table is confirmed/created
-           console.log(`Placeholder: Logged status '${messageStatus}' for SID ${messageSid}. ErrorCode: ${errorCode || 'N/A'}`);
-
-        } catch (logError) {
-          console.error(`Error processing status update for SID ${messageSid}:`, logError);
-          // Don't return error here, still need to send 200 OK to Twilio
-        }
-
-      // Check if it's an Incoming Message (JSON from Meta or Form from Twilio)
+      // Handle Incoming Message
       } else {
-         let messageData;
-        // Handle direct Twilio incoming message format (form-encoded)
-        if (formData && formData.has('SmsMessageSid') && formData.has('Body')) {
-           messageData = {
-            from: formData.get('From'),
-            body: formData.get('Body'),
-            mediaUrl: formData.get('MediaUrl0'), // Twilio uses numbered media URLs
-            provider: 'twilio',
-            provider_message_id: formData.get('SmsMessageSid')
-          };
-        }
-        // Handle Meta/WhatsApp incoming message format (JSON)
-        else if (body && body.entry && body.entry.length > 0) {
-          // ... (existing Meta JSON parsing logic) ...
-           const entry = body.entry[0];
+        let fromNumber = '';
+        let messageBody = '';
+        let messageId = '';
+        
+        // Extract message data based on the format
+        if (formData && formData.has('From') && formData.has('Body')) {
+          // Twilio format
+          fromNumber = formData.get('From') || '';
+          messageBody = formData.get('Body') || '';
+          messageId = formData.get('MessageSid') || '';
+          
+          // Format the number without WhatsApp: prefix if it exists
+          fromNumber = fromNumber.replace('whatsapp:', '');
+          
+        } else if (body && body.entry && body.entry.length > 0) {
+          // Meta format
+          const entry = body.entry[0];
           if (entry.changes && entry.changes.length > 0) {
             const change = entry.changes[0];
             if (change.value && change.value.messages && change.value.messages.length > 0) {
               const message = change.value.messages[0];
-              messageData = {
-                from: message.from,
-                body: message.text?.body || '',
-                mediaUrl: message.image?.id || message.video?.id || message.audio?.id || message.document?.id || null,
-                provider: 'meta',
-                provider_message_id: message.id
-              };
+              fromNumber = message.from || '';
+              messageBody = message.text?.body || '';
+              messageId = message.id || '';
             }
           }
         }
+        
+        if (fromNumber && messageBody) {
+          console.log(`Processing incoming message from ${fromNumber}: "${messageBody}"`);
+          
+          // Store the incoming message
+          const { error: insertError } = await supabaseAdmin
+            .from('whatsapp_messages')
+            .insert({
+              from_number: fromNumber,
+              message: messageBody,
+              provider_message_id: messageId,
+              provider: formData ? 'twilio' : 'meta'
+            });
 
-        // If we extracted message data, store it
-        if (messageData) {
-          try {
-            console.log('Processing incoming message data:', messageData);
-            const { error: insertError } = await supabaseAdmin
-              .from('whatsapp_messages') // Assuming this table exists for incoming messages
-              .insert({
-                from_number: messageData.from,
-                message: messageData.body,
-                media_url: messageData.mediaUrl,
-                provider: messageData.provider,
-                provider_message_id: messageData.provider_message_id
-              });
-
-            if (insertError) {
-              console.error('Error storing incoming WhatsApp message:', insertError);
-            } else {
-              console.log('Successfully stored incoming WhatsApp message');
+          if (insertError) {
+            console.error('Error storing incoming WhatsApp message:', insertError);
+          }
+          
+          // Check for existing onboarding data for this number
+          const { data: existingOnboarding, error: onboardingError } = await supabaseAdmin
+            .from('whatsapp_onboarding')
+            .select('*')
+            .eq('phone_number', fromNumber)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+            
+          if (onboardingError) {
+            console.error('Error fetching onboarding data:', onboardingError);
+          }
+          
+          // Process the message through our onboarding flow
+          const { response, updatedState } = await handleOnboarding(
+            supabaseAdmin, 
+            fromNumber, 
+            messageBody, 
+            existingOnboarding
+          );
+          
+          // Store or update the onboarding state
+          if (existingOnboarding?.id) {
+            // Update existing record
+            const { error: updateError } = await supabaseAdmin
+              .from('whatsapp_onboarding')
+              .update({
+                state: updatedState.state,
+                delivery_time: updatedState.delivery_time,
+                first_name: updatedState.first_name,
+                last_name: updatedState.last_name,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existingOnboarding.id);
+              
+            if (updateError) {
+              console.error('Error updating onboarding state:', updateError);
             }
-          } catch (processError) {
-            console.error('Error processing incoming WhatsApp message:', processError);
+          } else if (updatedState?.state) {
+            // Insert new record
+            const { error: insertError } = await supabaseAdmin
+              .from('whatsapp_onboarding')
+              .insert({
+                phone_number: fromNumber,
+                state: updatedState.state,
+                delivery_time: updatedState.delivery_time,
+                first_name: updatedState.first_name,
+                last_name: updatedState.last_name,
+              });
+              
+            if (insertError) {
+              console.error('Error inserting onboarding state:', insertError);
+            }
+          }
+          
+          // Send the response message back to the user
+          if (response) {
+            try {
+              console.log(`Sending response to ${fromNumber}: "${response.substring(0, 50)}..."`);
+              
+              const { error: whatsappError } = await supabaseAdmin.functions.invoke(
+                "send-whatsapp",
+                {
+                  body: {
+                    to: fromNumber,
+                    message: response,
+                    messageType: "onboarding",
+                  },
+                }
+              );
+              
+              if (whatsappError) {
+                console.error('Error sending WhatsApp response:', whatsappError);
+              }
+            } catch (sendError) {
+              console.error('Error invoking send-whatsapp function:', sendError);
+            }
           }
         } else {
-          console.warn('Webhook received POST but could not extract known message or status data.');
+          console.warn('Webhook received POST but could not extract message data.');
         }
       }
 
@@ -275,4 +507,3 @@ serve(async (req) => {
     );
   }
 });
-
