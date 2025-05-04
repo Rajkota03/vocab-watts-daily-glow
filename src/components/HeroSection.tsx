@@ -1,47 +1,23 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Smartphone, ArrowRight, CheckCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import SignupForm from './SignupForm';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { useNavigate } from 'react-router-dom';
 
 const HeroSection = () => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const isMobile = useIsMobile();
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const navigate = useNavigate();
   
-  const handleFreeTrialClick = () => {
-    if (isMobile) {
-      // On mobile, scroll to the mobile signup section
-      const mobileSignup = document.getElementById('mobile-signup');
-      if (mobileSignup) {
-        mobileSignup.scrollIntoView({ behavior: 'smooth' });
-      } else {
-        // Fallback if element not found
-        window.scrollTo({
-          top: document.body.scrollHeight,
-          behavior: 'smooth'
-        });
-      }
-    } else {
-      // On desktop, scroll to the signup element in the hero section
-      document.getElementById('signup')?.scrollIntoView({
-        behavior: 'smooth'
-      });
-    }
-  };
-
-  return <section className="min-h-screen py-24 md:py-0 flex items-center bg-gradient-to-br from-white to-primary/5 overflow-hidden">
+  return (
+    <section className="min-h-screen py-24 md:py-0 flex items-center bg-gradient-to-br from-white to-primary/5 overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="flex flex-col lg:flex-row gap-12 items-center">
           <div className="flex-1 text-center lg:text-left px-[49px]">
             <div className="inline-flex items-center mb-6 py-1.5 rounded-full text-dark text-sm font-medium shadow-sm bg-green-500 px-[13px]">
-              
               <img src="/lovable-uploads/164886d6-c431-4caf-9f94-f4729aa2698b.png" alt="WhatsApp" className="w-5 h-5 mr-2" />
               <span className="font-bold">Learn directly on Whatsapp</span>
-              
             </div>
             
             <h1 className="sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6 text-2xl px-0 mx-0">
@@ -53,38 +29,25 @@ const HeroSection = () => {
             </p>
             
             <div className="space-y-4 sm:space-y-0 sm:flex sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button 
-                onClick={handleFreeTrialClick} 
-                className="group px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300 hover:translate-y-[-2px]"
-              >
-                Start 3-Day Free Trial
-                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </Button>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" className="border-2 border-dark text-dark hover:bg-dark/5 text-base px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300">
-                    See Sample Words
+                  <Button className="group px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300 hover:translate-y-[-2px]">
+                    Start 3-Day Free Trial
+                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
-                  <div className="p-4 bg-white rounded-lg shadow-lg">
-                    <h3 className="text-xl font-bold mb-4">Sample Words on WhatsApp</h3>
-                    <div className="bg-[#DCF8C6]/50 p-4 rounded-lg mb-4 border-l-4 border-[#25D366]">
-                      <p className="font-bold mb-2 text-dark">Today's Word: Serendipity</p>
-                      <p className="text-sm mb-1.5 text-gray-700">The occurrence of events by chance in a happy or beneficial way</p>
-                      <p className="text-sm italic text-gray-600 border-l-2 border-primary pl-2">It was pure serendipity that I met my business partner at a random coffee shop.</p>
-                    </div>
-                    <div className="text-center">
-                      <Button onClick={() => {
-                      setIsDialogOpen(false);
-                      handleFreeTrialClick();
-                    }}>
-                        Get Your First Words
-                      </Button>
-                    </div>
-                  </div>
+                  <SignupForm />
                 </DialogContent>
               </Dialog>
+              
+              <Button 
+                onClick={() => navigate('/login')}
+                variant="ghost" 
+                className="border-2 border-dark text-dark hover:bg-dark/5 text-base px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300"
+              >
+                Log In / Go Pro
+              </Button>
             </div>
             
             <div className="mt-8 flex flex-wrap justify-center lg:justify-start gap-6">
@@ -103,7 +66,7 @@ const HeroSection = () => {
             </div>
           </div>
           
-          <div id="signup" className="flex-1 max-w-md hidden lg:block">
+          <div className="flex-1 max-w-md hidden lg:block">
             <div className="relative">
               <div className="absolute -top-8 -left-8 w-20 h-20 bg-primary/10 rounded-full blur-xl"></div>
               <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-dark/10 rounded-full blur-xl"></div>
@@ -115,7 +78,8 @@ const HeroSection = () => {
           </div>
         </div>
       </div>
-    </section>;
+    </section>
+  );
 };
 
 export default HeroSection;

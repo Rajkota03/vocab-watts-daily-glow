@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,65 +7,40 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { RegisterForm } from '@/components/auth/RegisterForm';
-import { PhoneLoginForm } from '@/components/auth/PhoneLoginForm'; // Import the new component
-import type { LoginFormValues, RegisterFormValues } from '@/types/auth';
+import { PhoneLoginForm } from '@/components/auth/PhoneLoginForm';
 
 const Login = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [configStatus, setConfigStatus] = useState<any>(null);
-  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email'); // State to toggle login method
+  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
+    // Check if user is already logged in
     const checkUser = async () => {
       const { data } = await supabase.auth.getSession();
-      console.log("Session check on login page:", data.session);
       if (data.session) {
-        console.log("User already logged in, redirecting to dashboard");
         navigate('/dashboard');
       }
     };
     checkUser();
 
-    // Check WhatsApp configuration status when login page loads
-    const checkWhatsAppConfig = async () => {
-      try {
-        // Assuming 'update-whatsapp-settings' can check config
-        const { data, error } = await supabase.functions.invoke('update-whatsapp-settings', {
-          body: { checkOnly: true }
-        });
-        
-        if (!error) {
-          setConfigStatus(data);
-          console.log("WhatsApp configuration status:", data);
-        }
-      } catch (err) {
-        console.error("Error checking WhatsApp config:", err);
-      }
-    };
-    
-    checkWhatsAppConfig();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("Auth state change:", event, session);
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          if (window.location.pathname.includes('/login')) {
-             console.log("Signed in, navigating to dashboard from login page.");
-             navigate('/dashboard');
-          }
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (window.location.pathname.includes('/login')) {
+          navigate('/dashboard');
         }
       }
-    );
+    });
 
     return () => {
       subscription.unsubscribe();
     };
   }, [navigate]);
 
-  const handleLogin = async (values: LoginFormValues) => {
+  const handleLogin = async (values: any) => {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -76,7 +52,6 @@ const Login = () => {
         title: "Login successful",
         description: "Welcome back!",
       });
-      // Navigation is handled by onAuthStateChange
     } catch (error: any) {
       toast({
         title: "Error",
@@ -88,7 +63,7 @@ const Login = () => {
     }
   };
 
-  const handleRegister = async (values: RegisterFormValues) => {
+  const handleRegister = async (values: any) => {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
@@ -106,9 +81,9 @@ const Login = () => {
       if (error) throw error;
       toast({
         title: "Account created successfully",
-        description: "Please check your email for a confirmation link or proceed to login.",
+        description: "Please check your email for a confirmation link.",
       });
-      setIsSignUp(false); // Switch back to login view after registration
+      setIsSignUp(false); // Switch back to login view
     } catch (error: any) {
       toast({
         title: "Registration Error",
@@ -118,12 +93,6 @@ const Login = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handlePhoneLoginSuccess = () => {
-    console.log("Phone login successful, navigating to dashboard.");
-    // Navigation should be handled by onAuthStateChange, but force it if needed
-    navigate('/dashboard');
   };
 
   return (
@@ -144,29 +113,23 @@ const Login = () => {
             </div>
           </div>
           <CardTitle className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#9b87f5] to-[#7E69AB]">
-            {isSignUp ? 'Join GLINTUP' : 'Welcome Back'}
+            {isSignUp ? 'Create Account' : 'Welcome Back'}
           </CardTitle>
           <CardDescription className="text-gray-500 text-base">
             {isSignUp 
-              ? 'Create your account to get started' 
-              : `Sign in via ${loginMethod === 'email' ? 'Email' : 'WhatsApp OTP'} to access your GLINTUP dashboard`}
+              ? 'Sign up to manage your account' 
+              : 'Sign in to access your dashboard'}
           </CardDescription>
         </CardHeader>
         
         <CardContent className="space-y-6 pt-4">
-          {configStatus && configStatus.configRequired?.TWILIO_AUTH_TOKEN === false && (
-            <div className="bg-green-50 text-green-700 p-2 rounded-md text-xs mb-4">
-              WhatsApp messaging is configured and ready to use
-            </div>
-          )}
-          
           {isSignUp ? (
             <RegisterForm onSubmit={handleRegister} isLoading={isLoading} />
           ) : (
             loginMethod === 'email' ? (
               <LoginForm onSubmit={handleLogin} isLoading={isLoading} />
             ) : (
-              <PhoneLoginForm onLoginSuccess={handlePhoneLoginSuccess} />
+              <PhoneLoginForm onLoginSuccess={() => navigate('/dashboard')} />
             )
           )}
         </CardContent>
@@ -180,7 +143,7 @@ const Login = () => {
                 onClick={() => setLoginMethod(loginMethod === 'email' ? 'phone' : 'email')}
               >
                 {loginMethod === 'email' ? <Phone className="h-4 w-4 mr-1"/> : <Mail className="h-4 w-4 mr-1"/>}
-                Sign in with {loginMethod === 'email' ? 'WhatsApp OTP' : 'Email/Password'} instead
+                Sign in with {loginMethod === 'email' ? 'WhatsApp OTP' : 'Email/Password'}
               </button>
             </div>
           )}
@@ -203,4 +166,3 @@ const Login = () => {
 };
 
 export default Login;
-
