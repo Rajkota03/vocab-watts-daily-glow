@@ -5,7 +5,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 
-// Helper function to add days to a date without using date-fns
+// Helper function to add days to a date using native JavaScript
 function addDays(date: Date, days: number): Date {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
@@ -71,7 +71,8 @@ serve(async (req) => {
     }
 
     // --- Create Free Trial Subscription ---
-    const trialEndsAt = addDays(new Date(), 3).toISOString(); // Free trial lasts 3 days
+    // Calculate trial end date using native JavaScript (3 days from now)
+    const trialEndsAt = addDays(new Date(), 3).toISOString();
 
     const subscriptionData = {
       phone_number: phoneNumber,
@@ -109,7 +110,8 @@ serve(async (req) => {
             category: "general", // Or a default category
             isPro: false,
             sendImmediately: true,
-            firstName: firstName // Pass name for personalization
+            firstName: firstName, // Pass name for personalization
+            message: `Welcome to VocabSpark, ${firstName}! Your free trial has started. You'll receive daily vocabulary words at your preferred time. Enjoy learning!`
           },
         }
       );
