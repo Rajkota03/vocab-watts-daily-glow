@@ -31,7 +31,12 @@ serve(async (req) => {
     // --- Initialize Supabase Admin Client with Service Role ---
     // This is important: using the service role allows us to bypass RLS policies
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
-       auth: { persistSession: false } // Important for server-side
+      auth: { persistSession: false }, // Important for server-side
+      global: { 
+        headers: { 
+          Authorization: `Bearer ${supabaseServiceRoleKey}`
+        }
+      }
     });
 
     // --- Parse Request Body ---
@@ -74,9 +79,8 @@ serve(async (req) => {
       trial_ends_at: trialEndsAt,
       delivery_time: deliveryTime, // Store delivery time preference
       // user_id: null, // No user account linked initially for free trial
-      // Store names if your table has columns for them
-      // first_name: firstName,
-      // last_name: lastName,
+      first_name: firstName,
+      last_name: lastName || '',
     };
 
     console.log("Inserting free trial subscription with service role client:", JSON.stringify(subscriptionData));
