@@ -9,13 +9,25 @@ interface WhatsAppQRCodeProps {
 
 const WhatsAppQRCode = ({ whatsappLink, size = 180 }: WhatsAppQRCodeProps) => {
   const [qrCodeSrc, setQrCodeSrc] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   
   useEffect(() => {
     // Encode the WhatsApp link for the QR code
     const encodedLink = encodeURIComponent(whatsappLink);
     // Use Google Charts API to generate QR code
     const qrCodeUrl = `https://chart.googleapis.com/chart?cht=qr&chl=${encodedLink}&chs=${size}x${size}&choe=UTF-8&chld=L|0`;
-    setQrCodeSrc(qrCodeUrl);
+    
+    // Create an image to verify loading
+    const img = new Image();
+    img.onload = () => {
+      setQrCodeSrc(qrCodeUrl);
+      setIsLoading(false);
+    };
+    img.onerror = () => {
+      console.error("Failed to load QR code");
+      setIsLoading(false);
+    };
+    img.src = qrCodeUrl;
   }, [whatsappLink, size]);
 
   return (
@@ -32,7 +44,7 @@ const WhatsAppQRCode = ({ whatsappLink, size = 180 }: WhatsAppQRCodeProps) => {
         </div>
       ) : (
         <div className="bg-white p-4 rounded-xl shadow-md flex items-center justify-center" style={{ width: size, height: size }}>
-          <QrCode className="animate-pulse text-gray-300" size={size/2} />
+          <QrCode className={`text-gray-300 ${isLoading ? 'animate-pulse' : ''}`} size={size/2} />
         </div>
       )}
     </div>
