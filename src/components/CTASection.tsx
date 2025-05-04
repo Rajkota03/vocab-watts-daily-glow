@@ -58,7 +58,11 @@ const CTASection = () => {
           <div className="flex flex-col md:flex-row items-center justify-center gap-x-8 gap-y-3 text-sm">
             <div className="flex items-center bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
               <CheckCircle className="h-4 w-4 mr-2 text-white" />
-              <span>No credit card required for trial</span>
+              <span>Verified WhatsApp number</span>
+            </div>
+            <div className="flex items-center bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
+              <CheckCircle className="h-4 w-4 mr-2 text-white" />
+              <span>No credit card required</span>
             </div>
             <div className="flex items-center bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
               <CheckCircle className="h-4 w-4 mr-2 text-white" />
