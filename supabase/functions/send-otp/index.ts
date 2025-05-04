@@ -62,6 +62,7 @@ serve(async (req) => {
     console.log("OTP stored successfully.");
 
     // --- Send OTP via WhatsApp (Invoke send-whatsapp function) ---
+    // Format the OTP message with clear formatting for better visibility
     const otpMessage = `Your VocabSpark verification code is: *${otp}*\n\nThis code will expire in 10 minutes. Do not share this code with anyone.`;
     
     console.log(`Invoking send-whatsapp to send OTP ${otp} to ${formattedPhone}`);

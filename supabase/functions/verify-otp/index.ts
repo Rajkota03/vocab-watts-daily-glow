@@ -73,18 +73,21 @@ serve(async (req) => {
       .select("*")
       .eq("phone_number", formattedPhone)
       .limit(1)
-      .single();
+      .maybeSingle();  // Using maybeSingle instead of single to prevent errors
 
     // --- Create session or return subscription data ---
     let responseData = { success: true };
 
     if (subError) {
-      console.log("No existing subscription found.");
+      console.log("Error checking subscription:", subError);
       responseData.subscriptionExists = false;
-    } else {
+    } else if (subscriptionData) {
       console.log("Existing subscription found:", subscriptionData);
       responseData.subscriptionExists = true;
       responseData.subscription = subscriptionData;
+    } else {
+      console.log("No existing subscription found.");
+      responseData.subscriptionExists = false;
     }
 
     // --- Create or sign in user if needed (optional) ---
