@@ -1,5 +1,5 @@
 
-// /home/ubuntu/glintup_project/supabase/functions/verify-otp/index.ts
+// supabase/functions/verify-otp/index.ts
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
@@ -41,7 +41,7 @@ serve(async (req) => {
       .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();  // Using maybeSingle instead of single to prevent errors
 
     if (otpError) {
       console.error("Error retrieving OTP:", otpError);
@@ -89,10 +89,6 @@ serve(async (req) => {
       console.log("No existing subscription found.");
       responseData.subscriptionExists = false;
     }
-
-    // --- Create or sign in user if needed (optional) ---
-    // This would involve creating a custom JWT token or similar
-    // For now, we'll just return the success status and subscription info
 
     return new Response(JSON.stringify(responseData), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

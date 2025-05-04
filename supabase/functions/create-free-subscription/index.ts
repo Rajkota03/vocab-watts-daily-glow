@@ -1,12 +1,12 @@
 
-// /home/ubuntu/glintup_project/supabase/functions/create-free-subscription/index.ts
+// supabase/functions/create-free-subscription/index.ts
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 
-// Helper function to add days to a date using native JavaScript
-function addDays(date: Date, days: number): Date {
+// Helper function for date manipulation using only native JavaScript
+function addDays(date, days) {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
   return result;
@@ -29,9 +29,8 @@ serve(async (req) => {
     }
 
     // --- Initialize Supabase Admin Client with Service Role ---
-    // This is important: using the service role allows us to bypass RLS policies
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
-      auth: { persistSession: false }, // Important for server-side
+      auth: { persistSession: false }, 
       global: { 
         headers: { 
           Authorization: `Bearer ${supabaseServiceRoleKey}`
@@ -45,7 +44,6 @@ serve(async (req) => {
       firstName,
       lastName,
       deliveryTime,
-      // email // Optional: Could be used to link/create user later
     } = await req.json();
 
     if (!phoneNumber || !firstName || !deliveryTime) {
@@ -71,15 +69,15 @@ serve(async (req) => {
     }
 
     // --- Create Free Trial Subscription ---
-    // Calculate trial end date using native JavaScript (3 days from now)
-    const trialEndsAt = addDays(new Date(), 3).toISOString();
+    // Use native JavaScript Date handling
+    const now = new Date();
+    const trialEndsAt = addDays(now, 3).toISOString();
 
     const subscriptionData = {
       phone_number: phoneNumber,
       is_pro: false,
       trial_ends_at: trialEndsAt,
-      delivery_time: deliveryTime, // Store delivery time preference
-      // user_id: null, // No user account linked initially for free trial
+      delivery_time: deliveryTime,
       first_name: firstName,
       last_name: lastName || '',
     };
@@ -99,7 +97,7 @@ serve(async (req) => {
 
     console.log("Free trial subscription created successfully:", newSubscription);
 
-    // --- Trigger Welcome Message (Optional but recommended) ---
+    // --- Trigger Welcome Message ---
     try {
       console.log("Invoking send-whatsapp function for welcome message...");
       const { data: whatsappResult, error: whatsappError } = await supabaseAdmin.functions.invoke(
@@ -107,10 +105,10 @@ serve(async (req) => {
         {
           body: {
             to: phoneNumber,
-            category: "general", // Or a default category
+            category: "general",
             isPro: false,
             sendImmediately: true,
-            firstName: firstName, // Pass name for personalization
+            firstName: firstName,
             message: `Welcome to VocabSpark, ${firstName}! Your free trial has started. You'll receive daily vocabulary words at your preferred time. Enjoy learning!`
           },
         }
@@ -118,7 +116,6 @@ serve(async (req) => {
 
       if (whatsappError) {
         console.error("Error invoking send-whatsapp function:", whatsappError);
-        // Don't fail the signup if WhatsApp fails, but log it
       } else {
         console.log("send-whatsapp function invoked successfully:", whatsappResult);
       }
@@ -136,7 +133,7 @@ serve(async (req) => {
     console.error("Error in create-free-subscription function:", error);
     return new Response(JSON.stringify({ success: false, error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400, // Use 400 for client-related errors
+      status: 400,
     });
   }
 });

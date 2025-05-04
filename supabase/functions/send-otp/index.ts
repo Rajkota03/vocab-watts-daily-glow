@@ -1,5 +1,5 @@
 
-// /home/ubuntu/glintup_project/supabase/functions/send-otp/index.ts
+// supabase/functions/send-otp/index.ts
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
@@ -45,12 +45,11 @@ serve(async (req) => {
     console.log(`Generated OTP: ${otp} for ${formattedPhone}, expires at ${expiresAt.toISOString()}`);
 
     // --- Store OTP in database (assuming an otp_codes table exists) ---
-    // Table structure suggestion: id (uuid), phone_number (text), otp_code (text), expires_at (timestamptz), used (boolean)
     const { error: storeError } = await supabaseAdmin
       .from("otp_codes")
       .insert({
         phone_number: formattedPhone,
-        otp_code: otp, // Consider hashing the OTP before storing for better security
+        otp_code: otp,
         expires_at: expiresAt.toISOString(),
         used: false,
       });
