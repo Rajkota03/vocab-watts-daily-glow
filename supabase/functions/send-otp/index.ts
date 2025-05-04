@@ -70,7 +70,6 @@ serve(async (req) => {
       {
         body: {
           to: formattedPhone,
-          messageType: "otp", 
           message: otpMessage,
         },
       }

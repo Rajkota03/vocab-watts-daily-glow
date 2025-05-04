@@ -1,3 +1,4 @@
+
 // Import necessary libraries
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
@@ -119,6 +120,7 @@ serve(async (req) => {
     // Debug logging
     console.log("WhatsApp request received:", { 
       to, 
+      messageType,
       category, 
       isPro, 
       scheduledTime: requestData.scheduledTime,
@@ -178,17 +180,9 @@ serve(async (req) => {
     }
 
     // --- Decide on the actual message content ---
-    // Either use provided message or determine message content based on type
+    // Always use the provided message exactly as provided
     let finalMessage = message;
     
-    // Check if we're dealing with an OTP message type
-    if (messageType === "otp" && message) {
-      // Use the message as is since it should already contain the OTP
-      finalMessage = message;
-    } 
-    // Other message types could be handled here
-
-    // --- Send the message via Twilio API ---
     console.log(`Sending WhatsApp message using ${useMessagingService ? "Messaging Service" : "From Number"} to ${formattedTo}`);
     console.log("Message content (first 50 chars):", finalMessage ? `${finalMessage.substring(0, 50)}...` : "No message content");
 
