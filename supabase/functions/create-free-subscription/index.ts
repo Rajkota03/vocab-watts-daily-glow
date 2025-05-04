@@ -32,7 +32,8 @@ serve(async (req) => {
       throw new Error("Server configuration error.");
     }
 
-    // --- Initialize Supabase Admin Client ---
+    // --- Initialize Supabase Admin Client with Service Role ---
+    // This is important: using the service role allows us to bypass RLS policies
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
        auth: { persistSession: false } // Important for server-side
     });
@@ -82,7 +83,7 @@ serve(async (req) => {
       // last_name: lastName,
     };
 
-    console.log("Inserting free trial subscription:", JSON.stringify(subscriptionData));
+    console.log("Inserting free trial subscription with service role client:", JSON.stringify(subscriptionData));
 
     const { data: newSubscription, error: insertError } = await supabaseAdmin
       .from("user_subscriptions")
