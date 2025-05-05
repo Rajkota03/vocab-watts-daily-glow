@@ -60,7 +60,7 @@ const Navbar = () => {
   return <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white/95 shadow-md backdrop-blur-md' : 'bg-transparent'}`}>
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <Link to="/" className="flex items-center gap-2">
-          <img src="/logo-horizontal.svg" alt="GLINTUP" className="h-8" />
+          <img src="/GlintUp_logo1.svg" alt="GlintUp" className="h-8" />
         </Link>
         
         <button className="md:hidden p-2 text-glintup-indigo hover:text-glintup-mint focus:outline-none transition-colors" onClick={toggleMenu} aria-label="Toggle menu">

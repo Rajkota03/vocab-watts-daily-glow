@@ -55,59 +55,57 @@ const Pricing = () => {
   ];
 
   return (
-    <section id="pricing" className="py-20 bg-vuilder-bg">
+    <section id="pricing" className="py-20 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold mb-4 font-poppins text-vuilder-indigo">Plans & Pricing</h2>
-          <p className="text-lg text-vuilder-text max-w-2xl mx-auto font-inter">
+          <h2 className="text-3xl md:text-5xl font-bold mb-4 font-poppins text-gray-800">Plans & Pricing</h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto font-inter">
             No boring word lists. 5 words a day that actually stick. Choose the plan that works for you.
           </p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {plans.map((plan, index) => (
-            <div key={index} className={`pricing-card relative ${plan.popular ? plan.color : ''}`}>
+            <div key={index} className={`pricing-card relative bg-white p-8 rounded-xl shadow-md border ${plan.popular ? "border-primary" : "border-gray-200"}`}>
               {plan.popular && (
-                <div className={`absolute -top-4 inset-x-0 mx-auto w-max px-4 py-1 rounded-full ${plan.badgeColor} text-white text-sm font-medium`}>
+                <div className={`absolute -top-4 inset-x-0 mx-auto w-max px-4 py-1 rounded-full bg-primary text-primary-foreground text-sm font-medium`}>
                   Most Popular
                 </div>
               )}
-              <h3 className="text-2xl font-bold mb-2 font-poppins text-vuilder-indigo">{plan.name}</h3>
+              <h3 className="text-2xl font-bold mb-2 font-poppins text-gray-800">{plan.name}</h3>
               <div className="mb-4">
-                <span className="text-3xl font-bold font-poppins text-vuilder-indigo">{plan.price}</span>
-                <span className="text-gray-500">/{plan.period}</span>
+                <span className="text-3xl font-bold font-poppins text-gray-800">{plan.price}</span>
+                {plan.period && <span className="text-gray-500">/{plan.period}</span>}
                 {plan.priceYearly && (
                   <div className="mt-1 text-sm text-gray-500">
                     or {plan.priceYearly} {plan.periodYearly} (save 44%)
                   </div>
                 )}
               </div>
-              <p className="text-vuilder-text font-medium mb-2 italic">{plan.headline}</p>
+              <p className="text-gray-700 font-medium mb-2 italic">{plan.headline}</p>
               <p className="text-gray-600 mb-6">{plan.description}</p>
               
               <div className="space-y-3 mb-8">
                 {plan.features.map((feature, i) => (
                   <div key={i} className="flex items-start">
-                    {feature.icon === Check ? (
-                      <Check className="h-5 w-5 text-vuilder-mint mr-2 flex-shrink-0 mt-0.5" />
-                    ) : (
-                      <feature.icon className="h-5 w-5 text-vuilder-mint mr-2 flex-shrink-0 mt-0.5" />
-                    )}
-                    <span>{feature.text}</span>
+                    <feature.icon className="h-5 w-5 text-primary mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">{feature.text}</span>
                   </div>
                 ))}
                 
                 {plan.notIncluded.map((feature, i) => (
                   <div key={i} className="flex items-start text-gray-400">
                     <feature.icon className="h-5 w-5 text-gray-300 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>{feature.text}</span>
+                    <span className="text-gray-500">{feature.text}</span>
                     <span className="ml-2 text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">Pro only</span>
                   </div>
                 ))}
               </div>
               
+              {/* TODO: Update onClick to open AuthModal with correct initialPlan */}
               <Button 
-                className={plan.buttonVariant === 'default' ? 'bg-vuilder-mint hover:bg-vuilder-mint/90 text-white w-full' : 'bg-white border border-vuilder-indigo text-vuilder-indigo hover:bg-vuilder-indigo/5 w-full'}
+                className={`${plan.buttonVariant === "default" ? "bg-primary hover:bg-primary/90 text-primary-foreground" : "bg-white border border-primary text-primary hover:bg-primary/10"} w-full`}
+                onClick={() => { /* Open AuthModal with plan.name */ }}
               >
                 {plan.buttonText}
               </Button>

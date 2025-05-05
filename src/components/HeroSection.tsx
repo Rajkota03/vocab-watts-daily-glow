@@ -11,7 +11,7 @@ const HeroSection = () => {
   const navigate = useNavigate();
   
   return (
-    <section className="min-h-screen py-24 md:py-0 flex items-center bg-gradient-to-br from-white to-primary/5 overflow-hidden">
+    <section className="min-h-screen py-24 md:py-0 flex items-center bg-gradient-to-br from-white to-primary/10 overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="flex flex-col lg:flex-row gap-12 items-center">
           <div className="flex-1 text-center lg:text-left px-[49px]">
@@ -31,23 +31,26 @@ const HeroSection = () => {
             <div className="space-y-4 sm:space-y-0 sm:flex sm:flex-row gap-4 justify-center lg:justify-start">
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="group px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300 hover:translate-y-[-2px]">
+                  {/* TODO: Update onClick to open AuthModal with initialTab='signup', initialPlan='trial' */}
+                  <Button className="group bg-accent hover:bg-accent/90 text-accent-foreground px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95">
                     Start 3-Day Free Trial
                     <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
-                  <SignupForm />
+                  {/* Placeholder - This will be replaced by AuthModal */}
+                  <SignupForm /> 
                 </DialogContent>
               </Dialog>
               
-              <Button 
-                onClick={() => navigate('/login')}
-                variant="ghost" 
-                className="border-2 border-dark text-dark hover:bg-dark/5 text-base px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300"
+              {/* TODO: Update onClick to open AuthModal with initialTab='login' */}
+                    <Button 
+                onClick={() => { /* Open AuthModal with initialTab=
+                variant="outline" 
+                className="border-primary text-primary hover:bg-primary/10 text-base px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95"
               >
                 Log In / Go Pro
-              </Button>
+              </Button>Button>
             </div>
             
             <div className="mt-8 flex flex-wrap justify-center lg:justify-start gap-6">

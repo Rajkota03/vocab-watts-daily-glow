@@ -33,25 +33,25 @@ export default {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: '#1E88FF', // spark blue
-          light: '#EDF4FF',   // light primary background
-          foreground: '#ffffff'
+          DEFAULT: "#00A79D", // New Teal from LifeTree reference
+          light: "#E0F2F1",   // Lighter teal for backgrounds
+          foreground: "#ffffff"
         },
         secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))'
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))"
         },
         destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))'
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))"
         },
         muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))'
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))"
         },
         accent: {
-          DEFAULT: '#FFB300', // spark yellow
-          foreground: '#0D1A2E' // dark color for contrast
+          DEFAULT: "#FD7E14", // New Orange from LifeTree reference
+          foreground: "#ffffff" // White text for contrast on orange
         },
         popover: {
           DEFAULT: 'hsl(var(--popover))',

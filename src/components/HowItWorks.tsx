@@ -21,7 +21,7 @@ const HowItWorks = () => {
   ];
 
   return (
-    <section id="how-it-works" className="py-12 md:py-16 bg-white">
+    <section id="how-it-works" className="py-12 md:py-16 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-10">
           <h2 className="text-3xl md:text-4xl font-bold mb-3">How GLINTUP Works</h2>

@@ -3,7 +3,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { crypto } from "https://deno.land/std@0.177.0/crypto/mod.ts";
-import { addDays } from "https://deno.land/x/date_fns@v2.22.1/index.js";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*", // Allow requests from any origin (adjust in production)
@@ -138,7 +138,7 @@ serve(async (req) => {
     }
 
     // --- Update or Create Subscription ---
-    const subscriptionEndDate = addDays(new Date(), 30).toISOString(); // Pro plan lasts 30 days
+    const subscriptionEndDate = new Date(new Date().setDate(new Date().getDate() + 30)).toISOString(); // Pro plan lasts 30 days
 
     const subscriptionData = {
       user_id: userId,

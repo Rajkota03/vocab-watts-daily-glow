@@ -46,7 +46,7 @@ const SampleWords = () => {
           <div className="inline-block mb-3 p-3 bg-primary/10 rounded-full">
             <BookOpen className="w-8 h-8 text-primary" />
           </div>
-          <h2 className="text-4xl font-bold mb-3 text-dark">Sample Word Drop</h2>
+          <h2 className="text-4xl font-bold mb-3 text-gray-800">Sample Word Drop</h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Discover words that transform your language, delivered with wit and wisdom.
           </p>
@@ -58,7 +58,7 @@ const SampleWords = () => {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="rounded-full bg-white shadow-md hover:bg-primary/10"
+              className="rounded-full bg-white shadow-md hover:bg-primary/10 text-primary"
               onClick={prevSlide}
             >
               <ChevronLeft className="h-6 w-6" />
@@ -70,7 +70,7 @@ const SampleWords = () => {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="rounded-full bg-white shadow-md hover:bg-primary/10"
+              className="rounded-full bg-white shadow-md hover:bg-primary/10 text-primary"
               onClick={nextSlide}
             >
               <ChevronRight className="h-6 w-6" />
@@ -92,7 +92,7 @@ const SampleWords = () => {
                   <div className="mb-3">
                     <span className="text-2xl font-bold text-primary">{wordItem.word}</span>
                   </div>
-                  <p className="text-lg font-medium text-dark mb-4">{wordItem.meaning}</p>
+                  <p className="text-lg font-medium text-gray-800 mb-4">{wordItem.meaning}</p>
                   <div className="space-y-4">
                     <div className="text-gray-600">
                       <span className="text-sm font-medium uppercase text-gray-400 tracking-wider">Example:</span><br />
@@ -114,8 +114,8 @@ const SampleWords = () => {
               <button
                 key={index}
                 onClick={() => setActiveIndex(index)}
-                className={`w-2.5 h-2.5 rounded-full ${
-                  activeIndex === index ? 'bg-primary' : 'bg-gray-300'
+                className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${
+                  activeIndex === index ? "bg-primary" : "bg-gray-300 hover:bg-gray-400"
                 }`}
               >
                 <span className="sr-only">Word {index + 1}</span>
@@ -125,8 +125,10 @@ const SampleWords = () => {
           
           {/* CTA */}
           <div className="text-center mt-10">
+            {/* TODO: Update onClick to open AuthModal with initialPlan=\'trial\' */}
             <Button 
-              onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
+              className="bg-accent hover:bg-accent/90 text-accent-foreground"
+              onClick={() => { /* Open AuthModal with initialPlan=\'trial\' */ }}
             >
               Get Your First Words Today
             </Button>
