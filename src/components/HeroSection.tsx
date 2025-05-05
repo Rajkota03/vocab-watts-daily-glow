@@ -44,13 +44,13 @@ const HeroSection = () => {
               </Dialog>
               
               {/* TODO: Update onClick to open AuthModal with initialTab='login' */}
-                    <Button 
-                onClick={() => { /* Open AuthModal with initialTab=
+              <Button 
+                onClick={() => { /* Open AuthModal with initialTab='login' */ }}
                 variant="outline" 
                 className="border-primary text-primary hover:bg-primary/10 text-base px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95"
               >
                 Log In / Go Pro
-              </Button>Button>
+              </Button>
             </div>
             
             <div className="mt-8 flex flex-wrap justify-center lg:justify-start gap-6">
