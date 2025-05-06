@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -57,11 +58,12 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
     if (!msgId) return;
     
     try {
-      // Use a raw query with rpc instead of directly querying the table
-      const { data, error } = await supabase.rpc(
-        'get_whatsapp_message_status',
-        { message_sid_param: msgId }
-      );
+      // Use a raw SQL query instead of rpc since the function might not be in types
+      const { data, error } = await supabase.from('whatsapp_message_status')
+        .select('*')
+        .eq('message_sid', msgId)
+        .order('created_at', { ascending: false })
+        .limit(1);
         
       if (error) {
         console.error("Error checking message status:", error);
