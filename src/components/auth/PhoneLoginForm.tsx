@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -58,22 +57,19 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
     if (!msgId) return;
     
     try {
-      // Use a raw query instead of typed query since the table is not in the types
-      const { data, error } = await supabase
-        .from('whatsapp_message_status')
-        .select('*')
-        .eq('message_sid', msgId)
-        .order('created_at', { ascending: false })
-        .limit(1);
+      // Use a raw query with rpc instead of directly querying the table
+      const { data, error } = await supabase.rpc(
+        'get_whatsapp_message_status',
+        { message_sid_param: msgId }
+      );
         
       if (error) {
         console.error("Error checking message status:", error);
         return;
       }
       
-      // Type assertion since we know the structure
       if (data && data.length > 0) {
-        const statusData = data[0] as WhatsAppMessageStatus;
+        const statusData = data[0] as any;
         console.log("Latest message status:", statusData);
         
         if (statusData.status === 'undelivered') {
