@@ -1,7 +1,8 @@
-
 import React, { useState } from 'react';
 import { BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { motion } from 'framer-motion'; // Import motion
 
 const SampleWords = () => {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -39,47 +40,66 @@ const SampleWords = () => {
     );
   };
 
+  // Animation variants for fade-in effect
+  const fadeIn = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.6, ease: "easeOut" }
+    }
+  };
+
   return (
-    <section id="samples" className="py-12 md:py-16 bg-gray-50">
+    <motion.section 
+      id="samples" 
+      className="py-16 md:py-24 bg-background"
+      initial="hidden" // Start hidden
+      whileInView="visible" // Animate when in view
+      viewport={{ once: true, amount: 0.2 }} // Trigger once, when 20% is visible
+      variants={fadeIn} // Apply fade-in variants
+    >
       <div className="container mx-auto px-4">
-        <div className="text-center mb-10">
-          <div className="inline-block mb-3 p-3 bg-primary/10 rounded-full">
+        {/* Section Title and Description */}
+        <div className="text-center mb-12 md:mb-16">
+          <div className="inline-block mb-4 p-3 bg-primary/10 rounded-full">
             <BookOpen className="w-8 h-8 text-primary" />
           </div>
-          <h2 className="text-4xl font-bold mb-3 text-gray-800">Sample Word Drop</h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold font-poppins mb-4 text-foreground">Sample Word Drop</h2>
+          <p className="text-lg text-secondary-foreground max-w-2xl mx-auto">
             Discover words that transform your language, delivered with wit and wisdom.
           </p>
         </div>
         
-        <div className="max-w-3xl mx-auto relative">
-          {/* Carousel navigation */}
-          <div className="absolute top-1/2 -left-4 md:-left-12 -translate-y-1/2 z-10">
+        {/* Carousel */}
+        <div className="max-w-2xl mx-auto relative">
+          {/* Carousel navigation (Mobile friendly positioning) */}
+          <div className="absolute top-1/2 -left-3 md:-left-10 transform -translate-y-1/2 z-10">
             <Button 
-              variant="ghost" 
+              variant="outline" 
               size="icon" 
-              className="rounded-full bg-white shadow-md hover:bg-primary/10 text-primary"
+              className="rounded-full bg-card shadow-md hover:bg-muted/50 border-border/50 text-foreground"
               onClick={prevSlide}
             >
-              <ChevronLeft className="h-6 w-6" />
+              <ChevronLeft className="h-5 w-5" />
               <span className="sr-only">Previous word</span>
             </Button>
           </div>
           
-          <div className="absolute top-1/2 -right-4 md:-right-12 -translate-y-1/2 z-10">
+          <div className="absolute top-1/2 -right-3 md:-right-10 transform -translate-y-1/2 z-10">
             <Button 
-              variant="ghost" 
+              variant="outline" 
               size="icon" 
-              className="rounded-full bg-white shadow-md hover:bg-primary/10 text-primary"
+              className="rounded-full bg-card shadow-md hover:bg-muted/50 border-border/50 text-foreground"
               onClick={nextSlide}
             >
-              <ChevronRight className="h-6 w-6" />
+              <ChevronRight className="h-5 w-5" />
               <span className="sr-only">Next word</span>
             </Button>
           </div>
           
-          {/* Carousel */}
-          <div className="overflow-hidden rounded-xl shadow-lg">
+          {/* Carousel Content */}
+          <div className="overflow-hidden">
             <div 
               className="flex transition-transform duration-500 ease-in-out" 
               style={{ transform: `translateX(-${activeIndex * 100}%)` }}
@@ -87,22 +107,26 @@ const SampleWords = () => {
               {words.map((wordItem, index) => (
                 <div 
                   key={index} 
-                  className="min-w-full bg-white p-6 md:p-8"
+                  className="min-w-full flex-shrink-0 px-1" // Added padding for spacing between potential cards
                 >
-                  <div className="mb-3">
-                    <span className="text-2xl font-bold text-primary">{wordItem.word}</span>
-                  </div>
-                  <p className="text-lg font-medium text-gray-800 mb-4">{wordItem.meaning}</p>
-                  <div className="space-y-4">
-                    <div className="text-gray-600">
-                      <span className="text-sm font-medium uppercase text-gray-400 tracking-wider">Example:</span><br />
-                      {wordItem.example}
-                    </div>
-                    <div className="text-gray-600 italic border-l-3 border-primary pl-4">
-                      <span className="text-sm font-medium uppercase text-gray-400 tracking-wider">Witty Use:</span><br />
-                      {wordItem.wittyExample}
-                    </div>
-                  </div>
+                  <Card className="bg-card border-border/50 shadow-sm overflow-hidden">
+                    <CardContent className="p-6 md:p-8">
+                      <div className="mb-4">
+                        <span className="text-2xl md:text-3xl font-semibold font-poppins text-primary">{wordItem.word}</span>
+                      </div>
+                      <p className="text-base md:text-lg font-medium text-foreground mb-5">{wordItem.meaning}</p>
+                      <div className="space-y-4">
+                        <div className="text-secondary-foreground text-sm md:text-base">
+                          <span className="text-xs font-medium uppercase text-muted-foreground tracking-wider block mb-1">Example:</span>
+                          {wordItem.example}
+                        </div>
+                        <div className="text-secondary-foreground text-sm md:text-base italic border-l-3 border-accent pl-3">
+                          <span className="text-xs font-medium uppercase text-muted-foreground tracking-wider block mb-1 not-italic">Witty Use:</span>
+                          {wordItem.wittyExample}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               ))}
             </div>
@@ -114,29 +138,19 @@ const SampleWords = () => {
               <button
                 key={index}
                 onClick={() => setActiveIndex(index)}
-                className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${
-                  activeIndex === index ? "bg-primary" : "bg-gray-300 hover:bg-gray-400"
+                className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                  activeIndex === index ? "bg-primary" : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
                 }`}
               >
                 <span className="sr-only">Word {index + 1}</span>
               </button>
             ))}
           </div>
-          
-          {/* CTA */}
-          <div className="text-center mt-10">
-            {/* TODO: Update onClick to open AuthModal with initialPlan=\'trial\' */}
-            <Button 
-              className="bg-accent hover:bg-accent/90 text-accent-foreground"
-              onClick={() => { /* Open AuthModal with initialPlan=\'trial\' */ }}
-            >
-              Get Your First Words Today
-            </Button>
-          </div>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 };
 
 export default SampleWords;
+

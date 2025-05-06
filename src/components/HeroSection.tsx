@@ -1,84 +1,73 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle } from 'lucide-react';
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import SignupForm from './SignupForm';
-import { useNavigate } from 'react-router-dom';
+// import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"; // Temporarily commented out
+// import SignupForm from './SignupForm'; // Temporarily commented out
 
 const HeroSection = () => {
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  const navigate = useNavigate();
-  
+  // const [isDialogOpen, setIsDialogOpen] = React.useState(false); // Temporarily commented out
+
   return (
-    <section className="min-h-screen py-24 md:py-0 flex items-center bg-gradient-to-br from-white to-primary/10 overflow-hidden">
+    <section 
+      id="hero" 
+      className="min-h-screen py-20 md:py-28 flex items-center bg-gradient-to-br from-primary-light/30 via-white to-white overflow-hidden"
+    >
       <div className="container mx-auto px-4">
-        <div className="flex flex-col lg:flex-row gap-12 items-center">
-          <div className="flex-1 text-center lg:text-left px-[49px]">
-            <div className="inline-flex items-center mb-6 py-1.5 rounded-full text-dark text-sm font-medium shadow-sm bg-green-500 px-[13px]">
-              <img src="/lovable-uploads/164886d6-c431-4caf-9f94-f4729aa2698b.png" alt="WhatsApp" className="w-5 h-5 mr-2" />
-              <span className="font-bold">Learn directly on Whatsapp</span>
+        <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-center">
+          {/* Text Content */}
+          <div className="flex-1 text-center lg:text-left max-w-2xl mx-auto lg:mx-0">
+            <div className="inline-flex items-center mb-5 py-1 px-3 rounded-full bg-accent-light text-accent-foreground text-sm font-medium shadow-sm">
+              <img src="/lovable-uploads/164886d6-c431-4caf-9f94-f4729aa2698b.png" alt="WhatsApp" className="w-4 h-4 mr-1.5" />
+              Learn directly on WhatsApp
             </div>
             
-            <h1 className="sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6 text-2xl px-0 mx-0">
-              5 fresh words every day—<br />straight to WhatsApp.
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold font-poppins leading-tight tracking-tight mb-5 text-foreground">
+              5 fresh words <span className="text-primary">every day</span>—<br />straight to WhatsApp.
             </h1>
             
-            <p className="text-lg text-dark/80 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+            <p className="text-lg text-secondary-foreground mb-8 leading-relaxed">
               No apps. No boring word lists. Just vocabulary that sticks.
             </p>
             
-            <div className="space-y-4 sm:space-y-0 sm:flex sm:flex-row gap-4 justify-center lg:justify-start">
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  {/* TODO: Update onClick to open AuthModal with initialTab='signup', initialPlan='trial' */}
-                  <Button className="group bg-accent hover:bg-accent/90 text-accent-foreground px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95">
-                    Start 3-Day Free Trial
-                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  {/* Placeholder - This will be replaced by AuthModal */}
-                  <SignupForm /> 
-                </DialogContent>
-              </Dialog>
-              
-              {/* TODO: Update onClick to open AuthModal with initialTab='login' */}
+            {/* Call to Action Buttons - Simplified */}
+            <div className="space-y-3 sm:space-y-0 sm:flex sm:flex-row gap-4 justify-center lg:justify-start">
+              {/* Temporarily replace Dialog with a simple button */}
               <Button 
-                onClick={() => { /* Open AuthModal with initialTab='login' */ }}
-                variant="outline" 
-                className="border-primary text-primary hover:bg-primary/10 text-base px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95"
+                size="lg" 
+                className="group bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 w-full sm:w-auto transition-all duration-300 shadow-md hover:shadow-lg active:scale-95"
               >
-                Log In / Go Pro
+                Start 3-Day Free Trial (Test)
+                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
             </div>
             
-            <div className="mt-8 flex flex-wrap justify-center lg:justify-start gap-6">
-              <div className="flex items-center text-sm text-gray-500 bg-white/80 rounded-full px-3 py-1.5 shadow-sm">
-                <CheckCircle className="h-5 w-5 text-primary mr-2" />
-                <span>Verified WhatsApp number</span>
+            {/* Feature Highlights */}
+            <div className="mt-10 flex flex-col sm:flex-row flex-wrap justify-center lg:justify-start gap-x-6 gap-y-3">
+              <div className="flex items-center text-sm text-secondary-foreground">
+                <CheckCircle className="h-4 w-4 text-accent mr-1.5 flex-shrink-0" />
+                Verified WhatsApp number
               </div>
-              <div className="flex items-center text-sm text-gray-500 bg-white/80 rounded-full px-3 py-1.5 shadow-sm">
-                <CheckCircle className="h-5 w-5 text-accent mr-2" />
-                <span>Free 3-day trial</span>
+              <div className="flex items-center text-sm text-secondary-foreground">
+                <CheckCircle className="h-4 w-4 text-accent mr-1.5 flex-shrink-0" />
+                Free 3-day trial
               </div>
-              <div className="flex items-center text-sm text-gray-500 bg-white/80 rounded-full px-3 py-1.5 shadow-sm">
-                <CheckCircle className="h-5 w-5 text-primary mr-2" />
-                <span>Cancel anytime</span>
+              <div className="flex items-center text-sm text-secondary-foreground">
+                <CheckCircle className="h-4 w-4 text-accent mr-1.5 flex-shrink-0" />
+                Cancel anytime
               </div>
             </div>
           </div>
           
-          <div className="flex-1 max-w-md hidden lg:block">
+          {/* Signup Form Card (Temporarily commented out) */}
+          {/* 
+          <div className="flex-1 max-w-md w-full hidden lg:block">
             <div className="relative">
-              <div className="absolute -top-8 -left-8 w-20 h-20 bg-primary/10 rounded-full blur-xl"></div>
-              <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-dark/10 rounded-full blur-xl"></div>
-              
-              <div className="relative bg-white rounded-2xl shadow-xl p-8 border border-gray-100 px-[24px]">
+              <div className="relative bg-card rounded-xl shadow-lg p-6 border border-border/50">
                 <SignupForm />
               </div>
             </div>
           </div>
+          */}
         </div>
       </div>
     </section>
@@ -86,3 +75,4 @@ const HeroSection = () => {
 };
 
 export default HeroSection;
+
