@@ -39,6 +39,7 @@ serve(async (req) => {
     const contentType = req.headers.get('content-type') || '';
     const signature = req.headers.get('x-twilio-signature');
     const url = req.url; // Full request URL
+    const sourceIp = req.headers.get('x-forwarded-for') || 'unknown';
 
     // --- Handle GET for Webhook Verification (No signature validation needed for this) ---
     if (req.method === 'GET') {
@@ -74,7 +75,8 @@ serve(async (req) => {
       if (!formData) {
         console.error("Could not parse form data");
         return new Response(JSON.stringify({ success: false, error: "Could not parse form data" }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          status: 200, // Return 200 even for errors to prevent Twilio retries
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
 
@@ -91,7 +93,7 @@ serve(async (req) => {
         console.log(`Processing status update for message ${params.MessageSid}: ${params.MessageStatus}`);
         
         try {
-          // Store the status update in whatsapp_message_status table (we'll create this table)
+          // Store the status update in whatsapp_message_status table
           const { error } = await supabaseAdmin
             .from('whatsapp_message_status')
             .insert({
@@ -99,9 +101,11 @@ serve(async (req) => {
               status: params.MessageStatus,
               error_code: params.ErrorCode || null,
               error_message: params.ErrorMessage || null,
-              to: params.To || null,
-              from: params.From || null,
+              to_number: params.To || null,
+              from_number: params.From || null,
               api_version: params.ApiVersion || null,
+              request_method: req.method,
+              source_ip: sourceIp,
               raw_data: params
             });
 
@@ -115,7 +119,7 @@ serve(async (req) => {
           // Continue processing even if storage fails
         }
         
-        // Always respond with 200 OK to Twilio
+        // Always respond with 200 OK to Twilio status callbacks
         return new Response(JSON.stringify({ success: true }), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -157,8 +161,9 @@ serve(async (req) => {
         }
       } catch (e) {
         console.error("Error parsing JSON:", e);
+        // Always return 200 OK even for errors to prevent Twilio retries
         return new Response(JSON.stringify({ success: false, error: "Invalid JSON" }), {
-          status: 400,
+          status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
@@ -192,7 +197,7 @@ serve(async (req) => {
       }
     }
 
-    // Always respond with 200 OK to acknowledge receipt
+    // Always respond with 200 OK to acknowledge receipt for all webhook events
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

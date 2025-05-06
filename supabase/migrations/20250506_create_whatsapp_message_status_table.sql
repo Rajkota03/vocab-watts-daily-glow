@@ -6,9 +6,11 @@ CREATE TABLE IF NOT EXISTS public.whatsapp_message_status (
   status TEXT NOT NULL,
   error_code TEXT,
   error_message TEXT,
-  to_number TEXT,
+  to_number TEXT NOT NULL,
   from_number TEXT,
   api_version TEXT,
+  request_method TEXT,
+  source_ip TEXT,
   raw_data JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );

@@ -151,6 +151,12 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
           <AlertDescription className="text-xs">
             Message ID: {debugInfo.messageId}<br/>
             Status: {debugInfo.status}
+            {debugInfo.webhookUrl && (
+              <>
+                <br/>
+                Webhook URL: {debugInfo.webhookUrl}
+              </>
+            )}
           </AlertDescription>
         </Alert>
       )}
