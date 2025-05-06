@@ -19,6 +19,18 @@ interface PhoneLoginFormProps {
   onLoginSuccess: () => void;
 }
 
+// Define interfaces for message status
+interface WhatsAppMessageStatus {
+  id: string;
+  message_sid: string;
+  status: string;
+  error_code?: string;
+  error_message?: string;
+  to_number: string;
+  from_number?: string;
+  created_at: string;
+}
+
 export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }) => {
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
@@ -46,6 +58,7 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
     if (!msgId) return;
     
     try {
+      // Use a raw query instead of typed query since the table is not in the types
       const { data, error } = await supabase
         .from('whatsapp_message_status')
         .select('*')
@@ -58,10 +71,13 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
         return;
       }
       
+      // Type assertion since we know the structure
       if (data && data.length > 0) {
-        console.log("Latest message status:", data[0]);
-        if (data[0].status === 'undelivered') {
-          setError(`Message delivery failed: ${data[0].error_message || 'The message could not be delivered to WhatsApp'}`);
+        const statusData = data[0] as WhatsAppMessageStatus;
+        console.log("Latest message status:", statusData);
+        
+        if (statusData.status === 'undelivered') {
+          setError(`Message delivery failed: ${statusData.error_message || 'The message could not be delivered to WhatsApp'}`);
         }
       }
     } catch (e) {
