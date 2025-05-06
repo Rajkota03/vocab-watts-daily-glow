@@ -41,7 +41,10 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
       console.log("Sending OTP to:", formattedPhone);
       
       const { data, error } = await supabase.functions.invoke('send-otp', {
-        body: { phoneNumber: formattedPhone }
+        body: { 
+          phoneNumber: formattedPhone,
+          templateId: import.meta.env.VITE_WHATSAPP_TEMPLATE_SID // Optional template ID from environment
+        }
       });
 
       if (error) throw new Error(error.message);

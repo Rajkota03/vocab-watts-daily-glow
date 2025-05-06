@@ -19,6 +19,7 @@ serve(async (req) => {
     const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN");
     const twilioFromNumber = Deno.env.get("TWILIO_FROM_NUMBER");
     const messagingServiceSid = Deno.env.get("TWILIO_MESSAGING_SERVICE_SID");
+    const defaultTemplateSid = Deno.env.get("WHATSAPP_TEMPLATE_SID");
     const verifyToken = Deno.env.get("WHATSAPP_VERIFY_TOKEN");
 
     // Debug credential check
@@ -27,7 +28,8 @@ serve(async (req) => {
       authToken: twilioAuthToken ? "present (hidden)" : "missing",
       fromNumber: twilioFromNumber ? "present" : "missing",
       verifyToken: verifyToken ? "present" : "missing",
-      messagingServiceSid: messagingServiceSid ? `${messagingServiceSid.substring(0, 5)}...` : "missing"
+      messagingServiceSid: messagingServiceSid ? `${messagingServiceSid.substring(0, 5)}...` : "missing",
+      templateSid: defaultTemplateSid ? `${defaultTemplateSid.substring(0, 5)}...` : "missing"
     });
 
     // Early return for configuration check requests
@@ -40,6 +42,7 @@ serve(async (req) => {
         twilioConfigured: !!(twilioAccountSid && twilioAuthToken),
         fromNumberConfigured: !!twilioFromNumber,
         messagingServiceConfigured: !!messagingServiceSid,
+        templateSidConfigured: !!defaultTemplateSid,
         verifyTokenConfigured: !!verifyToken,
         configStatus: {
           accountSid: twilioAccountSid ? `${twilioAccountSid.substring(0, 6)}...` : null,
@@ -115,7 +118,18 @@ serve(async (req) => {
     }
 
     // --- Parse WhatsApp message request ---
-    const { to, message, messageType, category, userId, isPro, sendImmediately, firstName } = requestData;
+    const { 
+      to, 
+      message, 
+      messageType, 
+      templateId, 
+      templateValues,
+      category, 
+      userId, 
+      isPro, 
+      sendImmediately, 
+      firstName 
+    } = requestData;
 
     // Debug logging
     console.log("WhatsApp request received:", { 
@@ -123,6 +137,8 @@ serve(async (req) => {
       messageType,
       category, 
       isPro, 
+      templateId: templateId || defaultTemplateSid,
+      templateValues: templateValues ? "present" : "not provided",
       scheduledTime: requestData.scheduledTime,
       sendImmediately,
       debugMode: requestData.debugMode,
@@ -137,8 +153,8 @@ serve(async (req) => {
       throw new Error("Recipient phone number is required");
     }
     
-    if (!message && !messageType) {
-      throw new Error("Message content or message type is required");
+    if (!message && !messageType && !templateId && !defaultTemplateSid) {
+      throw new Error("Either message content, message type, or template ID is required");
     }
 
     // --- Process phone number format ---
@@ -198,7 +214,25 @@ serve(async (req) => {
       formData.append("From", formatWhatsAppNumber(twilioFromNumber!));
     }
     
-    formData.append("Body", finalMessage);
+    // Check if we should use a template
+    const useTemplate = templateId || defaultTemplateSid;
+    if (useTemplate) {
+      console.log(`Using template: ${templateId || defaultTemplateSid}`);
+      formData.append("ContentSid", templateId || defaultTemplateSid!);
+      
+      // Add template variables if provided
+      if (templateValues) {
+        console.log("Adding template values:", templateValues);
+        Object.entries(templateValues).forEach(([key, value], index) => {
+          formData.append(`ContentVariables`, JSON.stringify({
+            [key]: value
+          }));
+        });
+      }
+    } else {
+      // Use regular body if no template
+      formData.append("Body", finalMessage);
+    }
 
     // Log the API request details (but not the full auth token)
     console.log("Twilio API request:", {
@@ -206,7 +240,8 @@ serve(async (req) => {
       to: formattedTo,
       messagingService: useMessagingService ? messagingServiceSid : undefined,
       from: useMessagingService ? "using messaging service" : formatWhatsAppNumber(twilioFromNumber!),
-      messageLength: finalMessage.length
+      template: useTemplate || "none",
+      messageLength: finalMessage ? finalMessage.length : 0
     });
 
     // Make the API request to Twilio
@@ -245,6 +280,8 @@ serve(async (req) => {
       details: twilioData,
       usingMessagingService: useMessagingService,
       messagingServiceSid: useMessagingService ? messagingServiceSid : undefined,
+      usingTemplate: !!useTemplate,
+      templateSid: useTemplate || undefined,
       usingMetaIntegration: true,
       to: formattedTo,
       from: useMessagingService ? "via messaging service" : formatWhatsAppNumber(twilioFromNumber!),

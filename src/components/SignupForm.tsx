@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +42,10 @@ const SignupForm = () => {
       
       // Call the send-otp function
       const { data, error } = await supabase.functions.invoke('send-otp', {
-        body: { phoneNumber: formattedPhone }
+        body: { 
+          phoneNumber: formattedPhone,
+          templateId: import.meta.env.VITE_WHATSAPP_TEMPLATE_SID // Optional template ID
+        }
       });
 
       if (error || !data?.success) {

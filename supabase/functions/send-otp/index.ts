@@ -16,7 +16,7 @@ serve(async (req) => {
   }
 
   try {
-    const { phoneNumber } = await req.json();
+    const { phoneNumber, templateId } = await req.json();
 
     if (!phoneNumber) {
       throw new Error("Phone number is required.");
@@ -71,6 +71,11 @@ serve(async (req) => {
         body: {
           to: formattedPhone,
           message: otpMessage,
+          templateId: templateId || Deno.env.get("WHATSAPP_TEMPLATE_SID"), // Use provided templateId or env variable
+          templateValues: {
+            otp: otp,
+            expiryMinutes: "10"
+          }
         },
       }
     );
