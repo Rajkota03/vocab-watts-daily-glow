@@ -24,7 +24,10 @@ function parseFormDataFromText(text: string): URLSearchParams | null {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      status: 200,  // Ensure OPTIONS requests return 200
+      headers: corsHeaders 
+    });
   }
 
   try {
@@ -56,15 +59,25 @@ serve(async (req) => {
         return new Response(challenge, { status: 200, headers: { ...corsHeaders, 'Content-Type': 'text/plain' } });
       } else {
         console.error('Failed to verify webhook:', { mode, tokenMatch: token === verifyToken, challenge });
-        return new Response('Verification failed', { status: 403, headers: { ...corsHeaders, 'Content-Type': 'text/plain' } });
+        // IMPORTANT: Return 200 even for verification failures to prevent retry loops
+        return new Response('Verification failed', { status: 200, headers: { ...corsHeaders, 'Content-Type': 'text/plain' } });
       }
     }
 
     // --- For POST requests, first initialize Supabase client ---
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("Missing Supabase credentials. Cannot proceed.");
+      // Still return 200 to acknowledge receipt
+      return new Response(JSON.stringify({ success: false, error: "Server misconfigured" }), {
+        status: 200, // Return 200 even for errors to prevent Twilio retries
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
 
     // --- Process based on content type ---
     let messageData: any = null;
@@ -111,6 +124,7 @@ serve(async (req) => {
 
           if (error) {
             console.error("Error storing message status:", error);
+            // Continue processing even if storage fails
           } else {
             console.log("Successfully stored message status");
           }
@@ -119,7 +133,7 @@ serve(async (req) => {
           // Continue processing even if storage fails
         }
         
-        // Always respond with 200 OK to Twilio status callbacks
+        // IMPORTANT: Always respond with 200 OK to Twilio status callbacks
         return new Response(JSON.stringify({ success: true }), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -161,7 +175,7 @@ serve(async (req) => {
         }
       } catch (e) {
         console.error("Error parsing JSON:", e);
-        // Always return 200 OK even for errors to prevent Twilio retries
+        // Always return 200 OK even for errors to prevent retries
         return new Response(JSON.stringify({ success: false, error: "Invalid JSON" }), {
           status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -176,28 +190,35 @@ serve(async (req) => {
     if (messageData) {
       try {
         console.log("Storing incoming message:", messageData);
-        const { error } = await supabaseAdmin
-          .from('whatsapp_messages')
-          .insert({
-            from_number: messageData.from,
-            message: messageData.body,
-            media_url: messageData.mediaUrl,
-            provider: messageData.provider,
-            provider_message_id: messageData.provider_message_id
-          });
+        
+        // Check if whatsapp_messages table exists
+        try {
+          const { error } = await supabaseAdmin
+            .from('whatsapp_messages')
+            .insert({
+              from_number: messageData.from,
+              message: messageData.body,
+              media_url: messageData.mediaUrl,
+              provider: messageData.provider,
+              provider_message_id: messageData.provider_message_id
+            });
 
-        if (error) {
-          console.error("Error storing message:", error);
-        } else {
-          console.log("Message stored successfully");
+          if (error) {
+            console.error("Error storing message:", error);
+          } else {
+            console.log("Message stored successfully");
+          }
+        } catch (e) {
+          console.error("Exception storing message:", e);
+          // If table doesn't exist, log the error but don't fail the webhook
+          console.log("Table 'whatsapp_messages' might not exist. This is non-critical.");
         }
       } catch (e) {
-        console.error("Exception storing message:", e);
-        // Continue processing - we still want to acknowledge the webhook
+        console.error("Exception in message handling:", e);
       }
     }
 
-    // Always respond with 200 OK to acknowledge receipt for all webhook events
+    // IMPORTANT: Always respond with 200 OK to acknowledge receipt for all webhook events
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -205,7 +226,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Unexpected error in WhatsApp webhook:', error);
-    // Always return 200 OK even on errors to prevent retry loops
+    // CRITICAL: Always return 200 OK even on errors to prevent retry loops
     return new Response(
       JSON.stringify({ success: false, error: error.message || 'Internal Server Error' }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
