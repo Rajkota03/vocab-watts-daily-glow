@@ -311,6 +311,19 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_whatsapp_message_status: {
+        Args: { message_sid_param: string }
+        Returns: {
+          id: string
+          message_sid: string
+          status: string
+          error_code: string
+          error_message: string
+          to_number: string
+          from_number: string
+          created_at: string
+        }[]
+      }
       has_role: {
         Args: {
           _user_id: string
