@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Loader2, AlertCircle, Check } from 'lucide-react';
+import { Loader2, AlertCircle, Check, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -21,11 +21,13 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
   const { toast } = useToast();
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setDebugInfo(null);
     
     // Basic validation
     if (!phone) {
@@ -40,16 +42,23 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
     try {
       console.log("Sending OTP to:", formattedPhone);
       
+      // Get template ID from environment or use default
+      const templateId = import.meta.env.VITE_WHATSAPP_TEMPLATE_SID || undefined;
+      console.log("Using template ID:", templateId || "None specified (will use server default)");
+      
       const { data, error } = await supabase.functions.invoke('send-otp', {
         body: { 
           phoneNumber: formattedPhone,
-          templateId: import.meta.env.VITE_WHATSAPP_TEMPLATE_SID // Optional template ID from environment
+          templateId: templateId // Optional template ID from environment
         }
       });
 
       if (error) throw new Error(error.message);
       if (!data?.success) throw new Error(data?.error || 'Failed to send OTP.');
 
+      // Store debug information
+      setDebugInfo(data);
+      
       setOtpSent(true);
       setSuccess("OTP sent! Check your WhatsApp for the verification code.");
       toast({ 
@@ -136,6 +145,16 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
         </Alert>
       )}
 
+      {debugInfo && (
+        <Alert variant="default" className="bg-blue-50 text-blue-800 border-blue-200">
+          <Info className="h-4 w-4" />
+          <AlertDescription className="text-xs">
+            Message ID: {debugInfo.messageId}<br/>
+            Status: {debugInfo.status}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <form onSubmit={otpSent ? handleVerifyOtp : handleSendOtp} className="space-y-4">
         {!otpSent ? (
           <div className="space-y-2">
@@ -196,7 +215,7 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
             <Button 
               variant="link" 
               type="button" 
-              onClick={() => { setOtpSent(false); setOtp(''); setSuccess(null); }} 
+              onClick={() => { setOtpSent(false); setOtp(''); setSuccess(null); setDebugInfo(null); }} 
               className="text-sm text-[#9b87f5] w-full"
               disabled={isVerifying}
             >
