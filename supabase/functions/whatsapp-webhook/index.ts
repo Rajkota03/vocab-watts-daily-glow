@@ -1,6 +1,4 @@
 
-// /home/ubuntu/glintup_project/supabase/functions/whatsapp-webhook/index.ts
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 // Import Twilio helper library for signature validation
@@ -19,6 +17,161 @@ function parseFormDataFromText(text: string): URLSearchParams | null {
     console.error("Error parsing form data from text:", e);
     return null;
   }
+}
+
+// Helper function to convert form data to an object
+function formDataToObject(formData: URLSearchParams): Record<string, string> {
+  const params: Record<string, string> = {};
+  formData.forEach((value, key) => {
+    params[key] = value;
+  });
+  return params;
+}
+
+// Create response helper with consistent format
+function createResponse(data: any, status = 200): Response {
+  return new Response(
+    JSON.stringify(data), 
+    { 
+      status, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    }
+  );
+}
+
+// Handle webhook verification for WhatsApp
+async function handleWebhookVerification(url: URL) {
+  const mode = url.searchParams.get('hub.mode');
+  const token = url.searchParams.get('hub.verify_token');
+  const challenge = url.searchParams.get('hub.challenge');
+
+  console.log('WhatsApp webhook verification attempt:', { mode, tokenProvided: !!token, challengeProvided: !!challenge });
+
+  const verifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN');
+  if (mode === 'subscribe' && token === verifyToken && challenge) {
+    console.log('WhatsApp webhook verified successfully.');
+    return new Response(challenge, { status: 200, headers: { ...corsHeaders, 'Content-Type': 'text/plain' } });
+  } else {
+    console.error('Failed to verify webhook:', { mode, tokenMatch: token === verifyToken, challenge });
+    // IMPORTANT: Return 200 even for verification failures to prevent retry loops
+    return new Response('Verification failed', { status: 200, headers: { ...corsHeaders, 'Content-Type': 'text/plain' } });
+  }
+}
+
+// Handle message status updates from Twilio
+async function handleMessageStatus(params: Record<string, string>, supabaseAdmin: any, sourceIp: string) {
+  console.log(`Processing status update for message ${params.MessageSid}: ${params.MessageStatus}`);
+  
+  try {
+    // Store the status update in whatsapp_message_status table
+    const { error } = await supabaseAdmin
+      .from('whatsapp_message_status')
+      .insert({
+        message_sid: params.MessageSid,
+        status: params.MessageStatus,
+        error_code: params.ErrorCode || null,
+        error_message: params.ErrorMessage || null,
+        to_number: params.To || null,
+        from_number: params.From || null,
+        api_version: params.ApiVersion || null,
+        request_method: 'POST', // We know this is a POST for status callbacks
+        source_ip: sourceIp,
+        raw_data: params
+      });
+
+    if (error) {
+      console.error("Error storing message status:", error);
+    } else {
+      console.log("Successfully stored message status");
+    }
+  } catch (e) {
+    console.error("Exception processing status update:", e);
+  }
+  
+  // IMPORTANT: Always respond with 200 OK to Twilio status callbacks
+  return createResponse({ success: true });
+}
+
+// Parse and process incoming WhatsApp message from Twilio (form encoded)
+function processTwilioIncomingMessage(params: Record<string, string>): any {
+  if (params.Body) {
+    return {
+      from: params.From || params.WaId,
+      body: params.Body,
+      mediaUrl: params.MediaUrl0, // Twilio uses numbered media URLs
+      provider: 'twilio',
+      provider_message_id: params.SmsMessageSid || params.MessageSid
+    };
+  }
+  return null;
+}
+
+// Parse and process incoming WhatsApp message from Meta/WhatsApp API (JSON)
+function processMetaIncomingMessage(body: any): any {
+  if (body.entry && body.entry.length > 0) {
+    const entry = body.entry[0];
+    if (entry.changes && entry.changes.length > 0) {
+      const change = entry.changes[0];
+      if (change.value && change.value.messages && change.value.messages.length > 0) {
+        const message = change.value.messages[0];
+        return {
+          from: message.from,
+          body: message.text?.body || '',
+          mediaUrl: message.image?.id || message.video?.id || message.audio?.id || message.document?.id || null,
+          provider: 'meta',
+          provider_message_id: message.id
+        };
+      }
+    }
+  }
+  return null;
+}
+
+// Store incoming message in the database
+async function storeIncomingMessage(messageData: any, supabaseAdmin: any) {
+  if (!messageData) return;
+
+  try {
+    console.log("Storing incoming message:", messageData);
+    
+    // Check if whatsapp_messages table exists
+    try {
+      const { error } = await supabaseAdmin
+        .from('whatsapp_messages')
+        .insert({
+          from_number: messageData.from,
+          message: messageData.body,
+          media_url: messageData.mediaUrl,
+          provider: messageData.provider,
+          provider_message_id: messageData.provider_message_id
+        });
+
+      if (error) {
+        console.error("Error storing message:", error);
+      } else {
+        console.log("Message stored successfully");
+      }
+    } catch (e) {
+      console.error("Exception storing message:", e);
+      // If table doesn't exist, log the error but don't fail the webhook
+      console.log("Table 'whatsapp_messages' might not exist. This is non-critical.");
+    }
+  } catch (e) {
+    console.error("Exception in message handling:", e);
+  }
+}
+
+// Initialize Supabase client
+function initializeSupabase(): any {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.error("Missing Supabase credentials. Cannot proceed.");
+    throw new Error("Server misconfigured: Missing Supabase credentials");
+  }
+
+  return createClient(supabaseUrl, supabaseKey);
 }
 
 serve(async (req) => {
@@ -46,38 +199,11 @@ serve(async (req) => {
 
     // --- Handle GET for Webhook Verification (No signature validation needed for this) ---
     if (req.method === 'GET') {
-      const getUrl = new URL(req.url);
-      const mode = getUrl.searchParams.get('hub.mode');
-      const token = getUrl.searchParams.get('hub.verify_token');
-      const challenge = getUrl.searchParams.get('hub.challenge');
-
-      console.log('WhatsApp webhook verification attempt:', { mode, tokenProvided: !!token, challengeProvided: !!challenge });
-
-      const verifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN');
-      if (mode === 'subscribe' && token === verifyToken && challenge) {
-        console.log('WhatsApp webhook verified successfully.');
-        return new Response(challenge, { status: 200, headers: { ...corsHeaders, 'Content-Type': 'text/plain' } });
-      } else {
-        console.error('Failed to verify webhook:', { mode, tokenMatch: token === verifyToken, challenge });
-        // IMPORTANT: Return 200 even for verification failures to prevent retry loops
-        return new Response('Verification failed', { status: 200, headers: { ...corsHeaders, 'Content-Type': 'text/plain' } });
-      }
+      return await handleWebhookVerification(new URL(req.url));
     }
 
     // --- For POST requests, first initialize Supabase client ---
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error("Missing Supabase credentials. Cannot proceed.");
-      // Still return 200 to acknowledge receipt
-      return new Response(JSON.stringify({ success: false, error: "Server misconfigured" }), {
-        status: 200, // Return 200 even for errors to prevent Twilio retries
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+    const supabaseAdmin = initializeSupabase();
 
     // --- Process based on content type ---
     let messageData: any = null;
@@ -87,99 +213,32 @@ serve(async (req) => {
       const formData = parseFormDataFromText(rawBody);
       if (!formData) {
         console.error("Could not parse form data");
-        return new Response(JSON.stringify({ success: false, error: "Could not parse form data" }), {
-          status: 200, // Return 200 even for errors to prevent Twilio retries
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
+        return createResponse({ success: false, error: "Could not parse form data" }, 200);
       }
 
       // Convert form data to an object for easier handling
-      const params: Record<string, string> = {};
-      formData.forEach((value, key) => {
-        params[key] = value;
-      });
+      const params = formDataToObject(formData);
       
       console.log("Parsed form data:", params);
 
       // Handle status callbacks from Twilio (presence of MessageSid and MessageStatus indicates status update)
       if (params.MessageSid && params.MessageStatus) {
-        console.log(`Processing status update for message ${params.MessageSid}: ${params.MessageStatus}`);
-        
-        try {
-          // Store the status update in whatsapp_message_status table
-          const { error } = await supabaseAdmin
-            .from('whatsapp_message_status')
-            .insert({
-              message_sid: params.MessageSid,
-              status: params.MessageStatus,
-              error_code: params.ErrorCode || null,
-              error_message: params.ErrorMessage || null,
-              to_number: params.To || null,
-              from_number: params.From || null,
-              api_version: params.ApiVersion || null,
-              request_method: req.method,
-              source_ip: sourceIp,
-              raw_data: params
-            });
-
-          if (error) {
-            console.error("Error storing message status:", error);
-            // Continue processing even if storage fails
-          } else {
-            console.log("Successfully stored message status");
-          }
-        } catch (e) {
-          console.error("Exception processing status update:", e);
-          // Continue processing even if storage fails
-        }
-        
-        // IMPORTANT: Always respond with 200 OK to Twilio status callbacks
-        return new Response(JSON.stringify({ success: true }), {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
+        return await handleMessageStatus(params, supabaseAdmin, sourceIp);
       }
       
       // If it's an incoming message from Twilio (in form encoded format)
-      else if (params.Body) {
-        messageData = {
-          from: params.From || params.WaId,
-          body: params.Body,
-          mediaUrl: params.MediaUrl0, // Twilio uses numbered media URLs
-          provider: 'twilio',
-          provider_message_id: params.SmsMessageSid || params.MessageSid
-        };
-      }
+      messageData = processTwilioIncomingMessage(params);
     }
     // Handle JSON data from Meta/WhatsApp
     else if (contentType.includes('application/json')) {
       try {
         const body = JSON.parse(rawBody);
         console.log("Parsed JSON body:", JSON.stringify(body).substring(0, 200));
-        
-        if (body.entry && body.entry.length > 0) {
-          const entry = body.entry[0];
-          if (entry.changes && entry.changes.length > 0) {
-            const change = entry.changes[0];
-            if (change.value && change.value.messages && change.value.messages.length > 0) {
-              const message = change.value.messages[0];
-              messageData = {
-                from: message.from,
-                body: message.text?.body || '',
-                mediaUrl: message.image?.id || message.video?.id || message.audio?.id || message.document?.id || null,
-                provider: 'meta',
-                provider_message_id: message.id
-              };
-            }
-          }
-        }
+        messageData = processMetaIncomingMessage(body);
       } catch (e) {
         console.error("Error parsing JSON:", e);
         // Always return 200 OK even for errors to prevent retries
-        return new Response(JSON.stringify({ success: false, error: "Invalid JSON" }), {
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
+        return createResponse({ success: false, error: "Invalid JSON" }, 200);
       }
     } 
     else {
@@ -187,49 +246,17 @@ serve(async (req) => {
     }
 
     // Store incoming message if we have message data
-    if (messageData) {
-      try {
-        console.log("Storing incoming message:", messageData);
-        
-        // Check if whatsapp_messages table exists
-        try {
-          const { error } = await supabaseAdmin
-            .from('whatsapp_messages')
-            .insert({
-              from_number: messageData.from,
-              message: messageData.body,
-              media_url: messageData.mediaUrl,
-              provider: messageData.provider,
-              provider_message_id: messageData.provider_message_id
-            });
-
-          if (error) {
-            console.error("Error storing message:", error);
-          } else {
-            console.log("Message stored successfully");
-          }
-        } catch (e) {
-          console.error("Exception storing message:", e);
-          // If table doesn't exist, log the error but don't fail the webhook
-          console.log("Table 'whatsapp_messages' might not exist. This is non-critical.");
-        }
-      } catch (e) {
-        console.error("Exception in message handling:", e);
-      }
-    }
+    await storeIncomingMessage(messageData, supabaseAdmin);
 
     // IMPORTANT: Always respond with 200 OK to acknowledge receipt for all webhook events
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    return createResponse({ success: true });
 
   } catch (error) {
     console.error('Unexpected error in WhatsApp webhook:', error);
     // CRITICAL: Always return 200 OK even on errors to prevent retry loops
-    return new Response(
-      JSON.stringify({ success: false, error: error.message || 'Internal Server Error' }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return createResponse({ 
+      success: false, 
+      error: error.message || 'Internal Server Error' 
+    }, 200);
   }
 });
