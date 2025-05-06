@@ -8,6 +8,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"; 
+import { 
+  Accordion, 
+  AccordionContent, 
+  AccordionItem, 
+  AccordionTrigger 
+} from "@/components/ui/accordion";
 
 interface PhoneLoginFormProps {
   onLoginSuccess: () => void;
@@ -22,7 +28,46 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [messageId, setMessageId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Format phone number to ensure it has country code
+  const formatPhoneNumber = (input: string) => {
+    let formatted = input.trim();
+    // Ensure it has a + prefix
+    if (!formatted.startsWith('+')) {
+      formatted = `+${formatted}`;
+    }
+    return formatted;
+  };
+  
+  // Check message status from webhook
+  const checkMessageStatus = async (msgId: string) => {
+    if (!msgId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('whatsapp_message_status')
+        .select('*')
+        .eq('message_sid', msgId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+        
+      if (error) {
+        console.error("Error checking message status:", error);
+        return;
+      }
+      
+      if (data && data.length > 0) {
+        console.log("Latest message status:", data[0]);
+        if (data[0].status === 'undelivered') {
+          setError(`Message delivery failed: ${data[0].error_message || 'The message could not be delivered to WhatsApp'}`);
+        }
+      }
+    } catch (e) {
+      console.error("Exception checking message status:", e);
+    }
+  };
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,8 +80,8 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
       return;
     }
 
-    // Ensure phone number starts with +
-    const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+    // Format the phone number
+    const formattedPhone = formatPhoneNumber(phone);
     
     setIsLoading(true);
     try {
@@ -56,6 +101,13 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
       if (error) throw new Error(error.message);
       if (!data?.success) throw new Error(data?.error || 'Failed to send OTP.');
 
+      // Store message ID if available for status checking
+      if (data?.messageId) {
+        setMessageId(data.messageId);
+        // Set up status check after a delay
+        setTimeout(() => checkMessageStatus(data.messageId), 5000);
+      }
+      
       // Store debug information
       setDebugInfo(data);
       
@@ -109,11 +161,7 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
       
       // Wait a moment before redirect to show success state
       setTimeout(() => {
-        if (data.session) {
-          onLoginSuccess();
-        } else {
-          throw new Error("Authentication successful but no session returned");
-        }
+        onLoginSuccess();
       }, 1500);
       
     } catch (error: any) {
@@ -145,20 +193,48 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
         </Alert>
       )}
 
-      {debugInfo && (
+      {otpSent && (
         <Alert variant="default" className="bg-blue-50 text-blue-800 border-blue-200">
-          <Info className="h-4 w-4" />
-          <AlertDescription className="text-xs">
-            Message ID: {debugInfo.messageId}<br/>
-            Status: {debugInfo.status}
-            {debugInfo.webhookUrl && (
-              <>
-                <br/>
-                Webhook URL: {debugInfo.webhookUrl}
-              </>
-            )}
+          <Info className="h-4 w-4 mr-2" />
+          <AlertDescription>
+            <span className="font-medium">WhatsApp delivery may take a moment. </span> 
+            If you don't receive it, check that:
+            <ul className="list-disc ml-5 mt-1 text-xs space-y-1">
+              <li>Your number is correct and has WhatsApp</li>
+              <li>You've messaged the sender number first (required for testing)</li>
+            </ul>
           </AlertDescription>
         </Alert>
+      )}
+
+      {debugInfo && (
+        <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="debug">
+            <AccordionTrigger className="text-xs text-gray-500">
+              Debug Information
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="text-xs bg-slate-50 p-2 rounded">
+                Message ID: {debugInfo.messageId || 'N/A'}<br/>
+                Status: {debugInfo.status || 'N/A'}<br/>
+                {debugInfo.webhookUrl && (<>Webhook URL: {debugInfo.webhookUrl}<br/></>)}
+                Provider: {debugInfo.usingMetaIntegration ? 'Meta WhatsApp API' : 'Twilio'}
+              </div>
+              <div className="mt-2 text-xs text-gray-500">
+                {debugInfo.troubleshooting && (
+                  <>
+                    <div className="font-medium">Troubleshooting Tips:</div>
+                    <ul className="list-disc ml-4 mt-1">
+                      {Object.values(debugInfo.troubleshooting).map((tip: any, i: number) => (
+                        <li key={i}>{tip}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       )}
 
       <form onSubmit={otpSent ? handleVerifyOtp : handleSendOtp} className="space-y-4">

@@ -75,7 +75,8 @@ serve(async (req) => {
           templateValues: {
             otp: otp,
             expiryMinutes: "10"
-          }
+          },
+          debugMode: true // Enable extended debugging
         },
       }
     );
@@ -87,8 +88,22 @@ serve(async (req) => {
 
     console.log("send-whatsapp invoked successfully for OTP:", whatsappResult);
 
+    // Format the response to include helpful information for debugging
+    const responseData = {
+      success: true,
+      message: "OTP sent successfully.",
+      messageId: whatsappResult?.messageId,
+      status: whatsappResult?.status,
+      webhookUrl: whatsappResult?.webhookUrl,
+      usingMessagingService: whatsappResult?.usingMessagingService,
+      messagingServiceSid: whatsappResult?.messagingServiceSid,
+      usingTemplate: whatsappResult?.usingTemplate,
+      usingMetaIntegration: whatsappResult?.usingMetaIntegration,
+      troubleshooting: whatsappResult?.troubleshooting
+    };
+
     // --- Return Success Response ---
-    return new Response(JSON.stringify({ success: true, message: "OTP sent successfully." }), {
+    return new Response(JSON.stringify(responseData), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
