@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Loader2, AlertCircle, Info, ExternalLink, RefreshCw, CheckCircle } from "lucide-react";
@@ -185,7 +184,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
   };
 
   const handleSendTest = async () => {
-    setLastErrorDetails(null); // Clear previous errors
+    setLastErrorDetails(null);
     setTwilioDetails(null);
     
     try {
@@ -208,9 +207,13 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
       setLoading(true);
       console.log(`Sending WhatsApp test message to: ${phoneToUse}`);
 
+      // Create a test message
+      const testMessage = `This is a test message from your app. Sent at: ${new Date().toLocaleTimeString()}`;
+
       const { data, error } = await supabase.functions.invoke<FunctionResponse>('send-whatsapp', {
         body: {
           to: phoneToUse,
+          message: testMessage, // Always include a message
           category: category || "general", 
           isPro: false,
           sendImmediately: true,

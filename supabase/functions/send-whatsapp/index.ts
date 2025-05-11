@@ -1,4 +1,3 @@
-
 // Import necessary libraries
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
@@ -32,7 +31,6 @@ serve(async (req) => {
       templateSid: defaultTemplateSid ? `${defaultTemplateSid.substring(0, 5)}...` : "missing"
     });
 
-    // Early return for configuration check requests
     const requestData = await req.json();
     
     // Only do config check if explicitly requested
@@ -152,9 +150,19 @@ serve(async (req) => {
     if (!to) {
       throw new Error("Recipient phone number is required");
     }
-    
-    if (!message && !messageType && !templateId && !defaultTemplateSid) {
-      throw new Error("Either message content, message type, or template ID is required");
+
+    // --- Generate message content if not provided ---
+    // If neither message nor template is provided but category is, we need to generate message content
+    let finalMessage = message;
+    if (!finalMessage && !templateId && !defaultTemplateSid) {
+      if (category) {
+        // Create a simple test message when category is provided but no message
+        finalMessage = `This is a test message for category: ${category}. If you see this, WhatsApp integration is working!`;
+        console.log("Generated test message for category:", category);
+      } else {
+        // If no content can be determined, throw an error
+        throw new Error("Either message content, message type, or template ID is required");
+      }
     }
 
     // --- Process phone number format ---
@@ -194,16 +202,11 @@ serve(async (req) => {
     } else {
       throw new Error("Either Twilio From Number or Messaging Service SID must be configured");
     }
-
-    // --- Decide on the actual message content ---
-    // Always use the provided message exactly as provided
-    let finalMessage = message;
     
+    // --- Prepare and send the message ---
     console.log(`Sending WhatsApp message using ${useMessagingService ? "Messaging Service" : "From Number"} to ${formattedTo}`);
     console.log("Message content (first 50 chars):", finalMessage ? `${finalMessage.substring(0, 50)}...` : "No message content");
 
-    console.log("Preparing to send message with Twilio API");
-    
     // Prepare the request body for Twilio
     const formData = new FormData();
     formData.append("To", formattedTo);
@@ -231,7 +234,7 @@ serve(async (req) => {
       }
     } else {
       // Use regular body if no template
-      formData.append("Body", finalMessage);
+      formData.append("Body", finalMessage!);
     }
 
     // Log the API request details (but not the full auth token)

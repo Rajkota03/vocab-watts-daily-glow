@@ -1,5 +1,4 @@
 
-// Removed unused imports: createSubscription, getVocabWordsByCategory
 import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { generateNewWordBatch } from "./wordService"; // Import the correct function for getting words
@@ -114,18 +113,16 @@ export const sendVocabWords = async (request: SendWordsRequest): Promise<boolean
     const { data: functionResult, error: functionError } = await supabase.functions.invoke("send-whatsapp", {
       body: {
         to: request.phoneNumber,
-        message: finalMessage,
-        // Pass necessary info, but the function itself might re-verify status/details
+        message: finalMessage, // This is the important part - pass the message content!
         userId: request.userId, 
-        category: request.category, // Pass category for potential logging/context
-        isPro: isProUser, // Pass the determined Pro status
-        sendImmediately: request.sendImmediately || false // Ensure this flag is passed
+        category: request.category,
+        isPro: isProUser,
+        sendImmediately: request.sendImmediately || false
       },
     });
     
     if (functionError) {
       console.error("[WhatsApp] Error invoking send-whatsapp function:", functionError);
-      // Attempt to parse Supabase function error details if available
       let details = functionError.message;
       if (functionError.context && functionError.context.details) {
          details = functionError.context.details;

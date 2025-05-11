@@ -298,6 +298,105 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_config: {
+        Row: {
+          created_at: string
+          id: string
+          provider: string | null
+          updated_at: string
+          verification_token: string | null
+          webhook_url: string | null
+          webhook_verified: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          provider?: string | null
+          updated_at?: string
+          verification_token?: string | null
+          webhook_url?: string | null
+          webhook_verified?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          provider?: string | null
+          updated_at?: string
+          verification_token?: string | null
+          webhook_url?: string | null
+          webhook_verified?: boolean | null
+        }
+        Relationships: []
+      }
+      whatsapp_message_status: {
+        Row: {
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          from_number: string | null
+          id: string
+          message_sid: string | null
+          status: string
+          to_number: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          from_number?: string | null
+          id?: string
+          message_sid?: string | null
+          status: string
+          to_number: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          from_number?: string | null
+          id?: string
+          message_sid?: string | null
+          status?: string
+          to_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_messages: {
+        Row: {
+          created_at: string
+          from_number: string
+          id: string
+          media_url: string | null
+          message: string | null
+          processed: boolean | null
+          provider: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_number: string
+          id?: string
+          media_url?: string | null
+          message?: string | null
+          processed?: boolean | null
+          provider?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_number?: string
+          id?: string
+          media_url?: string | null
+          message?: string | null
+          processed?: boolean | null
+          provider?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -314,14 +413,15 @@ export type Database = {
       get_whatsapp_message_status: {
         Args: { message_sid_param: string }
         Returns: {
-          id: string
-          message_sid: string
-          status: string
-          error_code: string
-          error_message: string
-          to_number: string
-          from_number: string
           created_at: string
+          error_code: string | null
+          error_message: string | null
+          from_number: string | null
+          id: string
+          message_sid: string | null
+          status: string
+          to_number: string
+          updated_at: string
         }[]
       }
       has_role: {
