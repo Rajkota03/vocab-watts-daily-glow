@@ -36,7 +36,7 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
         description: "Your WhatsApp number is not configured in your profile.",
         variant: "destructive"
       });
-      setLastErrorDetails("Cannot send words: Phone number not found in your subscription details.");
+      setLastErrorDetails("Cannot send words: Phone number not found in your subscription details. Please update your profile to include your WhatsApp number.");
       return;
     }
 
@@ -51,6 +51,7 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
           isPro: isPro,
           sendImmediately: true, // Send now as it's a manual trigger
           debugMode: true, // Include additional debug information
+          forceDirectMessage: true, // Always use direct messaging without templates
           // Always include a direct message
           message: `Here are your daily vocabulary words for ${category}. Enjoy learning!`
         }

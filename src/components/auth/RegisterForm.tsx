@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,9 +27,20 @@ export function RegisterForm({ onSubmit, isLoading }: RegisterFormProps) {
     }
   });
 
+  // Helper to handle the form submission
+  const handleFormSubmit = async (values: RegisterFormValues) => {
+    // Format phone number if needed - ensure it has '+' prefix
+    if (values.whatsappNumber && !values.whatsappNumber.startsWith('+')) {
+      values.whatsappNumber = `+${values.whatsappNumber}`;
+    }
+    
+    console.log("Submitting registration with WhatsApp number:", values.whatsappNumber);
+    await onSubmit(values);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -127,6 +137,9 @@ export function RegisterForm({ onSubmit, isLoading }: RegisterFormProps) {
                   />
                 </FormControl>
               </div>
+              <FormDescription>
+                Include country code (e.g., +91 for India) to receive vocabulary words
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

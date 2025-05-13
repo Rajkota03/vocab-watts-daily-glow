@@ -1,3 +1,4 @@
+
 // /home/ubuntu/glintup_project/supabase/functions/verify-razorpay-payment/index.ts
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
@@ -76,6 +77,10 @@ serve(async (req) => {
       throw new Error("Missing required payment or user details in request.");
     }
 
+    // Format WhatsApp number to ensure it has a '+' prefix
+    const formattedWhatsappNumber = whatsappNumber.startsWith('+') ? whatsappNumber : `+${whatsappNumber}`;
+    console.log(`Processing payment with WhatsApp number: ${formattedWhatsappNumber}`);
+
     // --- Verify Razorpay Signature ---
     // Razorpay signature is created from order_id + "|" + payment_id
     const verificationBody = `${razorpay_order_id}|${razorpay_payment_id}`;
@@ -121,7 +126,7 @@ serve(async (req) => {
         user_metadata: {
           first_name: firstName,
           last_name: lastName || firstName, // Use first name if last name is missing
-          whatsapp_number: whatsappNumber,
+          whatsapp_number: formattedWhatsappNumber,
         },
       });
 
@@ -142,7 +147,7 @@ serve(async (req) => {
 
     const subscriptionData = {
       user_id: userId,
-      phone_number: whatsappNumber,
+      phone_number: formattedWhatsappNumber,
       is_pro: true,
       subscription_ends_at: subscriptionEndDate,
       razorpay_order_id: razorpay_order_id,
@@ -150,10 +155,10 @@ serve(async (req) => {
       // Add category, deliveryTime if needed
     };
 
-    // Upsert: Update if exists (based on phone_number), otherwise insert
+    // Upsert: Update if exists (based on user_id), otherwise insert
     const { data: upsertedSubscription, error: upsertError } = await supabaseAdmin
       .from("user_subscriptions")
-      .upsert(subscriptionData, { onConflict: "phone_number" })
+      .upsert(subscriptionData, { onConflict: "user_id" })
       .select()
       .single();
 

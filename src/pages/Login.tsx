@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,7 +65,15 @@ const Login = () => {
   const handleRegister = async (values: any) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      console.log("Registration values:", values);
+      
+      // Ensure whatsapp_number is properly formatted
+      const whatsappNumber = values.whatsappNumber?.startsWith('+') 
+        ? values.whatsappNumber 
+        : values.whatsappNumber ? `+${values.whatsappNumber}` : '';
+      
+      // Sign up the user
+      const { data, error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
         options: {
@@ -74,11 +81,30 @@ const Login = () => {
             first_name: values.firstName,
             last_name: values.lastName,
             nick_name: values.nickName || null,
-            whatsapp_number: values.whatsappNumber
+            whatsapp_number: whatsappNumber
           }
         }
       });
+
       if (error) throw error;
+      
+      if (data?.user) {
+        // Create initial subscription record to ensure WhatsApp number is available
+        const { error: subscriptionError } = await supabase
+          .from('user_subscriptions')
+          .upsert({
+            user_id: data.user.id,
+            phone_number: whatsappNumber,
+            is_pro: false,
+            category: 'daily-beginner'
+          });
+          
+        if (subscriptionError) {
+          console.error("Error creating subscription:", subscriptionError);
+          // Don't throw error here, continue with registration flow
+        }
+      }
+      
       toast({
         title: "Account created successfully",
         description: "Please check your email for a confirmation link.",
