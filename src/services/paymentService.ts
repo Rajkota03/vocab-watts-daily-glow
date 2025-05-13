@@ -1,7 +1,7 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { addDays } from 'date-fns';
 import { Database } from '@/integrations/supabase/types';
+import { ManualSubscriptionValues } from '@/types/auth';
 
 export interface PaymentData {
   phoneNumber: string;
@@ -183,5 +183,81 @@ export const completeSubscription = async (data: PaymentData) => {
   } catch (error: any) {
     console.error('Failed to create subscription:', error);
     return { success: false, error: error.message || 'Failed to create subscription' };
+  }
+};
+
+// Add a new function to manually add a subscription
+export const addManualSubscription = async (data: ManualSubscriptionValues) => {
+  try {
+    console.log('Adding manual subscription with data:', {
+      phoneNumber: data.phoneNumber,
+      userId: data.userId || null,
+      isPro: data.isPro !== undefined ? data.isPro : false,
+      category: data.category || 'daily-beginner',
+      deliveryTime: data.deliveryTime || null
+    });
+    
+    // Check if a subscription already exists for this phone number
+    const exists = await checkSubscriptionExists(data.phoneNumber);
+    if (exists) {
+      return { 
+        success: false, 
+        error: 'A subscription already exists for this phone number.' 
+      };
+    }
+    
+    // Format the phone number if needed
+    const formattedPhone = data.phoneNumber.startsWith('+') 
+      ? data.phoneNumber 
+      : `+${data.phoneNumber}`;
+    
+    // Calculate trial end date (3 days from now)
+    const trialEndsAt = addDays(new Date(), 3).toISOString();
+    
+    // Calculate subscription end date for pro users (30 days from now)
+    const subscriptionEndsAt = data.isPro 
+      ? addDays(new Date(), 30).toISOString() 
+      : null;
+    
+    // Prepare subscription data
+    let subscriptionData: any = {
+      phone_number: formattedPhone,
+      is_pro: data.isPro !== undefined ? data.isPro : false,
+      category: data.category || 'daily-beginner',
+      trial_ends_at: trialEndsAt,
+      subscription_ends_at: subscriptionEndsAt,
+      delivery_time: data.deliveryTime || null
+    };
+    
+    // Add user_id only if we have one
+    if (data.userId) {
+      subscriptionData.user_id = data.userId;
+    }
+    
+    const { data: subscription, error } = await supabase
+      .from('user_subscriptions')
+      .insert(subscriptionData)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating subscription:', error);
+      return { 
+        success: false, 
+        error: `Failed to add subscription: ${error.message}` 
+      };
+    }
+    
+    return { 
+      success: true, 
+      data: subscription 
+    };
+    
+  } catch (error: any) {
+    console.error('Failed to add manual subscription:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Failed to add subscription' 
+    };
   }
 };
