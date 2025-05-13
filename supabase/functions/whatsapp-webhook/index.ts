@@ -1,8 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
-// Import Twilio helper library for signature validation
-import twilio from 'https://esm.sh/twilio@4.20.1';
+import { createHmac } from "https://deno.land/std@0.168.0/node/crypto.ts";
 
 // Import shared CORS headers
 import { corsHeaders } from "../_shared/cors.ts";
@@ -37,6 +36,60 @@ function createResponse(data: any, status = 200): Response {
   );
 }
 
+// Custom Twilio signature validator that doesn't rely on the Twilio library
+function validateTwilioSignature(
+  url: string,
+  params: Record<string, string>,
+  signature: string | null,
+  authToken: string
+): boolean {
+  if (!signature) {
+    console.log("No Twilio signature provided");
+    return false;
+  }
+
+  if (!authToken) {
+    console.error("TWILIO_AUTH_TOKEN is not configured in environment variables");
+    return false;
+  }
+
+  try {
+    // Sort the POST parameters alphabetically by key
+    const sortedParams = Object.keys(params)
+      .sort()
+      .reduce((result: Record<string, string>, key) => {
+        result[key] = params[key];
+        return result;
+      }, {});
+
+    // Concatenate URL and sorted params
+    let data = url;
+    Object.keys(sortedParams).forEach(key => {
+      data += key + sortedParams[key];
+    });
+
+    // Create HMAC hash
+    const hmac = createHmac("sha1", authToken);
+    hmac.update(data);
+    const expectedSignature = hmac.digest("base64");
+    
+    const isValid = signature === expectedSignature;
+    
+    if (isValid) {
+      console.log("✅ Twilio signature validated successfully");
+    } else {
+      console.error("❌ Invalid Twilio signature");
+      console.log("Expected:", expectedSignature);
+      console.log("Received:", signature);
+    }
+    
+    return isValid;
+  } catch (e) {
+    console.error("Error validating Twilio signature:", e);
+    return false;
+  }
+}
+
 // Handle webhook verification for WhatsApp
 async function handleWebhookVerification(url: URL) {
   const mode = url.searchParams.get('hub.mode');
@@ -60,40 +113,6 @@ async function handleWebhookVerification(url: URL) {
     });
     
     return new Response('Verification failed', { status: 200, headers: { ...corsHeaders, 'Content-Type': 'text/plain' } });
-  }
-}
-
-// Validate Twilio request signature
-function validateTwilioSignature(
-  url: string,
-  params: Record<string, string>,
-  signature: string | null
-): boolean {
-  if (!signature) {
-    console.log("No Twilio signature provided");
-    return false;
-  }
-
-  const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-  if (!authToken) {
-    console.error("TWILIO_AUTH_TOKEN is not configured in environment variables");
-    return false;
-  }
-
-  try {
-    // Use Twilio's validator
-    const isValid = twilio.validateRequest(authToken, signature, url, params);
-    
-    if (isValid) {
-      console.log("✅ Twilio signature validated successfully");
-    } else {
-      console.error("❌ Invalid Twilio signature");
-    }
-    
-    return isValid;
-  } catch (e) {
-    console.error("Error validating Twilio signature:", e);
-    return false;
   }
 }
 
@@ -260,8 +279,11 @@ serve(async (req) => {
       
       console.log("Parsed form data:", params);
       
-      // Validate Twilio signature for all form-encoded requests
-      sigValidated = validateTwilioSignature(fullUrl, params, twilioSignature);
+      // Get auth token for validation
+      const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+      
+      // Validate Twilio signature using our custom validator
+      sigValidated = validateTwilioSignature(fullUrl, params, twilioSignature, authToken || '');
       
       // Log the signature validation outcome
       console.log(`Twilio signature validation: ${sigValidated ? 'VALID' : 'INVALID'}`);
