@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MessageSquare, Loader2, AlertCircle, ExternalLink, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { sendWhatsAppMessage } from "@/services/whatsappService";
+import { sendWhatsAppMessage, isUSPhoneNumber } from "@/services/whatsappService";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -31,6 +32,8 @@ const WhatsAppTester = () => {
   const [sandboxInfo, setSandboxInfo] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('template'); // Default to template
   const [useTemplate, setUseTemplate] = useState(true); // Default to true
+  const [forceDirectMessage, setForceDirectMessage] = useState(false); // Option to force direct messages
+  const [isUSNumberState, setIsUSNumberState] = useState(false);
   const { toast } = useToast();
   
   // Default template IDs that can be used
@@ -65,6 +68,28 @@ const WhatsAppTester = () => {
     loadTemplateIds();
   }, []);
 
+  // Check if phone number is US-based whenever it changes
+  useEffect(() => {
+    if (phoneNumber) {
+      const isUS = isUSPhoneNumber(phoneNumber);
+      setIsUSNumberState(isUS);
+      
+      // If it's a US number after April 1, 2025, we should show a warning
+      if (isUS) {
+        const currentDate = new Date();
+        const aprilFirstDate = new Date(2025, 3, 1); // Note: Month is 0-indexed, so 3 = April
+        
+        if (currentDate >= aprilFirstDate && useTemplate) {
+          setSandboxInfo("This appears to be a US number. Due to WhatsApp policy changes after April 1, 2025, template messages cannot be sent to US numbers. The system will automatically use direct messaging instead.");
+        } else {
+          setSandboxInfo(null);
+        }
+      } else {
+        setSandboxInfo(null);
+      }
+    }
+  }, [phoneNumber, useTemplate]);
+
   const handleSendTest = async () => {
     if (!phoneNumber || phoneNumber.length < 10) {
       toast({
@@ -76,7 +101,7 @@ const WhatsAppTester = () => {
     }
 
     // Always require template for template tab
-    if (activeTab === 'template' && !templateId) {
+    if (activeTab === 'template' && !templateId && !forceDirectMessage) {
       toast({
         title: "Template ID required",
         description: "Please enter a template ID to use template messaging",
@@ -105,8 +130,14 @@ const WhatsAppTester = () => {
         phoneNumber
       };
       
-      // Determine whether to use template or regular message based on active tab
-      if (activeTab === 'template') {
+      // Check if this is a US number
+      const isUSNumber = isUSPhoneNumber(phoneNumber);
+      if (isUSNumber) {
+        console.log("Detected US phone number. Template messaging restrictions may apply.");
+      }
+      
+      // Determine whether to use template or regular message based on active tab and US number status
+      if (activeTab === 'template' && !forceDirectMessage && !isUSNumber) {
         requestPayload.templateId = templateId;
         requestPayload.templateValues = templateValues;
         console.log("Using template mode with ID:", templateId);
@@ -114,16 +145,25 @@ const WhatsAppTester = () => {
         // Include fallback message in case template fails
         requestPayload.message = "This is a fallback message if template fails";
       } else {
-        // Regular message mode
-        requestPayload.message = message;
-        console.log("Using regular message mode");
+        // Regular message mode or forced direct message for US numbers
+        requestPayload.message = message || "This is a test message from GlintUp";
+        
+        if (forceDirectMessage) {
+          requestPayload.forceDirectMessage = true;
+          console.log("Forcing direct message instead of template");
+        } else if (isUSNumber && activeTab === 'template') {
+          console.log("Using direct message for US number due to template restrictions");
+          requestPayload.forceDirectMessage = true;
+        } else {
+          console.log("Using regular message mode");
+        }
       }
       
       const success = await sendWhatsAppMessage(requestPayload);
       
       if (success) {
         toast({
-          title: `${activeTab === 'template' ? 'Template message' : 'Message'} sent successfully`,
+          title: `${activeTab === 'template' && !forceDirectMessage && !isUSNumber ? 'Template message' : 'Message'} sent successfully`,
           description: "Your WhatsApp message has been queued for delivery",
           variant: "default"
         });
@@ -131,15 +171,17 @@ const WhatsAppTester = () => {
         setResult({
           success: true,
           timestamp: new Date().toISOString(),
-          messageType: activeTab === 'template' ? 'template' : 'regular'
+          messageType: activeTab === 'template' && !forceDirectMessage && !isUSNumber ? 'template' : 'regular'
         });
       }
     } catch (err: any) {
       console.error("Error sending WhatsApp message:", err);
       setError(err.message || "Failed to send message");
       
-      // Adjust error messaging for upgraded Twilio account
-      if (err.message?.includes('63016')) {
+      // Adjust error messaging for US numbers and template restrictions
+      if (err.message?.includes('63049')) {
+        setSandboxInfo(`Error 63049: US recipients cannot receive WhatsApp template messages after April 1, 2025. The system will automatically use direct messaging instead.`);
+      } else if (err.message?.includes('63016')) {
         setSandboxInfo(`Error 63016 indicates a messaging issue. Since you're on a upgraded Twilio account, check that:
         1. Your WhatsApp Business Profile is properly set up
         2. The template being used is approved
@@ -194,7 +236,29 @@ const WhatsAppTester = () => {
                 <p className="text-xs text-gray-500 mt-1">
                   Include the country code (e.g., +1 for US, +91 for India)
                 </p>
+                
+                {isUSNumberState && (
+                  <div className="mt-2">
+                    <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">US Number Detected</Badge>
+                    <p className="text-xs text-blue-600 mt-1">
+                      US numbers require direct messaging after April 1, 2025 per WhatsApp policy
+                    </p>
+                  </div>
+                )}
               </div>
+              
+              {activeTab === 'template' && isUSNumberState && (
+                <div className="flex items-center space-x-2 bg-amber-50 p-3 rounded-md border border-amber-200">
+                  <Switch
+                    id="force-direct"
+                    checked={forceDirectMessage}
+                    onCheckedChange={setForceDirectMessage}
+                  />
+                  <Label htmlFor="force-direct" className="text-amber-800">
+                    Force direct message (required for US numbers after April 1, 2025)
+                  </Label>
+                </div>
+              )}
               
               <TabsContent value="regular" className="mt-0">
                 <div>
@@ -215,7 +279,7 @@ const WhatsAppTester = () => {
                   <AlertTitle className="text-amber-800">Regular Message</AlertTitle>
                   <AlertDescription className="text-amber-700">
                     <p>Regular messages can be sent with your upgraded Twilio account but are subject to WhatsApp's 24-hour messaging window limitations.</p>
-                    <p className="mt-2 text-sm">Using templates is recommended for most business communications.</p>
+                    <p className="mt-2 text-sm">Using templates is recommended for most business communications (except for US numbers after April 1, 2025).</p>
                   </AlertDescription>
                 </Alert>
               </TabsContent>
@@ -228,6 +292,9 @@ const WhatsAppTester = () => {
                     <AlertDescription className="text-blue-700">
                       <p>Templates allow you to send WhatsApp messages outside the 24-hour messaging window.</p>
                       <p className="text-sm mt-2">Your upgraded Twilio account is configured for template messaging.</p>
+                      {isUSNumberState && (
+                        <p className="text-sm mt-2 font-medium">Note: US numbers require direct messaging after April 1, 2025.</p>
+                      )}
                     </AlertDescription>
                   </Alert>
 
@@ -241,9 +308,10 @@ const WhatsAppTester = () => {
                       value={templateId}
                       onChange={(e) => setTemplateId(e.target.value)}
                       className="w-full"
+                      disabled={forceDirectMessage || (isUSNumberState && new Date() >= new Date(2025, 3, 1))}
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Currently using template: {templateId || "None"}
+                      Currently using template: {forceDirectMessage ? "Disabled - using direct message" : (templateId || "None")}
                     </p>
                   </div>
                   
@@ -258,6 +326,7 @@ const WhatsAppTester = () => {
                             size="sm" 
                             onClick={() => setTemplateId(template.id)}
                             className={templateId === template.id ? "border-primary bg-primary/10" : ""}
+                            disabled={forceDirectMessage || (isUSNumberState && new Date() >= new Date(2025, 3, 1))}
                           >
                             {template.name}
                           </Button>
@@ -279,6 +348,7 @@ const WhatsAppTester = () => {
                                 value={templateValues.name}
                                 onChange={(e) => setTemplateValues({...templateValues, name: e.target.value})}
                                 placeholder="User's name"
+                                disabled={forceDirectMessage || (isUSNumberState && new Date() >= new Date(2025, 3, 1))}
                               />
                             </div>
                             
@@ -290,12 +360,14 @@ const WhatsAppTester = () => {
                                   value={templateValues.otp}
                                   onChange={(e) => setTemplateValues({...templateValues, otp: e.target.value})}
                                   placeholder="123456"
+                                  disabled={forceDirectMessage || (isUSNumberState && new Date() >= new Date(2025, 3, 1))}
                                 />
                                 <Button 
                                   variant="outline" 
                                   onClick={() => generateRandomOtp()}
                                   type="button"
                                   size="icon"
+                                  disabled={forceDirectMessage || (isUSNumberState && new Date() >= new Date(2025, 3, 1))}
                                 >
                                   🎲
                                 </Button>
@@ -310,6 +382,7 @@ const WhatsAppTester = () => {
                               value={templateValues.expiryMinutes}
                               onChange={(e) => setTemplateValues({...templateValues, expiryMinutes: e.target.value})}
                               placeholder="10"
+                              disabled={forceDirectMessage || (isUSNumberState && new Date() >= new Date(2025, 3, 1))}
                             />
                           </div>
                           
@@ -329,11 +402,11 @@ const WhatsAppTester = () => {
               disabled={loading || 
                 !phoneNumber || 
                 (activeTab === 'regular' && !message) || 
-                (activeTab === 'template' && !templateId)}
+                (activeTab === 'template' && !templateId && !forceDirectMessage && !isUSNumberState)}
               className="w-full mt-4"
             >
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
-              {loading ? "Sending..." : `Send ${activeTab === 'template' ? 'Template' : ''} Message`}
+              {loading ? "Sending..." : `Send ${activeTab === 'template' && !forceDirectMessage && !isUSNumberState ? 'Template' : ''} Message`}
             </Button>
             
             {error && (
@@ -347,7 +420,7 @@ const WhatsAppTester = () => {
             {sandboxInfo && (
               <Alert className="bg-amber-50 border-amber-200 text-amber-800 mt-4">
                 <AlertCircle className="h-4 w-4 text-amber-800" />
-                <AlertTitle className="text-amber-800">Message Delivery Issue</AlertTitle>
+                <AlertTitle className="text-amber-800">Message Delivery Info</AlertTitle>
                 <AlertDescription className="text-amber-700">
                   {sandboxInfo}
                 </AlertDescription>
@@ -376,6 +449,7 @@ const WhatsAppTester = () => {
               <li><strong>Business API:</strong> Full features without sandbox limitations, which you're currently using.</li>
               <li><strong>Message Templates:</strong> Pre-approved messages that can be sent outside the 24-hour messaging window.</li>
               <li><strong>Direct Messages:</strong> Can only be sent within 24 hours of the last customer message.</li>
+              <li><strong>US Numbers:</strong> After April 1, 2025, cannot receive template messages and must use direct messaging.</li>
             </ul>
           </div>
           
@@ -386,7 +460,7 @@ const WhatsAppTester = () => {
             <div className="space-y-2">
               <div className="flex items-start gap-2">
                 <Badge variant="outline" className="mt-1 font-normal bg-green-50 text-green-700">Recommended</Badge>
-                <span className="text-sm">Use pre-approved message templates for most communications</span>
+                <span className="text-sm">Use pre-approved message templates for most communications (except for US recipients after April 1, 2025)</span>
               </div>
               <div className="flex items-start gap-2">
                 <Badge variant="outline" className="mt-1 font-normal">Option 2</Badge>

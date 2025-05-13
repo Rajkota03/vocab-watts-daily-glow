@@ -10,4 +10,3 @@ verify_jwt = false
 
 [functions.verify-whatsapp-webhook]
 verify_jwt = false
-

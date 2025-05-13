@@ -1,4 +1,3 @@
-
 // Import necessary libraries
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
@@ -171,6 +170,8 @@ serve(async (req) => {
     const message = requestData.message;
     const templateId = requestData.templateId || DEFAULT_TEMPLATE_ID; // Use default if not provided
     const templateValues = requestData.templateValues;
+    const isUSNumber = requestData.isUSNumber || false;
+    const forceDirectMessage = requestData.forceDirectMessage || false;
 
     // Debug logging
     console.log("WhatsApp request received:", { 
@@ -178,7 +179,9 @@ serve(async (req) => {
       messageLength: message ? message.length : 0,
       templateId: templateId || "none",
       toFormatted: to ? `${to.substring(0, 5)}...` : undefined,
-      usingTemplate: !!templateId
+      usingTemplate: !forceDirectMessage && !isUSNumber && !!templateId,
+      isUSNumber,
+      forceDirectMessage
     });
 
     // Validate input
@@ -187,7 +190,10 @@ serve(async (req) => {
     }
 
     // For upgraded Twilio accounts, either message or templateId is required
-    if (!message && !templateId) {
+    // But after April 1, 2025, US numbers can't receive template messages
+    const shouldUseTemplate = !forceDirectMessage && !isUSNumber && !!templateId;
+    
+    if (!message && !shouldUseTemplate) {
       throw new Error("Either message content or templateId is required");
     }
 
@@ -245,12 +251,16 @@ serve(async (req) => {
     console.log(`Sending WhatsApp message using ${useMessagingService ? "Messaging Service" : "From Number"} to ${formattedTo}`);
     
     // Check if we're using a template (prioritize this if available)
-    const usingTemplate = !!templateId;
+    const usingTemplate = shouldUseTemplate;
     if (usingTemplate) {
       console.log(`Using template ID: ${templateId}`);
       if (templateValues) {
         console.log("Template values:", templateValues);
       }
+    } else if (forceDirectMessage) {
+      console.log("Using direct message (forced by request)");
+    } else if (isUSNumber) {
+      console.log("Using direct message for US number due to template restrictions");
     } else {
       console.log("Message content (first 50 chars):", message.substring(0, 50) + "...");
     }
@@ -350,7 +360,7 @@ serve(async (req) => {
       businessAccount: true, // Indicate this is a business account
       troubleshooting: {
         checkTwilioConsole: "Check your Twilio console for message delivery status",
-        messageWindowInfo: "Standard messages may be restricted to 24-hour conversation window",
+        messageWindowInfo: isUSNumber ? "US numbers now require direct messaging after April 1, 2025" : "Standard messages may be restricted to 24-hour conversation window",
         businessReady: "Your account is configured for WhatsApp Business API"
       }
     };
@@ -371,7 +381,7 @@ serve(async (req) => {
         details: {
           message: error.message,
           tip: "Check your Twilio credentials and WhatsApp number formatting",
-          suggestion: "Use templates for more reliable delivery with your Twilio business account",
+          suggestion: "For US numbers, use direct messages instead of templates after April 1, 2025",
           twilioGuide: "https://www.twilio.com/docs/whatsapp/api"
         }
       }),
@@ -382,4 +392,3 @@ serve(async (req) => {
     );
   }
 });
-

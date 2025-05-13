@@ -17,7 +17,22 @@ export interface SendWhatsAppRequest {
   userId?: string;
   templateId?: string;
   templateValues?: Record<string, string>;
+  forceDirectMessage?: boolean; // Add option to force direct message without template
 }
+
+/**
+ * Check if a phone number is likely from the US
+ * @param phoneNumber The phone number to check
+ * @returns boolean indicating if it's a US number
+ */
+export const isUSPhoneNumber = (phoneNumber: string): boolean => {
+  // Clean the phone number
+  const cleanedNumber = phoneNumber.replace(/\s+/g, '').replace(/[()-]/g, '');
+  
+  // Check for US country code (+1)
+  return cleanedNumber.startsWith('+1') || 
+         cleanedNumber.startsWith('1') && cleanedNumber.length >= 10;
+};
 
 /**
  * Send a WhatsApp message via Twilio using the send-whatsapp edge function.
@@ -31,7 +46,7 @@ export const sendWhatsAppMessage = async (request: SendWhatsAppRequest): Promise
       phoneNumber: request.phoneNumber,
       messageLength: request.message?.length || 0,
       userId: request.userId,
-      useTemplate: !!request.templateId
+      useTemplate: !!request.templateId && !request.forceDirectMessage
     });
     
     // Validate phone number 
@@ -40,13 +55,6 @@ export const sendWhatsAppMessage = async (request: SendWhatsAppRequest): Promise
       throw new Error("Invalid phone number provided. Please include country code (e.g., +1 for US)");
     }
     
-    // For upgraded Twilio accounts, messages can be sent without templates
-    // but templates are preferred and don't require a message body
-    if (!request.message && !request.templateId) {
-      console.error("[WhatsApp] When not using templates, message content is required");
-      throw new Error("Either message content or template ID is required.");
-    }
-
     // Format phone number if needed
     let formattedPhone = request.phoneNumber.trim();
     // If number doesn't start with +, add it
@@ -54,30 +62,52 @@ export const sendWhatsAppMessage = async (request: SendWhatsAppRequest): Promise
       formattedPhone = `+${formattedPhone}`;
       console.log(`[WhatsApp] Added + prefix to number: ${formattedPhone}`);
     }
+    
+    // Check if it's a US number - these need special handling after April 1, 2025
+    const isUSNumber = isUSPhoneNumber(formattedPhone);
+    
+    // For upgraded Twilio accounts, messages can be sent without templates
+    // but templates are preferred and don't require a message body
+    // However, US numbers have restrictions on template messages after April 1, 2025
+    const shouldUseTemplate = request.templateId && !request.forceDirectMessage && !isUSNumber;
+    
+    if (!request.message && !shouldUseTemplate) {
+      console.error("[WhatsApp] When not using templates, message content is required");
+      throw new Error("Either message content or template ID is required.");
+    }
 
     // Call our edge function to send the WhatsApp message
-    console.log(`[WhatsApp] Invoking send-whatsapp function for ${formattedPhone}`);
+    console.log(`[WhatsApp] Invoking send-whatsapp function for ${formattedPhone}`, {
+      useTemplate: shouldUseTemplate,
+      isUSNumber,
+      forceDirectMessage: request.forceDirectMessage
+    });
     
     const requestPayload: any = {
       to: formattedPhone,
       userId: request.userId || null,
       sendImmediately: true,
-      debugMode: true
+      debugMode: true,
+      isUSNumber
     };
     
-    // Add template information as priority if provided
-    if (request.templateId) {
+    // Add template information as priority if we should use a template
+    if (shouldUseTemplate) {
       requestPayload.templateId = request.templateId;
       if (request.templateValues) {
         requestPayload.templateValues = request.templateValues;
       }
       console.log("[WhatsApp] Using template mode with ID:", request.templateId);
+    } else if (request.forceDirectMessage) {
+      console.log("[WhatsApp] Forcing direct message without template (user request)");
+    } else if (isUSNumber) {
+      console.log("[WhatsApp] Using direct message for US number due to template restrictions");
     }
     
     // Add message if provided (as fallback or primary content)
     if (request.message) {
       requestPayload.message = request.message;
-    } else if (!request.templateId) {
+    } else if (!shouldUseTemplate) {
       // Provide a default message if no template or message is specified
       requestPayload.message = "Message from GlintUp";
     }
@@ -98,9 +128,21 @@ export const sendWhatsAppMessage = async (request: SendWhatsAppRequest): Promise
       // Extract detailed error information if available
       let errorMessage = functionResult?.error || "Failed to send WhatsApp message.";
       
-      // Add extra context for specific error codes with adjusted messaging for upgraded accounts
+      // Add extra context for specific error codes
       if (functionResult?.details?.twilioError?.code === 63016) {
         errorMessage = "Error 63016: WhatsApp message could not be delivered. Please verify the recipient's phone number format and WhatsApp availability.";
+      } else if (functionResult?.details?.twilioError?.code === 63049) {
+        errorMessage = "Error 63049: US recipients cannot receive template messages after April 1, 2025. Switching to direct messaging.";
+        
+        // If this was a template error for US number, retry with direct message
+        if (isUSNumber && !request.forceDirectMessage) {
+          console.log("[WhatsApp] Retrying US number with direct message instead of template");
+          return await sendWhatsAppMessage({
+            ...request,
+            forceDirectMessage: true,
+            templateId: undefined
+          });
+        }
       } else if (functionResult?.details?.tip) {
         errorMessage += ` Tip: ${functionResult.details.tip}`;
       }
@@ -152,22 +194,34 @@ export const verifyWhatsAppConfig = async (): Promise<{
 };
 
 /**
- * Send an OTP code via WhatsApp using a template
- * Templates are the preferred method for WhatsApp Business API
+ * Send an OTP code via WhatsApp using a template or direct message
+ * For US numbers, direct messages will be used automatically
  */
 export const sendOtpViaWhatsApp = async (phoneNumber: string, otp: string): Promise<boolean> => {
   try {
-    // Use the default OTP template ID
-    const templateId = DEFAULT_OTP_TEMPLATE_ID;
+    // Determine if this is a US number
+    const isUS = isUSPhoneNumber(phoneNumber);
+    const message = `Your verification code is: ${otp}. It expires in 10 minutes.`;
     
+    // For US numbers, we'll prioritize direct messaging
+    if (isUS) {
+      console.log("[WhatsApp] Using direct message for US number:", phoneNumber);
+      return await sendWhatsAppMessage({
+        phoneNumber,
+        message,
+        forceDirectMessage: true
+      });
+    }
+    
+    // For non-US numbers, use template with fallback
     return await sendWhatsAppMessage({
       phoneNumber,
-      message: `Your verification code is: ${otp}`, // Fallback message if template fails
-      templateId,
+      message, // Fallback message if template fails
+      templateId: DEFAULT_OTP_TEMPLATE_ID,
       templateValues: {
         otp: otp,
-        expiryMinutes: "10", // Adjust as needed for your template
-        name: "User" // Your app name
+        expiryMinutes: "10",
+        name: "User"
       }
     });
   } catch (error) {
@@ -175,4 +229,3 @@ export const sendOtpViaWhatsApp = async (phoneNumber: string, otp: string): Prom
     throw error;
   }
 };
-
