@@ -6,9 +6,6 @@ import { corsHeaders } from '../_shared/cors.ts';
 const twilioApiUrl = (accountSid: string) => 
   `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
 
-// Default template ID for fallback
-const DEFAULT_TEMPLATE_ID = "HXabe0b61588dacdb93c6f458288896582";
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -34,6 +31,7 @@ serve(async (req) => {
     
     // Check only configuration without sending messages
     if (requestData.checkOnly === true) {
+      // ... keep existing code (config status check)
       const configStatus = {
         twilioConfigured: !!twilioAccountSid && !!twilioAuthToken,
         fromNumberConfigured: !!twilioFromNumber,
@@ -102,6 +100,7 @@ serve(async (req) => {
     
     // If this is a test connection request, just verify the credentials
     if (requestData.testTwilioConnection === true) {
+      // ... keep existing code (connection test)
       if (!twilioAccountSid || !twilioAuthToken) {
         return new Response(
           JSON.stringify({ 
@@ -168,19 +167,16 @@ serve(async (req) => {
     // Support both 'to' and 'phoneNumber' fields for compatibility
     const to = requestData.to || requestData.phoneNumber;
     const message = requestData.message;
-    const templateId = requestData.templateId || DEFAULT_TEMPLATE_ID; // Use default if not provided
-    const templateValues = requestData.templateValues;
-    const isUSNumber = requestData.isUSNumber || false;
-    const forceDirectMessage = requestData.forceDirectMessage || true; // Default to true to bypass templates
+    
+    // IMPORTANT CHANGE: We're not even going to look at template parameters anymore,
+    // we'll simply ensure there's a message for direct messaging
 
     // Debug logging
     console.log("WhatsApp request received:", { 
       to, 
       messageLength: message ? message.length : 0,
-      templateId: templateId || "none",
       toFormatted: to ? `${to.substring(0, 5)}...` : undefined,
-      usingDirectMessage: forceDirectMessage,
-      isUSNumber,
+      usingDirectMessage: true,
     });
 
     // Validate input
@@ -188,11 +184,8 @@ serve(async (req) => {
       throw new Error("Recipient phone number is required");
     }
 
-    // Always prioritize direct messaging over templates
-    const shouldUseTemplate = !forceDirectMessage && !isUSNumber && !!templateId;
-    
-    // Ensure we have a message for direct messaging
-    if (!message && forceDirectMessage) {
+    // Always require a message for direct messaging
+    if (!message) {
       throw new Error("Message content is required for direct messaging");
     }
 
@@ -249,16 +242,7 @@ serve(async (req) => {
     // --- Prepare and send the message ---
     console.log(`Sending WhatsApp message using ${useMessagingService ? "Messaging Service" : "From Number"} to ${formattedTo}`);
     
-    // Check if we're using a template (now defaults to false)
-    const usingTemplate = shouldUseTemplate;
-    if (usingTemplate) {
-      console.log(`Using template ID: ${templateId} as fallback`);
-      if (templateValues) {
-        console.log("Template values:", templateValues);
-      }
-    } else {
-      console.log("Using direct message: ", message.substring(0, 50) + (message.length > 50 ? "..." : ""));
-    }
+    console.log("Using direct message: ", message.substring(0, 50) + (message.length > 50 ? "..." : ""));
 
     // Prepare the request body for Twilio
     const formData = new FormData();
@@ -276,30 +260,9 @@ serve(async (req) => {
       formData.append("From", formattedFrom);
     }
     
-    // Always prioritize direct message body for better delivery rates
-    if (message) {
-      formData.append("Body", message);
-      console.log("Setting message body:", message.substring(0, 30) + "...");
-    } else {
-      // Provide a minimal default message if none was provided
-      formData.append("Body", "Message from GlintUp");
-      console.log("Setting default message body");
-    }
-    
-    // Add template only if specifically requested and not using direct message
-    if (usingTemplate) {
-      // If using a template, add the template SID
-      const contentSid = templateId;
-      formData.append("ContentSid", contentSid);
-      
-      // Add template parameters if provided
-      if (templateValues && typeof templateValues === 'object') {
-        const contentVariables = JSON.stringify(templateValues);
-        formData.append("ContentVariables", contentVariables);
-      }
-      
-      console.log("Adding template as fallback with ContentSid:", contentSid);
-    }
+    // Set the message body - this is the key change to always use direct messaging
+    formData.append("Body", message);
+    console.log("Setting message body:", message.substring(0, 30) + "...");
     
     // Log the API request details (but not the full auth token)
     console.log("Twilio API request:", {
@@ -307,7 +270,7 @@ serve(async (req) => {
       to: formattedTo,
       messagingService: useMessagingService ? messagingServiceSid : undefined,
       from: useMessagingService && twilioFromNumber ? formattedFrom : (useMessagingService ? "using messaging service" : formattedFrom),
-      contentType: usingTemplate ? "template + direct" : "direct message",
+      contentType: "direct message",
     });
 
     // Make the API request to Twilio
@@ -349,14 +312,12 @@ serve(async (req) => {
         (twilioFromNumber ? `whatsapp:${twilioFromNumber}` : "via messaging service") : 
         formattedFrom),
       webhookUrl: webhookUrl,
-      usingTemplate: usingTemplate,
-      usingDirectMessage: forceDirectMessage,
-      templateId: usingTemplate ? templateId : undefined,
+      usingDirectMessage: true,
       businessAccount: true,
       troubleshooting: {
         checkTwilioConsole: "Check your Twilio console for message delivery status",
         messageWillAppear: "Messages appear in WhatsApp, not as SMS/text",
-        directMessageUsed: "Using direct message mode to bypass template restrictions",
+        directMessageUsed: "Using direct message mode only",
         businessReady: "Your account is configured for WhatsApp Business API"
       }
     };
@@ -376,7 +337,7 @@ serve(async (req) => {
         error: error.message,
         details: {
           message: error.message,
-          tip: "Using direct messages instead of templates for better delivery rates",
+          tip: "Using direct messages for all numbers",
           suggestion: "Check your Twilio account status and WhatsApp number formatting",
           twilioGuide: "https://www.twilio.com/docs/whatsapp/api"
         }

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Send, Loader2, AlertCircle } from "lucide-react";
@@ -50,8 +51,8 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
           isPro: isPro,
           sendImmediately: true, // Send now as it's a manual trigger
           debugMode: true, // Include additional debug information
-          forceDirectMessage: true, // Always use direct messages for better delivery
-          message: `Here are your daily vocabulary words for ${category}. Enjoy learning!` // Default message
+          // Always include a direct message
+          message: `Here are your daily vocabulary words for ${category}. Enjoy learning!`
         }
       });
 

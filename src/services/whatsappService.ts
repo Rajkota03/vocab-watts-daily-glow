@@ -1,3 +1,4 @@
+
 import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -7,16 +8,10 @@ import { supabase } from "@/integrations/supabase/client";
  * This service handles sending messages to users via WhatsApp using Twilio.
  */
 
-// Default template ID for OTP messages
-const DEFAULT_OTP_TEMPLATE_ID = "HXabe0b61588dacdb93c6f458288896582";
-
 export interface SendWhatsAppRequest {
   phoneNumber: string;
-  message?: string; // Made optional since templates don't always need a fallback message
+  message: string; // Changed to be required
   userId?: string;
-  templateId?: string;
-  templateValues?: Record<string, string>;
-  forceDirectMessage?: boolean; // Add option to force direct message without template
 }
 
 /**
@@ -35,6 +30,7 @@ export const isUSPhoneNumber = (phoneNumber: string): boolean => {
 
 /**
  * Send a WhatsApp message via Twilio using the send-whatsapp edge function.
+ * Always sends as direct message, never using templates.
  * 
  * @param request The request parameters
  * @returns 
@@ -44,8 +40,7 @@ export const sendWhatsAppMessage = async (request: SendWhatsAppRequest): Promise
     console.log("[WhatsApp] Sending message via WhatsApp", { 
       phoneNumber: request.phoneNumber,
       messageLength: request.message?.length || 0,
-      userId: request.userId,
-      useTemplate: !request.forceDirectMessage && !!request.templateId
+      userId: request.userId
     });
     
     // Validate phone number 
@@ -62,25 +57,18 @@ export const sendWhatsAppMessage = async (request: SendWhatsAppRequest): Promise
       console.log(`[WhatsApp] Added + prefix to number: ${formattedPhone}`);
     }
     
-    // Check if it's a US number - these need special handling after April 1, 2025
+    // Check if it's a US number - just for logging
     const isUSNumber = isUSPhoneNumber(formattedPhone);
     
-    // NEW DEFAULT: Use direct messages instead of templates unless explicitly requested
-    // This changes the default behavior to prefer direct messages
-    const useDirectMessage = request.forceDirectMessage || true; // Default to true to force direct messaging
-    const shouldUseTemplate = request.templateId && !useDirectMessage && !isUSNumber;
-    
     // Always require a message for direct messaging
-    if (!request.message && useDirectMessage) {
-      console.log("[WhatsApp] Creating a default message for direct messaging");
-      // Set a default message if none provided
+    if (!request.message) {
+      console.log("[WhatsApp] No message provided, using default");
+      // Set a default message
       request.message = "Message from GlintUp";
     }
 
     // Call our edge function to send the WhatsApp message
     console.log(`[WhatsApp] Invoking send-whatsapp function for ${formattedPhone}`, {
-      useTemplate: shouldUseTemplate,
-      forceDirectMessage: useDirectMessage,
       isUSNumber,
       hasMessage: !!request.message
     });
@@ -91,27 +79,9 @@ export const sendWhatsAppMessage = async (request: SendWhatsAppRequest): Promise
       sendImmediately: true,
       debugMode: true,
       isUSNumber,
-      forceDirectMessage: useDirectMessage // Pass the direct message flag to the edge function
+      // Always send the message content - key change
+      message: request.message
     };
-    
-    // Always include message as the primary content
-    if (request.message) {
-      requestPayload.message = request.message;
-    } else {
-      // Provide a default message if no message is specified
-      requestPayload.message = "Message from GlintUp";
-    }
-    
-    // Add template information only if explicitly not using direct message
-    if (shouldUseTemplate) {
-      requestPayload.templateId = request.templateId;
-      if (request.templateValues) {
-        requestPayload.templateValues = request.templateValues;
-      }
-      console.log("[WhatsApp] Adding template as backup:", request.templateId);
-    } else {
-      console.log("[WhatsApp] Using direct message mode (bypassing templates)");
-    }
     
     const { data: functionResult, error: functionError } = await supabase.functions.invoke("send-whatsapp", {
       body: requestPayload,
@@ -132,18 +102,6 @@ export const sendWhatsAppMessage = async (request: SendWhatsAppRequest): Promise
       // Add extra context for specific error codes
       if (functionResult?.details?.twilioError?.code === 63016) {
         errorMessage = "Error 63016: WhatsApp message could not be delivered. Please verify the recipient's phone number format and WhatsApp availability.";
-      } else if (functionResult?.details?.twilioError?.code === 63049) {
-        errorMessage = "Error 63049: US recipients cannot receive template messages after April 1, 2025. Switching to direct messaging.";
-        
-        // If this was a template error, retry with direct message
-        if (!useDirectMessage) {
-          console.log("[WhatsApp] Retrying with direct message instead of template");
-          return await sendWhatsAppMessage({
-            ...request,
-            forceDirectMessage: true,
-            templateId: undefined
-          });
-        }
       } else if (functionResult?.details?.tip) {
         errorMessage += ` Tip: ${functionResult.details.tip}`;
       }
@@ -196,7 +154,6 @@ export const verifyWhatsAppConfig = async (): Promise<{
 
 /**
  * Send an OTP code via WhatsApp using direct messaging
- * Bypasses templates completely for better delivery reliability
  */
 export const sendOtpViaWhatsApp = async (phoneNumber: string, otp: string): Promise<boolean> => {
   try {
@@ -207,8 +164,7 @@ export const sendOtpViaWhatsApp = async (phoneNumber: string, otp: string): Prom
     
     return await sendWhatsAppMessage({
       phoneNumber,
-      message,
-      forceDirectMessage: true // Always force direct message for OTPs
+      message
     });
   } catch (error) {
     console.error("[WhatsApp] Failed to send OTP via WhatsApp:", error);
