@@ -117,22 +117,38 @@ serve(async (req) => {
     }
 
     // --- Process phone number format ---
+    // UPDATED: Improved WhatsApp number formatting with better validation
     const formatWhatsAppNumber = (phoneNumber: string) => {
-      // Remove any non-digit characters except the leading +
+      // First, sanitize the number to only contain digits and '+' at the start
       let formatted = phoneNumber.replace(/[^\d+]/g, '');
       
-      // Ensure the number starts with + if it doesn't already
+      // Ensure the number starts with '+' if it doesn't already
       if (!formatted.startsWith('+')) {
         formatted = `+${formatted}`;
       }
       
-      // Add WhatsApp: prefix for Twilio
-      formatted = `whatsapp:${formatted}`;
-      return formatted;
+      // Validate that we have a reasonable length for an international phone number
+      // Most international numbers are between 8 and 15 digits plus the '+' sign
+      const digitsOnly = formatted.replace(/[^\d]/g, '');
+      if (digitsOnly.length < 8 || digitsOnly.length > 15) {
+        console.warn(`Warning: Phone number ${formatted} has unusual length (${digitsOnly.length} digits)`);
+      }
+      
+      // For WhatsApp, Twilio requires the 'whatsapp:' prefix
+      return `whatsapp:${formatted}`;
     };
 
+    // Format phone numbers
     const formattedTo = formatWhatsAppNumber(to);
+    let formattedFrom = null;
+    if (twilioFromNumber) {
+      formattedFrom = formatWhatsAppNumber(twilioFromNumber);
+    }
+    
     console.log(`Formatted recipient phone number from ${to} to ${formattedTo}`);
+    if (formattedFrom) {
+      console.log(`Formatted sender phone number to ${formattedFrom}`);
+    }
 
     // --- Determine which number to send from ---
     console.log("TWILIO_FROM_NUMBER from environment:", twilioFromNumber);
@@ -143,7 +159,7 @@ serve(async (req) => {
     if (useMessagingService) {
       console.log("Using Messaging Service SID:", messagingServiceSid);
     } else if (twilioFromNumber) {
-      console.log("Using From Number:", formatWhatsAppNumber(twilioFromNumber));
+      console.log("Using From Number:", formattedFrom);
     } else {
       throw new Error("Either Twilio From Number or Messaging Service SID must be configured");
     }
@@ -159,7 +175,7 @@ serve(async (req) => {
     if (useMessagingService) {
       formData.append("MessagingServiceSid", messagingServiceSid);
     } else {
-      formData.append("From", formatWhatsAppNumber(twilioFromNumber!));
+      formData.append("From", formattedFrom);
     }
     
     formData.append("Body", message);
@@ -169,7 +185,7 @@ serve(async (req) => {
       url: twilioApiUrl(twilioAccountSid),
       to: formattedTo,
       messagingService: useMessagingService ? messagingServiceSid : undefined,
-      from: useMessagingService ? "using messaging service" : formatWhatsAppNumber(twilioFromNumber!),
+      from: useMessagingService ? "using messaging service" : formattedFrom,
       messageLength: message.length
     });
 
@@ -187,7 +203,7 @@ serve(async (req) => {
 
     // Parse the response JSON
     const twilioData = await twilioResponse.json();
-    console.log("Twilio response data:", JSON.stringify(twilioData).substring(0, 200) + "...");
+    console.log("Twilio response data:", JSON.stringify(twilioData));
 
     // Check if the API call was successful
     if (!twilioResponse.ok || twilioData.error_code) {
@@ -208,13 +224,13 @@ serve(async (req) => {
       status: twilioData.status,
       details: twilioData,
       to: formattedTo,
-      from: useMessagingService ? "via messaging service" : formatWhatsAppNumber(twilioFromNumber!),
+      from: useMessagingService ? "via messaging service" : formattedFrom,
       webhookUrl: webhookUrl,
       troubleshooting: {
-        checkPhoneFormat: "Phone format looks good",
-        checkSandbox: "You're using WhatsApp Business API",
+        checkTwilioConsole: "Check your Twilio console for message delivery status",
+        sandboxInstructions: "If using sandbox, recipient must send 'join <sandbox-code>' first",
         messageWillAppear: "Messages appear in WhatsApp, not as SMS/text",
-        appNeeded: "Make sure recipient has WhatsApp installed"
+        makeProductionReady: "For production, apply for WhatsApp Business API access through Twilio"
       }
     };
 
@@ -234,7 +250,8 @@ serve(async (req) => {
         details: {
           message: error.message,
           tip: "Check your Twilio credentials and WhatsApp number formatting",
-          suggestion: "Make sure your Twilio account is active and has WhatsApp capability"
+          suggestion: "Make sure your Twilio account is active and has WhatsApp capability",
+          twilioGuide: "https://www.twilio.com/docs/whatsapp/tutorial/send-whatsapp-notification-messages-templates"
         }
       }),
       { 

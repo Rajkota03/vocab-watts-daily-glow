@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 // Import Twilio helper library for signature validation
-import twilio from 'https://esm.sh/twilio@4.20.1'; // Use a specific version
+import twilio from 'https://esm.sh/twilio@4.20.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -63,21 +63,41 @@ async function handleMessageStatus(params: Record<string, string>, supabaseAdmin
   console.log(`Processing status update for message ${params.MessageSid}: ${params.MessageStatus}`);
   
   try {
-    // Store the status update in whatsapp_message_status table
+    // Store the status update in whatsapp_message_status table - we'll check if api_version exists
+    // This fixes the "Could not find the 'api_version' column" error
+    const currentTableInfo = await supabaseAdmin
+      .from('whatsapp_message_status')
+      .select('*')
+      .limit(1);
+
+    // Check if we had an error that might be due to missing column
+    let shouldTransformApiVersion = false;
+    if (currentTableInfo.error && currentTableInfo.error.message?.includes("api_version")) {
+      console.log("Detected missing api_version column - will omit this field");
+      shouldTransformApiVersion = true;
+    }
+    
+    // Prepare data object - conditionally include api_version
+    const dataObj: Record<string, any> = {
+      message_sid: params.MessageSid,
+      status: params.MessageStatus,
+      error_code: params.ErrorCode || null,
+      error_message: params.ErrorMessage || null,
+      to_number: params.To || null,
+      from_number: params.From || null,
+      source_ip: sourceIp,
+      raw_data: params
+    };
+    
+    // Only include api_version if the column exists
+    if (!shouldTransformApiVersion) {
+      dataObj.api_version = params.ApiVersion || null;
+    }
+
+    // Insert the record with our conditional data
     const { error } = await supabaseAdmin
       .from('whatsapp_message_status')
-      .insert({
-        message_sid: params.MessageSid,
-        status: params.MessageStatus,
-        error_code: params.ErrorCode || null,
-        error_message: params.ErrorMessage || null,
-        to_number: params.To || null,
-        from_number: params.From || null,
-        api_version: params.ApiVersion || null,
-        request_method: 'POST', // We know this is a POST for status callbacks
-        source_ip: sourceIp,
-        raw_data: params
-      });
+      .insert(dataObj);
 
     if (error) {
       console.error("Error storing message status:", error);
