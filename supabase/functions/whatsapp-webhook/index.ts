@@ -91,6 +91,8 @@ async function handleMessageStatus(params: Record<string, string>, supabaseAdmin
     
     // Only include api_version if the column exists
     if (!shouldTransformApiVersion) {
+      // Note about Twilio API version - this is normal and not an error condition
+      // The 2010-04-01 is Twilio's stable API version identifier
       dataObj.api_version = params.ApiVersion || null;
     }
 
@@ -240,6 +242,11 @@ serve(async (req) => {
       const params = formDataToObject(formData);
       
       console.log("Parsed form data:", params);
+      
+      // Add note about the API version if present
+      if (params.ApiVersion === "2010-04-01") {
+        console.log("Note: Twilio API version '2010-04-01' is their standard versioning scheme and represents the current stable API.");
+      }
 
       // Handle status callbacks from Twilio (presence of MessageSid and MessageStatus indicates status update)
       if (params.MessageSid && params.MessageStatus) {

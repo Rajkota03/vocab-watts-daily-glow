@@ -182,8 +182,14 @@ serve(async (req) => {
     const formData = new FormData();
     formData.append("To", formattedTo);
     
+    // IMPORTANT FIX: Always add both MessagingServiceSid AND From number when available
+    // This helps ensure the "from" field is properly populated in the response
     if (useMessagingService) {
       formData.append("MessagingServiceSid", messagingServiceSid);
+      // If we have a from number, add it as well to ensure "from" is not null
+      if (twilioFromNumber) {
+        formData.append("From", formattedFrom);
+      }
     } else {
       formData.append("From", formattedFrom);
     }
@@ -211,7 +217,7 @@ serve(async (req) => {
       url: twilioApiUrl(twilioAccountSid),
       to: formattedTo,
       messagingService: useMessagingService ? messagingServiceSid : undefined,
-      from: useMessagingService ? "using messaging service" : formattedFrom,
+      from: useMessagingService && twilioFromNumber ? formattedFrom : (useMessagingService ? "using messaging service" : formattedFrom),
       contentType: usingTemplate ? "template" : "text",
       templateId: usingTemplate ? templateId : undefined,
     });
@@ -251,10 +257,15 @@ serve(async (req) => {
       status: twilioData.status,
       details: twilioData,
       to: formattedTo,
-      from: useMessagingService ? "via messaging service" : formattedFrom,
+      // Fix the "from" field to be more descriptive
+      from: twilioData.from || (useMessagingService ? 
+        (twilioFromNumber ? `whatsapp:${twilioFromNumber}` : "via messaging service") : 
+        formattedFrom),
       webhookUrl: webhookUrl,
       usingTemplate: usingTemplate,
       templateId: usingTemplate ? templateId : undefined,
+      // Add API version explanation
+      apiVersionInfo: "Twilio's API endpoint is versioned as '2010-04-01' but represents their current stable API",
       troubleshooting: usingTemplate ? {
         templates: "You are using a WhatsApp template which bypasses the opt-in requirement",
         checkTwilioConsole: "Check your Twilio console for message delivery status and template approval",

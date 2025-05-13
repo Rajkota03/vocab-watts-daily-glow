@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Loader2, AlertCircle, Info, ExternalLink, RefreshCw, CheckCircle } from "lucide-react";
@@ -35,6 +36,8 @@ interface FunctionResponse {
   troubleshooting?: Record<string, string>;
   webhookUrl?: string;
   twilioResponse?: any;
+  apiVersionInfo?: string;
+  from?: string;
 }
 
 const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phoneNumber }) => {
@@ -281,7 +284,10 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
         variant: "success",
       });
 
-      if (data.troubleshooting) {
+      // Update UI with API version info if available
+      if (data.apiVersionInfo) {
+        setLastErrorDetails(`API Version Note: ${data.apiVersionInfo}\n\n${data.from ? `From: ${data.from}` : ""}`);
+      } else if (data.troubleshooting) {
         const tips = Object.entries(data.troubleshooting)
           .map(([key, value]) => `- ${value}`)
           .join('\n');
@@ -290,6 +296,8 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
 
       if (data.twilioResponse) {
         setTwilioDetails(data.twilioResponse);
+      } else if (data.details) {
+        setTwilioDetails(data.details);
       }
 
       setInputPhoneNumber('');
@@ -469,11 +477,11 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
         </Button>
       </div>
       
-      {/* Display last error details */} 
+      {/* Display last error details or API info */} 
       {lastErrorDetails && (
-         <Alert variant="destructive">
+        <Alert className={lastErrorDetails.includes("API Version Note") ? "bg-blue-50 border-blue-200" : "variant-destructive"}>
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Details</AlertTitle>
+          <AlertTitle>{lastErrorDetails.includes("API Version Note") ? "Information" : "Details"}</AlertTitle>
           <AlertDescription style={{ whiteSpace: 'pre-wrap' }}>{lastErrorDetails}</AlertDescription>
         </Alert>
       )}
