@@ -235,15 +235,12 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
           expiryMinutes: "10"
         };
         console.log(`Using template message with ID: ${templateId}`);
-        
-        // Add fallback message in case template fails
-        requestPayload.message = `This is a test message for ${category} category.`; 
-      } else {
-        // If not using template, always include a message
-        requestPayload.message = `This is a test message from your app. Sent at: ${new Date().toLocaleTimeString()}`; 
       }
+      
+      // Always include a message (either main content or as fallback)
+      requestPayload.message = `This is a test message for ${category} category. Sent at: ${new Date().toLocaleTimeString()}`;
 
-      const { data, error } = await supabase.functions.invoke<FunctionResponse>('send-whatsapp', {
+      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
         body: requestPayload
       });
 

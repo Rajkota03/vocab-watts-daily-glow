@@ -69,19 +69,21 @@ const WhatsAppTester = () => {
       return;
     }
 
-    if (activeTab === 'regular' && !message) {
+    // Always require template for template tab
+    if (activeTab === 'template' && !templateId) {
       toast({
-        title: "Message required",
-        description: "Please enter a message to send",
+        title: "Template ID required",
+        description: "Please enter a template ID to use template messaging",
         variant: "destructive"
       });
       return;
     }
 
-    if (activeTab === 'template' && !templateId) {
+    // Regular message tab requires a message
+    if (activeTab === 'regular' && !message) {
       toast({
-        title: "Template ID required",
-        description: "Please enter a template ID",
+        title: "Message required",
+        description: "Please enter a message to send",
         variant: "destructive"
       });
       return;
@@ -97,20 +99,24 @@ const WhatsAppTester = () => {
         phoneNumber
       };
       
-      if (activeTab === 'regular') {
-        requestPayload.message = message;
-      } else {
+      // Determine whether to use template or regular message based on active tab
+      if (activeTab === 'template') {
         requestPayload.templateId = templateId;
         requestPayload.templateValues = templateValues;
-        // If no message for template fallback, set a default
+        // Include fallback message in case template fails
         requestPayload.message = "This is a fallback message if template fails";
+        console.log("Using template mode with ID:", templateId);
+      } else {
+        // Regular message mode
+        requestPayload.message = message;
+        console.log("Using regular message mode");
       }
       
       const success = await sendWhatsAppMessage(requestPayload);
       
       if (success) {
         toast({
-          title: `Message ${activeTab === 'template' ? 'template ' : ''}sent successfully`,
+          title: `${activeTab === 'template' ? 'Template message' : 'Message'} sent successfully`,
           description: "Your WhatsApp message has been queued for delivery",
           variant: "default"
         });

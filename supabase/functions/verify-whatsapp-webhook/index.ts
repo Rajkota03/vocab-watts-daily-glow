@@ -1,91 +1,85 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from "../_shared/cors.ts";
-
-// Main webhook validator function
-async function validateWebhook(url: string, verifyToken: string): Promise<any> {
-  try {
-    // We're constructing the expected webhook URL
-    const webhookUrl = url + "/functions/v1/whatsapp-webhook";
-    
-    // Try to make a GET request to the webhook with verification parameters
-    const testToken = verifyToken || "test_token";
-    const testUrl = `${webhookUrl}?hub.mode=subscribe&hub.verify_token=${testToken}&hub.challenge=challenge123`;
-    
-    console.log(`Testing webhook at: ${testUrl}`);
-    
-    const response = await fetch(testUrl);
-    const status = response.status;
-    const body = await response.text();
-    
-    return {
-      success: status === 200 && body === "challenge123",
-      status,
-      body: body.substring(0, 100), // Truncate long responses
-      url: webhookUrl,
-      verifyTokenConfigured: !!verifyToken
-    };
-  } catch (error) {
-    console.error("Error testing webhook:", error);
-    return {
-      success: false,
-      error: error.message,
-      url: url + "/functions/v1/whatsapp-webhook",
-      verifyTokenConfigured: !!verifyToken
-    };
-  }
-}
+// Import necessary libraries
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { corsHeaders } from '../_shared/cors.ts';
 
 serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      status: 200,
-      headers: corsHeaders
-    });
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
   }
-  
+
   try {
-    // Parse request body
-    const { action } = await req.json();
+    const verifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const webhookUrl = `${supabaseUrl}/functions/v1/whatsapp-webhook`;
     
-    // Get Supabase URL and verify token from environment
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-    const verifyToken = Deno.env.get("WHATSAPP_VERIFY_TOKEN") || "";
+    const requestData = await req.json();
+    const action = requestData?.action || 'info';
     
-    // Build the webhook information
+    // Build the response object with webhook info
     const webhookInfo = {
-      url: supabaseUrl,
-      verifyTokenConfigured: !!verifyToken
+      url: webhookUrl,
+      verifyTokenConfigured: !!verifyToken,
+      provider: 'twilio',
+      updated_at: new Date().toISOString()
     };
-    
-    // If we're testing the webhook, add test results
-    if (action === "test") {
-      const testResult = await validateWebhook(supabaseUrl, verifyToken);
-      webhookInfo['testResult'] = testResult;
+
+    // If this is a test request, attempt to verify the webhook configuration
+    if (action === 'test') {
+      try {
+        // Simulate a verification request to ensure the webhook is properly configured
+        const verifyParams = new URLSearchParams({
+          'hub.mode': 'subscribe',
+          'hub.verify_token': verifyToken || '',
+          'hub.challenge': 'test-challenge-string'
+        });
+        
+        const testUrl = `${webhookUrl}?${verifyParams.toString()}`;
+        
+        const response = await fetch(testUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const responseBody = await response.text();
+        
+        // Add test result to the webhook info
+        webhookInfo.testResult = {
+          success: response.ok && responseBody === 'test-challenge-string',
+          status: response.status,
+          statusText: response.statusText,
+          body: responseBody,
+          timestamp: new Date().toISOString()
+        };
+      } catch (error) {
+        webhookInfo.testResult = {
+          success: false,
+          error: error.message,
+          timestamp: new Date().toISOString()
+        };
+      }
     }
-    
-    // Return the webhook information
-    return new Response(
-      JSON.stringify({ 
-        success: true,
-        webhook: webhookInfo
-      }),
-      { 
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      }
-    );
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      webhook: webhookInfo 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200
+    });
+      
   } catch (error) {
-    return new Response(
-      JSON.stringify({ 
-        success: false,
-        error: error.message
-      }),
-      { 
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      }
-    );
+    console.error('Error in webhook validation:', error);
+    
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: error.message || 'An error occurred during webhook validation'
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500
+    });
   }
 });

@@ -30,6 +30,74 @@ serve(async (req) => {
 
     const requestData = await req.json();
     
+    // Check only configuration without sending messages
+    if (requestData.checkOnly === true) {
+      const configStatus = {
+        twilioConfigured: !!twilioAccountSid && !!twilioAuthToken,
+        fromNumberConfigured: !!twilioFromNumber,
+        messagingServiceConfigured: !!messagingServiceSid,
+        accountSid: twilioAccountSid ? `${twilioAccountSid.substring(0, 6)}...` : null,
+      };
+      
+      // If we should also verify credentials, test Twilio API connectivity
+      if (requestData.verifyCredentials && twilioAccountSid && twilioAuthToken) {
+        try {
+          // Call Twilio API to check account status
+          const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}.json`, {
+            headers: {
+              Authorization: `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`
+            }
+          });
+          
+          if (!response.ok) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              twilioConfigured: true,
+              accountVerified: false,
+              error: `Twilio API returned ${response.status}`,
+              configStatus
+            }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200 // Still return 200 for frontend to process
+            });
+          }
+          
+          const accountData = await response.json();
+          return new Response(JSON.stringify({ 
+            success: true, 
+            twilioConfigured: true,
+            accountVerified: true,
+            accountName: accountData.friendly_name,
+            accountStatus: accountData.status,
+            accountType: accountData.type,
+            configStatus
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200
+          });
+        } catch (error) {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            twilioConfigured: true,
+            accountVerified: false,
+            error: `Connection error: ${error.message}`,
+            configStatus
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200 // Still return 200 for frontend to process
+          });
+        }
+      }
+      
+      return new Response(JSON.stringify({ 
+        success: configStatus.twilioConfigured && (configStatus.fromNumberConfigured || configStatus.messagingServiceConfigured),
+        configStatus
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200
+      });
+    }
+    
     // If this is a test connection request, just verify the credentials
     if (requestData.testTwilioConnection === true) {
       if (!twilioAccountSid || !twilioAuthToken) {
@@ -40,7 +108,7 @@ serve(async (req) => {
             accountSidPrefix: twilioAccountSid ? twilioAccountSid.substring(0, 6) : null
           }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 400
+            status: 200 // Return 200 for frontend handling
           }
         );
       }
@@ -66,7 +134,7 @@ serve(async (req) => {
             accountSidPrefix: twilioAccountSid.substring(0, 6)
           }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 400
+            status: 200 // Return 200 for frontend handling
           });
         }
         
@@ -89,13 +157,17 @@ serve(async (req) => {
           accountSidPrefix: twilioAccountSid ? twilioAccountSid.substring(0, 6) : null
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500
+          status: 200 // Return 200 for frontend handling
         });
       }
     }
 
     // --- Parse WhatsApp message request ---
-    const { to, message, templateId, templateValues } = requestData;
+    // Support both 'to' and 'phoneNumber' fields for compatibility
+    const to = requestData.to || requestData.phoneNumber;
+    const message = requestData.message;
+    const templateId = requestData.templateId;
+    const templateValues = requestData.templateValues;
 
     // Debug logging
     console.log("WhatsApp request received:", { 
@@ -209,8 +281,10 @@ serve(async (req) => {
       }
       
       console.log("Using template message with ContentSid:", contentSid);
-    } else {
-      // For regular message, just use the Body parameter
+    }
+    
+    // For all messages (including templates), provide a Body as fallback
+    if (message) {
       formData.append("Body", message);
     }
 
@@ -268,13 +342,9 @@ serve(async (req) => {
       // Add API version explanation
       apiVersionInfo: "Twilio's API endpoint is versioned as '2010-04-01' but represents their current stable API",
       businessAccount: true, // Indicate this is a business account
-      troubleshooting: usingTemplate ? {
-        templates: "You are using a WhatsApp template which works with your business account",
-        checkTwilioConsole: "Check your Twilio console for message delivery status and template approval",
-        businessReady: "Your account is configured for WhatsApp Business API"
-      } : {
+      troubleshooting: {
         checkTwilioConsole: "Check your Twilio console for message delivery status",
-        messageWindowInfo: "Standard messages are restricted to 24-hour conversation window",
+        messageWindowInfo: "Standard messages may be restricted to 24-hour conversation window",
         businessReady: "Your account is configured for WhatsApp Business API"
       }
     };
