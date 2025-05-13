@@ -1,17 +1,13 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import SignupForm from './SignupForm';
 import { useNavigate } from 'react-router-dom';
-
 const HeroSection = () => {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const navigate = useNavigate();
-  
-  return (
-    <section className="min-h-screen py-24 md:py-0 flex items-center bg-gradient-to-br from-white to-primary/10 overflow-hidden">
+  return <section className="min-h-screen py-24 md:py-0 flex items-center bg-gradient-to-br from-white to-primary/10 overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="flex flex-col lg:flex-row gap-12 items-center">
           <div className="flex-1 text-center lg:text-left px-[49px]">
@@ -44,11 +40,7 @@ const HeroSection = () => {
               </Dialog>
               
               {/* TODO: Update onClick to open AuthModal with initialTab='login' */}
-              <Button 
-                onClick={() => { /* Open AuthModal with initialTab='login' */ }}
-                variant="outline" 
-                className="border-primary text-primary hover:bg-primary/10 text-base px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95"
-              >
+              <Button onClick={() => {/* Open AuthModal with initialTab='login' */}} variant="outline" className="border-primary text-primary hover:bg-primary/10 text-base px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95">
                 Log In / Go Pro
               </Button>
             </div>
@@ -81,8 +73,6 @@ const HeroSection = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default HeroSection;
