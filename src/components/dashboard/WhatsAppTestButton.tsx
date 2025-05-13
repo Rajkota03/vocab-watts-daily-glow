@@ -9,6 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
+// Default template ID - using the provided one
+const DEFAULT_TEMPLATE_ID = "HXabe0b61588dacdb93c6f458288896582";
+
 interface WhatsAppTestButtonProps {
   category: string;
   phoneNumber?: string; // Make phoneNumber optional
@@ -213,8 +216,8 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
       console.log(`Sending WhatsApp test message to: ${phoneToUse}`);
 
       // Create test payload - prioritize template
-      const templateId = import.meta.env.VITE_WHATSAPP_OTP_TEMPLATE_SID;
-      const useTemplateMessage = useTemplate && templateId;
+      const templateId = DEFAULT_TEMPLATE_ID; // Use our predefined template ID
+      const useTemplateMessage = useTemplate;
       
       // Create request payload
       const requestPayload: any = {
@@ -226,7 +229,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
         extraDebugging: true
       };
       
-      // Add template if available (preferred method)
+      // Add template if available and enabled (preferred method)
       if (useTemplateMessage) {
         requestPayload.templateId = templateId;
         requestPayload.templateValues = {
@@ -235,10 +238,15 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
           expiryMinutes: "10"
         };
         console.log(`Using template message with ID: ${templateId}`);
+      } else {
+        // Always include a message even when using templates as fallback
+        requestPayload.message = `This is a test message for ${category} category. Sent at: ${new Date().toLocaleTimeString()}`;
       }
       
       // Always include a message (either main content or as fallback)
-      requestPayload.message = `This is a test message for ${category} category. Sent at: ${new Date().toLocaleTimeString()}`;
+      if (!requestPayload.message) {
+        requestPayload.message = `Test message from GlintUp. Sent at: ${new Date().toLocaleTimeString()}`;
+      }
 
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
         body: requestPayload
@@ -434,6 +442,13 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
           onCheckedChange={setUseTemplate}
         />
       </div>
+      
+      {/* Display template status */}
+      {useTemplate && (
+        <div className="text-xs text-slate-600 bg-slate-50 p-2 rounded border">
+          Using template ID: <span className="font-mono">{DEFAULT_TEMPLATE_ID}</span>
+        </div>
+      )}
       
       {/* Phone Input Form */}
       {showPhoneInput ? (

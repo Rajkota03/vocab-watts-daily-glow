@@ -8,6 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
  * This service handles sending messages to users via WhatsApp using Twilio.
  */
 
+// Default template ID for OTP messages
+const DEFAULT_OTP_TEMPLATE_ID = "HXabe0b61588dacdb93c6f458288896582";
+
 export interface SendWhatsAppRequest {
   phoneNumber: string;
   message?: string; // Made optional since templates don't always need a fallback message
@@ -74,6 +77,9 @@ export const sendWhatsAppMessage = async (request: SendWhatsAppRequest): Promise
     // Add message if provided (as fallback or primary content)
     if (request.message) {
       requestPayload.message = request.message;
+    } else if (!request.templateId) {
+      // Provide a default message if no template or message is specified
+      requestPayload.message = "Message from GlintUp";
     }
     
     const { data: functionResult, error: functionError } = await supabase.functions.invoke("send-whatsapp", {
@@ -151,9 +157,8 @@ export const verifyWhatsAppConfig = async (): Promise<{
  */
 export const sendOtpViaWhatsApp = async (phoneNumber: string, otp: string): Promise<boolean> => {
   try {
-    // Use the default OTP template from environment or fall back to a known SID
-    // You would need to set this in your Supabase secrets or .env file
-    const templateId = import.meta.env.VITE_WHATSAPP_OTP_TEMPLATE_SID || "YOUR_OTP_TEMPLATE_SID";
+    // Use the default OTP template ID
+    const templateId = DEFAULT_OTP_TEMPLATE_ID;
     
     return await sendWhatsAppMessage({
       phoneNumber,
@@ -162,7 +167,7 @@ export const sendOtpViaWhatsApp = async (phoneNumber: string, otp: string): Prom
       templateValues: {
         otp: otp,
         expiryMinutes: "10", // Adjust as needed for your template
-        appName: "GlintUp" // Your app name
+        name: "User" // Your app name
       }
     });
   } catch (error) {
@@ -170,3 +175,4 @@ export const sendOtpViaWhatsApp = async (phoneNumber: string, otp: string): Prom
     throw error;
   }
 };
+

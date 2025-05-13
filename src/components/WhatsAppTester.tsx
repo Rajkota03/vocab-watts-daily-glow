@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,10 +13,13 @@ import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+// Default template ID - using the one provided
+const DEFAULT_TEMPLATE_ID = "HXabe0b61588dacdb93c6f458288896582";
+
 const WhatsAppTester = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [message, setMessage] = useState('');
-  const [templateId, setTemplateId] = useState('');
+  const [templateId, setTemplateId] = useState(DEFAULT_TEMPLATE_ID);
   const [templateValues, setTemplateValues] = useState<Record<string, string>>({
     name: '',
     otp: '',
@@ -27,23 +29,27 @@ const WhatsAppTester = () => {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
   const [sandboxInfo, setSandboxInfo] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('template'); // Changed default to 'template'
-  const [useTemplate, setUseTemplate] = useState(true); // Changed default to true
+  const [activeTab, setActiveTab] = useState('template'); // Default to template
+  const [useTemplate, setUseTemplate] = useState(true); // Default to true
   const { toast } = useToast();
   
   // Default template IDs that can be used
   const [defaultTemplates, setDefaultTemplates] = useState<{id: string, name: string, description: string}[]>([
     {
-      id: import.meta.env.VITE_WHATSAPP_OTP_TEMPLATE_SID || '',
+      id: DEFAULT_TEMPLATE_ID,
       name: 'OTP Template',
       description: 'Send verification code'
     }
   ]);
   
   useEffect(() => {
-    // If we have a template ID in the environment, set it as default
-    if (import.meta.env.VITE_WHATSAPP_OTP_TEMPLATE_SID) {
-      setTemplateId(import.meta.env.VITE_WHATSAPP_OTP_TEMPLATE_SID);
+    // Set the template ID from environment or use the default one
+    const envTemplateId = import.meta.env.VITE_WHATSAPP_OTP_TEMPLATE_SID;
+    if (envTemplateId) {
+      setTemplateId(envTemplateId);
+    } else {
+      // Use the hardcoded default if no env variable
+      console.log("Using default template ID:", DEFAULT_TEMPLATE_ID);
     }
     
     // Attempt to load template IDs from Supabase
@@ -103,9 +109,10 @@ const WhatsAppTester = () => {
       if (activeTab === 'template') {
         requestPayload.templateId = templateId;
         requestPayload.templateValues = templateValues;
+        console.log("Using template mode with ID:", templateId);
+        
         // Include fallback message in case template fails
         requestPayload.message = "This is a fallback message if template fails";
-        console.log("Using template mode with ID:", templateId);
       } else {
         // Regular message mode
         requestPayload.message = message;
@@ -235,6 +242,9 @@ const WhatsAppTester = () => {
                       onChange={(e) => setTemplateId(e.target.value)}
                       className="w-full"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Currently using template: {templateId || "None"}
+                    </p>
                   </div>
                   
                   {defaultTemplates.length > 0 && defaultTemplates[0].id && (

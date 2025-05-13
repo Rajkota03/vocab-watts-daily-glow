@@ -7,6 +7,9 @@ import { corsHeaders } from '../_shared/cors.ts';
 const twilioApiUrl = (accountSid: string) => 
   `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
 
+// Default template ID for fallback
+const DEFAULT_TEMPLATE_ID = "HXabe0b61588dacdb93c6f458288896582";
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -166,7 +169,7 @@ serve(async (req) => {
     // Support both 'to' and 'phoneNumber' fields for compatibility
     const to = requestData.to || requestData.phoneNumber;
     const message = requestData.message;
-    const templateId = requestData.templateId;
+    const templateId = requestData.templateId || DEFAULT_TEMPLATE_ID; // Use default if not provided
     const templateValues = requestData.templateValues;
 
     // Debug logging
@@ -286,6 +289,9 @@ serve(async (req) => {
     // For all messages (including templates), provide a Body as fallback
     if (message) {
       formData.append("Body", message);
+    } else if (usingTemplate) {
+      // Provide a minimal default message if none was provided
+      formData.append("Body", "Message from GlintUp");
     }
 
     // Log the API request details (but not the full auth token)
@@ -376,3 +382,4 @@ serve(async (req) => {
     );
   }
 });
+
