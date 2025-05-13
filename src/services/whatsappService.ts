@@ -68,7 +68,11 @@ export const sendWhatsAppMessage = async (request: SendWhatsAppRequest): Promise
       
       // Extract detailed error information if available
       let errorMessage = functionResult?.error || "Failed to send WhatsApp message.";
-      if (functionResult?.details?.tip) {
+      
+      // Add extra context for specific error codes
+      if (functionResult?.details?.twilioError?.code === 63016) {
+        errorMessage = `Error 63016: Failed to send message because recipient hasn't opted into your WhatsApp sandbox. The recipient must send "join <your-sandbox-keyword>" to your Twilio WhatsApp number first.`;
+      } else if (functionResult?.details?.tip) {
         errorMessage += ` Tip: ${functionResult.details.tip}`;
       }
       

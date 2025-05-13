@@ -16,6 +16,7 @@ const WhatsAppTester = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
+  const [sandboxInfo, setSandboxInfo] = useState<string | null>(null);
   const { toast } = useToast();
   
   const handleSendTest = async () => {
@@ -41,6 +42,7 @@ const WhatsAppTester = () => {
       setLoading(true);
       setError(null);
       setResult(null);
+      setSandboxInfo(null);
       
       const success = await sendWhatsAppMessage({
         phoneNumber,
@@ -51,7 +53,7 @@ const WhatsAppTester = () => {
         toast({
           title: "Message sent successfully",
           description: "Your WhatsApp message has been queued for delivery",
-          variant: "success"
+          variant: "default"
         });
         
         setResult({
@@ -63,10 +65,16 @@ const WhatsAppTester = () => {
       console.error("Error sending WhatsApp message:", err);
       setError(err.message || "Failed to send message");
       
+      // Check for the specific 63016 error code
+      if (err.message?.includes('63016') || err.message?.includes('outside the allowed window')) {
+        setSandboxInfo(`Important: Error 63016 indicates you need to opt-in to the Twilio WhatsApp sandbox. 
+        The recipient (${phoneNumber}) must send "join <your-sandbox-keyword>" to your Twilio WhatsApp number first.`);
+      }
+      
       toast({
         title: "Failed to send message",
         description: err.message || "An unexpected error occurred",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -128,9 +136,19 @@ const WhatsAppTester = () => {
               </Alert>
             )}
             
+            {sandboxInfo && (
+              <Alert className="bg-amber-50 border-amber-200 text-amber-800">
+                <AlertCircle className="h-4 w-4 text-amber-800" />
+                <AlertTitle className="text-amber-800">Sandbox Opt-In Required</AlertTitle>
+                <AlertDescription className="text-amber-700">
+                  {sandboxInfo}
+                </AlertDescription>
+              </Alert>
+            )}
+            
             {result && result.success && (
-              <Alert variant="success" className="bg-green-50 border-green-200 text-green-800">
-                <div className="text-sm">
+              <Alert className="bg-green-50 border-green-200">
+                <div className="text-sm text-green-800">
                   ✓ Message sent successfully at {new Date(result.timestamp).toLocaleTimeString()}
                 </div>
               </Alert>

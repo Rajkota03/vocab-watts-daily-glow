@@ -2,11 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, AlertTriangle, CheckCircle2, HelpCircle } from "lucide-react";
 import WhatsAppTester from "@/components/WhatsAppTester";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface ConfigStatus {
   accountSid?: boolean;
@@ -22,6 +23,7 @@ const WhatsAppTest = () => {
   const [configStatus, setConfigStatus] = useState<ConfigStatus>({
     overallStatus: 'checking'
   });
+  const [twilioNumber, setTwilioNumber] = useState<string | null>(null);
   
   useEffect(() => {
     // Check Twilio configuration
@@ -49,6 +51,11 @@ const WhatsAppTest = () => {
             messagingService: true,
             overallStatus: 'configured'
           });
+          
+          // Try to extract the Twilio WhatsApp number if available
+          if (data.fromNumber) {
+            setTwilioNumber(data.fromNumber.replace('whatsapp:', ''));
+          }
         } else {
           // Could connect but there's an issue
           setConfigStatus({
@@ -126,6 +133,26 @@ const WhatsAppTest = () => {
           </AlertDescription>
         </Alert>
       )}
+      
+      {/* Sandbox Instructions Card - ALWAYS show this for new users */}
+      <Card className="mb-6 bg-blue-50 border-blue-200">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-blue-800 flex items-center gap-2">
+            <HelpCircle className="h-5 w-5" />
+            Important: WhatsApp Sandbox Opt-In Required
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-blue-700">
+          <p className="mb-3">For Twilio WhatsApp sandbox testing, recipients <strong>must first opt in</strong> by sending a message to your Twilio WhatsApp number:</p>
+          
+          <div className="bg-white p-3 rounded-md border border-blue-200 mb-3">
+            <p className="font-mono text-center mb-1">Send <strong>"join &lt;your-sandbox-code&gt;"</strong> to:</p>
+            <p className="font-mono text-center font-bold">{twilioNumber || "Your Twilio WhatsApp number"}</p>
+          </div>
+          
+          <p className="text-sm">The error code 63016 means the recipient hasn't completed this opt-in process. Find your sandbox code in the <a href="https://console.twilio.com/us1/develop/sms/settings/whatsapp-sandbox" target="_blank" rel="noopener noreferrer" className="underline">Twilio Console</a>.</p>
+        </CardContent>
+      </Card>
       
       <WhatsAppTester />
       
