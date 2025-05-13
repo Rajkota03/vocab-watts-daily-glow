@@ -171,7 +171,7 @@ serve(async (req) => {
     const templateId = requestData.templateId || DEFAULT_TEMPLATE_ID; // Use default if not provided
     const templateValues = requestData.templateValues;
     const isUSNumber = requestData.isUSNumber || false;
-    const forceDirectMessage = requestData.forceDirectMessage || false;
+    const forceDirectMessage = requestData.forceDirectMessage || true; // Default to true to bypass templates
 
     // Debug logging
     console.log("WhatsApp request received:", { 
@@ -179,9 +179,8 @@ serve(async (req) => {
       messageLength: message ? message.length : 0,
       templateId: templateId || "none",
       toFormatted: to ? `${to.substring(0, 5)}...` : undefined,
-      usingTemplate: !forceDirectMessage && !isUSNumber && !!templateId,
+      usingDirectMessage: forceDirectMessage,
       isUSNumber,
-      forceDirectMessage
     });
 
     // Validate input
@@ -189,12 +188,12 @@ serve(async (req) => {
       throw new Error("Recipient phone number is required");
     }
 
-    // For upgraded Twilio accounts, either message or templateId is required
-    // But after April 1, 2025, US numbers can't receive template messages
+    // Always prioritize direct messaging over templates
     const shouldUseTemplate = !forceDirectMessage && !isUSNumber && !!templateId;
     
-    if (!message && !shouldUseTemplate) {
-      throw new Error("Either message content or templateId is required");
+    // Ensure we have a message for direct messaging
+    if (!message && forceDirectMessage) {
+      throw new Error("Message content is required for direct messaging");
     }
 
     if (!twilioAccountSid || !twilioAuthToken) {
@@ -250,19 +249,15 @@ serve(async (req) => {
     // --- Prepare and send the message ---
     console.log(`Sending WhatsApp message using ${useMessagingService ? "Messaging Service" : "From Number"} to ${formattedTo}`);
     
-    // Check if we're using a template (prioritize this if available)
+    // Check if we're using a template (now defaults to false)
     const usingTemplate = shouldUseTemplate;
     if (usingTemplate) {
-      console.log(`Using template ID: ${templateId}`);
+      console.log(`Using template ID: ${templateId} as fallback`);
       if (templateValues) {
         console.log("Template values:", templateValues);
       }
-    } else if (forceDirectMessage) {
-      console.log("Using direct message (forced by request)");
-    } else if (isUSNumber) {
-      console.log("Using direct message for US number due to template restrictions");
     } else {
-      console.log("Message content (first 50 chars):", message.substring(0, 50) + "...");
+      console.log("Using direct message: ", message.substring(0, 50) + (message.length > 50 ? "..." : ""));
     }
 
     // Prepare the request body for Twilio
@@ -281,7 +276,17 @@ serve(async (req) => {
       formData.append("From", formattedFrom);
     }
     
-    // Handle template vs regular message
+    // Always prioritize direct message body for better delivery rates
+    if (message) {
+      formData.append("Body", message);
+      console.log("Setting message body:", message.substring(0, 30) + "...");
+    } else {
+      // Provide a minimal default message if none was provided
+      formData.append("Body", "Message from GlintUp");
+      console.log("Setting default message body");
+    }
+    
+    // Add template only if specifically requested and not using direct message
     if (usingTemplate) {
       // If using a template, add the template SID
       const contentSid = templateId;
@@ -293,25 +298,16 @@ serve(async (req) => {
         formData.append("ContentVariables", contentVariables);
       }
       
-      console.log("Using template message with ContentSid:", contentSid);
+      console.log("Adding template as fallback with ContentSid:", contentSid);
     }
     
-    // For all messages (including templates), provide a Body as fallback
-    if (message) {
-      formData.append("Body", message);
-    } else if (usingTemplate) {
-      // Provide a minimal default message if none was provided
-      formData.append("Body", "Message from GlintUp");
-    }
-
     // Log the API request details (but not the full auth token)
     console.log("Twilio API request:", {
       url: twilioApiUrl(twilioAccountSid),
       to: formattedTo,
       messagingService: useMessagingService ? messagingServiceSid : undefined,
       from: useMessagingService && twilioFromNumber ? formattedFrom : (useMessagingService ? "using messaging service" : formattedFrom),
-      contentType: usingTemplate ? "template" : "text",
-      templateId: usingTemplate ? templateId : undefined,
+      contentType: usingTemplate ? "template + direct" : "direct message",
     });
 
     // Make the API request to Twilio
@@ -354,13 +350,13 @@ serve(async (req) => {
         formattedFrom),
       webhookUrl: webhookUrl,
       usingTemplate: usingTemplate,
+      usingDirectMessage: forceDirectMessage,
       templateId: usingTemplate ? templateId : undefined,
-      // Add API version explanation
-      apiVersionInfo: "Twilio's API endpoint is versioned as '2010-04-01' but represents their current stable API",
-      businessAccount: true, // Indicate this is a business account
+      businessAccount: true,
       troubleshooting: {
         checkTwilioConsole: "Check your Twilio console for message delivery status",
-        messageWindowInfo: isUSNumber ? "US numbers now require direct messaging after April 1, 2025" : "Standard messages may be restricted to 24-hour conversation window",
+        messageWillAppear: "Messages appear in WhatsApp, not as SMS/text",
+        directMessageUsed: "Using direct message mode to bypass template restrictions",
         businessReady: "Your account is configured for WhatsApp Business API"
       }
     };
@@ -380,8 +376,8 @@ serve(async (req) => {
         error: error.message,
         details: {
           message: error.message,
-          tip: "Check your Twilio credentials and WhatsApp number formatting",
-          suggestion: "For US numbers, use direct messages instead of templates after April 1, 2025",
+          tip: "Using direct messages instead of templates for better delivery rates",
+          suggestion: "Check your Twilio account status and WhatsApp number formatting",
           twilioGuide: "https://www.twilio.com/docs/whatsapp/api"
         }
       }),

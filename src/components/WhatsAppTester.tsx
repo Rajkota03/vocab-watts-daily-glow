@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MessageSquare, Loader2, AlertCircle, ExternalLink, Info } from "lucide-react";
+import { MessageSquare, Loader2, AlertCircle, ExternalLink, Info, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { sendWhatsAppMessage, isUSPhoneNumber } from "@/services/whatsappService";
@@ -30,9 +29,9 @@ const WhatsAppTester = () => {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
   const [sandboxInfo, setSandboxInfo] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('template'); // Default to template
-  const [useTemplate, setUseTemplate] = useState(true); // Default to true
-  const [forceDirectMessage, setForceDirectMessage] = useState(false); // Option to force direct messages
+  const [activeTab, setActiveTab] = useState('regular'); // Default to regular direct messages
+  const [useTemplate, setUseTemplate] = useState(false); // Default to false - direct messages
+  const [forceDirectMessage, setForceDirectMessage] = useState(true); // Default to true - always force direct messages
   const [isUSNumberState, setIsUSNumberState] = useState(false);
   const { toast } = useToast();
   
@@ -100,18 +99,8 @@ const WhatsAppTester = () => {
       return;
     }
 
-    // Always require template for template tab
-    if (activeTab === 'template' && !templateId && !forceDirectMessage) {
-      toast({
-        title: "Template ID required",
-        description: "Please enter a template ID to use template messaging",
-        variant: "destructive"
-      });
-      return;
-    }
-
     // Regular message tab requires a message
-    if (activeTab === 'regular' && !message) {
+    if (!message) {
       toast({
         title: "Message required",
         description: "Please enter a message to send",
@@ -127,43 +116,31 @@ const WhatsAppTester = () => {
       setSandboxInfo(null);
       
       const requestPayload: any = {
-        phoneNumber
+        phoneNumber,
+        message: message || "This is a test message from GlintUp",
+        forceDirectMessage: true // Always use direct messaging
       };
       
       // Check if this is a US number
       const isUSNumber = isUSPhoneNumber(phoneNumber);
       if (isUSNumber) {
-        console.log("Detected US phone number. Template messaging restrictions may apply.");
+        console.log("Detected US phone number. Using direct messaging.");
       }
       
-      // Determine whether to use template or regular message based on active tab and US number status
-      if (activeTab === 'template' && !forceDirectMessage && !isUSNumber) {
+      // Only add template if explicitly chosen and not forcing direct message
+      if (activeTab === 'template' && useTemplate && !forceDirectMessage) {
         requestPayload.templateId = templateId;
         requestPayload.templateValues = templateValues;
-        console.log("Using template mode with ID:", templateId);
-        
-        // Include fallback message in case template fails
-        requestPayload.message = "This is a fallback message if template fails";
+        console.log("Adding template as fallback:", templateId);
       } else {
-        // Regular message mode or forced direct message for US numbers
-        requestPayload.message = message || "This is a test message from GlintUp";
-        
-        if (forceDirectMessage) {
-          requestPayload.forceDirectMessage = true;
-          console.log("Forcing direct message instead of template");
-        } else if (isUSNumber && activeTab === 'template') {
-          console.log("Using direct message for US number due to template restrictions");
-          requestPayload.forceDirectMessage = true;
-        } else {
-          console.log("Using regular message mode");
-        }
+        console.log("Using direct message mode only");
       }
       
       const success = await sendWhatsAppMessage(requestPayload);
       
       if (success) {
         toast({
-          title: `${activeTab === 'template' && !forceDirectMessage && !isUSNumber ? 'Template message' : 'Message'} sent successfully`,
+          title: "Message sent successfully",
           description: "Your WhatsApp message has been queued for delivery",
           variant: "default"
         });
@@ -171,22 +148,12 @@ const WhatsAppTester = () => {
         setResult({
           success: true,
           timestamp: new Date().toISOString(),
-          messageType: activeTab === 'template' && !forceDirectMessage && !isUSNumber ? 'template' : 'regular'
+          messageType: 'regular' // Always mark as regular for user clarity
         });
       }
     } catch (err: any) {
       console.error("Error sending WhatsApp message:", err);
       setError(err.message || "Failed to send message");
-      
-      // Adjust error messaging for US numbers and template restrictions
-      if (err.message?.includes('63049')) {
-        setSandboxInfo(`Error 63049: US recipients cannot receive WhatsApp template messages after April 1, 2025. The system will automatically use direct messaging instead.`);
-      } else if (err.message?.includes('63016')) {
-        setSandboxInfo(`Error 63016 indicates a messaging issue. Since you're on a upgraded Twilio account, check that:
-        1. Your WhatsApp Business Profile is properly set up
-        2. The template being used is approved
-        3. The recipient's number is properly formatted with country code`);
-      }
       
       toast({
         title: "Failed to send message",
@@ -213,10 +180,12 @@ const WhatsAppTester = () => {
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="regular">Regular Message</TabsTrigger>
+              <TabsTrigger value="regular">Direct Message</TabsTrigger>
               <TabsTrigger value="template">
                 Template Message
-                <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 text-xs">Recommended</Badge>
+                <Badge variant="outline" className="ml-2 bg-gray-100 text-gray-700 text-xs">
+                  Not Recommended
+                </Badge>
               </TabsTrigger>
             </TabsList>
             
@@ -241,66 +210,51 @@ const WhatsAppTester = () => {
                   <div className="mt-2">
                     <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">US Number Detected</Badge>
                     <p className="text-xs text-blue-600 mt-1">
-                      US numbers require direct messaging after April 1, 2025 per WhatsApp policy
+                      Using direct messaging for better delivery
                     </p>
                   </div>
                 )}
               </div>
               
-              {activeTab === 'template' && isUSNumberState && (
-                <div className="flex items-center space-x-2 bg-amber-50 p-3 rounded-md border border-amber-200">
-                  <Switch
-                    id="force-direct"
-                    checked={forceDirectMessage}
-                    onCheckedChange={setForceDirectMessage}
-                  />
-                  <Label htmlFor="force-direct" className="text-amber-800">
-                    Force direct message (required for US numbers after April 1, 2025)
-                  </Label>
-                </div>
-              )}
+              {/* Added Direct Message Alert */}
+              <Alert className="bg-green-50 border-green-200 text-green-800">
+                <CheckCircle2 className="h-4 w-4" />
+                <AlertTitle>Direct Messaging Enabled</AlertTitle>
+                <AlertDescription className="text-green-700">
+                  <p>Messages will be sent as direct WhatsApp messages for better delivery rates.</p>
+                  <p className="text-sm mt-2">This bypasses template restrictions and improves delivery reliability.</p>
+                </AlertDescription>
+              </Alert>
               
-              <TabsContent value="regular" className="mt-0">
-                <div>
-                  <label htmlFor="message" className="block text-sm font-medium mb-1">
-                    Message
-                  </label>
-                  <textarea
-                    id="message"
-                    placeholder="Enter your test message here"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    className="w-full min-h-[100px] px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-                
-                <Alert className="mt-4 bg-amber-50 border-amber-200">
-                  <AlertCircle className="h-4 w-4 text-amber-800" />
-                  <AlertTitle className="text-amber-800">Regular Message</AlertTitle>
-                  <AlertDescription className="text-amber-700">
-                    <p>Regular messages can be sent with your upgraded Twilio account but are subject to WhatsApp's 24-hour messaging window limitations.</p>
-                    <p className="mt-2 text-sm">Using templates is recommended for most business communications (except for US numbers after April 1, 2025).</p>
-                  </AlertDescription>
-                </Alert>
-              </TabsContent>
-              
+              <div>
+                <label htmlFor="message" className="block text-sm font-medium mb-1">
+                  Message
+                </label>
+                <textarea
+                  id="message"
+                  placeholder="Enter your test message here"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="w-full min-h-[100px] px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+
+              {/* Template tab content - now discouraged */}
               <TabsContent value="template" className="mt-0">
                 <div className="space-y-4">
-                  <Alert className="bg-blue-50 border-blue-200">
-                    <Info className="h-4 w-4 text-blue-800" />
-                    <AlertTitle className="text-blue-800">Using Templates</AlertTitle>
-                    <AlertDescription className="text-blue-700">
-                      <p>Templates allow you to send WhatsApp messages outside the 24-hour messaging window.</p>
-                      <p className="text-sm mt-2">Your upgraded Twilio account is configured for template messaging.</p>
-                      {isUSNumberState && (
-                        <p className="text-sm mt-2 font-medium">Note: US numbers require direct messaging after April 1, 2025.</p>
-                      )}
+                  <Alert className="bg-amber-50 border-amber-200">
+                    <AlertCircle className="h-4 w-4 text-amber-800" />
+                    <AlertTitle className="text-amber-800">Template Limitations</AlertTitle>
+                    <AlertDescription className="text-amber-700">
+                      <p>Template messaging has limitations and may result in delivery issues.</p>
+                      <p className="text-sm mt-2">We now recommend using direct messaging for all numbers for better reliability.</p>
                     </AlertDescription>
                   </Alert>
 
-                  <div>
+                  {/* Keep template fields for reference but with disabled styling */}
+                  <div className="opacity-50">
                     <label htmlFor="templateId" className="block text-sm font-medium mb-1">
-                      Template ID (Content SID)
+                      Template ID (Not Recommended)
                     </label>
                     <Input
                       id="templateId"
@@ -308,105 +262,20 @@ const WhatsAppTester = () => {
                       value={templateId}
                       onChange={(e) => setTemplateId(e.target.value)}
                       className="w-full"
-                      disabled={forceDirectMessage || (isUSNumberState && new Date() >= new Date(2025, 3, 1))}
+                      disabled={true}
                     />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Currently using template: {forceDirectMessage ? "Disabled - using direct message" : (templateId || "None")}
-                    </p>
                   </div>
-                  
-                  {defaultTemplates.length > 0 && defaultTemplates[0].id && (
-                    <div className="space-y-2">
-                      <Label className="text-xs text-gray-500">Quick Templates</Label>
-                      <div className="flex gap-2 flex-wrap">
-                        {defaultTemplates.map(template => (
-                          <Button 
-                            key={template.id} 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => setTemplateId(template.id)}
-                            className={templateId === template.id ? "border-primary bg-primary/10" : ""}
-                            disabled={forceDirectMessage || (isUSNumberState && new Date() >= new Date(2025, 3, 1))}
-                          >
-                            {template.name}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  <Accordion type="single" collapsible>
-                    <AccordionItem value="template-values">
-                      <AccordionTrigger>Template Values</AccordionTrigger>
-                      <AccordionContent>
-                        <div className="grid gap-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="name-var">Name</Label>
-                              <Input
-                                id="name-var"
-                                value={templateValues.name}
-                                onChange={(e) => setTemplateValues({...templateValues, name: e.target.value})}
-                                placeholder="User's name"
-                                disabled={forceDirectMessage || (isUSNumberState && new Date() >= new Date(2025, 3, 1))}
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label htmlFor="otp-var">OTP Code</Label>
-                              <div className="flex gap-2">
-                                <Input
-                                  id="otp-var"
-                                  value={templateValues.otp}
-                                  onChange={(e) => setTemplateValues({...templateValues, otp: e.target.value})}
-                                  placeholder="123456"
-                                  disabled={forceDirectMessage || (isUSNumberState && new Date() >= new Date(2025, 3, 1))}
-                                />
-                                <Button 
-                                  variant="outline" 
-                                  onClick={() => generateRandomOtp()}
-                                  type="button"
-                                  size="icon"
-                                  disabled={forceDirectMessage || (isUSNumberState && new Date() >= new Date(2025, 3, 1))}
-                                >
-                                  🎲
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <Label htmlFor="expiry-var">Expiry (minutes)</Label>
-                            <Input
-                              id="expiry-var"
-                              value={templateValues.expiryMinutes}
-                              onChange={(e) => setTemplateValues({...templateValues, expiryMinutes: e.target.value})}
-                              placeholder="10"
-                              disabled={forceDirectMessage || (isUSNumberState && new Date() >= new Date(2025, 3, 1))}
-                            />
-                          </div>
-                          
-                          <p className="text-xs text-muted-foreground">
-                            Add any values your template requires. The available values depend on your approved template.
-                          </p>
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
                 </div>
               </TabsContent>
             </div>
             
             <Button
               onClick={handleSendTest}
-              disabled={loading || 
-                !phoneNumber || 
-                (activeTab === 'regular' && !message) || 
-                (activeTab === 'template' && !templateId && !forceDirectMessage && !isUSNumberState)}
+              disabled={loading || !phoneNumber || !message}
               className="w-full mt-4"
             >
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
-              {loading ? "Sending..." : `Send ${activeTab === 'template' && !forceDirectMessage && !isUSNumberState ? 'Template' : ''} Message`}
+              {loading ? "Sending..." : "Send Direct Message"}
             </Button>
             
             {error && (
@@ -444,12 +313,12 @@ const WhatsAppTester = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h3 className="font-medium text-sm mb-2">WhatsApp Business API (Production)</h3>
+            <h3 className="font-medium text-sm mb-2">WhatsApp Business API (Using Direct Messages)</h3>
             <ul className="list-disc pl-5 text-sm text-gray-700 space-y-2">
-              <li><strong>Business API:</strong> Full features without sandbox limitations, which you're currently using.</li>
-              <li><strong>Message Templates:</strong> Pre-approved messages that can be sent outside the 24-hour messaging window.</li>
-              <li><strong>Direct Messages:</strong> Can only be sent within 24 hours of the last customer message.</li>
-              <li><strong>US Numbers:</strong> After April 1, 2025, cannot receive template messages and must use direct messaging.</li>
+              <li><strong>Direct Messaging:</strong> Now using direct messages for all numbers for better delivery reliability.</li>
+              <li><strong>Business API:</strong> Your upgraded Twilio account supports direct messaging outside the 24-hour window.</li>
+              <li><strong>Bypassing Templates:</strong> This approach avoids template restrictions and simplifies message sending.</li>
+              <li><strong>Message Format:</strong> You can send any message content you design in the app.</li>
             </ul>
           </div>
           
@@ -460,16 +329,16 @@ const WhatsAppTester = () => {
             <div className="space-y-2">
               <div className="flex items-start gap-2">
                 <Badge variant="outline" className="mt-1 font-normal bg-green-50 text-green-700">Recommended</Badge>
-                <span className="text-sm">Use pre-approved message templates for most communications (except for US recipients after April 1, 2025)</span>
+                <span className="text-sm">Use direct messages with clear, concise content</span>
               </div>
               <div className="flex items-start gap-2">
-                <Badge variant="outline" className="mt-1 font-normal">Option 2</Badge>
-                <span className="text-sm">Use direct messages only when responding to customer queries within 24 hours</span>
+                <Badge variant="outline" className="mt-1 font-normal">Tip</Badge>
+                <span className="text-sm">Keep messages professional and avoid spam-like content</span>
               </div>
               <Alert className="mt-2 py-2 px-3">
                 <Info className="h-4 w-4" />
                 <AlertDescription className="text-xs">
-                  Your app sends messages to registered users using your upgraded Twilio WhatsApp Business account.
+                  Your app now sends messages using direct messaging with your upgraded Twilio WhatsApp Business account.
                 </AlertDescription>
               </Alert>
             </div>

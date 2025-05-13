@@ -55,7 +55,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
   const [twilioDetails, setTwilioDetails] = useState<any>(null);
   const [showAdvancedDiagnostics, setShowAdvancedDiagnostics] = useState(false);
   const [accountSidPrefix, setAccountSidPrefix] = useState<string | null>(null);
-  const [useTemplate, setUseTemplate] = useState(true); // Default to using templates
+  const [useTemplate, setUseTemplate] = useState(false); // Default to using direct messages
 
   // Check WhatsApp configuration status when component mounts
   React.useEffect(() => {
@@ -215,9 +215,8 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
       setLoading(true);
       console.log(`Sending WhatsApp test message to: ${phoneToUse}`);
 
-      // Create test payload - prioritize template
-      const templateId = DEFAULT_TEMPLATE_ID; // Use our predefined template ID
-      const useTemplateMessage = useTemplate;
+      // Create test payload - prioritize direct messages
+      const templateId = DEFAULT_TEMPLATE_ID;
       
       // Create request payload
       const requestPayload: any = {
@@ -226,27 +225,23 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
         isPro: false,
         sendImmediately: true,
         debugMode: true,
-        extraDebugging: true
+        forceDirectMessage: true // Always use direct messages
       };
       
-      // Add template if available and enabled (preferred method)
-      if (useTemplateMessage) {
+      // Only add template if specifically requested
+      if (useTemplate) {
         requestPayload.templateId = templateId;
         requestPayload.templateValues = {
           name: "User",
           otp: "123456",
           expiryMinutes: "10"
         };
-        console.log(`Using template message with ID: ${templateId}`);
-      } else {
-        // Always include a message even when using templates as fallback
-        requestPayload.message = `This is a test message for ${category} category. Sent at: ${new Date().toLocaleTimeString()}`;
+        console.log(`Adding template as fallback with ID: ${templateId}`);
       }
       
-      // Always include a message (either main content or as fallback)
-      if (!requestPayload.message) {
-        requestPayload.message = `Test message from GlintUp. Sent at: ${new Date().toLocaleTimeString()}`;
-      }
+      // Always include a message (primary content)
+      requestPayload.message = `This is a test message for ${category} category. Sent at: ${new Date().toLocaleTimeString()}`;
+      console.log("Using direct message content:", requestPayload.message);
 
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
         body: requestPayload
@@ -270,12 +265,8 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
         const errorTitle = data?.error || "Failed to send WhatsApp message";
         let errorDescription = "An unknown error occurred.";
         
-        // Parse error details for 20404 error specifically
-        if (data?.details?.twilioError?.code === 20404) {
-          errorDescription = "The Twilio Account SID doesn't exist or is invalid. Check your credentials in Supabase secrets.";
-          setLastErrorDetails("Error 20404: The requested resource was not found. This typically means your Twilio Account SID is incorrect or your account has been deactivated. Please verify your Account SID in the Twilio Console.");
-        }
-        else if (data?.details) {
+        // Parse error details
+        if (data?.details) {
           if (typeof data.details === 'string') {
             errorDescription = data.details;
           } else if (data.details.message) {
@@ -430,17 +421,22 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
         </Alert>
       )}
       
-      {/* Template Mode Option */}
+      {/* Template Mode Option - updated text to discourage template usage */}
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
           <Label htmlFor="template-mode" className="text-sm">Use Template Message</Label>
-          <div className="text-xs text-muted-foreground">Recommended for Business API accounts</div>
+          <div className="text-xs text-muted-foreground">Not recommended - direct messages preferred</div>
         </div>
         <Switch
           id="template-mode"
           checked={useTemplate}
           onCheckedChange={setUseTemplate}
         />
+      </div>
+      
+      {/* New Direct Message Alert */}
+      <div className="text-xs text-green-600 bg-green-50 p-2 rounded border border-green-200">
+        Using direct messages for better delivery reliability
       </div>
       
       {/* Display template status */}
