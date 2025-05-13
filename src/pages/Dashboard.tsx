@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -8,6 +7,7 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardMain from '@/components/dashboard/DashboardMain';
 import { MOCK_TODAYS_QUIZ, MOCK_RECENT_DROPS } from '@/data/dashboardMockData';
 import { useAuthHandler } from '@/hooks/useAuthHandler';
+import PhoneNumberUpdateForm from '@/components/dashboard/PhoneNumberUpdateForm';
 
 interface UserSubscription {
   is_pro: boolean;
@@ -26,6 +26,7 @@ const Dashboard = () => {
   const [userNickname, setUserNickname] = useState<string>('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [wordsLearnedThisMonth, setWordsLearnedThisMonth] = useState(45);
+  const [showPhoneForm, setShowPhoneForm] = useState(false);
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -82,6 +83,9 @@ const Dashboard = () => {
             category: subscriptionData.category || 'daily-beginner',
             phone_number: subscriptionData.phone_number
           });
+          setShowPhoneForm(!subscriptionData.phone_number);
+        } else {
+          setShowPhoneForm(true);
         }
 
         const { data: wordsData } = await supabase
@@ -200,6 +204,18 @@ const Dashboard = () => {
     }
   };
 
+  const handlePhoneNumberUpdate = (newPhoneNumber: string) => {
+    setSubscription(prev => ({
+      ...prev,
+      phone_number: newPhoneNumber
+    }));
+    setShowPhoneForm(false);
+    toast({
+      title: "Phone Number Updated",
+      description: "Your WhatsApp number has been saved. You can now receive daily words."
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -228,6 +244,8 @@ const Dashboard = () => {
         MOCK_TODAYS_QUIZ={MOCK_TODAYS_QUIZ}
         MOCK_RECENT_DROPS={MOCK_RECENT_DROPS}
         wordsLearnedThisMonth={wordsLearnedThisMonth}
+        showPhoneForm={showPhoneForm}
+        handlePhoneNumberUpdate={handlePhoneNumberUpdate}
       />
     </div>
   );
