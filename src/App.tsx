@@ -1,3 +1,4 @@
+
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -14,7 +15,7 @@ import Privacy from "./pages/Privacy";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Payment from "./pages/Payment";
 import Upgrade from "./pages/Upgrade";
-import TwilioTest from "./pages/TwilioTest";
+import WhatsAppTest from "./pages/WhatsAppTest";
 
 const queryClient = new QueryClient();
 
@@ -55,7 +56,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/payment" element={<Payment />} />
           <Route path="/upgrade" element={<Upgrade />} />
-          <Route path="/twilio-test" element={<TwilioTest />} />
+          <Route path="/whatsapp-test" element={<WhatsAppTest />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
