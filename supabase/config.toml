@@ -1,4 +1,5 @@
 
+
 [functions.whatsapp-webhook]
 verify_jwt = false
 
@@ -7,4 +8,8 @@ verify_jwt = false
 
 [functions.send-otp]
 verify_jwt = false
+
+[functions.verify-whatsapp-webhook]
+verify_jwt = false
+
 

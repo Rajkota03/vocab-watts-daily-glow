@@ -48,11 +48,26 @@ async function handleWebhookVerification(url: URL) {
   console.log('WhatsApp webhook verification attempt:', { mode, tokenProvided: !!token, challengeProvided: !!challenge });
 
   const verifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN');
+  
+  // Log the token comparison for debugging
+  console.log('Token comparison:', { 
+    providedToken: token,
+    expectedToken: verifyToken,
+    tokenMatch: token === verifyToken
+  });
+  
   if (mode === 'subscribe' && token === verifyToken && challenge) {
     console.log('WhatsApp webhook verified successfully.');
     return new Response(challenge, { status: 200, headers: { ...corsHeaders, 'Content-Type': 'text/plain' } });
   } else {
     console.error('Failed to verify webhook:', { mode, tokenMatch: token === verifyToken, challenge });
+    // For troubleshooting, log current environment variables (excluding sensitive ones)
+    console.log('Environment variables check:', {
+      hasVerifyToken: !!verifyToken,
+      verifyTokenLength: verifyToken ? verifyToken.length : 0,
+      requiredParams: { mode, token, challenge }
+    });
+    
     // IMPORTANT: Return 200 even for verification failures to prevent retry loops
     return new Response('Verification failed', { status: 200, headers: { ...corsHeaders, 'Content-Type': 'text/plain' } });
   }
@@ -86,7 +101,8 @@ async function handleMessageStatus(params: Record<string, string>, supabaseAdmin
       to_number: params.To || null,
       from_number: params.From || null,
       source_ip: sourceIp,
-      raw_data: params
+      raw_data: params,
+      notes: `Status update received at ${new Date().toISOString()}`
     };
     
     // Only include api_version if the column exists

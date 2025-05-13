@@ -8,6 +8,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import WhatsAppWebhookValidator from '@/components/WhatsAppWebhookValidator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ConfigStatus {
   accountSid?: boolean;
@@ -108,6 +110,7 @@ const WhatsAppTest = () => {
               <li>TWILIO_ACCOUNT_SID</li>
               <li>TWILIO_AUTH_TOKEN</li>
               <li>TWILIO_FROM_NUMBER or TWILIO_MESSAGING_SERVICE_SID</li>
+              <li>WHATSAPP_VERIFY_TOKEN</li>
             </ul>
           </AlertDescription>
         </Alert>
@@ -154,7 +157,23 @@ const WhatsAppTest = () => {
         </CardContent>
       </Card>
       
-      <WhatsAppTester />
+      <Tabs defaultValue="send-test">
+        <TabsList className="mb-4">
+          <TabsTrigger value="send-test">Send Test Message</TabsTrigger>
+          <TabsTrigger value="webhook">Webhook Configuration</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="send-test">
+          <WhatsAppTester />
+        </TabsContent>
+        
+        <TabsContent value="webhook">
+          <div className="bg-white p-4 border rounded-lg mb-6">
+            <h3 className="font-medium mb-3">Verify WhatsApp Webhook Configuration</h3>
+            <WhatsAppWebhookValidator />
+          </div>
+        </TabsContent>
+      </Tabs>
       
       <Separator className="my-8" />
       
@@ -162,6 +181,8 @@ const WhatsAppTest = () => {
         <h3 className="text-lg font-medium">Setup Instructions:</h3>
         <ol className="list-decimal pl-5 text-sm text-gray-700 space-y-2">
           <li>To use WhatsApp with Twilio, make sure all your Twilio credentials are set in Supabase Edge Function secrets.</li>
+          <li>Make sure to add a <strong>WHATSAPP_VERIFY_TOKEN</strong> (any secure random string) in your Supabase secrets.</li>
+          <li>Configure the webhook URL in your Twilio account's WhatsApp settings.</li>
           <li>For sandbox testing, recipients must send "join &lt;your-sandbox-word&gt;" to your Twilio WhatsApp number first.</li>
           <li>For production use, you'll need to register a Business Profile and submit a WhatsApp API application.</li>
           <li>Check the <a href="https://www.twilio.com/console/sms/whatsapp/learn" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Twilio WhatsApp Guide</a> for more details on setup.</li>
