@@ -4,10 +4,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 // Import Twilio helper library for signature validation
 import twilio from 'https://esm.sh/twilio@4.20.1';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-twilio-signature',
-};
+// Import shared CORS headers
+import { corsHeaders } from "../_shared/cors.ts";
 
 // Helper function to parse form-encoded data from raw text
 function parseFormDataFromText(text: string): URLSearchParams | null {
@@ -49,13 +47,6 @@ async function handleWebhookVerification(url: URL) {
 
   const verifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN');
   
-  // Log the token comparison for debugging
-  console.log('Token comparison:', { 
-    providedToken: token,
-    expectedToken: verifyToken,
-    tokenMatch: token === verifyToken
-  });
-  
   if (mode === 'subscribe' && token === verifyToken && challenge) {
     console.log('WhatsApp webhook verified successfully.');
     return new Response(challenge, { status: 200, headers: { ...corsHeaders, 'Content-Type': 'text/plain' } });
@@ -68,8 +59,41 @@ async function handleWebhookVerification(url: URL) {
       requiredParams: { mode, token, challenge }
     });
     
-    // IMPORTANT: Return 200 even for verification failures to prevent retry loops
     return new Response('Verification failed', { status: 200, headers: { ...corsHeaders, 'Content-Type': 'text/plain' } });
+  }
+}
+
+// Validate Twilio request signature
+function validateTwilioSignature(
+  url: string,
+  params: Record<string, string>,
+  signature: string | null
+): boolean {
+  if (!signature) {
+    console.log("No Twilio signature provided");
+    return false;
+  }
+
+  const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+  if (!authToken) {
+    console.error("TWILIO_AUTH_TOKEN is not configured in environment variables");
+    return false;
+  }
+
+  try {
+    // Use Twilio's validator
+    const isValid = twilio.validateRequest(authToken, signature, url, params);
+    
+    if (isValid) {
+      console.log("✅ Twilio signature validated successfully");
+    } else {
+      console.error("❌ Invalid Twilio signature");
+    }
+    
+    return isValid;
+  } catch (e) {
+    console.error("Error validating Twilio signature:", e);
+    return false;
   }
 }
 
@@ -78,21 +102,7 @@ async function handleMessageStatus(params: Record<string, string>, supabaseAdmin
   console.log(`Processing status update for message ${params.MessageSid}: ${params.MessageStatus}`);
   
   try {
-    // Store the status update in whatsapp_message_status table - we'll check if api_version exists
-    // This fixes the "Could not find the 'api_version' column" error
-    const currentTableInfo = await supabaseAdmin
-      .from('whatsapp_message_status')
-      .select('*')
-      .limit(1);
-
-    // Check if we had an error that might be due to missing column
-    let shouldTransformApiVersion = false;
-    if (currentTableInfo.error && currentTableInfo.error.message?.includes("api_version")) {
-      console.log("Detected missing api_version column - will omit this field");
-      shouldTransformApiVersion = true;
-    }
-    
-    // Prepare data object - conditionally include api_version
+    // Store the status update in whatsapp_message_status table
     const dataObj: Record<string, any> = {
       message_sid: params.MessageSid,
       status: params.MessageStatus,
@@ -100,19 +110,13 @@ async function handleMessageStatus(params: Record<string, string>, supabaseAdmin
       error_message: params.ErrorMessage || null,
       to_number: params.To || null,
       from_number: params.From || null,
+      api_version: params.ApiVersion || null,
       source_ip: sourceIp,
       raw_data: params,
       notes: `Status update received at ${new Date().toISOString()}`
     };
-    
-    // Only include api_version if the column exists
-    if (!shouldTransformApiVersion) {
-      // Note about Twilio API version - this is normal and not an error condition
-      // The 2010-04-01 is Twilio's stable API version identifier
-      dataObj.api_version = params.ApiVersion || null;
-    }
 
-    // Insert the record with our conditional data
+    // Insert the record
     const { error } = await supabaseAdmin
       .from('whatsapp_message_status')
       .insert(dataObj);
@@ -126,7 +130,7 @@ async function handleMessageStatus(params: Record<string, string>, supabaseAdmin
     console.error("Exception processing status update:", e);
   }
   
-  // IMPORTANT: Always respond with 200 OK to Twilio status callbacks
+  // Always respond with 200 OK to Twilio status callbacks
   return createResponse({ success: true });
 }
 
@@ -172,27 +176,20 @@ async function storeIncomingMessage(messageData: any, supabaseAdmin: any) {
   try {
     console.log("Storing incoming message:", messageData);
     
-    // Check if whatsapp_messages table exists
-    try {
-      const { error } = await supabaseAdmin
-        .from('whatsapp_messages')
-        .insert({
-          from_number: messageData.from,
-          message: messageData.body,
-          media_url: messageData.mediaUrl,
-          provider: messageData.provider,
-          provider_message_id: messageData.provider_message_id
-        });
+    const { error } = await supabaseAdmin
+      .from('whatsapp_messages')
+      .insert({
+        from_number: messageData.from,
+        message: messageData.body,
+        media_url: messageData.mediaUrl,
+        provider: messageData.provider,
+        provider_message_id: messageData.provider_message_id
+      });
 
-      if (error) {
-        console.error("Error storing message:", error);
-      } else {
-        console.log("Message stored successfully");
-      }
-    } catch (e) {
-      console.error("Exception storing message:", e);
-      // If table doesn't exist, log the error but don't fail the webhook
-      console.log("Table 'whatsapp_messages' might not exist. This is non-critical.");
+    if (error) {
+      console.error("Error storing message:", error);
+    } else {
+      console.log("Message stored successfully");
     }
   } catch (e) {
     console.error("Exception in message handling:", e);
@@ -216,23 +213,26 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
-      status: 200,  // Ensure OPTIONS requests return 200
-      headers: corsHeaders 
+      status: 200,
+      headers: { 
+        ...corsHeaders,
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-twilio-signature'
+      } 
     });
   }
 
   try {
     // Log the raw request information for debugging
     console.log(`Received ${req.method} request to webhook at ${new URL(req.url).pathname}`);
-    console.log(`Headers: ${JSON.stringify([...req.headers.entries()])}`);
     
-    const rawBody = await req.text(); // Get the raw body *before* parsing
-    console.log(`Raw body: ${rawBody.substring(0, 500)}${rawBody.length > 500 ? '...' : ''}`);
+    // Get the raw body *before* parsing
+    const rawBody = await req.text();
+    console.log(`Raw body (truncated): ${rawBody.substring(0, 200)}${rawBody.length > 200 ? '...' : ''}`);
 
     // Get parameters and important headers
     const contentType = req.headers.get('content-type') || '';
-    const signature = req.headers.get('x-twilio-signature');
-    const url = req.url; // Full request URL
+    const twilioSignature = req.headers.get('x-twilio-signature');
+    const fullUrl = req.url; // Full request URL
     const sourceIp = req.headers.get('x-forwarded-for') || 'unknown';
 
     // --- Handle GET for Webhook Verification (No signature validation needed for this) ---
@@ -245,8 +245,9 @@ serve(async (req) => {
 
     // --- Process based on content type ---
     let messageData: any = null;
+    let sigValidated = false;
 
-    // Handle form-encoded data from Twilio status callbacks
+    // Handle form-encoded data from Twilio
     if (contentType.includes('application/x-www-form-urlencoded')) {
       const formData = parseFormDataFromText(rawBody);
       if (!formData) {
@@ -259,11 +260,21 @@ serve(async (req) => {
       
       console.log("Parsed form data:", params);
       
-      // Add note about the API version if present
-      if (params.ApiVersion === "2010-04-01") {
-        console.log("Note: Twilio API version '2010-04-01' is their standard versioning scheme and represents the current stable API.");
+      // Validate Twilio signature for all form-encoded requests
+      sigValidated = validateTwilioSignature(fullUrl, params, twilioSignature);
+      
+      // Log the signature validation outcome
+      console.log(`Twilio signature validation: ${sigValidated ? 'VALID' : 'INVALID'}`);
+      
+      // Only continue processing if signature is valid or we're in development mode
+      // In production, you might want to reject invalid signatures entirely
+      if (!sigValidated) {
+        console.warn("⚠️ Processing request with invalid signature. In production, you may want to reject these requests.");
+        // For now, we'll still process but log a warning
+        // If you want to reject invalid signatures, uncomment this:
+        // return createResponse({ success: false, error: "Invalid Twilio signature" }, 403);
       }
-
+      
       // Handle status callbacks from Twilio (presence of MessageSid and MessageStatus indicates status update)
       if (params.MessageSid && params.MessageStatus) {
         return await handleMessageStatus(params, supabaseAdmin, sourceIp);
@@ -278,9 +289,9 @@ serve(async (req) => {
         const body = JSON.parse(rawBody);
         console.log("Parsed JSON body:", JSON.stringify(body).substring(0, 200));
         messageData = processMetaIncomingMessage(body);
+        // Note: Meta/WhatsApp has its own signature validation approach which would be implemented here
       } catch (e) {
         console.error("Error parsing JSON:", e);
-        // Always return 200 OK even for errors to prevent retries
         return createResponse({ success: false, error: "Invalid JSON" }, 200);
       }
     } 
@@ -289,14 +300,20 @@ serve(async (req) => {
     }
 
     // Store incoming message if we have message data
-    await storeIncomingMessage(messageData, supabaseAdmin);
+    if (messageData) {
+      await storeIncomingMessage(messageData, supabaseAdmin);
+    }
 
-    // IMPORTANT: Always respond with 200 OK to acknowledge receipt for all webhook events
-    return createResponse({ success: true });
+    // Always respond with 200 OK to acknowledge receipt for all webhook events
+    return createResponse({ 
+      success: true,
+      validated: sigValidated,
+      messageReceived: !!messageData
+    });
 
   } catch (error) {
     console.error('Unexpected error in WhatsApp webhook:', error);
-    // CRITICAL: Always return 200 OK even on errors to prevent retry loops
+    // Always return 200 OK even on errors to prevent retry loops
     return createResponse({ 
       success: false, 
       error: error.message || 'Internal Server Error' 
