@@ -59,3 +59,65 @@ export const checkUserProStatus = async (userId: string): Promise<boolean> => {
     return false;
   }
 };
+
+/**
+ * Ensures that a user has a subscription record with the correct user_id
+ * This helps maintain consistency between the profiles and user_subscriptions tables
+ * @param userId The ID of the user
+ * @param phoneNumber Optional phone number to use
+ */
+export const ensureUserSubscription = async (userId: string, phoneNumber?: string): Promise<void> => {
+  if (!userId) {
+    console.log('ensureUserSubscription: No userId provided.');
+    return;
+  }
+  
+  try {
+    // First, check if a subscription exists
+    const { data, error, count } = await supabase
+      .from('user_subscriptions')
+      .select('*', { count: 'exact' })
+      .eq('user_id', userId);
+      
+    if (error) {
+      console.error(`ensureUserSubscription: Error checking subscription for user ${userId}:`, error);
+      return;
+    }
+    
+    // If no subscription exists, create one
+    if (!count || count === 0) {
+      // If we don't have a phone number provided, try to get it from the profile
+      let phoneToUse = phoneNumber;
+      
+      if (!phoneToUse) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('whatsapp_number')
+          .eq('id', userId)
+          .single();
+          
+        if (profileData && profileData.whatsapp_number) {
+          phoneToUse = profileData.whatsapp_number;
+        }
+      }
+      
+      // Create a new subscription with default values
+      const { error: insertError } = await supabase
+        .from('user_subscriptions')
+        .insert({
+          user_id: userId,
+          phone_number: phoneToUse || '',
+          is_pro: false,
+          category: 'daily-beginner'
+        });
+        
+      if (insertError) {
+        console.error(`ensureUserSubscription: Error creating subscription for user ${userId}:`, insertError);
+      } else {
+        console.log(`ensureUserSubscription: Created new subscription for user ${userId}`);
+      }
+    }
+  } catch (error) {
+    console.error(`ensureUserSubscription: Unexpected error for user ${userId}:`, error);
+  }
+};

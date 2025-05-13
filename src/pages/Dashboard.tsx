@@ -37,6 +37,7 @@ const Dashboard = () => {
       if (!session?.user) return;
 
       try {
+        // Ensure user has admin role if needed
         if (session.user.email === 'rajkota.sql@gmail.com') {
           setIsAdmin(true);
           
@@ -61,16 +62,26 @@ const Dashboard = () => {
           }
         }
         
+        // Fetch profile data
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('nick_name, first_name')
+          .select('nick_name, first_name, whatsapp_number')
           .eq('id', session.user.id)
           .single();
         
         if (profileData) {
           setUserNickname(profileData.nick_name || profileData.first_name || 'there');
+          
+          // If profile has WhatsApp number, ensure it's also in the user_subscriptions table
+          if (profileData.whatsapp_number) {
+            await import('@/services/subscriptionService')
+              .then(({ ensureUserSubscription }) => {
+                ensureUserSubscription(session.user.id, profileData.whatsapp_number);
+              });
+          }
         }
         
+        // Fetch subscription data
         const { data: subscriptionData } = await supabase
           .from('user_subscriptions')
           .select('is_pro, category, phone_number')
@@ -85,6 +96,11 @@ const Dashboard = () => {
           });
           setShowPhoneForm(!subscriptionData.phone_number);
         } else {
+          // If no subscription data exists, ensure one is created
+          await import('@/services/subscriptionService')
+            .then(({ ensureUserSubscription }) => {
+              ensureUserSubscription(session.user.id);
+            });
           setShowPhoneForm(true);
         }
 

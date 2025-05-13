@@ -40,27 +40,57 @@ const PhoneNumberUpdateForm: React.FC<PhoneNumberUpdateFormProps> = ({
     setIsSubmitting(true);
 
     try {
+      console.log(`Updating phone number for user ${userId}`);
+      
       // Format the phone number to ensure it has a '+' prefix
       const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
       
-      // Update the phone_number in user_subscriptions table
-      const { error: subscriptionError } = await supabase
+      // First, check if a subscription exists for this user
+      const { data: existingSub, error: checkError, count } = await supabase
         .from('user_subscriptions')
-        .upsert({
-          user_id: userId,
-          phone_number: formattedPhone,
-          // Set default values for required fields if this is a new record
-          is_pro: false,
-          category: 'daily-beginner'
-        }, {
-          onConflict: 'user_id'  // Update if exists based on user_id
-        });
+        .select('*', { count: 'exact' })
+        .eq('user_id', userId);
       
-      if (subscriptionError) {
-        throw new Error(subscriptionError.message);
+      console.log(`Found ${count} existing subscriptions for user ${userId}`);
+      
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw new Error(checkError.message);
       }
       
-      // Also update the whatsapp_number in profiles table for consistency
+      // Update or insert into user_subscriptions table
+      if (count && count > 0) {
+        // Update existing subscription
+        const { error: subscriptionError } = await supabase
+          .from('user_subscriptions')
+          .update({
+            phone_number: formattedPhone
+          })
+          .eq('user_id', userId);
+        
+        if (subscriptionError) {
+          throw new Error(subscriptionError.message);
+        }
+        
+        console.log(`Updated existing subscription for user ${userId}`);
+      } else {
+        // Insert new subscription record
+        const { error: subscriptionError } = await supabase
+          .from('user_subscriptions')
+          .insert({
+            user_id: userId,
+            phone_number: formattedPhone,
+            is_pro: false,
+            category: 'daily-beginner'
+          });
+        
+        if (subscriptionError) {
+          throw new Error(subscriptionError.message);
+        }
+        
+        console.log(`Created new subscription for user ${userId}`);
+      }
+      
+      // Update the whatsapp_number in profiles table
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ whatsapp_number: formattedPhone })
@@ -69,6 +99,8 @@ const PhoneNumberUpdateForm: React.FC<PhoneNumberUpdateFormProps> = ({
       if (profileError) {
         console.warn("Failed to update profile WhatsApp number:", profileError);
         // Continue even if profile update fails, as the subscription update is more important
+      } else {
+        console.log(`Updated profile WhatsApp number for user ${userId}`);
       }
       
       // Update success state
