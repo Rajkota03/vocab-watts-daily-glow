@@ -76,7 +76,8 @@ serve(async (req) => {
           accountName: accountData.friendly_name,
           accountStatus: accountData.status,
           accountType: accountData.type,
-          accountSidPrefix: twilioAccountSid.substring(0, 6)
+          accountSidPrefix: twilioAccountSid.substring(0, 6),
+          fromNumber: twilioFromNumber
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200
@@ -110,6 +111,7 @@ serve(async (req) => {
       throw new Error("Recipient phone number is required");
     }
 
+    // For upgraded Twilio accounts, either message or templateId is required
     if (!message && !templateId) {
       throw new Error("Either message content or templateId is required");
     }
@@ -167,7 +169,7 @@ serve(async (req) => {
     // --- Prepare and send the message ---
     console.log(`Sending WhatsApp message using ${useMessagingService ? "Messaging Service" : "From Number"} to ${formattedTo}`);
     
-    // Check if we're using a template
+    // Check if we're using a template (prioritize this if available)
     const usingTemplate = !!templateId;
     if (usingTemplate) {
       console.log(`Using template ID: ${templateId}`);
@@ -182,7 +184,7 @@ serve(async (req) => {
     const formData = new FormData();
     formData.append("To", formattedTo);
     
-    // IMPORTANT FIX: Always add both MessagingServiceSid AND From number when available
+    // IMPORTANT: Always add both MessagingServiceSid AND From number when available
     // This helps ensure the "from" field is properly populated in the response
     if (useMessagingService) {
       formData.append("MessagingServiceSid", messagingServiceSid);
@@ -257,7 +259,6 @@ serve(async (req) => {
       status: twilioData.status,
       details: twilioData,
       to: formattedTo,
-      // Fix the "from" field to be more descriptive
       from: twilioData.from || (useMessagingService ? 
         (twilioFromNumber ? `whatsapp:${twilioFromNumber}` : "via messaging service") : 
         formattedFrom),
@@ -266,15 +267,15 @@ serve(async (req) => {
       templateId: usingTemplate ? templateId : undefined,
       // Add API version explanation
       apiVersionInfo: "Twilio's API endpoint is versioned as '2010-04-01' but represents their current stable API",
+      businessAccount: true, // Indicate this is a business account
       troubleshooting: usingTemplate ? {
-        templates: "You are using a WhatsApp template which bypasses the opt-in requirement",
+        templates: "You are using a WhatsApp template which works with your business account",
         checkTwilioConsole: "Check your Twilio console for message delivery status and template approval",
-        makeProductionReady: "For production, apply for WhatsApp Business API access through Twilio"
+        businessReady: "Your account is configured for WhatsApp Business API"
       } : {
         checkTwilioConsole: "Check your Twilio console for message delivery status",
-        sandboxInstructions: "If using sandbox, recipient must send 'join <sandbox-code>' first",
-        messageWillAppear: "Messages appear in WhatsApp, not as SMS/text",
-        makeProductionReady: "For production, apply for WhatsApp Business API access through Twilio"
+        messageWindowInfo: "Standard messages are restricted to 24-hour conversation window",
+        businessReady: "Your account is configured for WhatsApp Business API"
       }
     };
 
@@ -294,8 +295,8 @@ serve(async (req) => {
         details: {
           message: error.message,
           tip: "Check your Twilio credentials and WhatsApp number formatting",
-          suggestion: "Make sure your Twilio account is active and has WhatsApp capability",
-          twilioGuide: "https://www.twilio.com/docs/whatsapp/tutorial/send-whatsapp-notification-messages-templates"
+          suggestion: "Use templates for more reliable delivery with your Twilio business account",
+          twilioGuide: "https://www.twilio.com/docs/whatsapp/api"
         }
       }),
       { 

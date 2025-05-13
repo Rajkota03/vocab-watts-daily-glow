@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface SendWhatsAppRequest {
   phoneNumber: string;
-  message: string;
+  message?: string; // Made optional since templates don't always need a fallback message
   userId?: string;
   templateId?: string;
   templateValues?: Record<string, string>;
@@ -20,7 +20,6 @@ export interface SendWhatsAppRequest {
  * Send a WhatsApp message via Twilio using the send-whatsapp edge function.
  * 
  * @param request The request parameters
- * @param useTemplate If true, will attempt to use a template (bypasses opt-in requirement)
  * @returns 
  */
 export const sendWhatsAppMessage = async (request: SendWhatsAppRequest): Promise<boolean> => {
@@ -38,9 +37,10 @@ export const sendWhatsAppMessage = async (request: SendWhatsAppRequest): Promise
       throw new Error("Invalid phone number provided. Please include country code (e.g., +1 for US)");
     }
     
-    // Validate message or template
+    // For upgraded Twilio accounts, messages can be sent without templates
+    // but templates are preferred and don't require a message body
     if (!request.message && !request.templateId) {
-      console.error("[WhatsApp] Message content or template ID is required");
+      console.error("[WhatsApp] When not using templates, message content is required");
       throw new Error("Either message content or template ID is required.");
     }
 
@@ -62,17 +62,18 @@ export const sendWhatsAppMessage = async (request: SendWhatsAppRequest): Promise
       debugMode: true
     };
     
-    // Add message if provided
-    if (request.message) {
-      requestPayload.message = request.message;
-    }
-    
-    // Add template information if provided
+    // Add template information as priority if provided
     if (request.templateId) {
       requestPayload.templateId = request.templateId;
       if (request.templateValues) {
         requestPayload.templateValues = request.templateValues;
       }
+      console.log("[WhatsApp] Using template mode with ID:", request.templateId);
+    }
+    
+    // Add message if provided (as fallback or primary content)
+    if (request.message) {
+      requestPayload.message = request.message;
     }
     
     const { data: functionResult, error: functionError } = await supabase.functions.invoke("send-whatsapp", {
@@ -91,12 +92,9 @@ export const sendWhatsAppMessage = async (request: SendWhatsAppRequest): Promise
       // Extract detailed error information if available
       let errorMessage = functionResult?.error || "Failed to send WhatsApp message.";
       
-      // Add extra context for specific error codes
+      // Add extra context for specific error codes with adjusted messaging for upgraded accounts
       if (functionResult?.details?.twilioError?.code === 63016) {
-        errorMessage = `Error 63016: Failed to send message because recipient hasn't opted into your WhatsApp sandbox. The recipient must send "join <your-sandbox-keyword>" to your Twilio WhatsApp number first.`;
-        
-        // Additional suggestion if using sandbox
-        errorMessage += " Alternatively, create a message template to bypass the opt-in requirement.";
+        errorMessage = "Error 63016: WhatsApp message could not be delivered. Please verify the recipient's phone number format and WhatsApp availability.";
       } else if (functionResult?.details?.tip) {
         errorMessage += ` Tip: ${functionResult.details.tip}`;
       }
@@ -149,7 +147,7 @@ export const verifyWhatsAppConfig = async (): Promise<{
 
 /**
  * Send an OTP code via WhatsApp using a template
- * Templates can bypass the opt-in requirement
+ * Templates are the preferred method for WhatsApp Business API
  */
 export const sendOtpViaWhatsApp = async (phoneNumber: string, otp: string): Promise<boolean> => {
   try {

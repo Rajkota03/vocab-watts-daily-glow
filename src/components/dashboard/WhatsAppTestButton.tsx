@@ -51,6 +51,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
   const [twilioDetails, setTwilioDetails] = useState<any>(null);
   const [showAdvancedDiagnostics, setShowAdvancedDiagnostics] = useState(false);
   const [accountSidPrefix, setAccountSidPrefix] = useState<string | null>(null);
+  const [useTemplate, setUseTemplate] = useState(true); // Default to using templates
 
   // Check WhatsApp configuration status when component mounts
   React.useEffect(() => {
@@ -210,19 +211,39 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
       setLoading(true);
       console.log(`Sending WhatsApp test message to: ${phoneToUse}`);
 
-      // Create a test message
-      const testMessage = `This is a test message from your app. Sent at: ${new Date().toLocaleTimeString()}`;
+      // Create test payload - prioritize template
+      const templateId = import.meta.env.VITE_WHATSAPP_OTP_TEMPLATE_SID;
+      const useTemplateMessage = useTemplate && templateId;
+      
+      // Create request payload
+      const requestPayload: any = {
+        to: phoneToUse,
+        category: category || "general", 
+        isPro: false,
+        sendImmediately: true,
+        debugMode: true,
+        extraDebugging: true
+      };
+      
+      // Add template if available (preferred method)
+      if (useTemplateMessage) {
+        requestPayload.templateId = templateId;
+        requestPayload.templateValues = {
+          name: "User",
+          otp: "123456",
+          expiryMinutes: "10"
+        };
+        console.log(`Using template message with ID: ${templateId}`);
+        
+        // Add fallback message in case template fails
+        requestPayload.message = `This is a test message for ${category} category.`; 
+      } else {
+        // If not using template, always include a message
+        requestPayload.message = `This is a test message from your app. Sent at: ${new Date().toLocaleTimeString()}`; 
+      }
 
       const { data, error } = await supabase.functions.invoke<FunctionResponse>('send-whatsapp', {
-        body: {
-          to: phoneToUse,
-          message: testMessage, // Always include a message
-          category: category || "general", 
-          isPro: false,
-          sendImmediately: true,
-          debugMode: true,
-          extraDebugging: true
-        }
+        body: requestPayload
       });
 
       // Handle function invocation error
@@ -403,6 +424,19 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
         </Alert>
       )}
       
+      {/* Template Mode Option */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-0.5">
+          <Label htmlFor="template-mode" className="text-sm">Use Template Message</Label>
+          <div className="text-xs text-muted-foreground">Recommended for Business API accounts</div>
+        </div>
+        <Switch
+          id="template-mode"
+          checked={useTemplate}
+          onCheckedChange={setUseTemplate}
+        />
+      </div>
+      
       {/* Phone Input Form */}
       {showPhoneInput ? (
         <div className="space-y-3">
@@ -451,7 +485,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
           className="w-full"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <MessageSquare className="h-4 w-4 mr-2" />}
-          Test WhatsApp Message
+          Test WhatsApp {useTemplate ? 'Template' : 'Message'}
         </Button>
       )}
       

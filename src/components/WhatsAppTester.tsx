@@ -27,8 +27,8 @@ const WhatsAppTester = () => {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
   const [sandboxInfo, setSandboxInfo] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('regular');
-  const [useTemplate, setUseTemplate] = useState(false);
+  const [activeTab, setActiveTab] = useState('template'); // Changed default to 'template'
+  const [useTemplate, setUseTemplate] = useState(true); // Changed default to true
   const { toast } = useToast();
   
   // Default template IDs that can be used
@@ -45,6 +45,18 @@ const WhatsAppTester = () => {
     if (import.meta.env.VITE_WHATSAPP_OTP_TEMPLATE_SID) {
       setTemplateId(import.meta.env.VITE_WHATSAPP_OTP_TEMPLATE_SID);
     }
+    
+    // Attempt to load template IDs from Supabase
+    const loadTemplateIds = async () => {
+      try {
+        // This could be expanded to fetch template IDs from your database
+        console.log("Loading available WhatsApp templates...");
+      } catch (err) {
+        console.error("Error loading templates:", err);
+      }
+    };
+    
+    loadTemplateIds();
   }, []);
 
   const handleSendTest = async () => {
@@ -113,12 +125,12 @@ const WhatsAppTester = () => {
       console.error("Error sending WhatsApp message:", err);
       setError(err.message || "Failed to send message");
       
-      // Check for the specific 63016 error code
-      if (err.message?.includes('63016') || err.message?.includes('outside the allowed window')) {
-        setSandboxInfo(`Important: Error 63016 indicates you need to opt-in to the Twilio WhatsApp sandbox. 
-        The recipient (${phoneNumber}) must send "join <your-sandbox-keyword>" to your Twilio WhatsApp number first.
-        
-        Alternatively, you can use a message template to bypass this requirement.`);
+      // Adjust error messaging for upgraded Twilio account
+      if (err.message?.includes('63016')) {
+        setSandboxInfo(`Error 63016 indicates a messaging issue. Since you're on a upgraded Twilio account, check that:
+        1. Your WhatsApp Business Profile is properly set up
+        2. The template being used is approved
+        3. The recipient's number is properly formatted with country code`);
       }
       
       toast({
@@ -149,7 +161,7 @@ const WhatsAppTester = () => {
               <TabsTrigger value="regular">Regular Message</TabsTrigger>
               <TabsTrigger value="template">
                 Template Message
-                <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 text-xs">Bypasses Opt-In</Badge>
+                <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 text-xs">Recommended</Badge>
               </TabsTrigger>
             </TabsList>
             
@@ -187,10 +199,10 @@ const WhatsAppTester = () => {
                 
                 <Alert className="mt-4 bg-amber-50 border-amber-200">
                   <AlertCircle className="h-4 w-4 text-amber-800" />
-                  <AlertTitle className="text-amber-800">Sandbox Limitations</AlertTitle>
+                  <AlertTitle className="text-amber-800">Regular Message</AlertTitle>
                   <AlertDescription className="text-amber-700">
-                    <p>When using Twilio's sandbox, recipients must opt in by sending "join &lt;your-sandbox-keyword&gt;" to your Twilio WhatsApp number first.</p>
-                    <p className="mt-2 text-sm">Switch to the Template tab to bypass this restriction.</p>
+                    <p>Regular messages can be sent with your upgraded Twilio account but are subject to WhatsApp's 24-hour messaging window limitations.</p>
+                    <p className="mt-2 text-sm">Using templates is recommended for most business communications.</p>
                   </AlertDescription>
                 </Alert>
               </TabsContent>
@@ -199,10 +211,10 @@ const WhatsAppTester = () => {
                 <div className="space-y-4">
                   <Alert className="bg-blue-50 border-blue-200">
                     <Info className="h-4 w-4 text-blue-800" />
-                    <AlertTitle className="text-blue-800">About Templates</AlertTitle>
+                    <AlertTitle className="text-blue-800">Using Templates</AlertTitle>
                     <AlertDescription className="text-blue-700">
-                      <p>Templates allow you to send WhatsApp messages without requiring user opt-in first.</p>
-                      <p className="text-sm mt-2">You must create and approve templates in your Twilio console first.</p>
+                      <p>Templates allow you to send WhatsApp messages outside the 24-hour messaging window.</p>
+                      <p className="text-sm mt-2">Your upgraded Twilio account is configured for template messaging.</p>
                     </AlertDescription>
                   </Alert>
 
@@ -319,7 +331,7 @@ const WhatsAppTester = () => {
             {sandboxInfo && (
               <Alert className="bg-amber-50 border-amber-200 text-amber-800 mt-4">
                 <AlertCircle className="h-4 w-4 text-amber-800" />
-                <AlertTitle className="text-amber-800">Sandbox Opt-In Required</AlertTitle>
+                <AlertTitle className="text-amber-800">Message Delivery Issue</AlertTitle>
                 <AlertDescription className="text-amber-700">
                   {sandboxInfo}
                 </AlertDescription>
@@ -343,35 +355,31 @@ const WhatsAppTester = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h3 className="font-medium text-sm mb-2">WhatsApp Business API vs. Sandbox</h3>
+            <h3 className="font-medium text-sm mb-2">WhatsApp Business API (Production)</h3>
             <ul className="list-disc pl-5 text-sm text-gray-700 space-y-2">
-              <li><strong>Sandbox (Testing Only):</strong> Limited features and requires opt-in unless templates are used.</li>
-              <li><strong>Business API (Production):</strong> Full features without sandbox limitations, but requires application approval.</li>
-              <li><strong>Message Templates:</strong> Pre-approved messages that can be sent without recipient opt-in.</li>
+              <li><strong>Business API:</strong> Full features without sandbox limitations, which you're currently using.</li>
+              <li><strong>Message Templates:</strong> Pre-approved messages that can be sent outside the 24-hour messaging window.</li>
+              <li><strong>Direct Messages:</strong> Can only be sent within 24 hours of the last customer message.</li>
             </ul>
           </div>
           
           <Separator />
           
           <div>
-            <h3 className="font-medium text-sm mb-2">Bypassing Opt-In Requirements</h3>
+            <h3 className="font-medium text-sm mb-2">Best Practices</h3>
             <div className="space-y-2">
               <div className="flex items-start gap-2">
-                <Badge variant="outline" className="mt-1 font-normal bg-green-50 text-green-700">Option 1</Badge>
-                <span className="text-sm">Use pre-approved message templates (recommended for your app)</span>
+                <Badge variant="outline" className="mt-1 font-normal bg-green-50 text-green-700">Recommended</Badge>
+                <span className="text-sm">Use pre-approved message templates for most communications</span>
               </div>
               <div className="flex items-start gap-2">
                 <Badge variant="outline" className="mt-1 font-normal">Option 2</Badge>
-                <span className="text-sm">Get approved for WhatsApp Business API (requires business verification)</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <Badge variant="outline" className="mt-1 font-normal">Option 3</Badge>
-                <span className="text-sm">Have recipients opt-in by sending a message to your Twilio number first</span>
+                <span className="text-sm">Use direct messages only when responding to customer queries within 24 hours</span>
               </div>
               <Alert className="mt-2 py-2 px-3">
                 <Info className="h-4 w-4" />
                 <AlertDescription className="text-xs">
-                  For your app which sends messages to registered users, Option 1 (templates) is recommended during development.
+                  Your app sends messages to registered users using your upgraded Twilio WhatsApp Business account.
                 </AlertDescription>
               </Alert>
             </div>
@@ -381,12 +389,12 @@ const WhatsAppTester = () => {
           <div className="w-full flex justify-between items-center">
             <span className="text-xs text-gray-500">Need help?</span>
             <a 
-              href="https://www.twilio.com/docs/whatsapp/tutorial/send-whatsapp-notification-messages-templates" 
+              href="https://www.twilio.com/docs/whatsapp/api" 
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-blue-600 hover:underline flex items-center"
             >
-              Twilio WhatsApp Templates Guide
+              Twilio WhatsApp Business API Guide
               <ExternalLink className="h-3 w-3 ml-1" />
             </a>
           </div>

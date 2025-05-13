@@ -26,6 +26,7 @@ const WhatsAppTest = () => {
     overallStatus: 'checking'
   });
   const [twilioNumber, setTwilioNumber] = useState<string | null>(null);
+  const [isBusinessAccount, setIsBusinessAccount] = useState<boolean>(true); // Default to true for upgraded account
   
   useEffect(() => {
     // Check Twilio configuration
@@ -53,6 +54,11 @@ const WhatsAppTest = () => {
             messagingService: true,
             overallStatus: 'configured'
           });
+          
+          // Check account type to determine if this is a business account
+          if (data.accountType) {
+            setIsBusinessAccount(data.accountType !== 'Trial');
+          }
           
           // Try to extract the Twilio WhatsApp number if available
           if (data.fromNumber) {
@@ -132,28 +138,32 @@ const WhatsAppTest = () => {
           <CheckCircle2 className="h-4 w-4 text-green-800" />
           <AlertTitle className="text-green-800">Configuration Verified</AlertTitle>
           <AlertDescription className="text-green-700">
-            <p>Your Twilio WhatsApp integration is properly configured!</p>
+            <p>Your Twilio WhatsApp Business integration is properly configured!</p>
+            {isBusinessAccount && (
+              <p className="text-sm mt-1">You're using a Twilio WhatsApp Business account with template messaging capability.</p>
+            )}
           </AlertDescription>
         </Alert>
       )}
       
-      {/* Sandbox Instructions Card - ALWAYS show this for new users */}
+      {/* Business Account Information */}
       <Card className="mb-6 bg-blue-50 border-blue-200">
         <CardHeader className="pb-2">
           <CardTitle className="text-blue-800 flex items-center gap-2">
             <HelpCircle className="h-5 w-5" />
-            Important: WhatsApp Sandbox Opt-In Required
+            WhatsApp Business API Information
           </CardTitle>
         </CardHeader>
         <CardContent className="text-blue-700">
-          <p className="mb-3">For Twilio WhatsApp sandbox testing, recipients <strong>must first opt in</strong> by sending a message to your Twilio WhatsApp number:</p>
+          <p className="mb-3">Your account is configured as a WhatsApp Business API account with the following capabilities:</p>
           
-          <div className="bg-white p-3 rounded-md border border-blue-200 mb-3">
-            <p className="font-mono text-center mb-1">Send <strong>"join &lt;your-sandbox-code&gt;"</strong> to:</p>
-            <p className="font-mono text-center font-bold">{twilioNumber || "Your Twilio WhatsApp number"}</p>
-          </div>
+          <ul className="list-disc pl-5 mb-3 space-y-1 text-sm">
+            <li><strong>Template Messages:</strong> Can be sent anytime without 24-hour session limitations</li>
+            <li><strong>Session Messages:</strong> Can be sent only within 24 hours of the last user message</li>
+            <li><strong>WhatsApp Number:</strong> {twilioNumber || "Your Twilio WhatsApp number"}</li>
+          </ul>
           
-          <p className="text-sm">The error code 63016 means the recipient hasn't completed this opt-in process. Find your sandbox code in the <a href="https://console.twilio.com/us1/develop/sms/settings/whatsapp-sandbox" target="_blank" rel="noopener noreferrer" className="underline">Twilio Console</a>.</p>
+          <p className="text-sm">For best results, use template messages when initiating conversations with users. They provide higher delivery reliability and can be sent at any time.</p>
         </CardContent>
       </Card>
       
@@ -180,20 +190,19 @@ const WhatsAppTest = () => {
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Setup Instructions:</h3>
         <ol className="list-decimal pl-5 text-sm text-gray-700 space-y-2">
-          <li>To use WhatsApp with Twilio, make sure all your Twilio credentials are set in Supabase Edge Function secrets.</li>
-          <li>Make sure to add a <strong>WHATSAPP_VERIFY_TOKEN</strong> (any secure random string) in your Supabase secrets.</li>
-          <li>Configure the webhook URL in your Twilio account's WhatsApp settings.</li>
-          <li>For sandbox testing, recipients must send "join &lt;your-sandbox-word&gt;" to your Twilio WhatsApp number first.</li>
-          <li>For production use, you'll need to register a Business Profile and submit a WhatsApp API application.</li>
-          <li>Check the <a href="https://www.twilio.com/console/sms/whatsapp/learn" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Twilio WhatsApp Guide</a> for more details on setup.</li>
+          <li>You're using a WhatsApp Business API account which supports template messaging.</li>
+          <li>Make sure to configure your message templates in the Twilio console for best results.</li>
+          <li>Set the webhook URL in your Twilio account's WhatsApp settings to receive status updates.</li>
+          <li>Use the <strong>WHATSAPP_VERIFY_TOKEN</strong> from your Supabase secrets when configuring the webhook.</li>
+          <li>Template messages can be sent anytime, while session messages are restricted to 24-hour windows.</li>
         </ol>
       </div>
       
       <div className="mt-8 text-sm text-gray-600 bg-gray-50 p-4 rounded border">
         <p><strong>Troubleshooting:</strong> If messages are not being delivered:</p>
         <ol className="list-decimal pl-5 mt-2 space-y-1">
-          <li>Check that the recipient has joined your sandbox if you're using Twilio's sandbox environment</li>
-          <li>Verify your Twilio account is active and not in trial mode (some features may be restricted)</li>
+          <li>Check that your template messages are approved in the Twilio console</li>
+          <li>Verify that recipient phone numbers are formatted correctly with country codes</li>
           <li>Ensure the recipient's phone number has WhatsApp installed and active</li>
           <li>Check <a href="https://console.twilio.com/us1/develop/sms/logs/errors" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Twilio's Error Logs</a> for detailed error information</li>
         </ol>
