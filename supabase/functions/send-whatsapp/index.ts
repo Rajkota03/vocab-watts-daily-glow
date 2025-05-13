@@ -94,13 +94,15 @@ serve(async (req) => {
     }
 
     // --- Parse WhatsApp message request ---
-    const { to, message } = requestData;
+    const { to, message, templateId, templateValues } = requestData;
 
     // Debug logging
     console.log("WhatsApp request received:", { 
       to, 
       messageLength: message ? message.length : 0,
+      templateId: templateId || "none",
       toFormatted: to ? `${to.substring(0, 5)}...` : undefined,
+      usingTemplate: !!templateId
     });
 
     // Validate input
@@ -108,8 +110,8 @@ serve(async (req) => {
       throw new Error("Recipient phone number is required");
     }
 
-    if (!message) {
-      throw new Error("Message content is required");
+    if (!message && !templateId) {
+      throw new Error("Either message content or templateId is required");
     }
 
     if (!twilioAccountSid || !twilioAuthToken) {
@@ -117,7 +119,6 @@ serve(async (req) => {
     }
 
     // --- Process phone number format ---
-    // UPDATED: Improved WhatsApp number formatting with better validation
     const formatWhatsAppNumber = (phoneNumber: string) => {
       // First, sanitize the number to only contain digits and '+' at the start
       let formatted = phoneNumber.replace(/[^\d+]/g, '');
@@ -128,7 +129,6 @@ serve(async (req) => {
       }
       
       // Validate that we have a reasonable length for an international phone number
-      // Most international numbers are between 8 and 15 digits plus the '+' sign
       const digitsOnly = formatted.replace(/[^\d]/g, '');
       if (digitsOnly.length < 8 || digitsOnly.length > 15) {
         console.warn(`Warning: Phone number ${formatted} has unusual length (${digitsOnly.length} digits)`);
@@ -166,7 +166,17 @@ serve(async (req) => {
     
     // --- Prepare and send the message ---
     console.log(`Sending WhatsApp message using ${useMessagingService ? "Messaging Service" : "From Number"} to ${formattedTo}`);
-    console.log("Message content (first 50 chars):", message.substring(0, 50) + "...");
+    
+    // Check if we're using a template
+    const usingTemplate = !!templateId;
+    if (usingTemplate) {
+      console.log(`Using template ID: ${templateId}`);
+      if (templateValues) {
+        console.log("Template values:", templateValues);
+      }
+    } else {
+      console.log("Message content (first 50 chars):", message.substring(0, 50) + "...");
+    }
 
     // Prepare the request body for Twilio
     const formData = new FormData();
@@ -178,7 +188,23 @@ serve(async (req) => {
       formData.append("From", formattedFrom);
     }
     
-    formData.append("Body", message);
+    // Handle template vs regular message
+    if (usingTemplate) {
+      // If using a template, add the template SID
+      const contentSid = templateId;
+      formData.append("ContentSid", contentSid);
+      
+      // Add template parameters if provided
+      if (templateValues && typeof templateValues === 'object') {
+        const contentVariables = JSON.stringify(templateValues);
+        formData.append("ContentVariables", contentVariables);
+      }
+      
+      console.log("Using template message with ContentSid:", contentSid);
+    } else {
+      // For regular message, just use the Body parameter
+      formData.append("Body", message);
+    }
 
     // Log the API request details (but not the full auth token)
     console.log("Twilio API request:", {
@@ -186,7 +212,8 @@ serve(async (req) => {
       to: formattedTo,
       messagingService: useMessagingService ? messagingServiceSid : undefined,
       from: useMessagingService ? "using messaging service" : formattedFrom,
-      messageLength: message.length
+      contentType: usingTemplate ? "template" : "text",
+      templateId: usingTemplate ? templateId : undefined,
     });
 
     // Make the API request to Twilio
@@ -226,7 +253,13 @@ serve(async (req) => {
       to: formattedTo,
       from: useMessagingService ? "via messaging service" : formattedFrom,
       webhookUrl: webhookUrl,
-      troubleshooting: {
+      usingTemplate: usingTemplate,
+      templateId: usingTemplate ? templateId : undefined,
+      troubleshooting: usingTemplate ? {
+        templates: "You are using a WhatsApp template which bypasses the opt-in requirement",
+        checkTwilioConsole: "Check your Twilio console for message delivery status and template approval",
+        makeProductionReady: "For production, apply for WhatsApp Business API access through Twilio"
+      } : {
         checkTwilioConsole: "Check your Twilio console for message delivery status",
         sandboxInstructions: "If using sandbox, recipient must send 'join <sandbox-code>' first",
         messageWillAppear: "Messages appear in WhatsApp, not as SMS/text",

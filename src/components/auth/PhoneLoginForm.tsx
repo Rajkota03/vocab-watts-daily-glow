@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -123,6 +124,14 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
       // Store debug information
       setDebugInfo(data);
       
+      // Add info about template usage
+      if (data?.usingTemplate) {
+        setDebugInfo({
+          ...data,
+          templateInfo: "Using a WhatsApp template to bypass opt-in requirement"
+        });
+      }
+      
       setOtpSent(true);
       setSuccess("OTP sent! Check your WhatsApp for the verification code.");
       toast({ 
@@ -205,7 +214,7 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
         </Alert>
       )}
 
-      {otpSent && (
+      {otpSent && !debugInfo?.usingTemplate && (
         <Alert variant="default" className="bg-blue-50 text-blue-800 border-blue-200">
           <Info className="h-4 w-4 mr-2" />
           <AlertDescription>
@@ -215,6 +224,16 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
               <li>Your number is correct and has WhatsApp</li>
               <li>You've messaged the sender number first (required for testing)</li>
             </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {otpSent && debugInfo?.usingTemplate && (
+        <Alert variant="default" className="bg-green-50 text-green-800 border-green-200">
+          <Info className="h-4 w-4 mr-2" />
+          <AlertDescription>
+            <span className="font-medium">WhatsApp verification code sent! </span> 
+            Using a message template to bypass the opt-in requirement.
           </AlertDescription>
         </Alert>
       )}
@@ -230,6 +249,8 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
                 Message ID: {debugInfo.messageId || 'N/A'}<br/>
                 Status: {debugInfo.status || 'N/A'}<br/>
                 {debugInfo.webhookUrl && (<>Webhook URL: {debugInfo.webhookUrl}<br/></>)}
+                Using Template: {debugInfo.usingTemplate ? 'Yes' : 'No'}<br/>
+                {debugInfo.templateId && (<>Template ID: {debugInfo.templateId}<br/></>)}
                 Provider: {debugInfo.usingMetaIntegration ? 'Meta WhatsApp API' : 'Twilio'}
               </div>
               <div className="mt-2 text-xs text-gray-500">

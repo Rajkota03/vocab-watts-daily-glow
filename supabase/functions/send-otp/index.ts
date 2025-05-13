@@ -64,21 +64,34 @@ serve(async (req) => {
     // Format the OTP message with clear formatting for better visibility
     const otpMessage = `Your GlintUp verification code is: *${otp}*\n\nThis code will expire in 10 minutes. Do not share this code with anyone.`;
     
+    // Get template ID from parameter, environment or default
+    const whatsAppTemplateId = templateId || 
+      Deno.env.get("WHATSAPP_TEMPLATE_SID") || 
+      Deno.env.get("TWILIO_WHATSAPP_TEMPLATE_SID");
+    
     console.log(`Invoking send-whatsapp to send OTP ${otp} to ${formattedPhone}`);
+    console.log(`Using template: ${whatsAppTemplateId ? 'Yes' : 'No'}`);
+    
+    const requestBody: any = {
+      to: formattedPhone,
+      message: otpMessage, // Fallback message if template is not available or fails
+      debugMode: true
+    };
+    
+    // If a template ID is available, use it (this will bypass opt-in requirements)
+    if (whatsAppTemplateId) {
+      requestBody.templateId = whatsAppTemplateId;
+      requestBody.templateValues = {
+        otp: otp,
+        expiryMinutes: "10",
+        appName: "GlintUp"
+      };
+      console.log("Using template ID:", whatsAppTemplateId);
+    }
+    
     const { data: whatsappResult, error: whatsappError } = await supabaseAdmin.functions.invoke(
       "send-whatsapp",
-      {
-        body: {
-          to: formattedPhone,
-          message: otpMessage,
-          templateId: templateId || Deno.env.get("WHATSAPP_TEMPLATE_SID"), // Use provided templateId or env variable
-          templateValues: {
-            otp: otp,
-            expiryMinutes: "10"
-          },
-          debugMode: true // Enable extended debugging
-        },
-      }
+      { body: requestBody }
     );
 
     if (whatsappError) {
@@ -95,10 +108,9 @@ serve(async (req) => {
       messageId: whatsappResult?.messageId,
       status: whatsappResult?.status,
       webhookUrl: whatsappResult?.webhookUrl,
-      usingMessagingService: whatsappResult?.usingMessagingService,
+      usingTemplate: whatsappResult?.usingTemplate || !!whatsAppTemplateId,
+      templateId: whatsappResult?.templateId || whatsAppTemplateId,
       messagingServiceSid: whatsappResult?.messagingServiceSid,
-      usingTemplate: whatsappResult?.usingTemplate,
-      usingMetaIntegration: whatsappResult?.usingMetaIntegration,
       troubleshooting: whatsappResult?.troubleshooting
     };
 
