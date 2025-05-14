@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Brain, ArrowLeft, Mail, Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -11,16 +11,28 @@ import { PhoneLoginForm } from '@/components/auth/PhoneLoginForm';
 const Login = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  
+  // Get the return path from location state
+  const from = location.state?.from?.pathname || '/dashboard';
 
   useEffect(() => {
     // Check if user is already logged in
     const checkUser = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        navigate('/dashboard');
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          // Navigate to the return URL or dashboard
+          navigate(from, { replace: true });
+        }
+      } catch (error) {
+        console.error("Error checking auth:", error);
+      } finally {
+        setIsCheckingAuth(false);
       }
     };
     checkUser();
@@ -28,8 +40,8 @@ const Login = () => {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        if (window.location.pathname.includes('/login')) {
-          navigate('/dashboard');
+        if (session) {
+          navigate(from, { replace: true });
         }
       }
     });
@@ -37,7 +49,7 @@ const Login = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, from]);
 
   const handleLogin = async (values: any) => {
     setIsLoading(true);
@@ -121,6 +133,12 @@ const Login = () => {
     }
   };
 
+  if (isCheckingAuth) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+    </div>;
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#9b87f5]/10 to-[#7E69AB]/10 px-4 py-12 relative">
       <Link
@@ -155,7 +173,7 @@ const Login = () => {
             loginMethod === 'email' ? (
               <LoginForm onSubmit={handleLogin} isLoading={isLoading} />
             ) : (
-              <PhoneLoginForm onLoginSuccess={() => navigate('/dashboard')} />
+              <PhoneLoginForm onLoginSuccess={() => navigate(from, { replace: true })} />
             )
           )}
         </CardContent>

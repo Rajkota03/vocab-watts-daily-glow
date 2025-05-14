@@ -7,29 +7,45 @@ import { useToast } from '@/hooks/use-toast';
 
 export const useAuthHandler = () => {
   const [session, setSession] = useState<Session | null>(null);
+  const [isChecking, setIsChecking] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
+    let isMounted = true;
+    let hasRedirected = false;
+    
     // Initial session check
     const checkSession = async () => {
-      const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error("Error checking session:", error);
-        toast({
-          title: "Authentication error",
-          description: "Please sign in again to continue.",
-          variant: "destructive"
-        });
-        navigate('/login');
-        return;
-      }
-      
-      setSession(currentSession);
-      
-      if (!currentSession) {
-        navigate('/login');
+      try {
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Error checking session:", error);
+          if (isMounted) {
+            toast({
+              title: "Authentication error",
+              description: "Please sign in again to continue.",
+              variant: "destructive"
+            });
+          }
+          return;
+        }
+        
+        if (isMounted) {
+          setSession(currentSession);
+        }
+        
+        if (!currentSession && !hasRedirected) {
+          hasRedirected = true;
+          navigate('/login');
+        }
+      } catch (error) {
+        console.error("Exception checking session:", error);
+      } finally {
+        if (isMounted) {
+          setIsChecking(false);
+        }
       }
     };
 
@@ -41,23 +57,35 @@ export const useAuthHandler = () => {
       
       if (event === 'TOKEN_REFRESHED') {
         console.log('Token refreshed successfully');
-        setSession(currentSession);
+        if (isMounted) {
+          setSession(currentSession);
+        }
       }
       
       // Use a more general approach for session expiry events to avoid TypeScript errors
       // Supabase can emit various events like "SIGNED_OUT" or "USER_DELETED"
       if (event === 'SIGNED_OUT') {
-        setSession(null);
-        navigate('/login');
-        toast({
-          title: "Session expired",
-          description: "Please sign in again to continue.",
-          variant: "destructive"
-        });
+        if (isMounted) {
+          setSession(null);
+        }
+        
+        if (!hasRedirected) {
+          hasRedirected = true;
+          navigate('/login');
+          
+          if (isMounted) {
+            toast({
+              title: "Session expired",
+              description: "Please sign in again to continue.",
+              variant: "destructive"
+            });
+          }
+        }
       }
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, [navigate, toast]);
@@ -91,5 +119,5 @@ export const useAuthHandler = () => {
     }
   };
 
-  return { session, refreshToken };
+  return { session, refreshToken, isChecking };
 };
