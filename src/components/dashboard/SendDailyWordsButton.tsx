@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Send, Loader2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface SendDailyWordsButtonProps {
   phoneNumber?: string;
@@ -26,6 +27,64 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const [lastErrorDetails, setLastErrorDetails] = useState<string | null>(null);
+  const [provider, setProvider] = useState<'twilio' | 'aisensy'>('twilio');
+  const [providerStatus, setProviderStatus] = useState<{
+    twilio: boolean;
+    aisensy: boolean;
+  }>({
+    twilio: false,
+    aisensy: false
+  });
+
+  // Check which providers are configured when component mounts
+  useEffect(() => {
+    const checkProviders = async () => {
+      // Check Twilio
+      try {
+        const { data: twilioData } = await supabase.functions.invoke<FunctionResponse>('send-whatsapp', {
+          body: {
+            checkConfig: true,
+            provider: 'twilio'
+          }
+        });
+        
+        setProviderStatus(prev => ({
+          ...prev,
+          twilio: twilioData?.success || false
+        }));
+        
+        if (twilioData?.success) {
+          setProvider('twilio');
+        }
+      } catch (e) {
+        console.error("Error checking Twilio config:", e);
+      }
+      
+      // Check AiSensy
+      try {
+        const { data: aisensyData } = await supabase.functions.invoke<FunctionResponse>('send-whatsapp', {
+          body: {
+            checkConfig: true,
+            provider: 'aisensy'
+          }
+        });
+        
+        setProviderStatus(prev => ({
+          ...prev,
+          aisensy: aisensyData?.success || false
+        }));
+        
+        // If AiSensy is configured and Twilio isn't, use AiSensy
+        if (aisensyData?.success && !providerStatus.twilio) {
+          setProvider('aisensy');
+        }
+      } catch (e) {
+        console.error("Error checking AiSensy config:", e);
+      }
+    };
+    
+    checkProviders();
+  }, []);
 
   const handleSendWords = async () => {
     setLastErrorDetails(null); // Clear previous errors
@@ -41,7 +100,7 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
     }
 
     setLoading(true);
-    console.log(`Requesting daily words for ${phoneNumber}, category: ${category}, isPro: ${isPro}`);
+    console.log(`Requesting daily words for ${phoneNumber}, category: ${category}, isPro: ${isPro}, provider: ${provider}`);
 
     try {
       const { data, error } = await supabase.functions.invoke<FunctionResponse>('send-whatsapp', {
@@ -51,7 +110,7 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
           isPro: isPro,
           sendImmediately: true, // Send now as it's a manual trigger
           debugMode: true, // Include additional debug information
-          forceDirectMessage: true, // Always use direct messaging without templates
+          provider: provider, // Specify the provider
           // Always include a direct message
           message: `Here are your daily vocabulary words for ${category}. Enjoy learning!`
         }
@@ -78,7 +137,7 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
             if (data.details.tip) errorDescription += ` Tip: ${data.details.tip}`;
             if (data.details.suggestion) errorDescription += ` Suggestion: ${data.details.suggestion}`;
           } else if (data.details.responseText) {
-             errorDescription = `Twilio API Error: ${data.details.responseText.substring(0, 150)}...`;
+             errorDescription = `API Error: ${data.details.responseText.substring(0, 150)}...`;
           }
         }
         setLastErrorDetails(errorDescription);
@@ -92,7 +151,7 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
 
       // Handle successful send
       console.log("Daily words send response:", data);
-      let successDescription = `Your daily words request was accepted by Twilio (ID: ${data.messageId || 'N/A'}). Status: ${data.status || 'unknown'}.`;
+      let successDescription = `Your daily words request was accepted (ID: ${data.messageId || 'N/A'}). Status: ${data.status || 'unknown'}.`;
       if (data.instructions && data.instructions.length > 0) {
         successDescription += ` Instructions: ${data.instructions.join(' ')}`;
       }
@@ -125,8 +184,32 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
     }
   };
 
+  const handleProviderChange = (value: string) => {
+    setProvider(value as 'twilio' | 'aisensy');
+  };
+
   return (
     <div className="space-y-4">
+      {(providerStatus.twilio && providerStatus.aisensy) && (
+        <div className="mb-2">
+          <label htmlFor="provider" className="block text-sm font-medium mb-1">WhatsApp Provider</label>
+          <Select value={provider} onValueChange={handleProviderChange}>
+            <SelectTrigger id="provider" className="w-full">
+              <SelectValue placeholder="Select WhatsApp Provider" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="twilio">Twilio</SelectItem>
+              <SelectItem value="aisensy">AiSensy</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-gray-500 mt-1">
+            {provider === 'aisensy' 
+              ? "AiSensy offers better delivery rates especially for US numbers"
+              : "Twilio is the default provider"}
+          </p>
+        </div>
+      )}
+      
       <Button
         onClick={handleSendWords}
         variant="default"
@@ -134,7 +217,7 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
         className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
       >
         {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-        Send Today's Words Now
+        Send Today's Words {provider === 'aisensy' ? '(via AiSensy)' : ''}
       </Button>
       {!phoneNumber && (
          <Alert>

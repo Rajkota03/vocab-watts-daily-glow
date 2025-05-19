@@ -6,6 +6,9 @@ import { corsHeaders } from '../_shared/cors.ts';
 const twilioApiUrl = (accountSid: string) => 
   `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
 
+// Define AiSensy API URL
+const aisensyApiUrl = "https://api.aisensy.com/campaign/send";
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -13,322 +16,21 @@ serve(async (req) => {
   }
 
   try {
-    // --- Extract credentials from environment variables ---
-    const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-    const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const twilioFromNumber = Deno.env.get("TWILIO_FROM_NUMBER");
-    const messagingServiceSid = Deno.env.get("TWILIO_MESSAGING_SERVICE_SID");
-    
-    // Debug credential check
-    console.log("Twilio credentials check:", {
-      accountSid: twilioAccountSid ? `${twilioAccountSid.substring(0, 6)}...${twilioAccountSid.slice(-3)}` : "missing",
-      authToken: twilioAuthToken ? "present (hidden)" : "missing",
-      fromNumber: twilioFromNumber ? "present" : "missing",
-      messagingServiceSid: messagingServiceSid ? `${messagingServiceSid.substring(0, 5)}...` : "missing",
-    });
-
+    // Parse request data
     const requestData = await req.json();
     
-    // Check only configuration without sending messages
-    if (requestData.checkOnly === true) {
-      // ... keep existing code (config status check)
-      const configStatus = {
-        twilioConfigured: !!twilioAccountSid && !!twilioAuthToken,
-        fromNumberConfigured: !!twilioFromNumber,
-        messagingServiceConfigured: !!messagingServiceSid,
-        accountSid: twilioAccountSid ? `${twilioAccountSid.substring(0, 6)}...` : null,
-      };
-      
-      // If we should also verify credentials, test Twilio API connectivity
-      if (requestData.verifyCredentials && twilioAccountSid && twilioAuthToken) {
-        try {
-          // Call Twilio API to check account status
-          const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}.json`, {
-            headers: {
-              Authorization: `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`
-            }
-          });
-          
-          if (!response.ok) {
-            return new Response(JSON.stringify({ 
-              success: false, 
-              twilioConfigured: true,
-              accountVerified: false,
-              error: `Twilio API returned ${response.status}`,
-              configStatus
-            }), {
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-              status: 200 // Still return 200 for frontend to process
-            });
-          }
-          
-          const accountData = await response.json();
-          return new Response(JSON.stringify({ 
-            success: true, 
-            twilioConfigured: true,
-            accountVerified: true,
-            accountName: accountData.friendly_name,
-            accountStatus: accountData.status,
-            accountType: accountData.type,
-            configStatus
-          }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200
-          });
-        } catch (error) {
-          return new Response(JSON.stringify({ 
-            success: false, 
-            twilioConfigured: true,
-            accountVerified: false,
-            error: `Connection error: ${error.message}`,
-            configStatus
-          }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200 // Still return 200 for frontend to process
-          });
-        }
-      }
-      
-      return new Response(JSON.stringify({ 
-        success: configStatus.twilioConfigured && (configStatus.fromNumberConfigured || configStatus.messagingServiceConfigured),
-        configStatus
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200
-      });
-    }
-    
-    // If this is a test connection request, just verify the credentials
-    if (requestData.testTwilioConnection === true) {
-      // ... keep existing code (connection test)
-      if (!twilioAccountSid || !twilioAuthToken) {
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: "Missing Twilio credentials",
-            accountSidPrefix: twilioAccountSid ? twilioAccountSid.substring(0, 6) : null
-          }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200 // Return 200 for frontend handling
-          }
-        );
-      }
-      
-      try {
-        // Call Twilio API to check account status
-        const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}.json`, {
-          headers: {
-            Authorization: `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`
-          }
-        });
-        
-        if (!response.ok) {
-          const responseText = await response.text();
-          return new Response(JSON.stringify({ 
-            success: false, 
-            error: `Twilio API returned ${response.status}`,
-            details: { 
-              status: response.status, 
-              statusText: response.statusText,
-              responseText: responseText
-            },
-            accountSidPrefix: twilioAccountSid.substring(0, 6)
-          }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200 // Return 200 for frontend handling
-          });
-        }
-        
-        const accountData = await response.json();
-        return new Response(JSON.stringify({ 
-          success: true, 
-          accountName: accountData.friendly_name,
-          accountStatus: accountData.status,
-          accountType: accountData.type,
-          accountSidPrefix: twilioAccountSid.substring(0, 6),
-          fromNumber: twilioFromNumber
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200
-        });
-      } catch (error) {
-        return new Response(JSON.stringify({ 
-          success: false, 
-          error: `Connection error: ${error.message}`,
-          accountSidPrefix: twilioAccountSid ? twilioAccountSid.substring(0, 6) : null
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200 // Return 200 for frontend handling
-        });
-      }
-    }
+    // Determine which provider to use - default to twilio for backward compatibility
+    const provider = requestData.provider || 'twilio';
 
-    // --- Parse WhatsApp message request ---
-    // Support both 'to' and 'phoneNumber' fields for compatibility
-    const to = requestData.to || requestData.phoneNumber;
-    const message = requestData.message;
-    
-    // IMPORTANT CHANGE: We're not even going to look at template parameters anymore,
-    // we'll simply ensure there's a message for direct messaging
+    console.log(`Using provider: ${provider}`);
 
-    // Debug logging
-    console.log("WhatsApp request received:", { 
-      to, 
-      messageLength: message ? message.length : 0,
-      toFormatted: to ? `${to.substring(0, 5)}...` : undefined,
-      usingDirectMessage: true,
-    });
-
-    // Validate input
-    if (!to) {
-      throw new Error("Recipient phone number is required");
-    }
-
-    // Always require a message for direct messaging
-    if (!message) {
-      throw new Error("Message content is required for direct messaging");
-    }
-
-    if (!twilioAccountSid || !twilioAuthToken) {
-      throw new Error("Twilio credentials are not configured");
-    }
-
-    // --- Process phone number format ---
-    const formatWhatsAppNumber = (phoneNumber: string) => {
-      // First, sanitize the number to only contain digits and '+' at the start
-      let formatted = phoneNumber.replace(/[^\d+]/g, '');
-      
-      // Ensure the number starts with '+' if it doesn't already
-      if (!formatted.startsWith('+')) {
-        formatted = `+${formatted}`;
-      }
-      
-      // Validate that we have a reasonable length for an international phone number
-      const digitsOnly = formatted.replace(/[^\d]/g, '');
-      if (digitsOnly.length < 8 || digitsOnly.length > 15) {
-        console.warn(`Warning: Phone number ${formatted} has unusual length (${digitsOnly.length} digits)`);
-      }
-      
-      // For WhatsApp, Twilio requires the 'whatsapp:' prefix
-      return `whatsapp:${formatted}`;
-    };
-
-    // Format phone numbers
-    const formattedTo = formatWhatsAppNumber(to);
-    let formattedFrom = null;
-    if (twilioFromNumber) {
-      formattedFrom = formatWhatsAppNumber(twilioFromNumber);
-    }
-    
-    console.log(`Formatted recipient phone number from ${to} to ${formattedTo}`);
-    if (formattedFrom) {
-      console.log(`Formatted sender phone number to ${formattedFrom}`);
-    }
-
-    // --- Determine which number to send from ---
-    console.log("TWILIO_FROM_NUMBER from environment:", twilioFromNumber);
-    console.log("TWILIO_MESSAGING_SERVICE_SID from environment:", messagingServiceSid);
-
-    // Use Messaging Service if available, otherwise use From Number
-    const useMessagingService = !!messagingServiceSid;
-    if (useMessagingService) {
-      console.log("Using Messaging Service SID:", messagingServiceSid);
-    } else if (twilioFromNumber) {
-      console.log("Using From Number:", formattedFrom);
+    if (provider === 'aisensy') {
+      return await handleAiSensyRequest(req, requestData);
     } else {
-      throw new Error("Either Twilio From Number or Messaging Service SID must be configured");
+      return await handleTwilioRequest(req, requestData);
     }
-    
-    // --- Prepare and send the message ---
-    console.log(`Sending WhatsApp message using ${useMessagingService ? "Messaging Service" : "From Number"} to ${formattedTo}`);
-    
-    console.log("Using direct message: ", message.substring(0, 50) + (message.length > 50 ? "..." : ""));
-
-    // Prepare the request body for Twilio
-    const formData = new FormData();
-    formData.append("To", formattedTo);
-    
-    // IMPORTANT: Always add both MessagingServiceSid AND From number when available
-    // This helps ensure the "from" field is properly populated in the response
-    if (useMessagingService) {
-      formData.append("MessagingServiceSid", messagingServiceSid);
-      // If we have a from number, add it as well to ensure "from" is not null
-      if (twilioFromNumber) {
-        formData.append("From", formattedFrom);
-      }
-    } else {
-      formData.append("From", formattedFrom);
-    }
-    
-    // Set the message body - this is the key change to always use direct messaging
-    formData.append("Body", message);
-    console.log("Setting message body:", message.substring(0, 30) + "...");
-    
-    // Log the API request details (but not the full auth token)
-    console.log("Twilio API request:", {
-      url: twilioApiUrl(twilioAccountSid),
-      to: formattedTo,
-      messagingService: useMessagingService ? messagingServiceSid : undefined,
-      from: useMessagingService && twilioFromNumber ? formattedFrom : (useMessagingService ? "using messaging service" : formattedFrom),
-      contentType: "direct message",
-    });
-
-    // Make the API request to Twilio
-    const twilioResponse = await fetch(twilioApiUrl(twilioAccountSid), {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
-      },
-      body: formData,
-    });
-
-    // Log the API response status
-    console.log("Twilio API response status:", twilioResponse.status);
-
-    // Parse the response JSON
-    const twilioData = await twilioResponse.json();
-    console.log("Twilio response data:", JSON.stringify(twilioData));
-
-    // Check if the API call was successful
-    if (!twilioResponse.ok || twilioData.error_code) {
-      throw new Error(`Twilio API error: ${twilioData.error_message || twilioResponse.statusText}`);
-    }
-
-    // Log a success message
-    console.log("WhatsApp message sent successfully:", twilioData.sid);
-
-    // --- Return success response ---
-    const webhookUrl = Deno.env.get("SUPABASE_URL") ? 
-      `${Deno.env.get("SUPABASE_URL")}/functions/v1/whatsapp-webhook` : undefined;
-    
-    // Create a response with helpful information
-    const response = {
-      success: true,
-      messageId: twilioData.sid,
-      status: twilioData.status,
-      details: twilioData,
-      to: formattedTo,
-      from: twilioData.from || (useMessagingService ? 
-        (twilioFromNumber ? `whatsapp:${twilioFromNumber}` : "via messaging service") : 
-        formattedFrom),
-      webhookUrl: webhookUrl,
-      usingDirectMessage: true,
-      businessAccount: true,
-      troubleshooting: {
-        checkTwilioConsole: "Check your Twilio console for message delivery status",
-        messageWillAppear: "Messages appear in WhatsApp, not as SMS/text",
-        directMessageUsed: "Using direct message mode only",
-        businessReady: "Your account is configured for WhatsApp Business API"
-      }
-    };
-
-    return new Response(JSON.stringify(response), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
-    
   } catch (error) {
-    console.error("WhatsApp message error:", error);
+    console.error(`WhatsApp message error [${requestData?.provider || 'unknown'}]:`, error);
     
     // Format detailed error response
     return new Response(
@@ -337,9 +39,7 @@ serve(async (req) => {
         error: error.message,
         details: {
           message: error.message,
-          tip: "Using direct messages for all numbers",
-          suggestion: "Check your Twilio account status and WhatsApp number formatting",
-          twilioGuide: "https://www.twilio.com/docs/whatsapp/api"
+          suggestion: "Check your configuration and try again",
         }
       }),
       { 
@@ -349,3 +49,361 @@ serve(async (req) => {
     );
   }
 });
+
+// Handle AiSensy requests
+async function handleAiSensyRequest(req: Request, requestData: any) {
+  // --- Extract credentials from environment variables ---
+  const aisensyApiKey = Deno.env.get("AISENSY_API_KEY");
+  const aisensyBusinessId = Deno.env.get("AISENSY_BUSINESS_ID");
+  
+  // Debug credential check
+  console.log("AiSensy credentials check:", {
+    apiKey: aisensyApiKey ? `${aisensyApiKey.substring(0, 5)}...` : "missing",
+    businessId: aisensyBusinessId ? "present" : "missing",
+  });
+
+  // Check if this is just a configuration verification request
+  if (requestData.checkConfig === true) {
+    const configStatus = {
+      aisensyConfigured: !!aisensyApiKey && !!aisensyBusinessId,
+      businessId: aisensyBusinessId ? "configured" : "missing",
+      apiKey: aisensyApiKey ? "configured" : "missing"
+    };
+    
+    return new Response(JSON.stringify({ 
+      success: configStatus.aisensyConfigured,
+      configStatus
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200
+    });
+  }
+  
+  // Check if this is a templates fetch request
+  if (requestData.action === "getTemplates") {
+    return await fetchAiSensyTemplates(aisensyApiKey, aisensyBusinessId);
+  }
+
+  // --- Parse WhatsApp message request ---
+  const to = requestData.to || requestData.phoneNumber;
+  const message = requestData.message;
+  const templateName = requestData.templateName;
+  const templateParams = requestData.templateParams || {};
+
+  // Debug logging
+  console.log("AiSensy request received:", { 
+    to, 
+    messageLength: message ? message.length : 0,
+    templateName,
+    hasTemplateParams: Object.keys(templateParams).length > 0
+  });
+
+  // Validate input
+  if (!to) {
+    throw new Error("Recipient phone number is required");
+  }
+
+  if (!message && !templateName) {
+    throw new Error("Either message content or template name is required");
+  }
+
+  if (!aisensyApiKey || !aisensyBusinessId) {
+    throw new Error("AiSensy credentials are not configured");
+  }
+
+  // Determine which type of message to send
+  let aisensyPayload;
+  
+  if (templateName) {
+    // Template message
+    aisensyPayload = {
+      apiKey: aisensyApiKey,
+      campaign: {
+        campaignName: templateName,
+        recipientPhone: to,
+        userName: templateParams.userName || "",
+        broadcast: false,
+        variables: templateParams
+      }
+    };
+  } else {
+    // Direct message (text message)
+    aisensyPayload = {
+      apiKey: aisensyApiKey,
+      campaign: {
+        campaignName: "direct_message",
+        recipientPhone: to,
+        userName: requestData.userName || "",
+        broadcast: false,
+        message: {
+          type: "text",
+          text: message
+        }
+      }
+    };
+  }
+  
+  console.log("AiSensy payload prepared:", JSON.stringify(aisensyPayload).substring(0, 200) + "...");
+
+  // Make the API request to AiSensy
+  const aisensyResponse = await fetch(aisensyApiUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(aisensyPayload),
+  });
+
+  // Log the API response status
+  console.log("AiSensy API response status:", aisensyResponse.status);
+
+  // Parse the response JSON
+  const aisensyData = await aisensyResponse.json();
+  console.log("AiSensy response data:", JSON.stringify(aisensyData));
+
+  // Check if the API call was successful
+  if (!aisensyResponse.ok || aisensyData.error) {
+    throw new Error(`AiSensy API error: ${aisensyData.message || aisensyData.error || aisensyResponse.statusText}`);
+  }
+
+  // Log a success message
+  console.log("WhatsApp message sent successfully via AiSensy:", aisensyData.id || aisensyData);
+
+  // --- Return success response ---
+  const webhookUrl = Deno.env.get("SUPABASE_URL") ? 
+    `${Deno.env.get("SUPABASE_URL")}/functions/v1/whatsapp-webhook` : undefined;
+  
+  // Create a response with helpful information
+  const response = {
+    success: true,
+    messageId: aisensyData.id || "unknown",
+    status: aisensyData.status || "sent",
+    details: aisensyData,
+    to: to,
+    provider: "aisensy",
+    webhookUrl: webhookUrl,
+    troubleshooting: {
+      checkAiSensyDashboard: "Check your AiSensy dashboard for message delivery status",
+      messageWillAppear: "Messages appear in WhatsApp, not as SMS/text",
+      businessReady: "Your account is configured for WhatsApp Business API"
+    }
+  };
+
+  return new Response(JSON.stringify(response), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    status: 200,
+  });
+}
+
+// Fetch templates from AiSensy
+async function fetchAiSensyTemplates(apiKey: string | undefined, businessId: string | undefined) {
+  if (!apiKey || !businessId) {
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: "AiSensy credentials are not configured" 
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200
+    });
+  }
+  
+  try {
+    // AiSensy templates endpoint - replace with actual endpoint
+    const templatesUrl = `https://api.aisensy.com/templates/list?apiKey=${apiKey}&businessId=${businessId}`;
+    
+    const response = await fetch(templatesUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch templates: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    return new Response(JSON.stringify({
+      success: true,
+      templates: data.templates || []
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200
+    });
+  } catch (error) {
+    console.error("Error fetching AiSensy templates:", error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message,
+      templates: []
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200
+    });
+  }
+}
+
+// Handle Twilio requests (existing functionality)
+async function handleTwilioRequest(req: Request, requestData: any) {
+  // --- Extract credentials from environment variables ---
+  const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+  const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+  const twilioFromNumber = Deno.env.get("TWILIO_FROM_NUMBER");
+  const messagingServiceSid = Deno.env.get("TWILIO_MESSAGING_SERVICE_SID");
+  
+  // Debug credential check
+  console.log("Twilio credentials check:", {
+    accountSid: twilioAccountSid ? `${twilioAccountSid.substring(0, 6)}...${twilioAccountSid.slice(-3)}` : "missing",
+    authToken: twilioAuthToken ? "present (hidden)" : "missing",
+    fromNumber: twilioFromNumber ? "present" : "missing",
+    messagingServiceSid: messagingServiceSid ? `${messagingServiceSid.substring(0, 5)}...` : "missing",
+  });
+
+  // Check only configuration without sending messages
+  if (requestData.checkOnly === true) {
+    // ... keep existing code (config status check)
+  }
+  
+  // If this is a test connection request, just verify the credentials
+  if (requestData.testTwilioConnection === true) {
+    // ... keep existing code (connection test)
+  }
+
+  // --- Parse WhatsApp message request ---
+  const to = requestData.to || requestData.phoneNumber;
+  const message = requestData.message;
+  
+  // Debug logging
+  console.log("WhatsApp request received:", { 
+    to, 
+    messageLength: message ? message.length : 0,
+    toFormatted: to ? `${to.substring(0, 5)}...` : undefined,
+    usingDirectMessage: true,
+  });
+
+  // Validate input
+  if (!to) {
+    throw new Error("Recipient phone number is required");
+  }
+
+  // Always require a message for direct messaging
+  if (!message) {
+    throw new Error("Message content is required for direct messaging");
+  }
+
+  if (!twilioAccountSid || !twilioAuthToken) {
+    throw new Error("Twilio credentials are not configured");
+  }
+
+  // --- Process phone number format ---
+  const formatWhatsAppNumber = (phoneNumber: string) => {
+    // First, sanitize the number to only contain digits and '+' at the start
+    let formatted = phoneNumber.replace(/[^\d+]/g, '');
+    
+    // Ensure the number starts with '+' if it doesn't already
+    if (!formatted.startsWith('+')) {
+      formatted = `+${formatted}`;
+    }
+    
+    // Validate that we have a reasonable length for an international phone number
+    const digitsOnly = formatted.replace(/[^\d]/g, '');
+    if (digitsOnly.length < 8 || digitsOnly.length > 15) {
+      console.warn(`Warning: Phone number ${formatted} has unusual length (${digitsOnly.length} digits)`);
+    }
+    
+    // For WhatsApp, Twilio requires the 'whatsapp:' prefix
+    return `whatsapp:${formatted}`;
+  };
+
+  // Format phone numbers
+  const formattedTo = formatWhatsAppNumber(to);
+  let formattedFrom = null;
+  if (twilioFromNumber) {
+    formattedFrom = formatWhatsAppNumber(twilioFromNumber);
+  }
+  
+  // --- Determine which number to send from ---
+  console.log("TWILIO_FROM_NUMBER from environment:", twilioFromNumber);
+  console.log("TWILIO_MESSAGING_SERVICE_SID from environment:", messagingServiceSid);
+
+  // Use Messaging Service if available, otherwise use From Number
+  const useMessagingService = !!messagingServiceSid;
+  
+  // --- Prepare and send the message ---
+  console.log(`Sending WhatsApp message using ${useMessagingService ? "Messaging Service" : "From Number"} to ${formattedTo}`);
+  
+  console.log("Using direct message: ", message.substring(0, 50) + (message.length > 50 ? "..." : ""));
+
+  // Prepare the request body for Twilio
+  const formData = new FormData();
+  formData.append("To", formattedTo);
+  
+  // IMPORTANT: Always add both MessagingServiceSid AND From number when available
+  if (useMessagingService) {
+    formData.append("MessagingServiceSid", messagingServiceSid);
+    if (twilioFromNumber) {
+      formData.append("From", formattedFrom);
+    }
+  } else {
+    formData.append("From", formattedFrom);
+  }
+  
+  // Set the message body - always use direct messaging
+  formData.append("Body", message);
+  
+  // Make the API request to Twilio
+  const twilioResponse = await fetch(twilioApiUrl(twilioAccountSid), {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
+    },
+    body: formData,
+  });
+
+  // Log the API response status
+  console.log("Twilio API response status:", twilioResponse.status);
+
+  // Parse the response JSON
+  const twilioData = await twilioResponse.json();
+  console.log("Twilio response data:", JSON.stringify(twilioData));
+
+  // Check if the API call was successful
+  if (!twilioResponse.ok || twilioData.error_code) {
+    throw new Error(`Twilio API error: ${twilioData.error_message || twilioResponse.statusText}`);
+  }
+
+  // Log a success message
+  console.log("WhatsApp message sent successfully:", twilioData.sid);
+
+  // --- Return success response ---
+  const webhookUrl = Deno.env.get("SUPABASE_URL") ? 
+    `${Deno.env.get("SUPABASE_URL")}/functions/v1/whatsapp-webhook` : undefined;
+  
+  // Create a response with helpful information
+  const response = {
+    success: true,
+    messageId: twilioData.sid,
+    status: twilioData.status,
+    details: twilioData,
+    to: formattedTo,
+    from: twilioData.from || (useMessagingService ? 
+      (twilioFromNumber ? `whatsapp:${twilioFromNumber}` : "via messaging service") : 
+      formattedFrom),
+    webhookUrl: webhookUrl,
+    usingDirectMessage: true,
+    provider: "twilio",
+    businessAccount: true,
+    troubleshooting: {
+      checkTwilioConsole: "Check your Twilio console for message delivery status",
+      messageWillAppear: "Messages appear in WhatsApp, not as SMS/text",
+      directMessageUsed: "Using direct message mode only",
+      businessReady: "Your account is configured for WhatsApp Business API"
+    }
+  };
+
+  return new Response(JSON.stringify(response), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    status: 200,
+  });
+}

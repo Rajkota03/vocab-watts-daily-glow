@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 import { createHmac } from "https://deno.land/std@0.168.0/node/crypto.ts";
@@ -117,7 +116,7 @@ async function handleWebhookVerification(url: URL) {
 }
 
 // Handle message status updates from Twilio
-async function handleMessageStatus(params: Record<string, string>, supabaseAdmin: any, sourceIp: string) {
+async function handleMessageStatus(params: Record<string, string>, supabaseAdmin: any, sourceIp: string, provider: string) {
   console.log(`Processing status update for message ${params.MessageSid}: ${params.MessageStatus}`);
   
   try {
@@ -153,6 +152,42 @@ async function handleMessageStatus(params: Record<string, string>, supabaseAdmin
   return createResponse({ success: true });
 }
 
+// Handle AiSensy message status updates
+async function handleAiSensyMessageStatus(data: any, supabaseAdmin: any, sourceIp: string) {
+  console.log(`Processing AiSensy status update for message ${data.aisensyMessageId}: ${data.status}`);
+  
+  try {
+    // Store the status update in whatsapp_message_status table
+    const dataObj: Record<string, any> = {
+      message_sid: data.aisensyMessageId || data.id,
+      status: data.status,
+      error_code: data.errorCode || null,
+      error_message: data.errorMessage || data.error || null,
+      to_number: data.to || data.phone || null,
+      from_number: data.from || null,
+      source_ip: sourceIp,
+      raw_data: data,
+      notes: `AiSensy status update received at ${new Date().toISOString()}`
+    };
+
+    // Insert the record
+    const { error } = await supabaseAdmin
+      .from('whatsapp_message_status')
+      .insert(dataObj);
+
+    if (error) {
+      console.error("Error storing AiSensy message status:", error);
+    } else {
+      console.log("Successfully stored AiSensy message status");
+    }
+  } catch (e) {
+    console.error("Exception processing AiSensy status update:", e);
+  }
+  
+  // Always respond with 200 OK to AiSensy status callbacks
+  return createResponse({ success: true, provider: 'aisensy' });
+}
+
 // Parse and process incoming WhatsApp message from Twilio (form encoded)
 function processTwilioIncomingMessage(params: Record<string, string>): any {
   if (params.Body) {
@@ -184,6 +219,20 @@ function processMetaIncomingMessage(body: any): any {
         };
       }
     }
+  }
+  return null;
+}
+
+// Parse and process incoming WhatsApp message from AiSensy API (JSON)
+function processAiSensyIncomingMessage(body: any): any {
+  if (body.text || body.media) {
+    return {
+      from: body.from || body.phone,
+      body: body.text || body.message || "",
+      mediaUrl: body.media?.url || null,
+      provider: 'aisensy',
+      provider_message_id: body.aisensyMessageId || body.id
+    };
   }
   return null;
 }
@@ -251,6 +300,7 @@ serve(async (req) => {
     // Get parameters and important headers
     const contentType = req.headers.get('content-type') || '';
     const twilioSignature = req.headers.get('x-twilio-signature');
+    const aisensySignature = req.headers.get('x-aisensy-signature');
     const fullUrl = req.url; // Full request URL
     const sourceIp = req.headers.get('x-forwarded-for') || 'unknown';
 
@@ -265,6 +315,7 @@ serve(async (req) => {
     // --- Process based on content type ---
     let messageData: any = null;
     let sigValidated = false;
+    let provider = 'unknown';
 
     // Handle form-encoded data from Twilio
     if (contentType.includes('application/x-www-form-urlencoded')) {
@@ -278,6 +329,7 @@ serve(async (req) => {
       const params = formDataToObject(formData);
       
       console.log("Parsed form data:", params);
+      provider = 'twilio';
       
       // Get auth token for validation
       const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
@@ -285,33 +337,36 @@ serve(async (req) => {
       // Validate Twilio signature using our custom validator
       sigValidated = validateTwilioSignature(fullUrl, params, twilioSignature, authToken || '');
       
-      // Log the signature validation outcome
-      console.log(`Twilio signature validation: ${sigValidated ? 'VALID' : 'INVALID'}`);
-      
-      // Only continue processing if signature is valid or we're in development mode
-      // In production, you might want to reject invalid signatures entirely
-      if (!sigValidated) {
-        console.warn("⚠️ Processing request with invalid signature. In production, you may want to reject these requests.");
-        // For now, we'll still process but log a warning
-        // If you want to reject invalid signatures, uncomment this:
-        // return createResponse({ success: false, error: "Invalid Twilio signature" }, 403);
-      }
-      
-      // Handle status callbacks from Twilio (presence of MessageSid and MessageStatus indicates status update)
+      // Handle status callbacks from Twilio
       if (params.MessageSid && params.MessageStatus) {
-        return await handleMessageStatus(params, supabaseAdmin, sourceIp);
+        return await handleMessageStatus(params, supabaseAdmin, sourceIp, provider);
       }
       
-      // If it's an incoming message from Twilio (in form encoded format)
+      // If it's an incoming message from Twilio
       messageData = processTwilioIncomingMessage(params);
     }
-    // Handle JSON data from Meta/WhatsApp
+    // Handle JSON data which could be from Meta/WhatsApp or AiSensy
     else if (contentType.includes('application/json')) {
       try {
         const body = JSON.parse(rawBody);
         console.log("Parsed JSON body:", JSON.stringify(body).substring(0, 200));
-        messageData = processMetaIncomingMessage(body);
-        // Note: Meta/WhatsApp has its own signature validation approach which would be implemented here
+        
+        // Check AiSensy-specific fields to identify the provider
+        if (body.aisensyMessageId || body.provider === 'aisensy') {
+          provider = 'aisensy';
+          
+          // Handle AiSensy status updates
+          if (body.aisensyMessageId && body.status) {
+            return await handleAiSensyMessageStatus(body, supabaseAdmin, sourceIp);
+          }
+          
+          // Handle incoming message from AiSensy
+          messageData = processAiSensyIncomingMessage(body);
+        } else {
+          // Process as Meta/WhatsApp
+          provider = 'meta';
+          messageData = processMetaIncomingMessage(body);
+        }
       } catch (e) {
         console.error("Error parsing JSON:", e);
         return createResponse({ success: false, error: "Invalid JSON" }, 200);
@@ -330,6 +385,7 @@ serve(async (req) => {
     return createResponse({ 
       success: true,
       validated: sigValidated,
+      provider: provider,
       messageReceived: !!messageData
     });
 
