@@ -101,10 +101,13 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
           {/*   Render quiz component using MOCK_TODAYS_QUIZ */}
           {/* </div> */}
           
-          {/* Add this somewhere in the dashboard, perhaps near existing admin links or settings */}
-          <div className="mt-4 pt-4 border-t border-gray-200">
+          {/* Add links to testing pages */}
+          <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
             <Link to="/twilio-test" className="text-sm text-blue-600 hover:text-blue-800 flex items-center">
               <span className="mr-1">Test Twilio Connection</span>
+            </Link>
+            <Link to="/aisensy-test" className="text-sm text-blue-600 hover:text-blue-800 flex items-center">
+              <span className="mr-1">Test AiSensy Integration</span>
             </Link>
           </div>
 

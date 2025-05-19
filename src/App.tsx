@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Index from './pages/Index';
@@ -7,6 +6,9 @@ import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Toaster } from "@/components/ui/toaster";
 import WhatsAppTest from './pages/WhatsAppTest';
+import TwilioTest from './pages/TwilioTest';
+import AiSensyTest from './pages/AiSensyTest';
+import NotFound from './pages/NotFound';
 import { supabase } from '@/integrations/supabase/client';
 
 function App() {
@@ -33,26 +35,26 @@ function App() {
   }
 
   return (
-    <>
+    <BrowserRouter>
       <Toaster />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/whatsapp-test" element={
-            <ProtectedRoute>
-              <WhatsAppTest />
-            </ProtectedRoute>
-          } />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/whatsapp-test" element={
+          <ProtectedRoute>
+            <WhatsAppTest />
+          </ProtectedRoute>
+        } />
+        <Route path="/twilio-test" element={<TwilioTest />} />
+        <Route path="/aisensy-test" element={<AiSensyTest />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
