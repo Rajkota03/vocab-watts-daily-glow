@@ -54,19 +54,16 @@ serve(async (req) => {
 async function handleAiSensyRequest(req: Request, requestData: any) {
   // --- Extract credentials from environment variables ---
   const aisensyApiKey = Deno.env.get("AISENSY_API_KEY");
-  const aisensyBusinessId = Deno.env.get("AISENSY_BUSINESS_ID");
   
   // Debug credential check
   console.log("AiSensy credentials check:", {
-    apiKey: aisensyApiKey ? `${aisensyApiKey.substring(0, 5)}...` : "missing",
-    businessId: aisensyBusinessId ? "present" : "missing",
+    apiKey: aisensyApiKey ? `${aisensyApiKey.substring(0, 5)}...` : "missing"
   });
 
   // Check if this is just a configuration verification request
   if (requestData.checkConfig === true) {
     const configStatus = {
-      aisensyConfigured: !!aisensyApiKey && !!aisensyBusinessId,
-      businessId: aisensyBusinessId ? "configured" : "missing",
+      aisensyConfigured: !!aisensyApiKey,
       apiKey: aisensyApiKey ? "configured" : "missing"
     };
     
@@ -81,7 +78,7 @@ async function handleAiSensyRequest(req: Request, requestData: any) {
   
   // Check if this is a templates fetch request
   if (requestData.action === "getTemplates") {
-    return await fetchAiSensyTemplates(aisensyApiKey, aisensyBusinessId);
+    return await fetchAiSensyTemplates(aisensyApiKey);
   }
 
   // --- Parse WhatsApp message request ---
@@ -107,8 +104,8 @@ async function handleAiSensyRequest(req: Request, requestData: any) {
     throw new Error("Either message content or template name is required");
   }
 
-  if (!aisensyApiKey || !aisensyBusinessId) {
-    throw new Error("AiSensy credentials are not configured");
+  if (!aisensyApiKey) {
+    throw new Error("AiSensy API key is not configured");
   }
 
   // Determine which type of message to send
@@ -196,11 +193,11 @@ async function handleAiSensyRequest(req: Request, requestData: any) {
 }
 
 // Fetch templates from AiSensy
-async function fetchAiSensyTemplates(apiKey: string | undefined, businessId: string | undefined) {
-  if (!apiKey || !businessId) {
+async function fetchAiSensyTemplates(apiKey: string | undefined) {
+  if (!apiKey) {
     return new Response(JSON.stringify({ 
       success: false, 
-      error: "AiSensy credentials are not configured" 
+      error: "AiSensy API key is not configured" 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200
@@ -208,8 +205,8 @@ async function fetchAiSensyTemplates(apiKey: string | undefined, businessId: str
   }
   
   try {
-    // AiSensy templates endpoint - replace with actual endpoint
-    const templatesUrl = `https://api.aisensy.com/templates/list?apiKey=${apiKey}&businessId=${businessId}`;
+    // AiSensy templates endpoint
+    const templatesUrl = `https://api.aisensy.com/templates/list?apiKey=${apiKey}`;
     
     const response = await fetch(templatesUrl, {
       method: "GET",

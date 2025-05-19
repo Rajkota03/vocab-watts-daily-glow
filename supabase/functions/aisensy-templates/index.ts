@@ -3,9 +3,9 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 
-// Define AiSensy templates API URL
-const aisensyTemplatesUrl = (apiKey: string, businessId: string) => 
-  `https://api.aisensy.com/campaign/templates?apiKey=${apiKey}&businessId=${businessId}`;
+// Define AiSensy templates API URL - making businessId optional
+const aisensyTemplatesUrl = (apiKey: string) => 
+  `https://api.aisensy.com/campaign/templates?apiKey=${apiKey}`;
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -16,16 +16,14 @@ serve(async (req) => {
   try {
     // --- Extract credentials from environment variables ---
     const apiKey = Deno.env.get("AISENSY_API_KEY");
-    const businessId = Deno.env.get("AISENSY_BUSINESS_ID");
     
-    if (!apiKey || !businessId) {
+    if (!apiKey) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: "AiSensy credentials are not configured",
+          error: "AiSensy API key is not configured",
           details: {
-            apiKey: apiKey ? "configured" : "missing",
-            businessId: businessId ? "configured" : "missing"
+            apiKey: "missing"
           }
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
@@ -43,7 +41,7 @@ serve(async (req) => {
     }
     
     // Fetch templates from AiSensy API
-    const response = await fetch(aisensyTemplatesUrl(apiKey, businessId), {
+    const response = await fetch(aisensyTemplatesUrl(apiKey), {
       method: "GET",
       headers: {
         "Content-Type": "application/json"
