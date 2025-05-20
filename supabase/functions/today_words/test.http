@@ -1,0 +1,15 @@
+
+### Test the today_words endpoint with valid parameters
+GET https://pbpmtqcffhqwzboviqfw.supabase.co/functions/v1/today_words?userId=YOUR_TEST_USER_ID
+x-api-key: YOUR_API_KEY
+
+### Test without userId parameter (should return 400)
+GET https://pbpmtqcffhqwzboviqfw.supabase.co/functions/v1/today_words
+x-api-key: YOUR_API_KEY
+
+### Test with invalid userId (should return 404)
+GET https://pbpmtqcffhqwzboviqfw.supabase.co/functions/v1/today_words?userId=invalid_user_id
+x-api-key: YOUR_API_KEY
+
+### Test without API key (should return 401)
+GET https://pbpmtqcffhqwzboviqfw.supabase.co/functions/v1/today_words?userId=YOUR_TEST_USER_ID

@@ -19,4 +19,7 @@ verify_jwt = false
 [functions.aisensy-templates]
 verify_jwt = false
 
+[functions.today_words]
+verify_jwt = false
+
 
