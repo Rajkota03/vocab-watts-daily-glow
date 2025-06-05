@@ -63,7 +63,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
       <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
         <div className="flex flex-col flex-grow border-r border-gray-200 bg-white pt-5 pb-4 overflow-y-auto">
           <div className="flex items-center flex-shrink-0 px-4 mb-5">
-            <img src="/GlintUp_logo1.svg" alt="GlintUp" className="h-8" />
+            <img src="/GlintUp_logo1.svg" alt="Glintup" className="h-8" />
           </div>
           <nav className="mt-5 flex-1 flex flex-col divide-y divide-gray-100 overflow-y-auto">
             <div className="px-2 space-y-1">
@@ -111,7 +111,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
 
       {/* Mobile Nav */}
       <div className="lg:hidden flex items-center justify-between p-4 border-b">
-        <img src="/logo-horizontal.svg" alt="GlintUp" className="h-8" />
+        <img src="/logo-horizontal.svg" alt="Glintup" className="h-8" />
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon">
@@ -120,7 +120,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
           </SheetTrigger>
           <SheetContent side="left" className="w-[240px] sm:w-[280px]">
             <div className="mb-6">
-              <img src="/logo.svg" alt="GlintUp" className="h-10" />
+              <img src="/logo.svg" alt="Glintup" className="h-10" />
             </div>
             <nav className="flex flex-col gap-2 py-4">
               {navItems.map((item) => (

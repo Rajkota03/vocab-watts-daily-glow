@@ -25,7 +25,7 @@ const HowItWorks = () => {
     <section id="how-it-works" className="py-12 md:py-16 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-bold mb-3">How GlintUp Works</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-3">How Glintup Works</h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Building your vocabulary has never been this simple and effective
           </p>
@@ -50,7 +50,7 @@ const HowItWorks = () => {
                 <span className="font-bold">G</span>
               </div>
               <div className="ml-3">
-                <p className="font-medium">GlintUp</p>
+                <p className="font-medium">Glintup</p>
                 <p className="text-xs opacity-80">Online</p>
               </div>
             </div>

@@ -47,7 +47,7 @@ export const PricingPlanCard = ({ isPro, onSubscribe, isProcessing }: PricingPla
       )}
       <CardHeader>
         <CardTitle className="text-2xl">{isPro ? 'Pro Plan' : 'Free Trial'}</CardTitle>
-        <CardDescription>{isPro ? 'All features unlocked' : 'Try GlintUp for 3 days'}</CardDescription>
+        <CardDescription>{isPro ? 'All features unlocked' : 'Try Glintup for 3 days'}</CardDescription>
         <div className="mt-4">
           <div className="text-3xl font-bold">
             {isPro ? (
