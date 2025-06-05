@@ -9,7 +9,7 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-center mb-8">
           <div className="mb-6 md:mb-0">
             <div className="flex items-center gap-2 mb-2">
-              <img src="/src/assets/logo.svg" alt="GLINTUP" className="h-8" />
+              <img src="/src/assets/logo.svg" alt="GlintUp" className="h-8" />
             </div>
             <p className="text-gray-400">
               Expanding your vocabulary effortlessly.
@@ -25,7 +25,7 @@ const Footer = () => {
         </div>
         
         <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
-          <p>© {new Date().getFullYear()} GLINTUP. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} GlintUp. All rights reserved.</p>
         </div>
       </div>
     </footer>

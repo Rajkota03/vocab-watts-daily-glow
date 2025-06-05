@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Users, BarChart2, MessageSquare, Activity, 
@@ -110,7 +111,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
 
       {/* Mobile Nav */}
       <div className="lg:hidden flex items-center justify-between p-4 border-b">
-        <img src="/logo-horizontal.svg" alt="GLINTUP" className="h-8" />
+        <img src="/logo-horizontal.svg" alt="GlintUp" className="h-8" />
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon">
@@ -119,7 +120,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
           </SheetTrigger>
           <SheetContent side="left" className="w-[240px] sm:w-[280px]">
             <div className="mb-6">
-              <img src="/logo.svg" alt="GLINTUP" className="h-10" />
+              <img src="/logo.svg" alt="GlintUp" className="h-10" />
             </div>
             <nav className="flex flex-col gap-2 py-4">
               {navItems.map((item) => (
