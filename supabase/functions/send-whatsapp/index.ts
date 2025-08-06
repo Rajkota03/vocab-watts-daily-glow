@@ -7,7 +7,7 @@ const twilioApiUrl = (accountSid: string) =>
   `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
 
 // Define AiSensy API URL
-const aisensyApiUrl = "https://api.aisensy.com/campaign/send";
+const aisensyApiUrl = "https://backend.aisensy.com/campaign/t1/api/v2";
 
 serve(async (req) => {
   // Handle CORS preflight requests
