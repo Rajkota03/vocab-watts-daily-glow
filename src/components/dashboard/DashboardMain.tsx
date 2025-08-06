@@ -1,10 +1,8 @@
 import React from 'react';
 import CategorySelection from './CategorySelection';
 import { cn } from '@/lib/utils';
-import WhatsAppTestButton from './WhatsAppTestButton';
 import SendDailyWordsButton from './SendDailyWordsButton';
 import PhoneNumberUpdateForm from './PhoneNumberUpdateForm';
-import { Link } from 'react-router-dom';
 import { useAuthHandler } from '@/hooks/useAuthHandler';
 
 interface DashboardMainProps {
@@ -16,9 +14,6 @@ interface DashboardMainProps {
   handleCategoryUpdate: (primary: string, subcategory: string) => Promise<void>;
   handleNewBatch: () => Promise<void>;
   isGeneratingBatch: boolean;
-  isAdmin: boolean;
-  MOCK_TODAYS_QUIZ: any;
-  MOCK_RECENT_DROPS: any;
   wordsLearnedThisMonth?: number;
   showPhoneForm?: boolean;
   handlePhoneNumberUpdate?: (newPhoneNumber: string) => void;
@@ -29,9 +24,6 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
   handleCategoryUpdate,
   handleNewBatch,
   isGeneratingBatch,
-  isAdmin,
-  MOCK_TODAYS_QUIZ,
-  MOCK_RECENT_DROPS,
   wordsLearnedThisMonth = 0,
   showPhoneForm = false,
   handlePhoneNumberUpdate
@@ -75,40 +67,9 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
               isPro={subscription.is_pro} 
               currentCategory={subscription.category} 
               onCategoryUpdate={handleCategoryUpdate} 
-              onNewBatch={handleNewBatch} // Assuming this is related to category/word generation?
+              onNewBatch={handleNewBatch}
               isLoadingNewBatch={isGeneratingBatch} 
             />
-          </div>
-          
-          {/* Section for WhatsApp Testing (Optional - maybe only for admin or specific users) */}
-          {/* Consider adding conditional rendering based on isAdmin or a feature flag */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="text-xl font-semibold mb-4 text-gray-800">WhatsApp Integration Test</h3>
-             <p className="text-gray-600 mb-4">
-              Use this button to send a generic test message and verify the connection.
-            </p>
-            <WhatsAppTestButton 
-              category={subscription.category} 
-              phoneNumber={subscription.phone_number} 
-            />
-          </div>
-
-          {/* Placeholder for other dashboard sections like Quiz, Recent Drops etc. */}
-          {/* You would integrate MOCK_TODAYS_QUIZ and MOCK_RECENT_DROPS here */}
-          {/* Example: */}
-          {/* <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200"> */}
-          {/*   <h3 className="text-xl font-semibold mb-4 text-gray-800">Today's Quiz</h3> */}
-          {/*   Render quiz component using MOCK_TODAYS_QUIZ */}
-          {/* </div> */}
-          
-          {/* Add links to testing pages */}
-          <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
-            <Link to="/twilio-test" className="text-sm text-blue-600 hover:text-blue-800 flex items-center">
-              <span className="mr-1">Test Twilio Connection</span>
-            </Link>
-            <Link to="/aisensy-test" className="text-sm text-blue-600 hover:text-blue-800 flex items-center">
-              <span className="mr-1">Test AiSensy Integration</span>
-            </Link>
           </div>
 
         </div>

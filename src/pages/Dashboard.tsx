@@ -5,7 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { generateNewWordBatch } from '@/services/wordService';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardMain from '@/components/dashboard/DashboardMain';
-import { MOCK_TODAYS_QUIZ, MOCK_RECENT_DROPS } from '@/data/dashboardMockData';
 import { useAuthHandler } from '@/hooks/useAuthHandler';
 import PhoneNumberUpdateForm from '@/components/dashboard/PhoneNumberUpdateForm';
 
@@ -256,9 +255,6 @@ const Dashboard = () => {
         handleCategoryUpdate={handleCategoryUpdate}
         handleNewBatch={handleNewBatch}
         isGeneratingBatch={isGeneratingBatch}
-        isAdmin={isAdmin}
-        MOCK_TODAYS_QUIZ={MOCK_TODAYS_QUIZ}
-        MOCK_RECENT_DROPS={MOCK_RECENT_DROPS}
         wordsLearnedThisMonth={wordsLearnedThisMonth}
         showPhoneForm={showPhoneForm}
         handlePhoneNumberUpdate={handlePhoneNumberUpdate}
