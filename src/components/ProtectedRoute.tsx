@@ -22,38 +22,40 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
       try {
         console.log("ProtectedRoute: Checking user role...");
         
-        // First, listen for auth state changes to catch fresh sessions
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-          console.log("ProtectedRoute: Auth state changed:", event, !!session);
-          
-          if (!isMounted) return;
-          
-          if (event === 'SIGNED_IN' && session) {
-            console.log("ProtectedRoute: User signed in, session available:", session.user.email);
-            await handleAuthCheck(session);
-          } else if (event === 'SIGNED_OUT' || !session) {
-            console.log("ProtectedRoute: User signed out or no session");
-            if (!authCheckComplete) {
-              authCheckComplete = true;
-              toast({
-                title: "Unauthorized",
-                description: "Please log in to access this page.",
-                variant: "destructive"
-              });
-              setIsAuthorized(false);
-              setIsLoading(false);
-            }
-          }
-        });
-        
-        // Also check for existing session
+        // Check for existing session first
         const { data: { session } } = await supabase.auth.getSession();
         console.log("ProtectedRoute: Initial session check:", !!session);
         
         if (session && isMounted) {
           console.log("ProtectedRoute: Found existing session for:", session.user.email);
           await handleAuthCheck(session);
-        } else if (!session && isMounted && !authCheckComplete) {
+          return;
+        }
+        
+        // Set up auth state listener for future changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+          console.log("ProtectedRoute: Auth state changed:", event, !!session);
+          
+          if (!isMounted || authCheckComplete) return;
+          
+          if (event === 'SIGNED_IN' && session) {
+            console.log("ProtectedRoute: User signed in, session available:", session.user.email);
+            await handleAuthCheck(session);
+          } else if (event === 'SIGNED_OUT' || (event === 'INITIAL_SESSION' && !session)) {
+            console.log("ProtectedRoute: User signed out or no session");
+            authCheckComplete = true;
+            toast({
+              title: "Unauthorized",
+              description: "Please log in to access this page.",
+              variant: "destructive"
+            });
+            setIsAuthorized(false);
+            setIsLoading(false);
+          }
+        });
+        
+        // If no existing session, show unauthorized
+        if (!session && isMounted && !authCheckComplete) {
           console.log("ProtectedRoute: No existing session found");
           authCheckComplete = true;
           toast({
@@ -71,7 +73,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
         
       } catch (error) {
         console.error('ProtectedRoute: Authorization check failed:', error);
-        if (isMounted) {
+        if (isMounted && !authCheckComplete) {
+          authCheckComplete = true;
           setIsAuthorized(false);
           setIsLoading(false);
         }

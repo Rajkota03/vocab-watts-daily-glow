@@ -86,11 +86,10 @@ const Login = () => {
         description: "Welcome back!",
       });
       
-      // Force immediate navigation after successful login
+      // Let the auth state change listener handle navigation
+      // This prevents race conditions with ProtectedRoute
       if (data.session) {
-        console.log("Forcing immediate navigation to:", from);
-        // Use window.location instead of navigate to force the redirect
-        window.location.href = from;
+        console.log("Login successful, waiting for auth state change to navigate");
       }
       
     } catch (error: any) {
