@@ -152,7 +152,8 @@ serve(async (req) => {
       subscription_ends_at: subscriptionEndDate,
       razorpay_order_id: razorpay_order_id,
       razorpay_payment_id: razorpay_payment_id,
-      // Add category, deliveryTime if needed
+      delivery_time: '10:00', // Fixed 10 AM delivery time
+      // Add category if needed
     };
 
     // Upsert: Update if exists (based on user_id), otherwise insert

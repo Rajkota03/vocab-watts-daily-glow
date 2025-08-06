@@ -12,7 +12,6 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 const SignupForm = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [firstName, setFirstName] = useState('');
-  const [deliveryTime, setDeliveryTime] = useState('evening');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showOtpVerification, setShowOtpVerification] = useState(false);
@@ -101,7 +100,7 @@ const SignupForm = () => {
           body: {
             phoneNumber: formattedPhone,
             firstName: firstName.trim(),
-            deliveryTime: deliveryTime,
+            deliveryTime: '10:00', // Fixed 10 AM delivery time
           }
         }
       );
@@ -121,7 +120,6 @@ const SignupForm = () => {
       setTimeout(() => {
         setPhoneNumber('');
         setFirstName('');
-        setDeliveryTime('evening');
         setShowOtpVerification(false);
         setOtp('');
         setSuccess(false);
@@ -277,19 +275,9 @@ const SignupForm = () => {
           <p className="mt-1 text-xs text-gray-500">We'll send your daily words to this number</p>
         </div>
 
-        {/* Delivery Time */}
-        <div>
-          <Label htmlFor="deliveryTime">Preferred Time</Label>
-          <Select value={deliveryTime} onValueChange={setDeliveryTime}>
-            <SelectTrigger id="deliveryTime">
-              <SelectValue placeholder="Select delivery time" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="morning">Morning (7 AM)</SelectItem>
-              <SelectItem value="noon">Noon (12 PM)</SelectItem>
-              <SelectItem value="evening">Evening (7 PM)</SelectItem>
-            </SelectContent>
-          </Select>
+        {/* Fixed delivery time notice */}
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">📅 Words are delivered daily at 10:00 AM IST</p>
         </div>
 
         {/* Submit Button */}

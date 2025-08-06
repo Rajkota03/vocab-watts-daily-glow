@@ -45,7 +45,7 @@ export const usePaymentHandler = ({ razorpayLoaded }: PaymentHandlerOptions) => 
         const subscriptionResult = await completeSubscription({
           phoneNumber,
           isPro: false,
-          deliveryTime: 'morning'
+          deliveryTime: '10:00'
         });
         
         if (!subscriptionResult.success) {
@@ -77,7 +77,7 @@ export const usePaymentHandler = ({ razorpayLoaded }: PaymentHandlerOptions) => 
               isPro: true,
               razorpayOrderId: response.razorpay_order_id,
               razorpayPaymentId: response.razorpay_payment_id,
-              deliveryTime: 'morning'
+              deliveryTime: '10:00'
             });
 
             if (!subscriptionResult.success) {

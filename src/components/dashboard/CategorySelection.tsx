@@ -8,7 +8,6 @@ import MobileCategorySelection from './MobileCategorySelection';
 import CategoryGrid from './category/CategoryGrid';
 import SubcategoryGrid from './category/SubcategoryGrid';
 import WordCountSelector from './category/WordCountSelector';
-import TimeScheduler from './category/TimeScheduler';
 import { useToast } from '@/hooks/use-toast';
 
 interface CategorySelectionProps {
@@ -30,7 +29,6 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [wordCount, setWordCount] = useState(3);
-  const [scheduledTime, setScheduledTime] = useState<string>('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -113,11 +111,6 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
                   wordCount={wordCount} 
                   onWordCountChange={setWordCount}
                   isPro={true}
-                />
-                
-                <TimeScheduler 
-                  scheduledTime={scheduledTime} 
-                  onScheduledTimeChange={setScheduledTime} 
                 />
 
                 <Button 

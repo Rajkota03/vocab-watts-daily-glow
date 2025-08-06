@@ -43,14 +43,14 @@ serve(async (req) => {
       phoneNumber,
       firstName,
       lastName,
-      deliveryTime,
+      deliveryTime, // Still accept from frontend for backward compatibility
     } = await req.json();
 
-    if (!phoneNumber || !firstName || !deliveryTime) {
-      throw new Error("Missing required details: phoneNumber, firstName, or deliveryTime.");
+    if (!phoneNumber || !firstName) {
+      throw new Error("Missing required details: phoneNumber or firstName.");
     }
 
-    console.log("Received free trial request:", { phoneNumber, firstName, deliveryTime });
+    console.log("Received free trial request:", { phoneNumber, firstName });
 
     // --- Check if subscription already exists ---
     const { data: existingSub, error: checkError, count } = await supabaseAdmin
@@ -77,7 +77,7 @@ serve(async (req) => {
       phone_number: phoneNumber,
       is_pro: false,
       trial_ends_at: trialEndsAt,
-      delivery_time: deliveryTime,
+      delivery_time: '10:00', // Fixed 10 AM delivery time
       first_name: firstName,
       last_name: lastName || '',
       category: 'general' // Set default category
