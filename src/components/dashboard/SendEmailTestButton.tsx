@@ -20,6 +20,7 @@ const SendEmailTestButton: React.FC = () => {
   const [email, setEmail] = useState('');
   const [category, setCategory] = useState('daily-beginner');
   const [wordCount, setWordCount] = useState(3);
+  const [forceNewWords, setForceNewWords] = useState(true); // Default to true for testing
   const [lastResult, setLastResult] = useState<string | null>(null);
   const { toast } = useToast();
   const { session } = useAuthHandler();
@@ -79,7 +80,7 @@ const SendEmailTestButton: React.FC = () => {
           wordCount: wordCount,
           user_id: session.user.id,
           debug: true,
-          force_new_words: false
+          force_new_words: forceNewWords // Use the toggle value
         }
       });
 
@@ -191,6 +192,25 @@ const SendEmailTestButton: React.FC = () => {
             </SelectContent>
           </Select>
         </div>
+
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="force-new-words"
+            checked={forceNewWords}
+            onChange={(e) => setForceNewWords(e.target.checked)}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label htmlFor="force-new-words" className="text-sm font-medium">
+            🔄 Always generate new words (ignore history)
+          </label>
+        </div>
+        <p className="text-xs text-gray-500">
+          {forceNewWords 
+            ? "✅ Will generate fresh words every time (perfect for testing)"
+            : "⚡ Will reuse existing words and avoid duplicates"
+          }
+        </p>
       </div>
 
       <Button
