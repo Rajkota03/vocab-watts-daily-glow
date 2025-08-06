@@ -11,34 +11,39 @@ import TwilioTest from './pages/TwilioTest';
 import AiSensyTest from './pages/AiSensyTest';
 import { useEmailAuth } from './hooks/useEmailAuth';
 
-function App() {
-  // Initialize auth hook at the app level
+// Auth wrapper component that uses the hook inside Router context
+function AuthProvider({ children }: { children: React.ReactNode }) {
   useEmailAuth();
+  return <>{children}</>;
+}
 
+function App() {
   return (
     <BrowserRouter>
-      <Toaster />
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin" element={
-          <ProtectedRoute>
-            <Admin />
-          </ProtectedRoute>
-        } />
-        <Route path="/whatsapp-test" element={
-          <ProtectedRoute>
-            <WhatsAppTest />
-          </ProtectedRoute>
-        } />
-        <Route path="/twilio-test" element={<TwilioTest />} />
-        <Route path="/aisensy-test" element={<AiSensyTest />} />
-      </Routes>
+      <AuthProvider>
+        <Toaster />
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin" element={
+            <ProtectedRoute>
+              <Admin />
+            </ProtectedRoute>
+          } />
+          <Route path="/whatsapp-test" element={
+            <ProtectedRoute>
+              <WhatsAppTest />
+            </ProtectedRoute>
+          } />
+          <Route path="/twilio-test" element={<TwilioTest />} />
+          <Route path="/aisensy-test" element={<AiSensyTest />} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
