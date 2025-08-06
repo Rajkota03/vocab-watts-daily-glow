@@ -70,11 +70,11 @@ const SendEmailTestButton: React.FC = () => {
     setLastResult(null);
 
     try {
-      console.log(`Sending test email to: ${email}, category: ${category}, wordCount: ${wordCount}`);
+      console.log(`Sending test email to: ${email.toLowerCase()}, category: ${category}, wordCount: ${wordCount}`);
       
       const { data, error } = await supabase.functions.invoke<EmailTestResponse>('send-vocab-email', {
         body: {
-          email: email,
+          email: email.toLowerCase(), // Normalize to lowercase
           category: category,
           wordCount: wordCount,
           user_id: session.user.id,
@@ -90,11 +90,17 @@ const SendEmailTestButton: React.FC = () => {
 
       if (!data || !data.success) {
         console.error("Email function returned error:", data);
-        const errorMessage = data?.error || "Failed to send test email";
+        let errorMessage = data?.error || "Failed to send test email";
+        
+        // Handle specific Resend errors
+        if (errorMessage.includes("You can only send testing emails to your own email address")) {
+          errorMessage = `🔒 Resend Free Tier Limitation: You can only send emails to your registered email address (${session?.user?.email}). To send to other addresses, you need to verify a domain at resend.com/domains`;
+        }
+        
         setLastResult(`❌ Error: ${errorMessage}`);
         toast({
           title: "Email Failed",
-          description: errorMessage,
+          description: errorMessage.length > 100 ? "Check details below" : errorMessage,
           variant: "destructive",
         });
         return;
@@ -107,7 +113,7 @@ const SendEmailTestButton: React.FC = () => {
       
       toast({
         title: "Email Sent!",
-        description: `Test vocabulary words sent to ${email}`,
+        description: `Test vocabulary words sent to ${email.toLowerCase()}`,
       });
 
       // Show debug info if available
@@ -140,11 +146,14 @@ const SendEmailTestButton: React.FC = () => {
           <Input
             id="test-email"
             type="email"
-            placeholder="Enter your email address"
+            placeholder={session?.user?.email || "Enter your email address"}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full"
           />
+          <p className="text-xs text-gray-500 mt-1">
+            💡 Free tier: Can only send to your registered email ({session?.user?.email})
+          </p>
         </div>
 
         <div>
