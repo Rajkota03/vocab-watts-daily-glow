@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import SignupForm from './SignupForm';
+import EmailSignupForm from './auth/EmailSignupForm';
 import { useNavigate } from 'react-router-dom';
 const HeroSection = () => {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
@@ -34,13 +34,11 @@ const HeroSection = () => {
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
-                  {/* Placeholder - This will be replaced by AuthModal */}
-                  <SignupForm /> 
+                  <EmailSignupForm /> 
                 </DialogContent>
               </Dialog>
               
-              {/* TODO: Update onClick to open AuthModal with initialTab='login' */}
-              <Button onClick={() => {/* Open AuthModal with initialTab='login' */}} variant="outline" className="border-primary text-primary hover:bg-primary/10 text-base px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95">
+              <Button onClick={() => navigate('/login')} variant="outline" className="border-primary text-primary hover:bg-primary/10 text-base px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95">
                 Log In / Go Pro
               </Button>
             </div>
@@ -67,7 +65,7 @@ const HeroSection = () => {
               <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-dark/10 rounded-full blur-xl"></div>
               
               <div className="relative bg-white rounded-2xl shadow-xl p-8 border border-gray-100 px-[24px]">
-                <SignupForm />
+                <EmailSignupForm />
               </div>
             </div>
           </div>
