@@ -2,6 +2,7 @@ import React from 'react';
 import CategorySelection from './CategorySelection';
 import { cn } from '@/lib/utils';
 import SendDailyWordsButton from './SendDailyWordsButton';
+import SendEmailTestButton from './SendEmailTestButton';
 import PhoneNumberUpdateForm from './PhoneNumberUpdateForm';
 import { useAuthHandler } from '@/hooks/useAuthHandler';
 
@@ -58,6 +59,15 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
               category={subscription.category}
               isPro={subscription.is_pro}
             />
+          </div>
+
+          {/* Section for Email Testing */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 className="text-xl font-semibold mb-4 text-gray-800">📧 Test Email Delivery</h3>
+            <p className="text-gray-600 mb-4">
+              Test your vocabulary words by sending them directly to your email. Perfect for testing different categories and word counts.
+            </p>
+            <SendEmailTestButton />
           </div>
 
           {/* Section for Category Selection */}
