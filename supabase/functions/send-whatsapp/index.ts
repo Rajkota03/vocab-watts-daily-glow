@@ -30,7 +30,7 @@ serve(async (req) => {
       return await handleTwilioRequest(req, requestData);
     }
   } catch (error) {
-    console.error(`WhatsApp message error [${requestData?.provider || 'unknown'}]:`, error);
+    console.error(`WhatsApp message error:`, error);
     
     // Format detailed error response
     return new Response(
