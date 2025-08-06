@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Search, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
+import BulkMessageSender from '../BulkMessageSender';
 
 interface ScheduledMessage {
   id: string;
@@ -115,6 +116,9 @@ const MessagesTab = () => {
           Manage scheduled messages and delivery status.
         </p>
       </div>
+      
+      {/* Bulk Message Sender */}
+      <BulkMessageSender />
       
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
