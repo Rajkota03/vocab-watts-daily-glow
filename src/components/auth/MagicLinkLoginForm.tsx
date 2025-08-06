@@ -3,14 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, Mail } from 'lucide-react';
+import { Loader2, Mail, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
-const MagicLinkLoginForm = () => {
+const PasswordLoginForm = () => {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -21,27 +21,28 @@ const MagicLinkLoginForm = () => {
       toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
       return;
     }
+    if (!password.trim()) {
+      toast({ title: "Missing password", description: "Please enter your password.", variant: "destructive" });
+      return;
+    }
 
     setIsSubmitting(true);
 
     try {
-      // Send magic link for login
-      const { error } = await supabase.auth.signInWithOtp({
+      // Sign in with email and password
+      const { error } = await supabase.auth.signInWithPassword({
         email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
-        }
+        password,
       });
 
       if (error) {
         throw new Error(error.message);
       }
 
-      // Show success state
-      setEmailSent(true);
+      // Show success message
       toast({
-        title: "Magic link sent!",
-        description: "Check your email inbox and click the link to log in.",
+        title: "Login successful!",
+        description: "Welcome back! Redirecting to dashboard...",
       });
 
     } catch (error: any) {
@@ -56,31 +57,11 @@ const MagicLinkLoginForm = () => {
     }
   };
 
-  // Success state
-  if (emailSent) {
-    return (
-      <div className="text-center p-4">
-        <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-          <Mail className="h-8 w-8 text-blue-600" />
-        </div>
-        <h3 className="text-xl font-bold mb-2">Check Your Email!</h3>
-        <p className="text-gray-600 mb-4">We've sent a magic link to {email}. Click it to log in!</p>
-        <Button 
-          variant="outline" 
-          onClick={() => setEmailSent(false)}
-          className="text-sm"
-        >
-          Use Different Email
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <div className="relative z-10">
       <div className="text-center mb-6">
         <h3 className="text-xl font-bold mb-2">Welcome Back</h3>
-        <p className="text-gray-600 text-sm">Enter your email to receive a magic link</p>
+        <p className="text-gray-600 text-sm">Enter your email and password to log in</p>
       </div>
 
       <form onSubmit={handleLogin} className="space-y-4">
@@ -101,6 +82,23 @@ const MagicLinkLoginForm = () => {
           </div>
         </div>
 
+        {/* Password */}
+        <div>
+          <Label htmlFor="password">Password</Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              id="password"
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="pl-10"
+            />
+          </div>
+        </div>
+
         {/* Submit Button */}
         <Button
           type="submit"
@@ -113,12 +111,12 @@ const MagicLinkLoginForm = () => {
           {isSubmitting ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Sending Magic Link...
+              Logging In...
             </>
           ) : (
             <>
-              <Mail className="h-4 w-4 mr-2" />
-              Send Magic Link
+              <Lock className="h-4 w-4 mr-2" />
+              Log In
             </>
           )}
         </Button>
@@ -127,4 +125,4 @@ const MagicLinkLoginForm = () => {
   );
 };
 
-export default MagicLinkLoginForm;
+export default PasswordLoginForm;

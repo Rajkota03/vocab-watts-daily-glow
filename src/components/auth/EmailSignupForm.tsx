@@ -3,17 +3,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { CheckCircle, Loader2, Mail, User, Phone } from 'lucide-react';
+import { CheckCircle, Loader2, Mail, User, Phone, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 const EmailSignupForm = () => {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
+  const [success, setSuccess] = useState(false);
   const { toast } = useToast();
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -32,6 +34,14 @@ const EmailSignupForm = () => {
       toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
       return;
     }
+    if (!password.trim() || password.length < 6) {
+      toast({ title: "Invalid password", description: "Password must be at least 6 characters long.", variant: "destructive" });
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast({ title: "Password mismatch", description: "Passwords do not match.", variant: "destructive" });
+      return;
+    }
     if (!whatsappNumber.trim() || !/^\+?[1-9]\d{1,14}$/.test(whatsappNumber.replace(/\s+/g, ''))) {
       toast({ title: "Invalid phone number", description: "Please enter a valid WhatsApp number including country code (e.g., +91...).", variant: "destructive" });
       return;
@@ -43,9 +53,10 @@ const EmailSignupForm = () => {
       // Format the phone number
       const formattedPhone = whatsappNumber.startsWith('+') ? whatsappNumber : `+${whatsappNumber}`;
       
-      // Sign up with Supabase Auth using magic link (passwordless)
-      const { error } = await supabase.auth.signInWithOtp({
+      // Sign up with Supabase Auth using email and password
+      const { error } = await supabase.auth.signUp({
         email,
+        password,
         options: {
           emailRedirectTo: `${window.location.origin}/dashboard`,
           data: {
@@ -61,10 +72,10 @@ const EmailSignupForm = () => {
       }
 
       // Show success state
-      setEmailSent(true);
+      setSuccess(true);
       toast({
-        title: "Magic link sent!",
-        description: "Check your email inbox and click the link to complete signup.",
+        title: "Account created successfully!",
+        description: "Please check your email for a confirmation link before logging in.",
       });
 
     } catch (error: any) {
@@ -80,20 +91,20 @@ const EmailSignupForm = () => {
   };
 
   // Success state
-  if (emailSent) {
+  if (success) {
     return (
       <div className="text-center p-4">
-        <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-          <Mail className="h-8 w-8 text-blue-600" />
+        <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+          <CheckCircle className="h-8 w-8 text-green-600" />
         </div>
-        <h3 className="text-xl font-bold mb-2">Check Your Email!</h3>
-        <p className="text-gray-600 mb-4">We've sent a magic link to {email}. Click it to complete your signup and start your free trial!</p>
+        <h3 className="text-xl font-bold mb-2">Account Created!</h3>
+        <p className="text-gray-600 mb-4">Please check your email for a confirmation link, then you can log in with your email and password.</p>
         <Button 
           variant="outline" 
-          onClick={() => setEmailSent(false)}
+          onClick={() => window.location.href = '/login'}
           className="text-sm"
         >
-          Use Different Email
+          Go to Login
         </Button>
       </div>
     );
@@ -104,7 +115,7 @@ const EmailSignupForm = () => {
     <div className="relative z-10">
       <div className="text-center mb-6">
         <h3 className="text-xl font-bold mb-2">Start Your Free Trial</h3>
-        <p className="text-gray-600 text-sm">Enter your details and we'll send you a magic link to get started</p>
+        <p className="text-gray-600 text-sm">Create your account with email and password</p>
       </div>
 
       <form onSubmit={handleSignup} className="space-y-4">
@@ -159,6 +170,40 @@ const EmailSignupForm = () => {
           </div>
         </div>
 
+        {/* Password */}
+        <div>
+          <Label htmlFor="password">Password</Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              id="password"
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        {/* Confirm Password */}
+        <div>
+          <Label htmlFor="confirmPassword">Confirm Password</Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              id="confirmPassword"
+              type="password"
+              placeholder="Confirm your password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              className="pl-10"
+            />
+          </div>
+        </div>
+
         {/* WhatsApp Number */}
         <div>
           <Label htmlFor="whatsapp">WhatsApp Number</Label>
@@ -194,12 +239,12 @@ const EmailSignupForm = () => {
           {isSubmitting ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Sending Magic Link...
+              Creating Account...
             </>
           ) : (
             <>
-              <Mail className="h-4 w-4 mr-2" />
-              Send Magic Link
+              <User className="h-4 w-4 mr-2" />
+              Create Account
             </>
           )}
         </Button>

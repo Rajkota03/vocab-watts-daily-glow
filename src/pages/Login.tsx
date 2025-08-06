@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import MagicLinkLoginForm from '@/components/auth/MagicLinkLoginForm';
+import PasswordLoginForm from '@/components/auth/MagicLinkLoginForm';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useEmailAuth } from '@/hooks/useEmailAuth';
@@ -42,7 +42,7 @@ const Login = () => {
         </div>
         
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <MagicLinkLoginForm />
+          <PasswordLoginForm />
         </div>
         
         <div className="text-center mt-6">
