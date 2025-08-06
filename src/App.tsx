@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Index from './pages/Index';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Admin from './pages/Admin';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Toaster } from "@/components/ui/toaster";
 import WhatsAppTest from './pages/WhatsAppTest';
@@ -43,6 +44,11 @@ function App() {
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <Admin />
           </ProtectedRoute>
         } />
         <Route path="/whatsapp-test" element={
