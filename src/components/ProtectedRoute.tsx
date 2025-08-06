@@ -15,15 +15,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
   const location = useLocation();
 
   useEffect(() => {
-    // Store a flag to prevent multiple redirects
     let isAuthCheckComplete = false;
     
     const checkUserRole = async () => {
       try {
+        console.log("ProtectedRoute: Checking user role...");
         const { data: { session } } = await supabase.auth.getSession();
+        console.log("ProtectedRoute: Session found:", !!session);
         
         if (!session) {
-          // Not logged in at all
+          console.log("ProtectedRoute: No session, redirecting to login");
           if (!isAuthCheckComplete) {
             toast({
               title: "Unauthorized",
@@ -34,8 +35,19 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
             isAuthCheckComplete = true;
           }
         } else {
+          console.log("ProtectedRoute: Session found, checking role for:", session.user.email);
+          
           // For admin email, auto-authorize
           if (session.user.email === 'rajkota.sql@gmail.com' && requiredRole === 'admin') {
+            console.log("ProtectedRoute: Admin user authorized");
+            setIsAuthorized(true);
+            setIsLoading(false);
+            return;
+          }
+
+          // For regular users accessing dashboard (default role), just authorize them
+          if (requiredRole === 'user') {
+            console.log("ProtectedRoute: Regular user authorized for user role");
             setIsAuthorized(true);
             setIsLoading(false);
             return;
@@ -48,9 +60,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
           });
           
           if (error) {
-            console.error('Role check failed:', error);
+            console.error('ProtectedRoute: Role check failed:', error);
             setIsAuthorized(false);
           } else if (!data && !isAuthCheckComplete) {
+            console.log("ProtectedRoute: User lacks required role:", requiredRole);
             toast({
               title: "Access Denied",
               description: `You need ${requiredRole} permissions to access this page.`,
@@ -59,11 +72,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
             setIsAuthorized(false);
             isAuthCheckComplete = true;
           } else {
+            console.log("ProtectedRoute: User has required role:", requiredRole);
             setIsAuthorized(true);
           }
         }
       } catch (error) {
-        console.error('Authorization check failed:', error);
+        console.error('ProtectedRoute: Authorization check failed:', error);
         setIsAuthorized(false);
       } finally {
         setIsLoading(false);
