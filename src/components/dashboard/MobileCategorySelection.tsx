@@ -25,31 +25,23 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   const navigate = useNavigate();
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-  const [wordCount, setWordCount] = useState<number>(isPro ? 3 : 1);
+  const [wordCount, setWordCount] = useState<number>(3);
 
-  // Force the primary category to 'daily' for non-pro users and parse current category
+  // Parse current category
   React.useEffect(() => {
     let initialPrimary = null;
     let initialSub = null;
 
     if (currentCategory && currentCategory.includes('-')) {
       const [primary, sub] = currentCategory.split('-');
-      if (isPro || primary === 'daily') {
-        initialPrimary = primary;
-        initialSub = sub;
-      } else {
-        initialPrimary = 'daily'; // Default non-pro to daily
-        initialSub = 'beginner'; // Default non-pro to beginner
-      }
-    } else if (!isPro) {
-        initialPrimary = 'daily'; // Default non-pro to daily if no current category
-        initialSub = 'beginner';
+      initialPrimary = primary;
+      initialSub = sub;
     }
     
     setSelectedPrimary(initialPrimary);
     setSelectedSubcategory(initialSub);
 
-  }, [isPro, currentCategory]);
+  }, [currentCategory]);
 
   const categories = [{
     id: 'daily',
@@ -214,11 +206,6 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   }];
 
   const handlePrimarySelect = (categoryId: string) => {
-    const category = categories.find(c => c.id === categoryId);
-    if (!isPro && category?.proOnly) {
-      handleUpgrade(); // Redirect to upgrade if pro category clicked
-      return;
-    }
     setSelectedPrimary(categoryId);
     // Reset subcategory if primary changes, unless it's the same category
     if (categoryId !== selectedPrimary) {
@@ -227,21 +214,10 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   };
 
   const handleDifficultySelect = (difficultyId: string) => {
-    const levels = selectedPrimary === 'exam' ? examTypes : difficultyLevels;
-    const difficulty = levels.find(d => d.id === difficultyId);
-    if (!isPro && difficulty?.proOnly) {
-      handleUpgrade(); // Redirect to upgrade if pro difficulty clicked
-      return;
-    }
     setSelectedSubcategory(difficultyId);
   };
 
   const handleWordCountSelect = (count: number) => {
-    const option = wordCountOptions.find(o => o.count === count);
-    if (!isPro && option?.proOnly) {
-      handleUpgrade(); // Redirect to upgrade if pro count clicked
-      return;
-    }
     setWordCount(count);
   };
 
@@ -268,22 +244,6 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   return (
     // Use flex column and allow scrolling for the main content area
     <div className="flex flex-col h-full bg-gray-50 rounded-lg">
-      {!isPro && (
-        <div className="bg-gradient-to-r from-amber-100 to-amber-50 p-3 rounded-t-lg flex items-center justify-between sticky top-0 z-10 border-b border-amber-200">
-          <div className="flex-1 mr-2">
-            <h3 className="font-semibold text-amber-800 text-sm">Free Trial</h3>
-            <p className="text-xs text-amber-700">Unlock all categories & features</p>
-          </div>
-          <Button
-            onClick={handleUpgrade}
-            className="bg-amber-500 hover:bg-amber-600 text-white text-xs shadow-sm"
-            size="sm"
-          >
-            Upgrade
-          </Button>
-        </div>
-      )}
-
       {/* Scrollable content area */}
       <ScrollArea className="flex-1 p-3">
         {/* Word Category Section */}
@@ -306,11 +266,9 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
                             ? ["ring-2 ring-offset-1", category.activeColor, "border-transparent"]
                             : "border-gray-200",
                           category.color,
-                          category.hoverColor,
-                          (!isPro && category.proOnly) && "opacity-60 cursor-not-allowed"
-                        )}
-                        disabled={!isPro && category.proOnly}
-                        aria-label={`Select category ${category.name}`}
+                           category.hoverColor
+                         )}
+                         aria-label={`Select category ${category.name}`}
                       >
                         <div className="mb-1">{React.cloneElement(category.icon, { className: "h-5 w-5" })}</div>
                         <span className="text-xs font-medium text-center leading-tight line-clamp-2">
@@ -321,20 +279,10 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
                             <Check className="h-3 w-3 text-vocab-purple" />
                           </div>
                         )}
-                        {!isPro && category.proOnly && (
-                          <div className="absolute top-1 right-1 bg-white/70 rounded-full p-0.5">
-                            <Lock className="h-3 w-3 text-amber-600" />
-                          </div>
-                        )}
-                      </button>
-                    </div>
-                  </TooltipTrigger>
-                  {!isPro && category.proOnly && (
-                    <TooltipContent side="top" className="bg-amber-50 border border-amber-200">
-                      <p className="text-xs text-amber-800">Upgrade to Pro to unlock</p>
-                    </TooltipContent>
-                  )}
-                </Tooltip>
+                       </button>
+                     </div>
+                   </TooltipTrigger>
+                 </Tooltip>
               </TooltipProvider>
             ))}
           </div>
@@ -361,31 +309,19 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
                             selectedSubcategory === level.id
                               ? ["ring-2 ring-offset-1", level.activeColor, "border-transparent"]
                               : "border-gray-200",
-                            level.color,
-                            level.textColor,
-                            (!isPro && level.proOnly) && "opacity-60 cursor-not-allowed"
-                          )}
-                          disabled={!isPro && level.proOnly}
-                           aria-label={`Select level ${level.name}`}
+                             level.color,
+                             level.textColor
+                           )}
+                            aria-label={`Select level ${level.name}`}
                         >
                           <span className="font-semibold text-xs mb-0.5 line-clamp-1">{level.name}</span>
                           <span className="text-[10px] opacity-80 line-clamp-2">
                             {level.description}
                           </span>
-                          {!isPro && level.proOnly && (
-                            <div className="absolute top-1 right-1 bg-white/70 rounded-full p-0.5">
-                              <Lock className="h-3 w-3 text-amber-600" />
-                            </div>
-                          )}
-                        </button>
-                      </div>
-                    </TooltipTrigger>
-                    {!isPro && level.proOnly && (
-                      <TooltipContent side="top" className="bg-amber-50 border border-amber-200">
-                        <p className="text-xs text-amber-800">Upgrade to Pro to unlock</p>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
+                         </button>
+                       </div>
+                     </TooltipTrigger>
+                   </Tooltip>
                 </TooltipProvider>
               ))}
             </div>
@@ -413,28 +349,16 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
                             wordCount === option.count
                               ? ["ring-2 ring-offset-1", option.activeColor, "border-transparent scale-105"]
                               : "border-gray-200",
-                            option.color,
-                            "hover:scale-105",
-                            (!isPro && option.proOnly) && "opacity-60 cursor-not-allowed"
-                          )}
-                          disabled={!isPro && option.proOnly}
-                          aria-label={`Select ${option.count} words per day`}
+                             option.color,
+                             "hover:scale-105"
+                           )}
+                           aria-label={`Select ${option.count} words per day`}
                         >
-                          {option.count}
-                          {!isPro && option.proOnly && (
-                            <div className="absolute top-0.5 right-0.5 bg-white/70 rounded-full p-0.5">
-                              <Lock className="h-2.5 w-2.5 text-amber-600" />
-                            </div>
-                          )}
-                        </button>
-                      </div>
-                    </TooltipTrigger>
-                    {!isPro && option.proOnly && (
-                      <TooltipContent side="top" className="bg-amber-50 border border-amber-200">
-                        <p className="text-xs text-amber-800">Upgrade to Pro</p>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
+                           {option.count}
+                         </button>
+                       </div>
+                     </TooltipTrigger>
+                   </Tooltip>
                 </TooltipProvider>
               ))}
             </div>

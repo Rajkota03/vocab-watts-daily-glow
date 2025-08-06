@@ -85,11 +85,6 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({
   const navigate = useNavigate();
   
   const handleCategorySelect = (categoryId: string) => {
-    const category = categories.find(c => c.id === categoryId);
-    if (!isPro && category?.proOnly) {
-      // Pro feature prompt
-      return;
-    }
     onPrimarySelect(categoryId);
   };
 
@@ -111,10 +106,8 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({
                     selectedPrimary === category.id && [
                       "ring-2 ring-offset-2",
                       category.activeColor
-                    ],
-                    (!isPro && category.proOnly) && "opacity-50"
+                    ]
                   )}
-                  disabled={!isPro && category.proOnly}
                 >
                   <div className="mb-2">{category.icon}</div>
                   <span className="text-xs md:text-sm font-medium text-center leading-tight">
@@ -126,23 +119,9 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({
                       <Check className="h-3 w-3 text-vocab-purple" />
                     </div>
                   )}
-                  
-                  {!isPro && category.proOnly && (
-                    <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full shadow-sm p-0.5">
-                      <Lock className="h-3 w-3 text-amber-500" />
-                    </div>
-                  )}
                 </button>
               </div>
             </TooltipTrigger>
-            {!isPro && category.proOnly && (
-              <TooltipContent side="top" className="bg-amber-50 border border-amber-200">
-                <div className="text-xs text-amber-800 flex flex-col gap-1">
-                  <p>Pro Feature: {category.name} Category</p>
-                  <p className="text-[10px] opacity-90">Upgrade to access all categories</p>
-                </div>
-              </TooltipContent>
-            )}
           </Tooltip>
         </TooltipProvider>
       ))}

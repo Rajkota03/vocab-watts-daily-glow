@@ -54,18 +54,9 @@ const WordCountSelector: React.FC<WordCountSelectorProps> = ({
     }
   ];
   
-  // Enforce word count restriction for free users
-  React.useEffect(() => {
-    if (!isPro && wordCount > 3) {
-      onWordCountChange(3);
-    }
-  }, [isPro, wordCount, onWordCountChange]);
+  // Remove word count restriction
 
   const handleWordCountChange = (count: number) => {
-    const option = wordCountOptions.find(o => o.count === count);
-    if (!isPro && option?.proOnly) {
-      return; // Don't change for free users if it's a pro option
-    }
     onWordCountChange(count);
   };
   
@@ -77,15 +68,6 @@ const WordCountSelector: React.FC<WordCountSelectorProps> = ({
     <div className="space-y-4 flex-shrink-0">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium text-gray-700 slider-label">Daily Word Count</h3>
-        {!isPro && (
-          <Button 
-            onClick={handleUpgrade}
-            className="bg-amber-500 hover:bg-amber-600 text-white text-xs"
-            size="sm"
-          >
-            Upgrade
-          </Button>
-        )}
       </div>
       
       <div className="text-center mb-2 text-primary font-medium">
@@ -108,40 +90,13 @@ const WordCountSelector: React.FC<WordCountSelectorProps> = ({
           onValueChange={(values) => handleWordCountChange(values[0])}
           aria-label="Word count"
         />
-        
-        {!isPro && (
-          <div className="absolute top-0 right-0 left-[60%] h-full flex items-center justify-end">
-            <div className="w-full h-4 bg-gradient-to-r from-transparent to-amber-100/80 rounded-r-full"></div>
-          </div>
-        )}
       </div>
       
       <div className="flex justify-between text-xs">
         {wordCountOptions.map((option) => (
-          <TooltipProvider key={option.count}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className={cn(
-                  "text-gray-500 relative",
-                  (!isPro && option.proOnly) ? "text-amber-400" : ""
-                )}>
-                  {option.count}
-                  {(!isPro && option.proOnly) && (
-                    <div className="absolute -top-3 -right-3">
-                      <Lock className="h-2.5 w-2.5 text-amber-500" />
-                    </div>
-                  )}
-                </div>
-              </TooltipTrigger>
-              {(!isPro && option.proOnly) && (
-                <TooltipContent side="top" className="bg-amber-50 border border-amber-200">
-                  <div className="text-xs text-amber-800">
-                    <p>Upgrade to Pro to get {option.count} words per day</p>
-                  </div>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
+          <div key={option.count} className="text-gray-500">
+            {option.count}
+          </div>
         ))}
       </div>
       

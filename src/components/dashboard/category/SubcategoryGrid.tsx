@@ -103,14 +103,6 @@ const SubcategoryGrid: React.FC<SubcategoryGridProps> = ({
     : difficultyLevels;
 
   const handleSubcategorySelect = (subcategoryId: string) => {
-    const subcategory = subcategories.find(s => s.id === subcategoryId);
-    if (selectedPrimary === 'exam' && !isPro) {
-      return; // Pro only
-    }
-    // Fixed the type issue by safely checking if proOnly exists and is true
-    if (!isPro && subcategory && subcategory.proOnly === true) {
-      return; // Pro only
-    }
     onSubcategorySelect(subcategoryId);
   };
 
@@ -136,35 +128,16 @@ const SubcategoryGrid: React.FC<SubcategoryGridProps> = ({
                       selectedSubcategory === level.id && [
                         "ring-2 ring-offset-2",
                         level.activeColor
-                      ],
-                      (
-                        (!isPro && selectedPrimary === 'exam') || 
-                        (!isPro && level.proOnly === true)
-                      ) && "opacity-50"
+                      ]
                     )}
-                    disabled={(!isPro && selectedPrimary === 'exam') || (!isPro && level.proOnly === true)}
                   >
                     <span className="font-semibold mb-1">{level.name}</span>
                     <span className="text-xs opacity-75 px-2">
                       {level.description}
                     </span>
-                    
-                    {((!isPro && selectedPrimary === 'exam') || (!isPro && level.proOnly === true)) && (
-                      <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full shadow-sm p-0.5">
-                        <Lock className="h-3 w-3 text-amber-500" />
-                      </div>
-                    )}
                   </button>
                 </div>
               </TooltipTrigger>
-              {((!isPro && selectedPrimary === 'exam') || (!isPro && level.proOnly === true)) && (
-                <TooltipContent side="top" className="bg-amber-50 border border-amber-200">
-                  <div className="text-xs text-amber-800">
-                    <p>Pro Feature: {level.name}</p>
-                    <p className="text-[10px] opacity-90">Upgrade to access all difficulty levels</p>
-                  </div>
-                </TooltipContent>
-              )}
             </Tooltip>
           </TooltipProvider>
         ))}
