@@ -25,6 +25,13 @@ const SendEmailTestButton: React.FC = () => {
   const { toast } = useToast();
   const { session } = useAuthHandler();
 
+  // Auto-fill user's email on component mount
+  React.useEffect(() => {
+    if (session?.user?.email && !email) {
+      setEmail(session.user.email);
+    }
+  }, [session?.user?.email, email]);
+
   const categories = [
     { value: 'daily-beginner', label: 'Daily - Beginner' },
     { value: 'daily-intermediate', label: 'Daily - Intermediate' },
@@ -215,16 +222,26 @@ const SendEmailTestButton: React.FC = () => {
 
       <Button
         onClick={handleSendEmail}
-        disabled={loading || !email}
-        className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white"
+        disabled={loading || !email.trim()}
+        className={`w-full ${
+          !email.trim() 
+            ? "bg-gray-400 cursor-not-allowed" 
+            : "bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700"
+        } text-white`}
       >
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin mr-2" />
         ) : (
           <Mail className="h-4 w-4 mr-2" />
         )}
-        Send Test Email
+        {!email.trim() ? "Enter email address" : "Send Test Email"}
       </Button>
+
+      {!email.trim() && (
+        <p className="text-sm text-amber-600 bg-amber-50 p-2 rounded">
+          ⚠️ Please enter an email address to enable the send button
+        </p>
+      )}
 
       {lastResult && (
         <Alert className={lastResult.includes('✅') ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
