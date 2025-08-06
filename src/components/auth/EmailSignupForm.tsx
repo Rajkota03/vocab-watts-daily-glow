@@ -43,10 +43,9 @@ const EmailSignupForm = () => {
       // Format the phone number
       const formattedPhone = whatsappNumber.startsWith('+') ? whatsappNumber : `+${whatsappNumber}`;
       
-      // Sign up with Supabase Auth using magic link
-      const { error } = await supabase.auth.signUp({
+      // Sign up with Supabase Auth using magic link (passwordless)
+      const { error } = await supabase.auth.signInWithOtp({
         email,
-        password: 'temp-password', // Temporary password for magic link flow
         options: {
           emailRedirectTo: `${window.location.origin}/dashboard`,
           data: {
@@ -105,7 +104,7 @@ const EmailSignupForm = () => {
     <div className="relative z-10">
       <div className="text-center mb-6">
         <h3 className="text-xl font-bold mb-2">Start Your Free Trial</h3>
-        <p className="text-gray-600 text-sm">Get vocabulary words via WhatsApp for 3 days</p>
+        <p className="text-gray-600 text-sm">Enter your details and we'll send you a magic link to get started</p>
       </div>
 
       <form onSubmit={handleSignup} className="space-y-4">
@@ -200,7 +199,7 @@ const EmailSignupForm = () => {
           ) : (
             <>
               <Mail className="h-4 w-4 mr-2" />
-              Get Magic Link
+              Send Magic Link
             </>
           )}
         </Button>
