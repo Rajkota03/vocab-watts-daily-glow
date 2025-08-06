@@ -7,7 +7,7 @@ const twilioApiUrl = (accountSid: string) =>
   `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
 
 // Define AiSensy API URL
-const aisensyApiUrl = "https://backend.aisensy.com/campaign/t1/api/v2";
+const aisensyApiUrl = "https://backend.aisensy.com/campaign/t1/api";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -166,19 +166,16 @@ async function handleAiSensyRequest(req: Request, requestData: any) {
       }
     };
   } else {
-    // Direct message (text message)
+    // Direct message (text message) - Updated payload structure for AiSensy
     aisensyPayload = {
       apiKey: aisensyApiKey,
-      campaign: {
-        campaignName: "direct_message",
-        recipientPhone: to,
-        userName: requestData.userName || "",
-        broadcast: false,
-        message: {
-          type: "text",
-          text: finalMessage
-        }
-      }
+      destination: to,
+      userName: requestData.userName || "User",
+      templateName: "direct_message_template",
+      source: "glintup_app",
+      media: {},
+      message: finalMessage,
+      buttons: []
     };
   }
   
