@@ -86,13 +86,19 @@ async function handleAiSensyRequest(req: Request, requestData: any) {
   const message = requestData.message;
   const templateName = requestData.templateName;
   const templateParams = requestData.templateParams || {};
+  const category = requestData.category;
+  const isPro = requestData.isPro;
+  const sendImmediately = requestData.sendImmediately;
 
   // Debug logging
   console.log("AiSensy request received:", { 
     to, 
     messageLength: message ? message.length : 0,
     templateName,
-    hasTemplateParams: Object.keys(templateParams).length > 0
+    hasTemplateParams: Object.keys(templateParams).length > 0,
+    category,
+    isPro,
+    sendImmediately
   });
 
   // Validate input
@@ -100,12 +106,48 @@ async function handleAiSensyRequest(req: Request, requestData: any) {
     throw new Error("Recipient phone number is required");
   }
 
-  if (!message && !templateName) {
-    throw new Error("Either message content or template name is required");
-  }
-
   if (!aisensyApiKey) {
     throw new Error("AiSensy API key is not configured");
+  }
+
+  // If category is provided, generate vocabulary words
+  let finalMessage = message;
+  if (category && sendImmediately) {
+    console.log(`Generating vocabulary words for category: ${category}`);
+    try {
+      const wordsResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-vocab-words`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`
+        },
+        body: JSON.stringify({
+          category: category,
+          count: 3 // Send 3 words for testing
+        })
+      });
+
+      if (wordsResponse.ok) {
+        const wordsData = await wordsResponse.json();
+        if (wordsData.words && Array.isArray(wordsData.words)) {
+          // Format the vocabulary words into a nice message
+          const formattedWords = wordsData.words.map((word: any, index: number) => 
+            `${index + 1}. *${word.word}*\n   _${word.definition}_\n   Example: ${word.example}`
+          ).join('\n\n');
+          
+          finalMessage = `📚 Your Daily Vocabulary Words (${category})\n\n${formattedWords}\n\n✨ Keep learning!`;
+        }
+      } else {
+        console.warn("Failed to generate vocabulary words, using default message");
+      }
+    } catch (error) {
+      console.error("Error generating vocabulary words:", error);
+      // Continue with default message if word generation fails
+    }
+  }
+
+  if (!finalMessage && !templateName) {
+    throw new Error("Either message content or template name is required");
   }
 
   // Determine which type of message to send
@@ -134,7 +176,7 @@ async function handleAiSensyRequest(req: Request, requestData: any) {
         broadcast: false,
         message: {
           type: "text",
-          text: message
+          text: finalMessage
         }
       }
     };
