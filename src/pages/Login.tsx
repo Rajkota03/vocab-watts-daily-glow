@@ -54,15 +54,23 @@ const Login = () => {
   const handleLogin = async (values: any) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
       });
       if (error) throw error;
+      
+      // Show success message
       toast({
         title: "Login successful",
         description: "Welcome back!",
       });
+      
+      // Ensure redirect happens - the onAuthStateChange should handle this,
+      // but let's add a fallback
+      if (data.session) {
+        navigate(from, { replace: true });
+      }
     } catch (error: any) {
       toast({
         title: "Error",
