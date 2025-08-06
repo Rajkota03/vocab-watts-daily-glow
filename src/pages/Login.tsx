@@ -86,6 +86,13 @@ const Login = () => {
         description: "Welcome back!",
       });
       
+      // Force immediate navigation after successful login
+      if (data.session) {
+        console.log("Forcing immediate navigation to:", from);
+        // Use window.location instead of navigate to force the redirect
+        window.location.href = from;
+      }
+      
     } catch (error: any) {
       console.error("Login error:", error);
       toast({
