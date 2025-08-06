@@ -8,9 +8,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useForm } from 'react-hook-form';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, Search, Edit, Trash2, Mail, MessageSquare, Loader2 } from 'lucide-react';
+import { PlusCircle, Search, Edit, Trash2, Mail, MessageSquare, Loader2, Lightbulb } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
+import { enrichVocabularyWord } from '@/services/vocabularyEnrichmentService';
+import EnrichedVocabularyCard from '@/components/dashboard/EnrichedVocabularyCard';
 
 interface VocabularyWord {
   id: string;
@@ -50,6 +52,8 @@ const VocabularyTab = () => {
   const [testEmail, setTestEmail] = useState('');
   const [testPhone, setTestPhone] = useState('');
   const [sending, setSending] = useState(false);
+  const [testEnrichment, setTestEnrichment] = useState<any>(null);
+  const [enrichmentLoading, setEnrichmentLoading] = useState(false);
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -358,6 +362,47 @@ const VocabularyTab = () => {
     }
   };
 
+  const handleTestEnrichment = async () => {
+    const testWord = {
+      word: "Perplexed",
+      definition: "Confused or puzzled, unable to understand something.",
+      example: "She was perplexed by the complicated instructions."
+    };
+
+    setEnrichmentLoading(true);
+    setTestEnrichment(null);
+
+    try {
+      const enrichment = await enrichVocabularyWord(
+        testWord.word,
+        testWord.definition,
+        testWord.example
+      );
+
+      setTestEnrichment({
+        id: 'test-id',
+        ...testWord,
+        category: 'test',
+        created_at: new Date().toISOString(),
+        ...enrichment
+      });
+
+      toast({
+        title: "Word Enriched!",
+        description: "Successfully enriched the test vocabulary word.",
+      });
+    } catch (error: any) {
+      console.error('Error testing enrichment:', error);
+      toast({
+        title: "Enrichment Failed",
+        description: error.message || "Failed to enrich the vocabulary word",
+        variant: "destructive"
+      });
+    } finally {
+      setEnrichmentLoading(false);
+    }
+  };
+
   const filteredWords = vocabularyWords.filter(word => 
     word.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
     word.definition.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -372,6 +417,41 @@ const VocabularyTab = () => {
           Manage vocabulary words, categories, and try live vocabulary generation using OpenAI.
         </p>
       </div>
+
+      <Card className="border shadow-sm">
+        <CardHeader>
+          <CardTitle>Vocabulary Word Enrichment Test</CardTitle>
+          <CardDescription>
+            Test the AI-powered vocabulary word enrichment that adds mnemonics, synonyms, pronunciation, and sentiment.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4 items-center mb-4">
+            <Button
+              onClick={handleTestEnrichment}
+              disabled={enrichmentLoading}
+              className="flex items-center gap-2"
+            >
+              {enrichmentLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Lightbulb className="h-4 w-4" />
+              )}
+              {enrichmentLoading ? 'Enriching...' : 'Test Word Enrichment'}
+            </Button>
+            <span className="text-sm text-gray-500">
+              This will enrich the word "Perplexed" with additional learning details
+            </span>
+          </div>
+          
+          {testEnrichment && (
+            <div className="mt-4">
+              <h4 className="font-medium mb-3">Enriched Word Result:</h4>
+              <EnrichedVocabularyCard word={testEnrichment} />
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
         <div className="border rounded-lg shadow bg-white p-6">
