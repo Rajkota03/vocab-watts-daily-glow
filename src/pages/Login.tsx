@@ -21,32 +21,48 @@ const Login = () => {
   const from = location.state?.from?.pathname || '/dashboard';
 
   useEffect(() => {
+    let mounted = true;
+    
     // Check if user is already logged in
     const checkUser = async () => {
       try {
         const { data } = await supabase.auth.getSession();
-        if (data.session) {
-          // Navigate to the return URL or dashboard
+        if (data.session && mounted) {
+          console.log("User already logged in, navigating to:", from);
           navigate(from, { replace: true });
         }
       } catch (error) {
         console.error("Error checking auth:", error);
       } finally {
-        setIsCheckingAuth(false);
+        if (mounted) {
+          setIsCheckingAuth(false);
+        }
       }
     };
-    checkUser();
 
     // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        if (session) {
-          navigate(from, { replace: true });
-        }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, !!session);
+      
+      if (event === 'SIGNED_IN' && session && mounted) {
+        console.log("User signed in, navigating to:", from);
+        // Small delay to ensure session is fully established
+        setTimeout(() => {
+          if (mounted) {
+            navigate(from, { replace: true });
+          }
+        }, 100);
+      }
+      
+      if (event === 'SIGNED_OUT' && mounted) {
+        setIsCheckingAuth(false);
       }
     });
 
+    checkUser();
+
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [navigate, from]);
@@ -54,11 +70,15 @@ const Login = () => {
   const handleLogin = async (values: any) => {
     setIsLoading(true);
     try {
+      console.log("Attempting login for:", values.email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
       });
+      
       if (error) throw error;
+      
+      console.log("Login successful, session:", !!data.session);
       
       // Show success message
       toast({
@@ -66,12 +86,8 @@ const Login = () => {
         description: "Welcome back!",
       });
       
-      // Ensure redirect happens - the onAuthStateChange should handle this,
-      // but let's add a fallback
-      if (data.session) {
-        navigate(from, { replace: true });
-      }
     } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "Error",
         description: error.message || "An error occurred",
