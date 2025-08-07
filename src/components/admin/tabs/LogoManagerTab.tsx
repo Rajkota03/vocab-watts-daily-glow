@@ -4,13 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Upload, Image, Trash2, Download } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { removeBackground, loadImage } from '@/utils/backgroundRemoval';
 
 const LogoManager = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [previewLogo, setPreviewLogo] = useState<string | null>(null);
+  const [processedLogoBlob, setProcessedLogoBlob] = useState<Blob | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [currentLogos, setCurrentLogos] = useState({
     main_logo: '/public/logo.svg',
     horizontal_logo: '/public/logo-horizontal.svg'
@@ -20,16 +23,16 @@ const LogoManager = () => {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      processLogo(file);
+      processLogoPreview(file);
     }
   };
 
-  const processLogo = async (file: File) => {
+  const processLogoPreview = async (file: File) => {
     setIsProcessing(true);
     try {
       toast({
         title: "Processing Logo",
-        description: "Uploading and processing your logo...",
+        description: "Removing background and preparing preview...",
       });
 
       // Load the image
@@ -38,11 +41,51 @@ const LogoManager = () => {
       // Remove background
       const processedBlob = await removeBackground(imageElement);
       
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(processedBlob);
+      setPreviewLogo(previewUrl);
+      setProcessedLogoBlob(processedBlob);
+      setHasUnsavedChanges(true);
+
+      toast({
+        title: "Preview Ready",
+        description: "Logo processed successfully! Click 'Save Logo' to apply changes.",
+      });
+
+    } catch (error) {
+      console.error('Error processing logo:', error);
+      toast({
+        title: "Processing Error",
+        description: "Failed to process logo. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const saveLogo = async () => {
+    if (!processedLogoBlob) {
+      toast({
+        title: "No Logo to Save",
+        description: "Please upload and process a logo first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      toast({
+        title: "Saving Logo",
+        description: "Uploading your logo and updating the app...",
+      });
+
       // Upload to Supabase Storage
       const fileName = `logo-${Date.now()}.png`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('logos')
-        .upload(fileName, processedBlob, {
+        .upload(fileName, processedLogoBlob, {
           contentType: 'image/png',
           upsert: true
         });
@@ -75,25 +118,43 @@ const LogoManager = () => {
       }
 
       setCurrentLogos(newLogoConfig);
+      setHasUnsavedChanges(false);
+      setPreviewLogo(null);
+      setProcessedLogoBlob(null);
 
       toast({
-        title: "Logo Updated",
-        description: "Your logo has been processed and updated throughout the app!",
+        title: "Logo Updated Successfully!",
+        description: "Your logo has been updated throughout the app. The page will refresh to show changes.",
       });
 
-      // Refresh the page to show the new logo
-      window.location.reload();
+      // Refresh the page after a short delay to show the success message
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
 
     } catch (error) {
-      console.error('Error processing logo:', error);
+      console.error('Error saving logo:', error);
       toast({
-        title: "Error",
-        description: "Failed to process logo. Please try again.",
+        title: "Save Failed",
+        description: "Failed to save logo. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsProcessing(false);
+      setIsUploading(false);
     }
+  };
+
+  const cancelChanges = () => {
+    setPreviewLogo(null);
+    setProcessedLogoBlob(null);
+    setHasUnsavedChanges(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    toast({
+      title: "Changes Cancelled",
+      description: "Logo upload cancelled.",
+    });
   };
 
   const downloadSampleLogo = () => {
@@ -117,19 +178,26 @@ const LogoManager = () => {
         </CardHeader>
         <CardContent className="space-y-6">
           
-          {/* Current Logo Preview */}
+          {/* Current/Preview Logo */}
           <div className="space-y-4">
-            <Label>Current Logo</Label>
+            <Label>
+              {hasUnsavedChanges ? 'New Logo Preview' : 'Current Logo'}
+            </Label>
             <div className="flex items-center justify-center p-8 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
               <img 
-                src={currentLogos.main_logo} 
-                alt="Current Logo" 
+                src={previewLogo || currentLogos.main_logo} 
+                alt={hasUnsavedChanges ? 'New Logo Preview' : 'Current Logo'} 
                 className="max-h-16 object-contain"
                 onError={(e) => {
                   e.currentTarget.src = '/public/logo.svg';
                 }}
               />
             </div>
+            {hasUnsavedChanges && (
+              <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded-lg">
+                ✓ Logo processed successfully! Click "Save Logo" below to apply changes.
+              </div>
+            )}
           </div>
 
           {/* Upload Section */}
@@ -147,13 +215,34 @@ const LogoManager = () => {
               
               <Button
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isProcessing}
+                disabled={isProcessing || isUploading}
                 className="w-full"
                 variant="outline"
               >
                 <Upload className="h-4 w-4 mr-2" />
                 {isProcessing ? 'Processing...' : 'Choose Logo File'}
               </Button>
+
+              {/* Action Buttons */}
+              {hasUnsavedChanges && (
+                <div className="flex gap-3">
+                  <Button
+                    onClick={saveLogo}
+                    disabled={isUploading}
+                    className="flex-1"
+                  >
+                    {isUploading ? 'Saving...' : 'Save Logo'}
+                  </Button>
+                  <Button
+                    onClick={cancelChanges}
+                    disabled={isUploading}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
 
               <div className="text-sm text-gray-500 space-y-1">
                 <p>• Recommended: PNG or JPG format</p>
