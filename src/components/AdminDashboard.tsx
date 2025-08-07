@@ -12,6 +12,7 @@ import ActivityTab from './admin/tabs/ActivityTab';
 import SettingsTab from './admin/tabs/SettingsTab';
 import UserRolesTab from './admin/tabs/UserRolesTab';
 import PromptManagerTab from './admin/tabs/PromptManagerTab';
+import LogoManagerTab from './admin/tabs/LogoManagerTab';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -71,6 +72,8 @@ const AdminDashboard = () => {
         return <UserRolesTab key={refreshKey} />;
       case 'prompts':
         return <PromptManagerTab key={refreshKey} />;
+      case 'logo':
+        return <LogoManagerTab key={refreshKey} />;
       default:
         return <OverviewTab key={refreshKey} />;
     }
