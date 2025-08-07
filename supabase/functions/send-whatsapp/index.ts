@@ -32,7 +32,7 @@ serve(async (req) => {
   } catch (error) {
     console.error(`WhatsApp message error:`, error);
     
-    // Format detailed error response
+    // Return success: false but with 200 status so the frontend can read the error details
     return new Response(
       JSON.stringify({ 
         success: false, 
@@ -44,7 +44,7 @@ serve(async (req) => {
       }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
+        status: 200, // Changed from 500 to 200 so frontend can read the response
       }
     );
   }
@@ -52,6 +52,7 @@ serve(async (req) => {
 
 // Handle AiSensy requests
 async function handleAiSensyRequest(req: Request, requestData: any) {
+  try {
   // --- Extract credentials from environment variables ---
   const aisensyApiKey = Deno.env.get("AISENSY_API_KEY");
   
@@ -199,7 +200,19 @@ async function handleAiSensyRequest(req: Request, requestData: any) {
 
   // Check if the API call was successful
   if (!aisensyResponse.ok || aisensyData.error) {
-    throw new Error(`AiSensy API error: ${aisensyData.message || aisensyData.error || aisensyResponse.statusText}`);
+    // Return error in response format instead of throwing
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: `AiSensy API error: ${aisensyData.message || aisensyData.error || aisensyResponse.statusText}`,
+      details: {
+        message: `AiSensy API error: ${aisensyData.message || aisensyData.error || aisensyResponse.statusText}`,
+        suggestion: "Check your configuration and try again",
+        responseData: aisensyData
+      }
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200, // Return 200 so frontend can read the error details
+    });
   }
 
   // Log a success message
@@ -229,6 +242,20 @@ async function handleAiSensyRequest(req: Request, requestData: any) {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
     status: 200,
   });
+  } catch (error) {
+    console.error("AiSensy handler error:", error);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: error.message,
+      details: {
+        message: error.message,
+        suggestion: "Check your configuration and try again",
+      }
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    });
+  }
 }
 
 // Fetch templates from AiSensy
@@ -406,7 +433,19 @@ async function handleTwilioRequest(req: Request, requestData: any) {
 
   // Check if the API call was successful
   if (!twilioResponse.ok || twilioData.error_code) {
-    throw new Error(`Twilio API error: ${twilioData.error_message || twilioResponse.statusText}`);
+    // Return error in response format instead of throwing
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: `Twilio API error: ${twilioData.error_message || twilioResponse.statusText}`,
+      details: {
+        message: `Twilio API error: ${twilioData.error_message || twilioResponse.statusText}`,
+        suggestion: "Check your configuration and try again",
+        responseData: twilioData
+      }
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200, // Return 200 so frontend can read the error details
+    });
   }
 
   // Log a success message
