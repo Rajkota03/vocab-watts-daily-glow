@@ -1,3 +1,15 @@
-<svg width="200" height="50" viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-  <image href="/glintup-logo-final.png" x="0" y="0" width="200" height="50" preserveAspectRatio="xMidYMid meet"/>
+<svg width="200" height="50" viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <style>
+      .logo-text { font-family: 'Arial', sans-serif; font-weight: 600; }
+    </style>
+  </defs>
+  <!-- Green G -->
+  <path d="M10 35c-5.5 0-10-4.5-10-10s4.5-10 10-10c5.5 0 10 4.5 10 10h-4c0-3.3-2.7-6-6-6s-6 2.7-6 6 2.7 6 6 6h4v4h-4z" fill="#57BD81"/>
+  <rect x="14" y="25" width="6" height="4" fill="#57BD81"/>
+  <!-- Yellow star -->
+  <path d="M23 10l2 5 5-2-2-5-5 2z" fill="#F6C023"/>
+  <path d="M23 15l5 2 2-5-5-2-2 5z" fill="#F6C023"/>
+  <!-- Glintup text -->
+  <text x="35" y="32" class="logo-text" font-size="20" fill="#231F20">Glintup</text>
 </svg>
