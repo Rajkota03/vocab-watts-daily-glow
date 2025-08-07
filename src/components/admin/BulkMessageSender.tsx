@@ -122,14 +122,17 @@ const BulkMessageSender = () => {
 
           if (error) {
             failedCount++;
-            errors.push(`${user.phone_number}: ${error.message}`);
+            const errorMessage = error.message || 'Unknown error';
+            errors.push(`${user.phone_number}: ${errorMessage}`);
             console.error(`Failed to send to ${user.phone_number}:`, error);
           } else if (data?.success) {
             successCount++;
             console.log(`Successfully sent to ${user.phone_number}`);
           } else {
             failedCount++;
-            errors.push(`${user.phone_number}: ${data?.error || 'Unknown error'}`);
+            const errorMessage = data?.error || data?.details?.message || 'Unknown error';
+            errors.push(`${user.phone_number}: ${errorMessage}`);
+            console.error(`Failed to send to ${user.phone_number}:`, data);
           }
 
           // Add a small delay to avoid overwhelming the API
