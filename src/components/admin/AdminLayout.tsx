@@ -28,7 +28,7 @@ const navItems: NavItem[] = [
   { title: 'Vocabulary', icon: Database, value: 'vocabulary', path: '/admin' },
   { title: 'Analytics', icon: LineChart, value: 'analytics', path: '/admin/analytics' },
   { title: 'Prompt Manager', icon: FileText, value: 'prompts', path: '/admin' },
-  { title: 'Logo Manager', icon: Image, value: 'logo', path: '/admin' },
+  
   { title: 'Subscriptions', icon: BarChart2, value: 'subscriptions', path: '/admin' },
   { title: 'Messages', icon: MessageSquare, value: 'messages', path: '/admin' },
   { title: 'Activity', icon: Activity, value: 'activity', path: '/admin' },
