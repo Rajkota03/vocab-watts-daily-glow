@@ -155,16 +155,19 @@ async function handleAiSensyRequest(req: Request, requestData: any) {
   let aisensyPayload;
   
   if (templateName) {
-    // Template message
+    // Template message - Updated payload structure for AiSensy templates
     aisensyPayload = {
       apiKey: aisensyApiKey,
-      campaign: {
-        campaignName: templateName,
-        recipientPhone: to,
-        userName: templateParams.userName || "",
-        broadcast: false,
-        variables: templateParams
-      }
+      destination: to,
+      userName: templateParams.userName || "User",
+      templateName: templateName,
+      source: "api",
+      media: {},
+      buttons: [],
+      variables: Object.entries(templateParams).map(([key, value]) => ({
+        name: key,
+        text: String(value || "")
+      }))
     };
   } else {
     // Direct message (text message) - Corrected payload structure for AiSensy
