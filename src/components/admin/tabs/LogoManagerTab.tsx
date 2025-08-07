@@ -3,16 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, Image, Trash2, Download } from 'lucide-react';
+import { Upload, Image, Download } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { removeBackground, loadImage } from '@/utils/backgroundRemoval';
 
 const LogoManager = () => {
   const [isUploading, setIsUploading] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [previewLogo, setPreviewLogo] = useState<string | null>(null);
-  const [processedLogoBlob, setProcessedLogoBlob] = useState<Blob | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [currentLogos, setCurrentLogos] = useState({
     main_logo: '/public/logo.svg',
@@ -23,52 +21,24 @@ const LogoManager = () => {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      processLogoPreview(file);
-    }
-  };
-
-  const processLogoPreview = async (file: File) => {
-    setIsProcessing(true);
-    try {
-      toast({
-        title: "Processing Logo",
-        description: "Removing background and preparing preview...",
-      });
-
-      // Load the image
-      const imageElement = await loadImage(file);
-      
-      // Remove background
-      const processedBlob = await removeBackground(imageElement);
-      
       // Create preview URL
-      const previewUrl = URL.createObjectURL(processedBlob);
+      const previewUrl = URL.createObjectURL(file);
       setPreviewLogo(previewUrl);
-      setProcessedLogoBlob(processedBlob);
+      setLogoFile(file);
       setHasUnsavedChanges(true);
 
       toast({
         title: "Preview Ready",
-        description: "Logo processed successfully! Click 'Save Logo' to apply changes.",
+        description: "Logo uploaded successfully! Click 'Save Logo' to apply changes.",
       });
-
-    } catch (error) {
-      console.error('Error processing logo:', error);
-      toast({
-        title: "Processing Error",
-        description: "Failed to process logo. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
     }
   };
 
   const saveLogo = async () => {
-    if (!processedLogoBlob) {
+    if (!logoFile) {
       toast({
         title: "No Logo to Save",
-        description: "Please upload and process a logo first.",
+        description: "Please upload a logo first.",
         variant: "destructive",
       });
       return;
@@ -85,8 +55,8 @@ const LogoManager = () => {
       const fileName = `logo-${Date.now()}.png`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('logos')
-        .upload(fileName, processedLogoBlob, {
-          contentType: 'image/png',
+        .upload(fileName, logoFile, {
+          contentType: logoFile.type,
           upsert: true
         });
 
@@ -120,7 +90,7 @@ const LogoManager = () => {
       setCurrentLogos(newLogoConfig);
       setHasUnsavedChanges(false);
       setPreviewLogo(null);
-      setProcessedLogoBlob(null);
+      setLogoFile(null);
 
       toast({
         title: "Logo Updated Successfully!",
@@ -146,7 +116,7 @@ const LogoManager = () => {
 
   const cancelChanges = () => {
     setPreviewLogo(null);
-    setProcessedLogoBlob(null);
+    setLogoFile(null);
     setHasUnsavedChanges(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -215,12 +185,12 @@ const LogoManager = () => {
               
               <Button
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isProcessing || isUploading}
+                disabled={isUploading}
                 className="w-full"
                 variant="outline"
               >
                 <Upload className="h-4 w-4 mr-2" />
-                {isProcessing ? 'Processing...' : 'Choose Logo File'}
+                Choose Logo File
               </Button>
 
               {/* Action Buttons */}
@@ -245,8 +215,7 @@ const LogoManager = () => {
               )}
 
               <div className="text-sm text-gray-500 space-y-1">
-                <p>• Recommended: PNG or JPG format</p>
-                <p>• Background will be automatically removed</p>
+                <p>• Recommended: PNG format with transparent background</p>
                 <p>• Logo will be optimized for all sizes</p>
                 <p>• Changes will appear throughout the app</p>
               </div>
