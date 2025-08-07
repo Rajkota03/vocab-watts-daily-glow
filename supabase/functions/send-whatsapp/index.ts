@@ -172,7 +172,7 @@ async function handleAiSensyRequest(req: Request, requestData: any) {
       apiKey: aisensyApiKey,
       destination: to,
       userName: requestData.userName || "User",
-      templateName: "text", // Use 'text' for direct messages
+      templateName: "text",
       source: "api",
       media: {},
       message: finalMessage,
