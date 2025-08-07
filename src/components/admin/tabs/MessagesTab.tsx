@@ -119,6 +119,8 @@ const MessagesTab = () => {
       
       {/* Bulk Message Sender */}
       <BulkMessageSender />
+      {/* Delivery Report - last 24h */}
+      <DeliveryReport />
       
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
