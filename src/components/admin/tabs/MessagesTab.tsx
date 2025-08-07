@@ -9,6 +9,7 @@ import { Search, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import BulkMessageSender from '../BulkMessageSender';
+import DeliveryReport from '../DeliveryReport';
 
 interface ScheduledMessage {
   id: string;
