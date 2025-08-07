@@ -9,7 +9,7 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-center mb-8">
           <div className="mb-6 md:mb-0">
             <div className="flex items-center gap-2 mb-2">
-              <img src="/public/logo.svg" alt="Glintup" className="h-8" />
+              <img src="/lovable-uploads/7486a276-d787-490b-a716-26688baba4e0.png" alt="Glintup" className="h-8" />
             </div>
             <p className="text-gray-400">
               Expanding your vocabulary effortlessly.

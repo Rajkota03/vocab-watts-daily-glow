@@ -21,7 +21,7 @@ const DashboardHeader = ({
     <header className="bg-white border-b border-gray-100 py-4 px-4 sm:px-6 flex items-center justify-between">
       <div className="flex items-center">
         <Link to="/" className="text-xl font-semibold text-gray-800 flex items-center">
-          <img src="/src/assets/logo.svg" alt="Glintup" className="h-8" />
+          <img src="/lovable-uploads/7486a276-d787-490b-a716-26688baba4e0.png" alt="Glintup" className="h-8" />
         </Link>
         
         <div className="hidden md:flex ml-10 gap-5">
