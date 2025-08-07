@@ -46,74 +46,30 @@ const LogoManager = () => {
 
     setIsUploading(true);
     try {
+      // Create a download link for the user
+      const downloadUrl = URL.createObjectURL(logoFile);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `glintup-logo.${logoFile.name.split('.').pop()}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+
       toast({
-        title: "Saving Logo",
-        description: "Uploading your logo and updating the app...",
+        title: "Logo Downloaded!",
+        description: "Your logo has been downloaded. To complete the update:\n\n1. Replace /public/GlintUp_logo1.svg (main navbar)\n2. Replace /public/logo.svg (general use)\n3. Replace /public/logo-horizontal.svg (horizontal layouts)\n4. Replace /src/assets/logo.svg (dashboard)\n\nUse the downloaded file to replace these SVG files.",
       });
 
-      // Upload to Supabase Storage
-      const fileName = `logo-${Date.now()}.png`;
-      console.log('Attempting to upload file:', fileName, 'File size:', logoFile.size);
-      
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('logos')
-        .upload(fileName, logoFile, {
-          contentType: logoFile.type,
-          upsert: true
-        });
-
-      console.log('Upload result:', { uploadData, uploadError });
-
-      if (uploadError) {
-        console.error('Upload error details:', uploadError);
-        throw uploadError;
-      }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('logos')
-        .getPublicUrl(fileName);
-
-      console.log('Public URL generated:', publicUrl);
-
-      // Update app settings
-      const newLogoConfig = {
-        main_logo: publicUrl,
-        horizontal_logo: publicUrl
-      };
-
-      const { error: settingsError } = await supabase
-        .from('app_settings')
-        .upsert({
-          setting_key: 'logo_config',
-          setting_value: newLogoConfig,
-          updated_by: (await supabase.auth.getUser()).data.user?.id
-        });
-
-      if (settingsError) {
-        throw settingsError;
-      }
-
-      setCurrentLogos(newLogoConfig);
       setHasUnsavedChanges(false);
       setPreviewLogo(null);
       setLogoFile(null);
 
-      toast({
-        title: "Logo Updated Successfully!",
-        description: "Your logo has been updated throughout the app. The page will refresh to show changes.",
-      });
-
-      // Refresh the page after a short delay to show the success message
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-
     } catch (error) {
-      console.error('Error saving logo:', error);
+      console.error('Error processing logo:', error);
       toast({
-        title: "Save Failed",
-        description: "Failed to save logo. Please try again.",
+        title: "Process Failed",
+        description: "Failed to process logo. Please try again.",
         variant: "destructive",
       });
     } finally {
