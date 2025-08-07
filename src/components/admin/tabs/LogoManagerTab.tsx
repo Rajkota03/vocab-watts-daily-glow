@@ -53,6 +53,8 @@ const LogoManager = () => {
 
       // Upload to Supabase Storage
       const fileName = `logo-${Date.now()}.png`;
+      console.log('Attempting to upload file:', fileName, 'File size:', logoFile.size);
+      
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('logos')
         .upload(fileName, logoFile, {
@@ -60,7 +62,10 @@ const LogoManager = () => {
           upsert: true
         });
 
+      console.log('Upload result:', { uploadData, uploadError });
+
       if (uploadError) {
+        console.error('Upload error details:', uploadError);
         throw uploadError;
       }
 
@@ -68,6 +73,8 @@ const LogoManager = () => {
       const { data: { publicUrl } } = supabase.storage
         .from('logos')
         .getPublicUrl(fileName);
+
+      console.log('Public URL generated:', publicUrl);
 
       // Update app settings
       const newLogoConfig = {
