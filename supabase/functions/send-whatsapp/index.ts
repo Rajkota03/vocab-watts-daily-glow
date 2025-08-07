@@ -167,13 +167,13 @@ async function handleAiSensyRequest(req: Request, requestData: any) {
       }
     };
   } else {
-    // Direct message (text message) - Updated payload structure for AiSensy
+    // Direct message (text message) - Corrected payload structure for AiSensy
     aisensyPayload = {
       apiKey: aisensyApiKey,
       destination: to,
       userName: requestData.userName || "User",
-      templateName: "direct_message_template",
-      source: "glintup_app",
+      templateName: "text", // Use 'text' for direct messages
+      source: "api",
       media: {},
       message: finalMessage,
       buttons: []
