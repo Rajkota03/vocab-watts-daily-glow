@@ -112,15 +112,12 @@ const BulkMessageSender = () => {
           const { data, error } = await supabase.functions.invoke('send-whatsapp', {
             body: {
               to: user.phone_number,
-              templateName: 'daily_word_delivery1',
-              templateParams: {
-                userName: user.first_name || 'User',
-                category: category
-              },
+              message: `📚 Your Daily Vocabulary Words (${category})\n\nHello ${user.first_name || 'there'}! Here are your vocabulary words for today.\n\n✨ Keep learning!`,
               category: category,
               isPro: user.is_pro,
               sendImmediately: true,
-              provider: provider
+              provider: provider,
+              userName: user.first_name || 'User'
             }
           });
 

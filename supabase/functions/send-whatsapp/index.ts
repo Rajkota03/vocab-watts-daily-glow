@@ -24,6 +24,23 @@ serve(async (req) => {
 
     console.log(`Using provider: ${provider}`);
 
+    // Validate phone number early to avoid invalid numbers
+    const phoneNumber = requestData.to || requestData.phoneNumber;
+    if (phoneNumber && !isValidWhatsAppNumber(phoneNumber)) {
+      console.log(`Skipping invalid phone number: ${phoneNumber}`);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: `Invalid WhatsApp number format: ${phoneNumber}`,
+        details: {
+          message: `The phone number ${phoneNumber} is not a valid WhatsApp number`,
+          suggestion: "Please use a valid international phone number format"
+        }
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200
+      });
+    }
+
     if (provider === 'aisensy') {
       return await handleAiSensyRequest(req, requestData);
     } else {
@@ -49,6 +66,23 @@ serve(async (req) => {
     );
   }
 });
+
+// Helper function to validate WhatsApp numbers
+function isValidWhatsAppNumber(phoneNumber: string): boolean {
+  // Skip obvious test numbers
+  if (phoneNumber === '+1234567890' || phoneNumber === '+0000000000') {
+    return false;
+  }
+  
+  // Basic validation: starts with + and has reasonable length
+  const cleaned = phoneNumber.replace(/[^\d+]/g, '');
+  if (!cleaned.startsWith('+')) {
+    return false;
+  }
+  
+  const digitsOnly = cleaned.replace(/[^\d]/g, '');
+  return digitsOnly.length >= 10 && digitsOnly.length <= 15;
+}
 
 // Handle AiSensy requests
 async function handleAiSensyRequest(req: Request, requestData: any) {
