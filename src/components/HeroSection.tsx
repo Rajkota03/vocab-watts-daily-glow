@@ -16,6 +16,12 @@ const HeroSection = () => {
               <span className="font-bold">Learn directly on Whatsapp</span>
             </div>
             
+            <div className="mb-4">
+              <p className="text-lg text-primary font-semibold">
+                Glintup – Learn five smart words a day, delivered to your WhatsApp.
+              </p>
+            </div>
+            
             <h1 className="sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6 text-2xl px-0 mx-0">
               5 fresh words every day—<br />straight to WhatsApp.
             </h1>

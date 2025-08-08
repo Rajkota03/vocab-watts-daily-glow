@@ -25,7 +25,7 @@ const Footer = () => {
         </div>
         
         <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
-          <p>© {new Date().getFullYear()} Glintup. All rights reserved.</p>
+          <p>© 2025 Glintup. All rights reserved.</p>
         </div>
       </div>
     </footer>
