@@ -11,7 +11,7 @@ const CTASection = () => {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
   return (
-    <section className="py-20 bg-gradient-to-br from-duolingo-purple to-duolingo-purple/90 text-white relative overflow-hidden">
+    <section className="py-20 bg-gradient-to-br from-primary to-duolingo-purple text-white relative overflow-hidden">
       {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-full h-full opacity-10">
         <div className="absolute top-10 left-10 w-40 h-40 rounded-full bg-white"></div>
@@ -26,17 +26,17 @@ const CTASection = () => {
           </div>
           
           <h2 className="text-3xl md:text-5xl font-bold mb-6 font-poppins leading-tight">
-            Start building a smarter vocabulary <span className="block">without studying</span>
+            Ready to elevate <span className="block">your vocabulary?</span>
           </h2>
           
           <p className="text-lg md:text-xl mb-8 opacity-90 font-inter leading-relaxed">
-            5 new words daily, straight to your WhatsApp. No app downloads. No boring lists. Just words that actually stick.
+            Join thousands who are already expanding their vocabulary effortlessly with Glintup.
           </p>
           
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-8">
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-duolingo-green hover:bg-duolingo-green/90 text-white text-base group px-8 py-6 rounded-full transition-all hover:scale-105 hover:shadow-xl w-full md:w-auto font-medium shadow-lg">
+                <Button className="bg-accent hover:bg-accent/90 text-white text-base group px-8 py-6 rounded-full transition-all hover:scale-105 hover:shadow-xl w-full md:w-auto font-medium shadow-lg">
                   <Calendar className="mr-2 h-5 w-5" />
                   Start 3-Day Free Trial
                 </Button>

@@ -39,9 +39,9 @@ export const PricingPlanCard = ({ isPro, onSubscribe, isProcessing }: PricingPla
   };
 
   return (
-    <Card className={`border-2 ${isPro ? 'border-primary shadow-md relative' : 'border-gray-200 shadow-sm hover:shadow-md'} transition-all`}>
+    <Card className={`border-2 ${isPro ? 'border-primary shadow-xl bg-gradient-to-br from-white to-primary/5 relative' : 'border-gray-200 shadow-sm hover:shadow-md'} transition-all`}>
       {isPro && (
-        <div className="absolute top-0 right-0 bg-primary text-white text-xs font-bold py-1 px-3 rounded-bl">
+        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-accent text-white text-xs font-bold py-2 px-4 rounded-full shadow-lg">
           MOST POPULAR
         </div>
       )}
@@ -51,17 +51,21 @@ export const PricingPlanCard = ({ isPro, onSubscribe, isProcessing }: PricingPla
         <div className="mt-4">
           <div className="text-3xl font-bold">
             {isPro ? (
-              <>₹149 <span className="text-sm font-normal text-gray-500">/month</span></>
+              <>Only ₹149 <span className="text-sm font-normal text-gray-500">/month</span></>
             ) : '₹0'}
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {[...features, ...(isPro ? proFeatures : [])].map((feature, index) => (
-            <li key={index} className="flex items-start gap-2">
-              <CheckCircle className={`h-5 w-5 flex-shrink-0 mt-0.5 ${index >= features.length ? 'text-primary' : isPro ? 'text-gray-400' : 'text-primary'}`} />
-              <span className={index >= features.length ? 'font-medium' : ''}>{feature}</span>
+            <li key={index} className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-0.5">
+                <svg className={`h-5 w-5 ${index >= features.length ? 'text-primary' : isPro ? 'text-accent' : 'text-primary'}`} fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <span className={`${index >= features.length ? 'font-medium' : ''} text-gray-700`}>{feature}</span>
             </li>
           ))}
         </ul>

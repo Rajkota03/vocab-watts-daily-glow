@@ -6,18 +6,21 @@ const HowItWorks = () => {
   const steps = [
     {
       icon: CheckCircle,
-      title: "1. Pick your category",
-      description: "Choose from business, academic, creative writing, or general vocabulary improvement."
+      title: "Pick your category",
+      description: "Choose from business, academic, creative writing, or general vocabulary improvement.",
+      microcopy: "Find words that fit your world"
     },
     {
       icon: Smartphone,
-      title: "2. Receive on WhatsApp",
-      description: "Get 5 curated words daily with meanings and examples directly on your phone."
+      title: "Get curated words daily",
+      description: "5 handpicked words with meanings and examples delivered directly to your WhatsApp.",
+      microcopy: "No app downloads, no email clutter"
     },
     {
       icon: Sparkles,
-      title: "3. Quiz & use words",
-      description: "Practice with quick quizzes and start using your new vocabulary right away."
+      title: "Quiz & make them stick",
+      description: "Practice with quick quizzes and start using your new vocabulary confidently.",
+      microcopy: "Turn knowledge into habit"
     }
   ];
 
@@ -31,14 +34,18 @@ const HowItWorks = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {steps.map((step, index) => (
-            <div key={index} className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-all">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary mb-4 text-white">
-                <step.icon className="h-7 w-7" />
+            <div key={index} className="group bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/80 mb-4 text-white group-hover:scale-110 transition-transform duration-300">
+                <step.icon className="h-8 w-8 stroke-[1.5]" />
               </div>
-              <h3 className="text-xl font-bold mb-3">{step.title}</h3>
-              <p className="text-gray-600">{step.description}</p>
+              <div className="text-center mb-2">
+                <span className="inline-block px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full">{index + 1}</span>
+              </div>
+              <h3 className="text-xl font-bold mb-2 text-center">{step.title}</h3>
+              <p className="text-sm text-accent font-medium mb-3 text-center italic">{step.microcopy}</p>
+              <p className="text-gray-600 text-center">{step.description}</p>
             </div>
           ))}
         </div>

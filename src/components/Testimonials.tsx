@@ -88,21 +88,26 @@ const Testimonials = () => {
             {testimonials.map((testimonial, index) => (
               <div 
                 key={index} 
-                className="bg-white min-w-[280px] md:min-w-[350px] flex-shrink-0 p-6 rounded-xl shadow-md snap-start"
+                className="bg-white min-w-[280px] md:min-w-[350px] flex-shrink-0 p-6 rounded-2xl shadow-lg border border-gray-100 snap-start relative"
               >
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden">
-                    {/* If you have actual avatars, use them here */}
-                    <div className="w-full h-full flex items-center justify-center bg-primary text-white font-bold">
+                {/* Speech bubble tail */}
+                <div className="absolute -bottom-3 left-8 w-6 h-6 bg-white transform rotate-45 border-r border-b border-gray-100"></div>
+                
+                <div className="mb-4">
+                  <p className="text-gray-700 text-lg leading-relaxed">"{testimonial.quote}"</p>
+                </div>
+                
+                <div className="flex items-center pt-4 border-t border-gray-100">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent overflow-hidden shadow-md">
+                    <div className="w-full h-full flex items-center justify-center text-white font-bold text-lg">
                       {testimonial.author.charAt(0)}
                     </div>
                   </div>
                   <div className="ml-4">
-                    <p className="font-semibold">{testimonial.author}</p>
+                    <p className="font-semibold text-gray-800">{testimonial.author}</p>
                     <p className="text-sm text-gray-500">{testimonial.role}</p>
                   </div>
                 </div>
-                <p className="text-gray-700">"{testimonial.quote}"</p>
               </div>
             ))}
           </div>
