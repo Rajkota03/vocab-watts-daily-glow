@@ -6,7 +6,7 @@ import HowItWorks from '@/components/HowItWorks';
 import SampleWordDrop from '@/components/SampleWordDrop';
 import Testimonials from '@/components/Testimonials';
 import Footer from '@/components/Footer';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { useNavigate } from 'react-router-dom';
 import SocialProofBar from '@/components/SocialProofBar';
 import PricingSection from '@/components/PricingSection';
