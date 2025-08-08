@@ -19,49 +19,52 @@ const HeroSection = () => {
       </div>
       
       <div className="container mx-auto px-4 relative z-10">
-        <div className="flex flex-col lg:flex-row gap-12 items-center">
-          <div className="flex-1 text-center lg:text-left px-[49px]">
+        <div className="flex flex-col lg:flex-row-reverse gap-12 items-center">
+          <div className="flex-1 text-center lg:text-right px-[49px]">
             <div className="inline-flex items-center mb-6 py-1.5 rounded-full text-dark text-sm font-medium shadow-sm bg-green-500 px-[13px]">
               <img src="/lovable-uploads/164886d6-c431-4caf-9f94-f4729aa2698b.png" alt="WhatsApp" className="w-5 h-5 mr-2" />
               <span className="font-bold">Learn directly on Whatsapp</span>
             </div>
             
-            <h1 className="sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6 text-2xl px-0 mx-0">5 fresh words every day. Straight to WhatsApp.</h1>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6">Glintup Your Vocabulary Effortlessly</h1>
             
-            <p className="text-lg text-dark/80 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-              Learn 5 powerful new words every day, with meanings, synonyms, and usage — all delivered effortlessly to your WhatsApp.
+            <p className="text-xl lg:text-2xl text-dark/80 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+              5 smart words a day. Clear meanings, examples, and synonyms — delivered straight to WhatsApp.
             </p>
             
             <div className="space-y-4 sm:space-y-0 sm:flex sm:flex-row gap-4 justify-center lg:justify-start">
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                  {/* TODO: Update onClick to open AuthModal with initialTab='signup', initialPlan='trial' */}
-                  <Button className="group bg-accent hover:bg-accent/90 text-accent-foreground px-8 py-7 h-auto w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95 text-lg font-semibold shadow-lg">
+                  <Button className="group bg-accent hover:bg-accent/90 text-white px-8 py-4 h-auto w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95 text-lg font-semibold shadow-lg rounded-full">
                     Start 3-Day Free Trial
-                    <ArrowRight className="ml-2 h-6 w-6 transition-transform group-hover:translate-x-1" />
+                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md bg-white">
+                  <div className="text-center mb-6">
+                    <h3 className="text-xl font-semibold mb-2">Start your free trial</h3>
+                    <p className="text-gray-600">(30 seconds)</p>
+                  </div>
                   <EmailSignupForm /> 
                 </DialogContent>
               </Dialog>
               
-              <Button onClick={() => navigate('/login')} variant="ghost" className="text-primary hover:bg-primary/10 text-base px-6 py-6 h-auto w-full sm:w-auto transition-all duration-300">
-                Log In / Go Pro
+              <Button onClick={() => navigate('/login')} variant="outline" className="border-primary text-primary hover:bg-primary/10 text-lg px-8 py-4 h-auto w-full sm:w-auto transition-all duration-300 rounded-full">
+                Log in / Go Pro
               </Button>
             </div>
             
             <div className="mt-8 flex flex-wrap justify-center lg:justify-start gap-6">
-              <div className="flex items-center text-sm text-gray-500 bg-white/80 rounded-full px-3 py-1.5 shadow-sm">
-                <CheckCircle className="h-5 w-5 text-primary mr-2" />
-                <span>Verified WhatsApp number</span>
+              <div className="flex items-center text-sm text-gray-600 bg-white/80 rounded-full px-4 py-2 shadow-sm">
+                <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                <span>Verified WhatsApp delivery</span>
               </div>
-              <div className="flex items-center text-sm text-gray-500 bg-white/80 rounded-full px-3 py-1.5 shadow-sm">
-                <CheckCircle className="h-5 w-5 text-accent mr-2" />
-                <span>Free 3-day trial</span>
+              <div className="flex items-center text-sm text-gray-600 bg-white/80 rounded-full px-4 py-2 shadow-sm">
+                <CheckCircle className="h-4 w-4 text-accent mr-2" />
+                <span>No credit card needed</span>
               </div>
-              <div className="flex items-center text-sm text-gray-500 bg-white/80 rounded-full px-3 py-1.5 shadow-sm">
-                <CheckCircle className="h-5 w-5 text-primary mr-2" />
+              <div className="flex items-center text-sm text-gray-600 bg-white/80 rounded-full px-4 py-2 shadow-sm">
+                <CheckCircle className="h-4 w-4 text-primary mr-2" />
                 <span>Cancel anytime</span>
               </div>
             </div>

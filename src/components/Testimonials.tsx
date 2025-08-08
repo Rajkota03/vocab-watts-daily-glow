@@ -20,28 +20,19 @@ const Testimonials = () => {
   
   const testimonials = [
     {
-      quote: "Best thing on my WhatsApp every morning. I've actually started using the words in meetings!",
+      quote: "Best thing on my WhatsApp every morning.",
       author: "Priya M.",
-      role: "Marketing Manager",
-      avatar: "/src/assets/avatar-1.jpg" // These would need to be added to assets
+      role: "Marketing Manager"
     },
     {
-      quote: "The witty examples help me remember the words. Finally, vocab that's not boring!",
+      quote: "Finally, vocab that's not boring!",
       author: "Rahul S.",
-      role: "Software Engineer",
-      avatar: "/src/assets/avatar-2.jpg"
+      role: "Software Engineer"
     },
     {
-      quote: "Actually retained words thanks to the regular delivery. Worth every rupee!",
+      quote: "Worth every rupee!",
       author: "Ananya K.",
-      role: "IELTS Student",
-      avatar: "/src/assets/avatar-3.jpg"
-    },
-    {
-      quote: "My clients are impressed by my improved vocabulary. GLINTUP is a game-changer!",
-      author: "Vikram J.",
-      role: "Freelance Copywriter",
-      avatar: "/src/assets/avatar-4.jpg"
+      role: "IELTS Student"
     }
   ];
 

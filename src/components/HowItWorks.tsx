@@ -7,19 +7,19 @@ const HowItWorks = () => {
     {
       icon: CheckCircle,
       title: "Pick your category",
-      description: "Choose from business, academic, creative writing, or general vocabulary improvement.",
+      description: "Business, exams, everyday fluency.",
       microcopy: "Find words that fit your world"
     },
     {
       icon: Smartphone,
-      title: "Get curated words daily",
-      description: "5 handpicked words with meanings and examples delivered directly to your WhatsApp.",
+      title: "Get words on WhatsApp",
+      description: "5 curated words daily.",
       microcopy: "No app downloads, no email clutter"
     },
     {
       icon: Sparkles,
-      title: "Quiz & make them stick",
-      description: "Practice with quick quizzes and start using your new vocabulary confidently.",
+      title: "Make them stick",
+      description: "Weekly recap & Sunday quiz (Pro).",
       microcopy: "Turn knowledge into habit"
     }
   ];
@@ -36,7 +36,7 @@ const HowItWorks = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {steps.map((step, index) => (
-            <div key={index} className="group bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+            <div key={index} className="group bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/80 mb-4 text-white group-hover:scale-110 transition-transform duration-300">
                 <step.icon className="h-8 w-8 stroke-[1.5]" />
               </div>
