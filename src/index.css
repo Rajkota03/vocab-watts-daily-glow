@@ -4,208 +4,75 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    /* Glintup Brand Colors - Friendly & Modern */
-    --primary: 142 196 91; /* Fresh green */
-    --primary-light: 169 211 137; /* Light green */
-    --primary-dark: 107 149 68; /* Dark green */
-    
-    --accent: 255 193 7; /* Bright yellow */
-    --accent-light: 255 235 59; /* Light yellow */
-    --accent-dark: 255 152 0; /* Orange yellow */
-    
-    --secondary: 52 168 229; /* Friendly blue */
-    --secondary-light: 135 206 235; /* Sky blue */
-    
-    /* Neutral Colors */
-    --background: 255 255 255; /* Pure white */
-    --foreground: 51 51 51; /* Dark gray */
-    --muted: 248 250 252; /* Light gray background */
-    --muted-foreground: 100 116 139; /* Medium gray text */
-    
-    /* UI Colors */
-    --card: 255 255 255;
-    --card-foreground: 51 51 51;
-    --border: 229 231 235;
-    --input: 255 255 255;
-    
-    /* Semantic Colors */
-    --success: 34 197 94; /* Green for success */
-    --warning: 251 146 60; /* Orange for warnings */
-    --destructive: 239 68 68; /* Red for errors */
-    
-    /* Illustration Colors */
-    --illustration-bg: 248 250 252; /* Soft background for illustrations */
-    --illustration-accent: 255 235 59; /* Highlight color for illustrations */
-    
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-light)));
-    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent-light)));
-    --gradient-hero: linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(var(--accent) / 0.1));
-    
-    /* Shadows for flat design */
-    --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.08);
-    --shadow-medium: 0 8px 25px rgba(0, 0, 0, 0.12);
-    --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.15);
-    
-    /* Border radius for friendly design */
-    --radius-sm: 8px;
-    --radius: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 24px;
-    
-    /* Transitions */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  }
-
-  .dark {
-    --background: 15 23 42;
-    --foreground: 248 250 252;
-    --muted: 30 41 59;
-    --muted-foreground: 148 163 184;
-    --border: 51 65 85;
-    --card: 30 41 59;
-    --card-foreground: 248 250 252;
-  }
-
   html, body, #root {
     @apply h-full w-full m-0 p-0 overflow-x-hidden;
-  }
-
-  body {
-    @apply bg-background text-foreground font-sans antialiased;
   }
 }
 
 @layer components {
-  /* Illustration containers */
-  .illustration-container {
-    @apply relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/5 to-accent/5;
-  }
-  
-  .illustration-float {
-    @apply animate-float;
-  }
-
-  /* Interactive elements with micro-animations */
-  .hover-lift {
-    @apply transition-all duration-300 ease-out hover:-translate-y-2 hover:shadow-hover;
-  }
-  
-  .hover-bounce {
-    @apply transition-transform duration-200 ease-out hover:scale-105;
-  }
-  
-  .hover-glow {
-    @apply transition-all duration-300 ease-out hover:shadow-lg hover:shadow-primary/25;
-  }
-
-  /* Button variants for flat design */
-  .btn-primary {
-    @apply bg-gradient-to-r from-primary to-primary-light text-white font-semibold py-4 px-8 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/25 active:scale-95;
-  }
-  
-  .btn-accent {
-    @apply bg-gradient-to-r from-accent to-accent-light text-primary-dark font-semibold py-4 px-8 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-accent/25 active:scale-95;
-  }
-  
-  .btn-outline {
-    @apply border-2 border-primary text-primary bg-transparent font-semibold py-4 px-8 rounded-full transition-all duration-300 hover:bg-primary hover:text-white hover:scale-105 active:scale-95;
-  }
-
-  /* Card styles for flat design */
-  .card-flat {
-    @apply bg-white rounded-2xl shadow-soft border border-gray-100 transition-all duration-300 hover:shadow-medium hover:-translate-y-1;
-  }
-  
-  .card-illustration {
-    @apply bg-gradient-to-br from-white to-primary/5 rounded-2xl shadow-soft border border-primary/10;
-  }
-
-  /* Speech bubble for testimonials */
-  .speech-bubble {
-    @apply relative bg-white rounded-2xl shadow-soft p-6 border border-gray-100;
-  }
-  
-  .speech-bubble::after {
-    content: '';
-    @apply absolute -bottom-3 left-8 w-6 h-6 bg-white transform rotate-45 border-r border-b border-gray-100;
-  }
-
-  /* Section utilities */
+  /* Update section padding utilities */
   .section-padding {
-    @apply py-16 md:py-20;
+    @apply py-12 md:py-16;
   }
 
   .section-padding-lg {
-    @apply py-20 md:py-24;
+    @apply py-16 md:py-20;
   }
   
+  /* Container widths */
   .container-wide {
     @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Toast styling */
+  :root [data-sonner-toast] {
+    @apply bg-white border border-gray-200 shadow-lg !important;
+  }
+  
+  [data-sonner-toast] [data-title] {
+    @apply font-medium text-gray-800 !important;
+  }
+  
+  [data-sonner-toast] [data-description] {
+    @apply text-sm text-gray-600 !important;
   }
 }
 
 @layer utilities {
-  /* Custom animations for friendly design */
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-  }
-  
-  @keyframes bounce-gentle {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-  }
-  
-  @keyframes fade-in-up {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
-  }
-  
-  .animate-bounce-gentle {
-    animation: bounce-gentle 2s ease-in-out infinite;
-  }
-  
-  .animate-fade-in-up {
-    animation: fade-in-up 0.6s ease-out;
-  }
-
-  /* Scrollbar styles */
+  /* Minimal, almost invisible scrollbar */
   .scrollbar-hidden {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer and Edge */
   }
   
   .scrollbar-hidden::-webkit-scrollbar {
-    display: none;
+    display: none; /* Webkit browsers (Chrome, Safari) */
+  }
+  
+  /* Optional: Very thin scrollbar for when it's needed */
+  .scrollbar-minimal {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-minimal::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .scrollbar-minimal::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-minimal::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.2);
+    border-radius: 2px;
+  }
+  
+  .scrollbar-minimal::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,0,0,0.3);
   }
 }
 
-/* Toast styling */
-:root [data-sonner-toast] {
-  @apply bg-white border border-gray-200 shadow-lg rounded-xl !important;
-}
-
-[data-sonner-toast] [data-title] {
-  @apply font-medium text-gray-800 !important;
-}
-
-[data-sonner-toast] [data-description] {
-  @apply text-sm text-gray-600 !important;
-}
-
+/* Fix for sonner toasts */
 [data-sonner-toaster] {
   --offset: 32px !important;
   --width: 356px !important;
@@ -220,9 +87,9 @@
 }
 
 [data-sonner-toast] {
-  @apply bg-white !opacity-100 rounded-xl !important;
+  @apply bg-white !opacity-100 rounded-lg !important;
   margin-bottom: var(--gap);
-  box-shadow: var(--shadow-soft) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
 }
 
 [data-sonner-toast][data-styled="true"] {
