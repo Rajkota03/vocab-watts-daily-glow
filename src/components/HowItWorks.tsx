@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { CheckCircle, Smartphone, Sparkles } from 'lucide-react';
+import howItWorksIcons from '@/assets/how-it-works-icons.svg';
 
 const HowItWorks = () => {
   const steps = [
@@ -25,36 +26,54 @@ const HowItWorks = () => {
   ];
 
   return (
-    <section id="how-it-works" className="py-12 md:py-16 bg-gray-50">
+    <section id="how-it-works" className="section-padding bg-muted/30">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-bold mb-3">How Glintup Works</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+            How Glintup Works
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Building your vocabulary has never been this simple and effective
           </p>
         </div>
         
+        {/* Illustration banner */}
+        <div className="mb-16 flex justify-center">
+          <div className="illustration-container max-w-4xl">
+            <img 
+              src={howItWorksIcons} 
+              alt="How Glintup works process" 
+              className="w-full h-auto animate-fade-in-up"
+            />
+          </div>
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {steps.map((step, index) => (
-            <div key={index} className="group bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/80 mb-4 text-white group-hover:scale-110 transition-transform duration-300">
+            <div key={index} className="group card-flat hover-lift text-center p-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary-light mb-6 text-white group-hover:scale-110 transition-transform duration-300 shadow-soft">
                 <step.icon className="h-8 w-8 stroke-[1.5]" />
               </div>
-              <div className="text-center mb-2">
-                <span className="inline-block px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full">{index + 1}</span>
+              
+              <div className="mb-4">
+                <span className="inline-block px-3 py-1 bg-gradient-to-r from-primary/10 to-accent/10 text-primary text-sm font-medium rounded-full border border-primary/20">
+                  Step {index + 1}
+                </span>
               </div>
-              <h3 className="text-xl font-bold mb-2 text-center">{step.title}</h3>
-              <p className="text-sm text-accent font-medium mb-3 text-center italic">{step.microcopy}</p>
-              <p className="text-gray-600 text-center">{step.description}</p>
+              
+              <h3 className="text-xl font-bold mb-2">{step.title}</h3>
+              <p className="text-sm text-accent font-medium mb-3 italic">{step.microcopy}</p>
+              <p className="text-muted-foreground">{step.description}</p>
             </div>
           ))}
         </div>
         
-        <div className="mt-10 max-w-md mx-auto">
-          <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-200">
-            <div className="flex items-center mb-4 bg-[#128C7E] text-white p-2 rounded-t-lg">
+        {/* WhatsApp preview mockup */}
+        <div className="mt-16 max-w-md mx-auto">
+          <div className="card-flat overflow-hidden">
+            <div className="flex items-center mb-4 bg-whatsapp-green text-white p-4 rounded-t-2xl">
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <span className="font-bold">G</span>
+                <span className="font-bold text-sm">G</span>
               </div>
               <div className="ml-3">
                 <p className="font-medium">Glintup</p>
@@ -62,14 +81,16 @@ const HowItWorks = () => {
               </div>
             </div>
             
-            <div className="space-y-3">
-              <div className="bg-[#DCF8C6]/50 p-3 rounded-lg rounded-tl-none">
-                <p className="font-bold mb-1">Today's Word: Ubiquitous</p>
-                <p className="text-sm mb-1.5">Present, appearing, or found everywhere</p>
-                <p className="text-sm italic border-l-2 border-[#25D366] pl-2">Smartphones have become ubiquitous in our daily lives, used for everything from communication to navigation.</p>
+            <div className="p-4 space-y-3">
+              <div className="bg-whatsapp-light/50 p-4 rounded-lg rounded-tl-none speech-bubble">
+                <p className="font-bold mb-1 text-primary">Today's Word: Ubiquitous</p>
+                <p className="text-sm mb-2 text-muted-foreground">Present, appearing, or found everywhere</p>
+                <p className="text-sm italic border-l-2 border-primary pl-2 text-foreground">
+                  "Smartphones have become ubiquitous in our daily lives, used for everything from communication to navigation."
+                </p>
               </div>
               
-              <div className="text-right text-xs text-gray-500">
+              <div className="text-right text-xs text-muted-foreground">
                 7:30 AM
               </div>
             </div>

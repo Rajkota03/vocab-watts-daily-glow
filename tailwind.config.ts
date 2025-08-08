@@ -33,39 +33,40 @@ export default {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: "#00A79D", // New Teal from LifeTree reference
-          light: "#E0F2F1",   // Lighter teal for backgrounds
-          foreground: "#ffffff"
+          DEFAULT: 'hsl(var(--primary))',
+          light: 'hsl(var(--primary-light))',
+          dark: 'hsl(var(--primary-dark))',
+          foreground: 'hsl(var(--foreground))'
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))"
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))"
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))"
+          DEFAULT: 'hsl(var(--secondary))',
+          light: 'hsl(var(--secondary-light))',
+          foreground: 'hsl(var(--foreground))'
         },
         accent: {
-          DEFAULT: "#FD7E14", // New Orange from LifeTree reference
-          foreground: "#ffffff" // White text for contrast on orange
+          DEFAULT: 'hsl(var(--accent))',
+          light: 'hsl(var(--accent-light))',
+          dark: 'hsl(var(--accent-dark))',
+          foreground: 'hsl(var(--foreground))'
         },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--foreground))'
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))'
+        },
+        success: 'hsl(var(--success))',
+        warning: 'hsl(var(--warning))',
         popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))'
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))'
         },
         card: {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))'
         },
-        dark: '#0D1A2E',
-        stroke: '#E5EAF2',     // 1px borders
-        surface: '#FFFFFF',    // card/panel background
-        success: '#2ECC71',    // success notices
-        dark: '#0D1A2E',
         sidebar: {
           DEFAULT: 'hsl(var(--sidebar-background))',
           foreground: 'hsl(var(--sidebar-foreground))',
@@ -76,35 +77,17 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))'
         },
-        // GLINTUP Theme Colors - Consistent palette
-        'glintup-indigo': '#3F3D56', // Primary Brand Color
-        'glintup-mint': '#2DCDA5',   // Accent Color 
-        'glintup-coral': '#FF6B6B',  // Action/CTA Color
-        'glintup-bg': '#F7F8FE',     // Background Color
-        'glintup-text': '#2F2F2F',   // Text Primary
-        // Keep these for backward compatibility with renamed variables
-        'vuilder-indigo': '#3F3D56',
-        'vuilder-yellow': '#FFD60A',
-        'vuilder-mint': '#2DCDA5',
-        'vuilder-coral': '#FF6B6B',
-        'vuilder-bg': '#F7F8FE',
-        'vuilder-text': '#2F2F2F',
-        'vocab-teal': '#2DCDA5',
-        'vocab-yellow': '#FFD60A',
-        'vocab-purple': '#3F3D56',
-        'vocab-red': '#FF6B6B',
+        // Legacy colors for compatibility
+        dark: '#0D1A2E',
+        stroke: '#E5EAF2',
+        surface: '#FFFFFF',
         'whatsapp-green': '#25D366',
         'whatsapp-light': '#DCF8C6',
-        // Duolingo inspired colors
-        'duolingo-green': '#58CC02',
-        'duolingo-purple': '#7D41E1', 
-        'duolingo-blue': '#1CB0F6',
-        'duolingo-red': '#FF4B4B',
-        'duolingo-orange': '#FF9600',
-        'duolingo-yellow': '#FFC800',
-        'loom-purple': '#625DF5',
-        'loom-blue': '#00C9DF',
-        'loom-pink': '#F35FF3',
+      },
+      boxShadow: {
+        'soft': 'var(--shadow-soft)',
+        'medium': 'var(--shadow-medium)',
+        'hover': 'var(--shadow-hover)',
       },
       borderRadius: {
         lg: 'var(--radius)',
