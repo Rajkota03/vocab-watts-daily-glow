@@ -16,9 +16,7 @@ const HeroSection = () => {
               <span className="font-bold">Learn directly on Whatsapp</span>
             </div>
             
-            <h1 className="sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6 text-2xl px-0 mx-0">
-              Glintup – Elevate your vocabulary daily — straight to WhatsApp.
-            </h1>
+            <h1 className="sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6 text-2xl px-0 mx-0">Glintup | Elevate your vocabulary. Every day. Straight to WhatsApp.</h1>
             
             <p className="text-lg text-dark/80 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed">
               Learn 5 powerful new words every day, with meanings, synonyms, and usage — all delivered effortlessly to your WhatsApp.
