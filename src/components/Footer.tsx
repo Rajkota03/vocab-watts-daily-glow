@@ -44,7 +44,7 @@ const Footer = () => {
         </div>
         
         <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
-          <p>© 2025 <span className="text-white">Glintup</span>. All rights reserved.</p>
+          <p>© 2025 <span className="text-white">Glintup</span> — a product of Square Blue Media</p>
         </div>
       </div>
     </footer>;
