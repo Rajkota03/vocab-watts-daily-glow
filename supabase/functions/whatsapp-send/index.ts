@@ -47,6 +47,10 @@ Deno.serve(async (req) => {
     const { action, ...payload } = requestData;
 
     // Handle different request formats for compatibility
+    if (requestData.checkConfig) {
+      return await checkConfiguration();
+    }
+
     if (!action) {
       // Check for direct parameters (compatibility with existing calls)
       if (requestData.to && requestData.message) {
@@ -58,8 +62,6 @@ Deno.serve(async (req) => {
           language: requestData.template.language || 'en_US',
           bodyParams: requestData.template.parameters
         });
-      } else if (requestData.checkConfig) {
-        return await checkConfiguration();
       }
     }
 
