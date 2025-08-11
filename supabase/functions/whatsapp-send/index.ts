@@ -489,6 +489,29 @@ async function sendTemplateMessage(payload: { to: string; name: string; language
 // Helper function to get WhatsApp configuration from database
 async function getWhatsAppConfig(): Promise<WhatsAppConfig | null> {
   try {
+    console.log('Starting getWhatsAppConfig...');
+    
+    // First check if we have the required environment variables
+    const token = Deno.env.get('META_ACCESS_TOKEN');
+    const phoneNumberId = Deno.env.get('META_PHONE_NUMBER_ID');
+    
+    console.log('Environment check:', {
+      hasToken: !!token,
+      hasPhoneNumberId: !!phoneNumberId,
+      tokenLength: token ? token.length : 0,
+      phoneNumberId: phoneNumberId ? phoneNumberId.substring(0, 10) + '...' : 'missing'
+    });
+
+    if (!token || !phoneNumberId) {
+      console.error('Meta API credentials not configured in secrets:', {
+        token: !!token,
+        phoneNumberId: !!phoneNumberId
+      });
+      return null;
+    }
+
+    // Try to get or create config in database
+    console.log('Querying whatsapp_config table...');
     const { data, error } = await supabase
       .from('whatsapp_config')
       .select('*')
@@ -496,34 +519,86 @@ async function getWhatsAppConfig(): Promise<WhatsAppConfig | null> {
       .limit(1)
       .maybeSingle();
 
+    console.log('Database query result:', {
+      hasData: !!data,
+      error: error?.message,
+      dataId: data?.id
+    });
+
     if (error) {
       console.error('Error fetching WhatsApp config:', error);
-      return null;
+      
+      // Try to create a new config if none exists
+      console.log('Attempting to create new config...');
+      const { data: newData, error: insertError } = await supabase
+        .from('whatsapp_config')
+        .insert({
+          provider: 'meta',
+          webhook_verified: false,
+        })
+        .select()
+        .single();
+        
+      console.log('Insert result:', {
+        hasNewData: !!newData,
+        insertError: insertError?.message
+      });
+      
+      if (insertError) {
+        console.error('Failed to create WhatsApp config:', insertError);
+        return null;
+      }
+      
+      // Use the newly created config
+      return {
+        id: newData.id,
+        token,
+        phone_number_id: phoneNumberId,
+        display_name: 'Meta WhatsApp',
+        display_status: 'active'
+      };
     }
 
     if (!data) {
-      console.log('No WhatsApp configuration found');
-      return null;
+      console.log('No existing configuration found, creating new one...');
+      const { data: newData, error: insertError } = await supabase
+        .from('whatsapp_config')
+        .insert({
+          provider: 'meta',
+          webhook_verified: false,
+        })
+        .select()
+        .single();
+        
+      console.log('New config creation result:', {
+        hasNewData: !!newData,
+        insertError: insertError?.message
+      });
+      
+      if (insertError) {
+        console.error('Failed to create WhatsApp config:', insertError);
+        return null;
+      }
+      
+      return {
+        id: newData.id,
+        token,
+        phone_number_id: phoneNumberId,
+        display_name: 'Meta WhatsApp',
+        display_status: 'active'
+      };
     }
 
-    // Get the Meta API credentials from secrets
-    const token = Deno.env.get('META_ACCESS_TOKEN');
-    const phoneNumberId = Deno.env.get('META_PHONE_NUMBER_ID');
-
-    if (!token || !phoneNumberId) {
-      console.error('Meta API credentials not configured in secrets');
-      return null;
-    }
-
+    console.log('Using existing configuration');
     return {
       id: data.id,
       token,
       phone_number_id: phoneNumberId,
-      display_name: data.display_name,
-      display_status: data.display_status
+      display_name: data.display_name || 'Meta WhatsApp',
+      display_status: data.display_status || 'active'
     };
   } catch (error) {
-    console.error('Error in getWhatsAppConfig:', error);
+    console.error('Exception in getWhatsAppConfig:', error);
     return null;
   }
 }
