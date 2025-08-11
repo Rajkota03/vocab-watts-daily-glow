@@ -46,26 +46,30 @@ const PhoneNumberUpdateForm: React.FC<PhoneNumberUpdateFormProps> = ({
       const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
       
       // First, check if a subscription exists for this user
-      const { data: existingSub, error: checkError, count } = await supabase
+      const { data: existingSub, error: checkError } = await supabase
         .from('user_subscriptions')
-        .select('*', { count: 'exact' })
-        .eq('user_id', userId);
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
       
-      console.log(`Found ${count} existing subscriptions for user ${userId}`);
-      
-      if (checkError && checkError.code !== 'PGRST116') {
+      if (checkError) {
+        console.error('Error checking existing subscription:', checkError);
         throw new Error(checkError.message);
       }
       
+      console.log('Existing subscription:', existingSub);
+      
       // Update or insert into user_subscriptions table
-      if (count && count > 0) {
+      if (existingSub) {
         // Update existing subscription
         const { error: subscriptionError } = await supabase
           .from('user_subscriptions')
           .update({
             phone_number: formattedPhone
           })
-          .eq('user_id', userId);
+          .eq('id', existingSub.id);
         
         if (subscriptionError) {
           throw new Error(subscriptionError.message);
