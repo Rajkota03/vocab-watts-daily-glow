@@ -20,9 +20,25 @@ function analyzeSentiment(word: string): 'positive' | 'negative' | 'neutral' {
 
 function getSentimentSquare(sentiment: 'positive' | 'negative' | 'neutral'): string {
   switch (sentiment) {
-    case 'positive': return '[GREEN]';
-    case 'negative': return '[RED]';
-    default: return '[ORANGE]';
+    case 'positive': return '🟢'; // Green square
+    case 'negative': return '🔴'; // Red square
+    default: return '🟠'; // Orange square
+  }
+}
+
+function getSentimentSquareWithFallback(sentiment: 'positive' | 'negative' | 'neutral'): string {
+  // Try emojis first, with text fallback
+  try {
+    const emoji = getSentimentSquare(sentiment);
+    console.log(`Sentiment for ${sentiment}: ${emoji} (${emoji.charCodeAt(0)})`);
+    return emoji;
+  } catch (error) {
+    console.warn('Emoji encoding failed, using text fallback:', error);
+    switch (sentiment) {
+      case 'positive': return '[GREEN]';
+      case 'negative': return '[RED]';
+      default: return '[ORANGE]';
+    }
   }
 }
 
@@ -236,15 +252,21 @@ async function sendDailyWords(payload: any) {
     const configuredLocale = Deno.env.get('WA_TEMPLATE_LOCALE') || 'en_US';
     if (configuredTemplate) {
       try {
+        const sentiment = firstWord ? analyzeSentiment(firstWord.word) : 'neutral';
+        const sentimentSquare = getSentimentSquareWithFallback(sentiment);
+        console.log(`First word: ${firstWord?.word}, sentiment: ${sentiment}, square: ${sentimentSquare}`);
+        
         const params = firstWord
           ? [
-              'Learner',              // {{1}} - Name
-              `${firstWord.word}`,    // {{2}} - Word (no sentiment for now)
-              `${firstWord.pronunciation || firstWord.word}`, // {{3}} - Pronunciation
-              `${firstWord.definition || ''}`,               // {{4}} - Meaning
-              `${firstWord.example || ''}`                   // {{5}} - Example
-            ]
+               'Learner',              // {{1}} - Name
+               `${sentimentSquare} ${firstWord.word}`,    // {{2}} - Word with sentiment square
+               `${firstWord.pronunciation || firstWord.word}`, // {{3}} - Pronunciation
+               `${firstWord.definition || ''}`,               // {{4}} - Meaning
+               `${firstWord.example || ''}`                   // {{5}} - Example
+             ]
           : undefined;
+        
+        console.log('Template parameters for direct send:', params);
         console.log('Attempting direct template send with', configuredTemplate);
         return await sendTemplateMessage({
           to,
@@ -275,16 +297,22 @@ async function sendDailyWords(payload: any) {
       if (approvedTemplate) {
         console.log('Using approved template:', approvedTemplate.name);
         try {
-          // Try to send using the approved template
+          // Try to send using the approved template with sentiment
+          const sentiment = firstWord ? analyzeSentiment(firstWord.word) : 'neutral';
+          const sentimentSquare = getSentimentSquareWithFallback(sentiment);
+          console.log(`Fallback template - First word: ${firstWord?.word}, sentiment: ${sentiment}, square: ${sentimentSquare}`);
+          
           const templateParams = firstWord && approvedTemplate.name === 'glintup_vocab_daily'
             ? [
                 'Learner',              // {{1}} - Name
-                `${firstWord.word}`,    // {{2}} - Word (no sentiment for now)
+                `${sentimentSquare} ${firstWord.word}`,    // {{2}} - Word with sentiment square
                 `${firstWord.pronunciation || firstWord.word}`, // {{3}} - Pronunciation
                 `${firstWord.definition || ''}`,               // {{4}} - Meaning
                 `${firstWord.example || ''}`                   // {{5}} - Example
               ]
             : [];
+          
+          console.log('Template parameters for fallback send:', templateParams);
           
           return await sendTemplateMessage({
             to,
@@ -499,9 +527,19 @@ async function sendTemplateMessage(payload: { to: string; name: string; language
     }
 
     console.log('Final template message payload:', JSON.stringify(templateMessage, null, 2));
+    
+    // Log individual parameters for debugging
+    if (bodyParams && bodyParams.length > 0) {
+      bodyParams.forEach((param, index) => {
+        console.log(`Parameter ${index + 1}: "${param}" (length: ${param.length}, charCodes: [${param.split('').map(c => c.charCodeAt(0)).join(', ')}])`);
+      });
+    }
 
     // Send template message via Meta Graph API
     const graphUrl = `https://graph.facebook.com/v21.0/${configData.phone_number_id}/messages`;
+    console.log('WhatsApp API URL:', graphUrl);
+    console.log('Authorization header present:', !!configData.token);
+    
     const response = await fetch(graphUrl, {
       method: 'POST',
       headers: {
@@ -511,11 +549,23 @@ async function sendTemplateMessage(payload: { to: string; name: string; language
       body: JSON.stringify(templateMessage),
     });
 
+    console.log('Response status:', response.status, response.statusText);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('Template message send error:', errorData);
+      console.error('Template message send error - Full response:', JSON.stringify(errorData, null, 2));
+      console.error('Error code:', errorData.error?.code);
+      console.error('Error type:', errorData.error?.type);
+      console.error('Error message:', errorData.error?.message);
+      console.error('Error details:', errorData.error?.error_data);
       return new Response(
-        JSON.stringify({ error: errorData.error?.message || 'Failed to send template message' }),
+        JSON.stringify({ 
+          error: errorData.error?.message || 'Failed to send template message',
+          errorCode: errorData.error?.code,
+          errorType: errorData.error?.type,
+          fullError: errorData
+        }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
