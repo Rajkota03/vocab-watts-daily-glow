@@ -165,6 +165,7 @@ async function sendDailyWords(payload: any) {
 
     let finalMessage = message || `Here are your daily vocabulary words for ${category}. Enjoy learning!`;
     console.log('Initial message:', finalMessage);
+    let firstWord: any = null;
 
     // If category is provided, generate vocabulary words
     if (category) {
@@ -189,6 +190,9 @@ async function sendDailyWords(payload: any) {
             `${index + 1}. *${word.word}*\n   📖 ${word.definition}\n   💡 Example: _${word.example}_`
           ).join('\n\n');
           
+          // Keep reference to the first word for template params
+          firstWord = wordsData.words[0];
+          
           finalMessage = `🌟 *Daily Vocabulary - ${category.toUpperCase()}*\n\n${wordsText}\n\n📚 Keep learning! 🚀`;
           console.log('Generated vocabulary message');
         } else {
@@ -202,7 +206,33 @@ async function sendDailyWords(payload: any) {
       }
     }
 
-    // Fetch existing templates from Meta and try to use one
+    // Try direct send using configured template (faster and avoids lookup)
+    const configuredTemplate = Deno.env.get('WA_TEMPLATE_NAME');
+    const configuredLocale = Deno.env.get('WA_TEMPLATE_LOCALE') || 'en_US';
+    if (configuredTemplate) {
+      try {
+        const params = firstWord
+          ? [
+              'Learner',
+              `${firstWord.word}`,
+              `${firstWord.pronunciation || ''}`,
+              `${firstWord.definition || ''}`,
+              `${firstWord.example || ''}`
+            ]
+          : undefined;
+        console.log('Attempting direct template send with', configuredTemplate);
+        return await sendTemplateMessage({
+          to,
+          name: configuredTemplate,
+          language: configuredLocale,
+          bodyParams: params
+        });
+      } catch (directErr) {
+        console.log('Direct template send failed, will try lookup fallback:', directErr);
+      }
+    }
+
+    // Fallback: Fetch existing templates from Meta and try to use one
     console.log('Fetching templates from Meta API...');
     let templates = [];
     try {
