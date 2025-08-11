@@ -239,7 +239,7 @@ async function sendDailyWords(payload: any) {
         const params = firstWord
           ? [
               'Learner',              // {{1}} - Name
-              `${getSentimentSquare(analyzeSentiment(firstWord.word))} ${firstWord.word}`,    // {{2}} - Word with sentiment color
+              `${firstWord.word}`,    // {{2}} - Word (no sentiment for now)
               `${firstWord.pronunciation || firstWord.word}`, // {{3}} - Pronunciation
               `${firstWord.definition || ''}`,               // {{4}} - Meaning
               `${firstWord.example || ''}`                   // {{5}} - Example
@@ -279,7 +279,7 @@ async function sendDailyWords(payload: any) {
           const templateParams = firstWord && approvedTemplate.name === 'glintup_vocab_daily'
             ? [
                 'Learner',              // {{1}} - Name
-                `${getSentimentSquare(analyzeSentiment(firstWord.word))} ${firstWord.word}`,    // {{2}} - Word with sentiment color
+                `${firstWord.word}`,    // {{2}} - Word (no sentiment for now)
                 `${firstWord.pronunciation || firstWord.word}`, // {{3}} - Pronunciation
                 `${firstWord.definition || ''}`,               // {{4}} - Meaning
                 `${firstWord.example || ''}`                   // {{5}} - Example
