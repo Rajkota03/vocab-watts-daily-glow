@@ -13,7 +13,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-
 interface WhatsAppConfig {
   token: string;
   phone_number_id: string;
@@ -23,7 +22,6 @@ interface WhatsAppConfig {
   display_status?: 'pending' | 'approved' | 'rejected';
   display_status_reason?: string;
 }
-
 interface Template {
   name: string;
   category: 'utility' | 'marketing';
@@ -32,7 +30,6 @@ interface Template {
   body_text: string;
   example_params?: string[];
 }
-
 interface Message {
   id: string;
   direction: 'in' | 'out';
@@ -43,13 +40,12 @@ interface Message {
   status?: string;
   timestamp: string;
 }
-
 const WhatsAppSetup = () => {
   const navigate = useNavigate();
   const [config, setConfig] = useState<WhatsAppConfig>({
     token: '',
     phone_number_id: '',
-    verify_token: Math.random().toString(36).substring(2, 15),
+    verify_token: Math.random().toString(36).substring(2, 15)
   });
   const [isConnected, setIsConnected] = useState(false);
   const [isConfigured, setIsConfigured] = useState(false);
@@ -60,19 +56,29 @@ const WhatsAppSetup = () => {
   const [createTemplateOpen, setCreateTemplateOpen] = useState(false);
   const [newTemplate, setNewTemplate] = useState<Partial<Template>>({
     category: 'utility',
-    language: 'en_US',
+    language: 'en_US'
   });
-  const [testMessage, setTestMessage] = useState({ to: '', body: '' });
-  const [templateMessage, setTemplateMessage] = useState({ to: '', template: '', params: [''] });
+  const [testMessage, setTestMessage] = useState({
+    to: '',
+    body: ''
+  });
+  const [templateMessage, setTemplateMessage] = useState({
+    to: '',
+    template: '',
+    params: ['']
+  });
 
   // Load existing configuration on mount and generate random verify token if needed
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const { data } = await supabase.functions.invoke('whatsapp-config', {
-          body: { action: 'get_config' }
+        const {
+          data
+        } = await supabase.functions.invoke('whatsapp-config', {
+          body: {
+            action: 'get_config'
+          }
         });
-        
         if (data?.config) {
           setConfig({
             token: data.config.token || '',
@@ -89,16 +95,21 @@ const WhatsAppSetup = () => {
         } else {
           // Generate random verify token for new setup
           const randomToken = Math.random().toString(36).substring(2, 15);
-          setConfig(prev => ({ ...prev, verify_token: randomToken }));
+          setConfig(prev => ({
+            ...prev,
+            verify_token: randomToken
+          }));
         }
       } catch (error) {
         console.error('Error loading config:', error);
         // Fallback: generate random token
         const randomToken = Math.random().toString(36).substring(2, 15);
-        setConfig(prev => ({ ...prev, verify_token: randomToken }));
+        setConfig(prev => ({
+          ...prev,
+          verify_token: randomToken
+        }));
       }
     };
-    
     loadConfig();
   }, []);
 
@@ -107,8 +118,12 @@ const WhatsAppSetup = () => {
     if (config.display_status === 'pending') {
       const interval = setInterval(async () => {
         try {
-          const { data } = await supabase.functions.invoke('whatsapp-config', {
-            body: { action: 'get_display_name_status' }
+          const {
+            data
+          } = await supabase.functions.invoke('whatsapp-config', {
+            body: {
+              action: 'get_display_name_status'
+            }
           });
           if (data?.status !== 'pending') {
             setConfig(prev => ({
@@ -124,24 +139,27 @@ const WhatsAppSetup = () => {
       return () => clearInterval(interval);
     }
   }, [config.display_status]);
-
   const handleSaveConfig = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('whatsapp-config', {
-        body: { 
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('whatsapp-config', {
+        body: {
           action: 'save_config',
           token: config.token,
           phone_number_id: config.phone_number_id,
           verify_token: config.verify_token
         }
       });
-
       if (error) throw error;
-
       if (data?.ok) {
         setIsConnected(true);
-        setConfig(prev => ({ ...prev, waba_id: data.waba_id }));
+        setConfig(prev => ({
+          ...prev,
+          waba_id: data.waba_id
+        }));
         toast.success('WhatsApp configuration saved successfully!');
       } else {
         throw new Error(data?.error || 'Failed to save configuration');
@@ -151,55 +169,62 @@ const WhatsAppSetup = () => {
     }
     setLoading(false);
   };
-
   const handleSubmitDisplayName = async () => {
     if (!config.display_name) return;
-    
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('whatsapp-config', {
-        body: { 
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('whatsapp-config', {
+        body: {
           action: 'submit_display_name',
           display_name: config.display_name
         }
       });
-
       if (error) throw error;
-
-      setConfig(prev => ({ ...prev, display_status: 'pending' }));
+      setConfig(prev => ({
+        ...prev,
+        display_status: 'pending'
+      }));
       toast.success('Display name submitted for approval!');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to submit display name');
     }
     setLoading(false);
   };
-
   const handleCreateTemplate = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('whatsapp-templates', {
-        body: { 
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('whatsapp-templates', {
+        body: {
           action: 'create',
           ...newTemplate
         }
       });
-
       if (error) throw error;
-
       toast.success('Template created successfully!');
       setCreateTemplateOpen(false);
-      setNewTemplate({ category: 'utility', language: 'en_US' });
+      setNewTemplate({
+        category: 'utility',
+        language: 'en_US'
+      });
       loadTemplates();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to create template');
     }
     setLoading(false);
   };
-
   const createOtpTemplate = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('whatsapp-templates', {
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('whatsapp-templates', {
         body: {
           action: 'create',
           name: 'otp_code',
@@ -209,9 +234,7 @@ const WhatsAppSetup = () => {
           example_params: ['123456', '5']
         }
       });
-
       if (error) throw error;
-
       if (data?.ok) {
         toast.success("OTP template created successfully");
         loadTemplates();
@@ -225,11 +248,14 @@ const WhatsAppSetup = () => {
       setLoading(false);
     }
   };
-
   const loadTemplates = async () => {
     try {
-      const { data } = await supabase.functions.invoke('whatsapp-templates', {
-        body: { action: 'list' }
+      const {
+        data
+      } = await supabase.functions.invoke('whatsapp-templates', {
+        body: {
+          action: 'list'
+        }
       });
       if (data?.templates) {
         setTemplates(data.templates);
@@ -238,11 +264,15 @@ const WhatsAppSetup = () => {
       console.error('Error loading templates:', error);
     }
   };
-
   const loadMessages = async () => {
     try {
-      const { data } = await supabase.functions.invoke('whatsapp-messages', {
-        body: { action: 'list', limit: 10 }
+      const {
+        data
+      } = await supabase.functions.invoke('whatsapp-messages', {
+        body: {
+          action: 'list',
+          limit: 10
+        }
       });
       if (data?.messages) {
         setMessages(data.messages);
@@ -251,25 +281,28 @@ const WhatsAppSetup = () => {
       console.error('Error loading messages:', error);
     }
   };
-
   const handleSendText = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('whatsapp-send', {
-        body: { 
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('whatsapp-send', {
+        body: {
           action: 'send_text',
           to: testMessage.to,
           body: testMessage.body
         }
       });
-
       if (error) throw error;
-
       if (data?.error === 'outside_window') {
         toast.error('Outside 24-hour window. Use a template instead.');
       } else {
         toast.success('Message sent successfully!');
-        setTestMessage({ to: '', body: '' });
+        setTestMessage({
+          to: '',
+          body: ''
+        });
         loadMessages();
       }
     } catch (error) {
@@ -277,12 +310,14 @@ const WhatsAppSetup = () => {
     }
     setLoading(false);
   };
-
   const handleSendTemplate = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('whatsapp-send', {
-        body: { 
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('whatsapp-send', {
+        body: {
           action: 'send_template',
           to: templateMessage.to,
           name: templateMessage.template,
@@ -290,27 +325,25 @@ const WhatsAppSetup = () => {
           bodyParams: templateMessage.params.filter(p => p.trim())
         }
       });
-
       if (error) throw error;
-
       toast.success('Template message sent successfully!');
-      setTemplateMessage({ to: '', template: '', params: [''] });
+      setTemplateMessage({
+        to: '',
+        template: '',
+        params: ['']
+      });
       loadMessages();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to send template message');
     }
     setLoading(false);
   };
-
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success('Copied to clipboard!');
   };
-
   const webhookUrl = `https://pbpmtqcffhqwzboviqfw.supabase.co/functions/v1/whatsapp-webhook`;
-
-  return (
-    <div className="min-h-screen bg-glintup-bg p-6">
+  return <div className="min-h-screen bg-glintup-bg p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
@@ -336,45 +369,32 @@ const WhatsAppSetup = () => {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="token">Permanent Access Token</Label>
-                <Input
-                  id="token"
-                  type="password"
-                  value={config.token}
-                  onChange={(e) => setConfig(prev => ({ ...prev, token: e.target.value }))}
-                  placeholder="Enter your permanent access token"
-                />
+                <Input id="token" type="password" value={config.token} onChange={e => setConfig(prev => ({
+                ...prev,
+                token: e.target.value
+              }))} placeholder="Enter your permanent access token" />
               </div>
               <div>
                 <Label htmlFor="phone_number_id">Phone Number ID</Label>
-                <Input
-                  id="phone_number_id"
-                  value={config.phone_number_id}
-                  onChange={(e) => setConfig(prev => ({ ...prev, phone_number_id: e.target.value }))}
-                  placeholder="Enter your phone number ID"
-                />
+                <Input id="phone_number_id" value={config.phone_number_id} onChange={e => setConfig(prev => ({
+                ...prev,
+                phone_number_id: e.target.value
+              }))} placeholder="Enter your phone number ID" />
               </div>
               <div>
                 <Label htmlFor="verify_token">Verify Token</Label>
-                <Input
-                  id="verify_token"
-                  value={config.verify_token}
-                  onChange={(e) => setConfig(prev => ({ ...prev, verify_token: e.target.value }))}
-                  placeholder="Random string for webhook verification"
-                />
+                <Input id="verify_token" value={config.verify_token} onChange={e => setConfig(prev => ({
+                ...prev,
+                verify_token: e.target.value
+              }))} placeholder="Random string for webhook verification" />
               </div>
-              <Button 
-                onClick={handleSaveConfig} 
-                disabled={loading || !config.token || !config.phone_number_id}
-                className="w-full"
-              >
+              <Button onClick={handleSaveConfig} disabled={loading || !config.token || !config.phone_number_id} className="w-full">
                 {loading ? 'Verifying...' : 'Verify & Save'}
               </Button>
-              {isConnected && (
-                <Alert>
+              {isConnected && <Alert>
                   <CheckCircle className="h-4 w-4" />
                   <AlertDescription>Successfully connected to WhatsApp Business API!</AlertDescription>
-                </Alert>
-              )}
+                </Alert>}
             </CardContent>
           </Card>
 
@@ -392,12 +412,10 @@ const WhatsAppSetup = () => {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="display_name">Display Name</Label>
-                <Input
-                  id="display_name"
-                  value={config.display_name || 'Glintup by Squareblue Media'}
-                  onChange={(e) => setConfig(prev => ({ ...prev, display_name: e.target.value }))}
-                  placeholder="Your business display name"
-                />
+                <Input id="display_name" value={config.display_name || 'Glintup by Squareblue Media'} onChange={e => setConfig(prev => ({
+                ...prev,
+                display_name: e.target.value
+              }))} placeholder="Your business display name" />
               </div>
               <Alert>
                 <AlertDescription>
@@ -405,29 +423,18 @@ const WhatsAppSetup = () => {
                   "Glintup is owned and operated by Squareblue Media (GSTIN: XXXXXXXX)"
                 </AlertDescription>
               </Alert>
-              <Button 
-                onClick={handleSubmitDisplayName} 
-                disabled={loading || !config.display_name || !isConnected}
-                className="w-full"
-              >
+              <Button onClick={handleSubmitDisplayName} disabled={loading || !config.display_name || !isConnected} className="w-full">
                 Submit for Approval
               </Button>
-              {config.display_status && (
-                <div className="flex items-center gap-2">
+              {config.display_status && <div className="flex items-center gap-2">
                   {config.display_status === 'pending' && <Clock className="h-4 w-4 text-yellow-500" />}
                   {config.display_status === 'approved' && <CheckCircle className="h-4 w-4 text-green-500" />}
                   {config.display_status === 'rejected' && <XCircle className="h-4 w-4 text-red-500" />}
-                  <Badge variant={
-                    config.display_status === 'approved' ? 'default' :
-                    config.display_status === 'pending' ? 'secondary' : 'destructive'
-                  }>
+                  <Badge variant={config.display_status === 'approved' ? 'default' : config.display_status === 'pending' ? 'secondary' : 'destructive'}>
                     {config.display_status}
                   </Badge>
-                  {config.display_status_reason && (
-                    <span className="text-sm text-muted-foreground">- {config.display_status_reason}</span>
-                  )}
-                </div>
-              )}
+                  {config.display_status_reason && <span className="text-sm text-muted-foreground">- {config.display_status_reason}</span>}
+                </div>}
             </CardContent>
           </Card>
 
@@ -489,19 +496,14 @@ const WhatsAppSetup = () => {
                   <DialogTrigger asChild>
                     <Button>Create Template</Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="bg-zinc-50">
                     <DialogHeader>
                       <DialogTitle>Create New Template</DialogTitle>
                       <DialogDescription>
                         Create a message template for WhatsApp
                       </DialogDescription>
                       <div className="flex gap-2 mt-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={createOtpTemplate}
-                          disabled={loading}
-                        >
+                        <Button variant="outline" size="sm" onClick={createOtpTemplate} disabled={loading}>
                           Quick: Create OTP Template
                         </Button>
                       </div>
@@ -509,19 +511,17 @@ const WhatsAppSetup = () => {
                     <div className="space-y-4">
                       <div>
                         <Label htmlFor="template_name">Template Name</Label>
-                        <Input
-                          id="template_name"
-                          value={newTemplate.name || ''}
-                          onChange={(e) => setNewTemplate(prev => ({ ...prev, name: e.target.value }))}
-                          placeholder="e.g., welcome_message"
-                        />
+                        <Input id="template_name" value={newTemplate.name || ''} onChange={e => setNewTemplate(prev => ({
+                        ...prev,
+                        name: e.target.value
+                      }))} placeholder="e.g., welcome_message" />
                       </div>
                       <div>
                         <Label htmlFor="template_category">Category</Label>
-                        <Select 
-                          value={newTemplate.category} 
-                          onValueChange={(value) => setNewTemplate(prev => ({ ...prev, category: value as 'utility' | 'marketing' }))}
-                        >
+                        <Select value={newTemplate.category} onValueChange={value => setNewTemplate(prev => ({
+                        ...prev,
+                        category: value as 'utility' | 'marketing'
+                      }))}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
@@ -533,10 +533,10 @@ const WhatsAppSetup = () => {
                       </div>
                       <div>
                         <Label htmlFor="template_language">Language</Label>
-                        <Select 
-                          value={newTemplate.language} 
-                          onValueChange={(value) => setNewTemplate(prev => ({ ...prev, language: value }))}
-                        >
+                        <Select value={newTemplate.language} onValueChange={value => setNewTemplate(prev => ({
+                        ...prev,
+                        language: value
+                      }))}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
@@ -549,13 +549,10 @@ const WhatsAppSetup = () => {
                       </div>
                       <div>
                         <Label htmlFor="template_body">Body Text</Label>
-                        <Textarea
-                          id="template_body"
-                          value={newTemplate.body_text || ''}
-                          onChange={(e) => setNewTemplate(prev => ({ ...prev, body_text: e.target.value }))}
-                          placeholder="Hi {{1}}, your order {{2}} is ready for pickup."
-                          rows={4}
-                        />
+                        <Textarea id="template_body" value={newTemplate.body_text || ''} onChange={e => setNewTemplate(prev => ({
+                        ...prev,
+                        body_text: e.target.value
+                      }))} placeholder="Hi {{1}}, your order {{2}} is ready for pickup." rows={4} />
                       </div>
                       <Button onClick={handleCreateTemplate} disabled={loading}>
                         {loading ? 'Creating...' : 'Create Template'}
@@ -575,21 +572,16 @@ const WhatsAppSetup = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {templates.map((template, index) => (
-                    <TableRow key={index}>
+                  {templates.map((template, index) => <TableRow key={index}>
                       <TableCell>{template.name}</TableCell>
                       <TableCell>{template.category}</TableCell>
                       <TableCell>{template.language}</TableCell>
                       <TableCell>
-                        <Badge variant={
-                          template.status === 'approved' ? 'default' :
-                          template.status === 'submitted' ? 'secondary' : 'destructive'
-                        }>
+                        <Badge variant={template.status === 'approved' ? 'default' : template.status === 'submitted' ? 'secondary' : 'destructive'}>
                           {template.status}
                         </Badge>
                       </TableCell>
-                    </TableRow>
-                  ))}
+                    </TableRow>)}
                 </TableBody>
               </Table>
             </CardContent>
@@ -613,28 +605,19 @@ const WhatsAppSetup = () => {
                   <h4 className="font-medium">Send Text Message (24hr window)</h4>
                   <div>
                     <Label htmlFor="test_to">To (+E.164 format)</Label>
-                    <Input
-                      id="test_to"
-                      value={testMessage.to}
-                      onChange={(e) => setTestMessage(prev => ({ ...prev, to: e.target.value }))}
-                      placeholder="+1234567890"
-                    />
+                    <Input id="test_to" value={testMessage.to} onChange={e => setTestMessage(prev => ({
+                    ...prev,
+                    to: e.target.value
+                  }))} placeholder="+1234567890" />
                   </div>
                   <div>
                     <Label htmlFor="test_message">Message</Label>
-                    <Textarea
-                      id="test_message"
-                      value={testMessage.body}
-                      onChange={(e) => setTestMessage(prev => ({ ...prev, body: e.target.value }))}
-                      placeholder="Your test message"
-                      rows={3}
-                    />
+                    <Textarea id="test_message" value={testMessage.body} onChange={e => setTestMessage(prev => ({
+                    ...prev,
+                    body: e.target.value
+                  }))} placeholder="Your test message" rows={3} />
                   </div>
-                  <Button 
-                    onClick={handleSendText} 
-                    disabled={loading || !testMessage.to || !testMessage.body}
-                    className="w-full"
-                  >
+                  <Button onClick={handleSendText} disabled={loading || !testMessage.to || !testMessage.body} className="w-full">
                     Send Text
                   </Button>
                 </div>
@@ -644,48 +627,35 @@ const WhatsAppSetup = () => {
                   <h4 className="font-medium">Send Template Message</h4>
                   <div>
                     <Label htmlFor="template_to">To (+E.164 format)</Label>
-                    <Input
-                      id="template_to"
-                      value={templateMessage.to}
-                      onChange={(e) => setTemplateMessage(prev => ({ ...prev, to: e.target.value }))}
-                      placeholder="+1234567890"
-                    />
+                    <Input id="template_to" value={templateMessage.to} onChange={e => setTemplateMessage(prev => ({
+                    ...prev,
+                    to: e.target.value
+                  }))} placeholder="+1234567890" />
                   </div>
                   <div>
                     <Label htmlFor="template_select">Template</Label>
-                    <Select 
-                      value={templateMessage.template} 
-                      onValueChange={(value) => setTemplateMessage(prev => ({ ...prev, template: value }))}
-                    >
+                    <Select value={templateMessage.template} onValueChange={value => setTemplateMessage(prev => ({
+                    ...prev,
+                    template: value
+                  }))}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select template" />
                       </SelectTrigger>
                       <SelectContent>
-                        {templates.filter(t => t.status === 'approved').map((template, index) => (
-                          <SelectItem key={index} value={template.name}>
+                        {templates.filter(t => t.status === 'approved').map((template, index) => <SelectItem key={index} value={template.name}>
                             {template.name}
-                          </SelectItem>
-                        ))}
+                          </SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
                     <Label htmlFor="template_params">Parameters (comma separated)</Label>
-                    <Input
-                      id="template_params"
-                      value={templateMessage.params.join(', ')}
-                      onChange={(e) => setTemplateMessage(prev => ({ 
-                        ...prev, 
-                        params: e.target.value.split(',').map(p => p.trim()) 
-                      }))}
-                      placeholder="param1, param2"
-                    />
+                    <Input id="template_params" value={templateMessage.params.join(', ')} onChange={e => setTemplateMessage(prev => ({
+                    ...prev,
+                    params: e.target.value.split(',').map(p => p.trim())
+                  }))} placeholder="param1, param2" />
                   </div>
-                  <Button 
-                    onClick={handleSendTemplate} 
-                    disabled={loading || !templateMessage.to || !templateMessage.template}
-                    className="w-full"
-                  >
+                  <Button onClick={handleSendTemplate} disabled={loading || !templateMessage.to || !templateMessage.template} className="w-full">
                     Send Template
                   </Button>
                 </div>
@@ -710,8 +680,7 @@ const WhatsAppSetup = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {messages.map((message) => (
-                      <TableRow key={message.id}>
+                    {messages.map(message => <TableRow key={message.id}>
                         <TableCell>
                           <Badge variant={message.direction === 'out' ? 'default' : 'secondary'}>
                             {message.direction === 'out' ? 'Outgoing' : 'Incoming'}
@@ -722,15 +691,12 @@ const WhatsAppSetup = () => {
                           {message.body || `Template: ${message.template_name}`}
                         </TableCell>
                         <TableCell>
-                          {message.status && (
-                            <Badge variant="outline">{message.status}</Badge>
-                          )}
+                          {message.status && <Badge variant="outline">{message.status}</Badge>}
                         </TableCell>
                         <TableCell>
                           {new Date(message.timestamp).toLocaleString()}
                         </TableCell>
-                      </TableRow>
-                    ))}
+                      </TableRow>)}
                   </TableBody>
                 </Table>
               </div>
@@ -738,8 +704,6 @@ const WhatsAppSetup = () => {
           </Card>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default WhatsAppSetup;
