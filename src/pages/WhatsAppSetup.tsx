@@ -206,15 +206,18 @@ const WhatsAppSetup = () => {
 
     setLoading(true);
     try {
-      const {
-        data,
-        error
-      } = await supabase.functions.invoke('whatsapp-templates', {
-        body: {
-          action: 'create',
-          ...newTemplate
-        }
-      });
+        console.log('Creating template with payload:', newTemplate);
+        
+        const { data, error } = await supabase.functions.invoke('whatsapp-send', {
+          body: {
+            action: 'send_template',
+            create_template: true,
+            name: newTemplate.name,
+            category: newTemplate.category,
+            language: newTemplate.language,
+            body_text: newTemplate.body_text
+          }
+        });
       if (error) throw error;
       
       if (data?.ok) {
@@ -237,20 +240,20 @@ const WhatsAppSetup = () => {
   const createOtpTemplate = async () => {
     setLoading(true);
     try {
-      const {
-        data,
-        error
-      } = await supabase.functions.invoke('whatsapp-templates', {
+      console.log('Creating OTP template using whatsapp-send');
+      
+      const { data, error } = await supabase.functions.invoke('whatsapp-send', {
         body: {
-          action: 'create',
+          action: 'create_template',
           name: 'otp_code',
-          category: 'utility',
+          category: 'UTILITY',
           language: 'en_US',
-          body_text: 'Your Glintup verification code is {{1}}. It expires in {{2}} minutes.',
-          example_params: ['123456', '5']
+          body_text: 'Your Glintup verification code is {{1}}. It expires in {{2}} minutes.'
         }
       });
+      
       if (error) throw error;
+      
       if (data?.ok) {
         toast.success("OTP template created successfully");
         loadTemplates();

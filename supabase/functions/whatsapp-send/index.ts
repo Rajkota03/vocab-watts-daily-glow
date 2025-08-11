@@ -46,9 +46,16 @@ Deno.serve(async (req) => {
     const requestData = await req.json();
     const { action, ...payload } = requestData;
 
+    console.log('WhatsApp-send request:', { action, payload });
+
     // Handle different request formats for compatibility
     if (requestData.checkConfig) {
       return await checkConfiguration();
+    }
+
+    // Handle template creation
+    if (requestData.create_template || action === 'create_template') {
+      return await createTemplate(requestData);
     }
 
     if (!action) {
@@ -69,12 +76,17 @@ Deno.serve(async (req) => {
       case 'send_text':
         return await sendTextMessage(payload);
       case 'send_template':
+        if (payload.create_template) {
+          return await createTemplate(payload);
+        }
         return await sendTemplateMessage(payload);
+      case 'create_template':
+        return await createTemplate(payload);
       case 'check_config':
         return await checkConfiguration();
       default:
         return new Response(
-          JSON.stringify({ error: 'Invalid action or missing parameters' }),
+          JSON.stringify({ error: 'Invalid action or missing parameters', received: { action, payload } }),
           { 
             status: 400, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -403,7 +415,109 @@ async function checkConfiguration() {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
         );
+}
+
+// Template creation function
+async function createTemplate(payload: any) {
+  try {
+    const { name, category, language, body_text } = payload;
+    
+    console.log('Creating template:', { name, category, language, body_text });
+
+    if (!name || !body_text) {
+      return new Response(
+        JSON.stringify({ error: 'Template name and body text are required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Get config from database
+    const configData = await getWhatsAppConfig();
+    if (!configData) {
+      return new Response(
+        JSON.stringify({ error: 'WhatsApp not configured' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Create template via Meta Graph API
+    const graphUrl = `https://graph.facebook.com/v21.0/${configData.phone_number_id}/message_templates`;
+    
+    const templatePayload = {
+      name: name,
+      category: category || 'UTILITY',
+      language: language || 'en_US',
+      components: [
+        {
+          type: 'BODY',
+          text: body_text
+        }
+      ]
+    };
+
+    console.log('Sending template creation request to Meta API:', templatePayload);
+
+    const response = await fetch(graphUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${configData.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(templatePayload),
+    });
+
+    const result = await response.json();
+    console.log('Meta API response:', result);
+
+    if (!response.ok) {
+      console.error('Template creation error:', result);
+      return new Response(
+        JSON.stringify({ 
+          ok: false,
+          error: result.error?.message || 'Failed to create template',
+          details: result
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    console.log('Template created successfully:', result);
+
+    return new Response(
+      JSON.stringify({ 
+        ok: true, 
+        template_id: result.id,
+        message: 'Template created successfully'
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
+    );
+  } catch (error) {
+    console.error('Error creating template:', error);
+    return new Response(
+      JSON.stringify({ 
+        ok: false,
+        error: 'Failed to create template',
+        details: error.message
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+  }
+}
     } catch (apiError) {
       return new Response(
         JSON.stringify({ 
