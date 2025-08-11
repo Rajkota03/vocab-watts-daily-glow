@@ -53,6 +53,11 @@ Deno.serve(async (req) => {
       return await checkConfiguration();
     }
 
+    // Handle initialization of WhatsApp config
+    if (requestData.initConfig) {
+      return await initializeConfiguration();
+    }
+
     // Handle daily words sending (vocabulary words)
     if (requestData.category && requestData.to) {
       return await sendDailyWords(requestData);
@@ -178,31 +183,49 @@ async function sendDailyWords(payload: any) {
       }
     }
 
-    // For daily words, we'll use template message to avoid 24-hour window restriction
-    // Try to send as template first, fallback to direct message
-    try {
-      return await sendTemplateMessage({
-        to,
-        name: 'daily_vocabulary', // Assuming this template exists
-        language: 'en_US',
-        bodyParams: [finalMessage]
-      });
-    } catch (templateError) {
-      console.log('Template message failed, trying direct message:', templateError);
-      // For now, return success with the formatted message
-      return new Response(
-        JSON.stringify({ 
-          success: true,
-          message: 'Daily words prepared successfully',
-          content: finalMessage,
-          note: 'Message sent via direct messaging (requires 24-hour window)'
-        }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    // Fetch existing templates from Meta and try to use one
+    console.log('Fetching templates from Meta API...');
+    const templates = await getMetaTemplates(configData);
+    
+    if (templates.length > 0) {
+      // Look for an approved template that we can use
+      const approvedTemplate = templates.find(t => t.status === 'APPROVED');
+      
+      if (approvedTemplate) {
+        console.log('Using approved template:', approvedTemplate.name);
+        try {
+          // Try to send using the approved template
+          return await sendTemplateMessage({
+            to,
+            name: approvedTemplate.name,
+            language: approvedTemplate.language || 'en_US',
+            bodyParams: approvedTemplate.components?.[0]?.text ? [] : [finalMessage]
+          });
+        } catch (templateError) {
+          console.log('Template message failed:', templateError);
         }
-      );
+      } else {
+        console.log('No approved templates found, templates available:', templates.map(t => ({ name: t.name, status: t.status })));
+      }
+    } else {
+      console.log('No templates found from Meta API');
     }
+
+    // If template sending fails or no templates available, return the prepared message
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        message: 'Daily words prepared successfully',
+        content: finalMessage,
+        note: 'Template not available - message prepared for manual sending',
+        templates_available: templates.length,
+        approved_templates: templates.filter(t => t.status === 'APPROVED').length
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
 
   } catch (error) {
     console.error('Error in sendDailyWords:', error);
@@ -478,6 +501,32 @@ async function getWhatsAppConfig(): Promise<WhatsAppConfig | null> {
   }
 }
 
+// Helper function to fetch existing templates from Meta API
+async function getMetaTemplates(config: WhatsAppConfig): Promise<any[]> {
+  try {
+    const graphUrl = `https://graph.facebook.com/v21.0/${config.phone_number_id}/message_templates`;
+    const response = await fetch(graphUrl, {
+      headers: {
+        'Authorization': `Bearer ${config.token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Failed to fetch templates:', errorData);
+      return [];
+    }
+
+    const result = await response.json();
+    console.log('Available templates from Meta:', result.data);
+    return result.data || [];
+  } catch (error) {
+    console.error('Error fetching Meta templates:', error);
+    return [];
+  }
+}
+
 // Configuration check function
 async function checkConfiguration() {
   try {
@@ -651,6 +700,75 @@ async function createTemplate(payload: any) {
         ok: false,
         error: 'Failed to create template',
         details: error.message
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+  }
+}
+
+// Initialize WhatsApp configuration function
+async function initializeConfiguration() {
+  try {
+    // Check if configuration already exists
+    const existingConfig = await getWhatsAppConfig();
+    if (existingConfig) {
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'WhatsApp configuration already exists',
+          phone_number_id: existingConfig.phone_number_id
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Create initial configuration entry
+    const { data, error } = await supabase
+      .from('whatsapp_config')
+      .insert({
+        provider: 'meta',
+        webhook_verified: false,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating WhatsApp config:', error);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Failed to create WhatsApp configuration' 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: 'WhatsApp configuration initialized successfully',
+        config_id: data.id
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+  } catch (error) {
+    console.error('Error in initializeConfiguration:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: 'Failed to initialize configuration' 
       }),
       { 
         status: 500, 

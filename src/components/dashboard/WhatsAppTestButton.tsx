@@ -62,11 +62,20 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
     checkConfig();
   }, []);
 
-  // Function to check Twilio configuration and detect issues
+  // Function to check WhatsApp configuration and detect issues
   const checkConfig = async () => {
     try {
       setConfigLoading(true);
       setLastErrorDetails(null);
+      
+      // First try to initialize config if it doesn't exist
+      const { data: initData } = await supabase.functions.invoke('whatsapp-send', {
+        body: { initConfig: true }
+      });
+      
+      if (initData?.success) {
+        console.log('WhatsApp configuration initialized');
+      }
       
       const { data, error } = await supabase.functions.invoke('whatsapp-send', {
         body: { 
