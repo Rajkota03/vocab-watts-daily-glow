@@ -23,6 +23,7 @@ interface WhatsAppConfig {
   id: string;
   token: string;
   phone_number_id: string;
+  waba_id: string;
   display_name?: string;
   display_status?: string;
 }
@@ -494,15 +495,18 @@ async function getWhatsAppConfig(): Promise<WhatsAppConfig | null> {
     // First check if we have the required environment variables
     const token = Deno.env.get('META_ACCESS_TOKEN');
     const phoneNumberId = Deno.env.get('META_PHONE_NUMBER_ID');
+    const wabaId = Deno.env.get('WA_WABA_ID');
     
     console.log('Environment check:', {
       hasToken: !!token,
       hasPhoneNumberId: !!phoneNumberId,
+      hasWabaId: !!wabaId,
       tokenLength: token ? token.length : 0,
-      phoneNumberId: phoneNumberId ? phoneNumberId.substring(0, 10) + '...' : 'missing'
+      phoneNumberId: phoneNumberId ? phoneNumberId.substring(0, 10) + '...' : 'missing',
+      wabaId: wabaId ? wabaId.substring(0, 10) + '...' : 'missing'
     });
 
-    if (!token || !phoneNumberId) {
+    if (!token || !phoneNumberId || !wabaId) {
       console.error('Meta API credentials not configured in secrets:', {
         token: !!token,
         phoneNumberId: !!phoneNumberId
@@ -554,6 +558,7 @@ async function getWhatsAppConfig(): Promise<WhatsAppConfig | null> {
         id: newData.id,
         token,
         phone_number_id: phoneNumberId,
+        waba_id: wabaId,
         display_name: 'Meta WhatsApp',
         display_status: 'active'
       };
@@ -584,6 +589,7 @@ async function getWhatsAppConfig(): Promise<WhatsAppConfig | null> {
         id: newData.id,
         token,
         phone_number_id: phoneNumberId,
+        waba_id: wabaId,
         display_name: 'Meta WhatsApp',
         display_status: 'active'
       };
@@ -594,6 +600,7 @@ async function getWhatsAppConfig(): Promise<WhatsAppConfig | null> {
       id: data.id,
       token,
       phone_number_id: phoneNumberId,
+      waba_id: wabaId,
       display_name: data.display_name || 'Meta WhatsApp',
       display_status: data.display_status || 'active'
     };
@@ -606,9 +613,10 @@ async function getWhatsAppConfig(): Promise<WhatsAppConfig | null> {
 // Helper function to fetch existing templates from Meta API
 async function getMetaTemplates(config: WhatsAppConfig): Promise<any[]> {
   try {
-    // Use the correct endpoint for fetching message templates
-    // Templates are associated with the WhatsApp Business Account, not the phone number
-    const graphUrl = `https://graph.facebook.com/v21.0/me/message_templates`;
+    // Use the WABA ID for fetching message templates - this is the correct endpoint
+    const graphUrl = `https://graph.facebook.com/v21.0/${config.waba_id}/message_templates?limit=200`;
+    console.log('Fetching templates from:', graphUrl.replace(config.waba_id, config.waba_id.substring(0, 10) + '...'));
+    
     const response = await fetch(graphUrl, {
       headers: {
         'Authorization': `Bearer ${config.token}`,
