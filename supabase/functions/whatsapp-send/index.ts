@@ -469,9 +469,12 @@ async function sendTemplateMessage(payload: { to: string; name: string; language
     }
 
     // Prepare template message
+    const cleanPhoneNumber = to.replace('+', '');
+    console.log('Sending to phone number:', cleanPhoneNumber, 'Template:', name, 'Params count:', bodyParams?.length || 0);
+    
     const templateMessage: any = {
       messaging_product: 'whatsapp',
-      to: to.replace('+', ''),
+      to: cleanPhoneNumber,
       type: 'template',
       template: {
         name,
@@ -483,6 +486,7 @@ async function sendTemplateMessage(payload: { to: string; name: string; language
 
     // Add parameters if provided
     if (bodyParams && bodyParams.length > 0) {
+      console.log('Template parameters being sent:', bodyParams);
       templateMessage.template.components = [
         {
           type: 'body',
@@ -493,6 +497,8 @@ async function sendTemplateMessage(payload: { to: string; name: string; language
         }
       ];
     }
+
+    console.log('Final template message payload:', JSON.stringify(templateMessage, null, 2));
 
     // Send template message via Meta Graph API
     const graphUrl = `https://graph.facebook.com/v21.0/${configData.phone_number_id}/messages`;
