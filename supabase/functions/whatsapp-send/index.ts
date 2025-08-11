@@ -20,9 +20,9 @@ function analyzeSentiment(word: string): 'positive' | 'negative' | 'neutral' {
 
 function getSentimentSquare(sentiment: 'positive' | 'negative' | 'neutral'): string {
   switch (sentiment) {
-    case 'positive': return '🟩';
-    case 'negative': return '🟥';
-    default: return '🟧';
+    case 'positive': return '[GREEN]';
+    case 'negative': return '[RED]';
+    default: return '[ORANGE]';
   }
 }
 
@@ -239,7 +239,7 @@ async function sendDailyWords(payload: any) {
         const params = firstWord
           ? [
               'Learner',              // {{1}} - Name
-              `${firstWord.word}`,    // {{2}} - Word
+              `${getSentimentSquare(analyzeSentiment(firstWord.word))} ${firstWord.word}`,    // {{2}} - Word with sentiment color
               `${firstWord.pronunciation || firstWord.word}`, // {{3}} - Pronunciation
               `${firstWord.definition || ''}`,               // {{4}} - Meaning
               `${firstWord.example || ''}`                   // {{5}} - Example
@@ -279,7 +279,7 @@ async function sendDailyWords(payload: any) {
           const templateParams = firstWord && approvedTemplate.name === 'glintup_vocab_daily'
             ? [
                 'Learner',              // {{1}} - Name
-                `${firstWord.word}`,    // {{2}} - Word
+                `${getSentimentSquare(analyzeSentiment(firstWord.word))} ${firstWord.word}`,    // {{2}} - Word with sentiment color
                 `${firstWord.pronunciation || firstWord.word}`, // {{3}} - Pronunciation
                 `${firstWord.definition || ''}`,               // {{4}} - Meaning
                 `${firstWord.example || ''}`                   // {{5}} - Example
