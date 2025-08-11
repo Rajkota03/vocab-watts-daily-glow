@@ -68,9 +68,9 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
       setConfigLoading(true);
       setLastErrorDetails(null);
       
-      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+      const { data, error } = await supabase.functions.invoke('whatsapp-send', {
         body: { 
-          checkOnly: true,
+          checkConfig: true,
           verifyCredentials: true // Add flag to request credential verification
         }
       });
@@ -135,9 +135,9 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
       setLastErrorDetails(null);
       setTwilioDetails(null);
       
-      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+      const { data, error } = await supabase.functions.invoke('whatsapp-send', {
         body: { 
-          testTwilioConnection: true,
+          checkConfig: true,
           detailed: true
         }
       });
@@ -243,7 +243,7 @@ const WhatsAppTestButton: React.FC<WhatsAppTestButtonProps> = ({ category, phone
       requestPayload.message = `This is a test message for ${category} category. Sent at: ${new Date().toLocaleTimeString()}`;
       console.log("Using direct message content:", requestPayload.message);
 
-      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+      const { data, error } = await supabase.functions.invoke('whatsapp-send', {
         body: requestPayload
       });
 

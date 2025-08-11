@@ -41,7 +41,7 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
     const checkProviders = async () => {
       // Check Twilio
       try {
-        const { data: twilioData } = await supabase.functions.invoke<FunctionResponse>('send-whatsapp', {
+        const { data: metaData } = await supabase.functions.invoke<FunctionResponse>('whatsapp-send', {
           body: {
             checkConfig: true,
             provider: 'twilio'
@@ -50,10 +50,10 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
         
         setProviderStatus(prev => ({
           ...prev,
-          twilio: twilioData?.success || false
+          twilio: metaData?.success || false
         }));
         
-        if (twilioData?.success) {
+        if (metaData?.success) {
           setProvider('twilio');
         }
       } catch (e) {
@@ -62,10 +62,9 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
       
       // Check AiSensy
       try {
-        const { data: aisensyData } = await supabase.functions.invoke<FunctionResponse>('send-whatsapp', {
+        const { data: aisensyData } = await supabase.functions.invoke<FunctionResponse>('whatsapp-send', {
           body: {
-            checkConfig: true,
-            provider: 'aisensy'
+            checkConfig: true
           }
         });
         
@@ -103,7 +102,7 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
     console.log(`Requesting daily words for ${phoneNumber}, category: ${category}, isPro: ${isPro}, provider: ${provider}`);
 
     try {
-      const { data, error } = await supabase.functions.invoke<FunctionResponse>('send-whatsapp', {
+      const { data, error } = await supabase.functions.invoke<FunctionResponse>('whatsapp-send', {
         body: {
           to: phoneNumber,
           category: category,

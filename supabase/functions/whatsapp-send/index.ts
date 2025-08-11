@@ -1,4 +1,5 @@
 import { corsHeaders } from '../_shared/cors.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 
 // Define types
 interface Contact {
@@ -18,12 +19,22 @@ interface Message {
   timestamp: string;
 }
 
+interface WhatsAppConfig {
+  id: string;
+  token: string;
+  phone_number_id: string;
+  display_name?: string;
+  display_status?: string;
+}
+
 // Simple in-memory storage (replace with actual database in production)
 let contacts: Contact[] = [];
 let messages: Message[] = [];
 
-// External config reference (in a real app, this would be from database)
-let configData: any = null;
+// Initialize Supabase client
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -32,16 +43,36 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { action, ...payload } = await req.json();
+    const requestData = await req.json();
+    const { action, ...payload } = requestData;
+
+    // Handle different request formats for compatibility
+    if (!action) {
+      // Check for direct parameters (compatibility with existing calls)
+      if (requestData.to && requestData.message) {
+        return await sendTextMessage({ to: requestData.to, body: requestData.message });
+      } else if (requestData.to && requestData.template) {
+        return await sendTemplateMessage({
+          to: requestData.to,
+          name: requestData.template.name,
+          language: requestData.template.language || 'en_US',
+          bodyParams: requestData.template.parameters
+        });
+      } else if (requestData.checkConfig) {
+        return await checkConfiguration();
+      }
+    }
 
     switch (action) {
       case 'send_text':
         return await sendTextMessage(payload);
       case 'send_template':
         return await sendTemplateMessage(payload);
+      case 'check_config':
+        return await checkConfiguration();
       default:
         return new Response(
-          JSON.stringify({ error: 'Invalid action' }),
+          JSON.stringify({ error: 'Invalid action or missing parameters' }),
           { 
             status: 400, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -74,8 +105,9 @@ async function sendTextMessage(payload: { to: string; body: string }) {
       );
     }
 
-    // Get config (in real app, this would be from database)
-    if (!configData || !configData.token || !configData.phone_number_id) {
+    // Get config from database
+    const configData = await getWhatsAppConfig();
+    if (!configData) {
       return new Response(
         JSON.stringify({ error: 'WhatsApp not configured' }),
         { 
@@ -179,8 +211,9 @@ async function sendTemplateMessage(payload: { to: string; name: string; language
       );
     }
 
-    // Get config (in real app, this would be from database)
-    if (!configData || !configData.token || !configData.phone_number_id) {
+    // Get config from database
+    const configData = await getWhatsAppConfig();
+    if (!configData) {
       return new Response(
         JSON.stringify({ error: 'WhatsApp not configured' }),
         { 
@@ -266,6 +299,128 @@ async function sendTemplateMessage(payload: { to: string; name: string; language
     console.error('Error sending template message:', error);
     return new Response(
       JSON.stringify({ error: 'Failed to send template message' }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+  }
+}
+
+// Helper function to get WhatsApp configuration from database
+async function getWhatsAppConfig(): Promise<WhatsAppConfig | null> {
+  try {
+    const { data, error } = await supabase
+      .from('whatsapp_config')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching WhatsApp config:', error);
+      return null;
+    }
+
+    if (!data) {
+      console.log('No WhatsApp configuration found');
+      return null;
+    }
+
+    // Get the Meta API credentials from secrets
+    const token = Deno.env.get('META_ACCESS_TOKEN');
+    const phoneNumberId = Deno.env.get('META_PHONE_NUMBER_ID');
+
+    if (!token || !phoneNumberId) {
+      console.error('Meta API credentials not configured in secrets');
+      return null;
+    }
+
+    return {
+      id: data.id,
+      token,
+      phone_number_id: phoneNumberId,
+      display_name: data.display_name,
+      display_status: data.display_status
+    };
+  } catch (error) {
+    console.error('Error in getWhatsAppConfig:', error);
+    return null;
+  }
+}
+
+// Configuration check function
+async function checkConfiguration() {
+  try {
+    const config = await getWhatsAppConfig();
+    
+    if (!config) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'WhatsApp configuration not found. Please configure Meta API credentials.' 
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Test the configuration by making a simple request to Meta API
+    try {
+      const testUrl = `https://graph.facebook.com/v21.0/${config.phone_number_id}`;
+      const testResponse = await fetch(testUrl, {
+        headers: {
+          'Authorization': `Bearer ${config.token}`,
+        },
+      });
+
+      if (testResponse.ok) {
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: 'Meta WhatsApp Business API is configured and accessible',
+            display_name: config.display_name,
+            display_status: config.display_status
+          }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      } else {
+        const errorData = await testResponse.json();
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: `Meta API error: ${errorData.error?.message || 'Invalid credentials'}` 
+          }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+    } catch (apiError) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Failed to connect to Meta API: ${apiError.message}` 
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+  } catch (error) {
+    console.error('Error in checkConfiguration:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: 'Failed to check configuration' 
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
