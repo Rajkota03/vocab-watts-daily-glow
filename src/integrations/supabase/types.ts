@@ -449,6 +449,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_expired_otp_codes: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       create_whatsapp_tables: {
         Args: Record<PropertyKey, never>
         Returns: Json
