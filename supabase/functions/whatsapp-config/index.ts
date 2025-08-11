@@ -1,4 +1,5 @@
 import { corsHeaders } from '../_shared/cors.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // Define types
 interface WhatsAppConfig {
@@ -14,9 +15,6 @@ interface WhatsAppConfig {
   updated_at?: string;
 }
 
-// Simple in-memory storage (replace with actual database in production)
-let configData: WhatsAppConfig | null = null;
-
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -24,17 +22,22 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
     const { action, ...payload } = await req.json();
 
     switch (action) {
       case 'save_config':
-        return await saveConfig(payload);
+        return await saveConfig(supabase, payload);
       case 'get_config':
-        return await getConfig();
+        return await getConfig(supabase);
       case 'submit_display_name':
-        return await submitDisplayName(payload);
+        return await submitDisplayName(supabase, payload);
       case 'get_display_name_status':
-        return await getDisplayNameStatus();
+        return await getDisplayNameStatus(supabase);
       default:
         return new Response(
           JSON.stringify({ error: 'Invalid action' }),
@@ -56,7 +59,7 @@ Deno.serve(async (req) => {
   }
 });
 
-async function saveConfig(payload: { token: string; phone_number_id: string; verify_token: string }) {
+async function saveConfig(supabase: any, payload: { token: string; phone_number_id: string; verify_token: string }) {
   try {
     const { token, phone_number_id, verify_token } = payload;
 
@@ -90,16 +93,47 @@ async function saveConfig(payload: { token: string; phone_number_id: string; ver
 
     const meData = await response.json();
     
-    // Save configuration
-    configData = {
-      id: crypto.randomUUID(),
+    // Check if config already exists
+    const { data: existingConfig } = await supabase
+      .from('whatsapp_config')
+      .select('*')
+      .limit(1);
+
+    const configData = {
       token,
       phone_number_id,
       verify_token,
       waba_id: meData.id,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     };
+
+    let result;
+    if (existingConfig && existingConfig.length > 0) {
+      // Update existing config
+      result = await supabase
+        .from('whatsapp_config')
+        .update(configData)
+        .eq('id', existingConfig[0].id)
+        .select()
+        .single();
+    } else {
+      // Insert new config
+      result = await supabase
+        .from('whatsapp_config')
+        .insert(configData)
+        .select()
+        .single();
+    }
+
+    if (result.error) {
+      console.error('Database error:', result.error);
+      return new Response(
+        JSON.stringify({ error: 'Failed to save configuration' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
 
     console.log('WhatsApp config saved successfully:', { waba_id: meData.id });
 
@@ -122,21 +156,56 @@ async function saveConfig(payload: { token: string; phone_number_id: string; ver
   }
 }
 
-async function getConfig() {
-  return new Response(
-    JSON.stringify({ config: configData }),
-    { 
-      status: 200, 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+async function getConfig(supabase: any) {
+  try {
+    const { data, error } = await supabase
+      .from('whatsapp_config')
+      .select('*')
+      .limit(1)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      console.error('Database error:', error);
+      return new Response(
+        JSON.stringify({ error: 'Failed to get configuration' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
-  );
+
+    return new Response(
+      JSON.stringify({ config: data || null }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+  } catch (error) {
+    console.error('Error getting config:', error);
+    return new Response(
+      JSON.stringify({ error: 'Failed to get configuration' }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+  }
 }
 
-async function submitDisplayName(payload: { display_name: string }) {
+async function submitDisplayName(supabase: any, payload: { display_name: string }) {
   try {
     const { display_name } = payload;
 
-    if (!configData || !configData.token || !configData.phone_number_id) {
+    // Get current config
+    const { data: configData, error: configError } = await supabase
+      .from('whatsapp_config')
+      .select('*')
+      .limit(1)
+      .single();
+
+    if (configError || !configData) {
       return new Response(
         JSON.stringify({ error: 'WhatsApp not configured' }),
         { 
@@ -170,13 +239,18 @@ async function submitDisplayName(payload: { display_name: string }) {
       );
     }
 
-    // Update config
-    configData = {
-      ...configData,
-      display_name,
-      display_status: 'pending',
-      updated_at: new Date().toISOString(),
-    };
+    // Update config in database
+    const { error: updateError } = await supabase
+      .from('whatsapp_config')
+      .update({
+        display_name,
+        display_status: 'pending',
+      })
+      .eq('id', configData.id);
+
+    if (updateError) {
+      console.error('Error updating display name:', updateError);
+    }
 
     console.log('Display name submitted successfully');
 
@@ -199,9 +273,16 @@ async function submitDisplayName(payload: { display_name: string }) {
   }
 }
 
-async function getDisplayNameStatus() {
+async function getDisplayNameStatus(supabase: any) {
   try {
-    if (!configData || !configData.token || !configData.phone_number_id) {
+    // Get current config
+    const { data: configData, error: configError } = await supabase
+      .from('whatsapp_config')
+      .select('*')
+      .limit(1)
+      .single();
+
+    if (configError || !configData) {
       return new Response(
         JSON.stringify({ error: 'WhatsApp not configured' }),
         { 
@@ -235,12 +316,13 @@ async function getDisplayNameStatus() {
 
     // Update config if status changed
     if (configData.display_status !== status) {
-      configData = {
-        ...configData,
-        display_status: status,
-        display_status_reason: reason,
-        updated_at: new Date().toISOString(),
-      };
+      await supabase
+        .from('whatsapp_config')
+        .update({
+          display_status: status,
+          display_status_reason: reason,
+        })
+        .eq('id', configData.id);
     }
 
     return new Response(

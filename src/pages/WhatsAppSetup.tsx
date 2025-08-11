@@ -52,6 +52,8 @@ const WhatsAppSetup = () => {
     verify_token: Math.random().toString(36).substring(2, 15),
   });
   const [isConnected, setIsConnected] = useState(false);
+  const [isConfigured, setIsConfigured] = useState(false);
+  const [displayNameSubmitted, setDisplayNameSubmitted] = useState(false);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
@@ -63,10 +65,41 @@ const WhatsAppSetup = () => {
   const [testMessage, setTestMessage] = useState({ to: '', body: '' });
   const [templateMessage, setTemplateMessage] = useState({ to: '', template: '', params: [''] });
 
-  // Generate random verify token on mount
+  // Load existing configuration on mount and generate random verify token if needed
   useEffect(() => {
-    const randomToken = Math.random().toString(36).substring(2, 15);
-    setConfig(prev => ({ ...prev, verify_token: randomToken }));
+    const loadConfig = async () => {
+      try {
+        const { data } = await supabase.functions.invoke('whatsapp-config', {
+          body: { action: 'get_config' }
+        });
+        
+        if (data?.config) {
+          setConfig({
+            token: data.config.token || '',
+            phone_number_id: data.config.phone_number_id || '',
+            verify_token: data.config.verify_token || '',
+            display_name: data.config.display_name || 'Glintup by Squareblue Media',
+            display_status: data.config.display_status || undefined,
+            display_status_reason: data.config.display_status_reason || undefined
+          });
+          setIsConfigured(true);
+          if (data.config.display_name) {
+            setDisplayNameSubmitted(true);
+          }
+        } else {
+          // Generate random verify token for new setup
+          const randomToken = Math.random().toString(36).substring(2, 15);
+          setConfig(prev => ({ ...prev, verify_token: randomToken }));
+        }
+      } catch (error) {
+        console.error('Error loading config:', error);
+        // Fallback: generate random token
+        const randomToken = Math.random().toString(36).substring(2, 15);
+        setConfig(prev => ({ ...prev, verify_token: randomToken }));
+      }
+    };
+    
+    loadConfig();
   }, []);
 
   // Polling for display name status
@@ -244,7 +277,7 @@ const WhatsAppSetup = () => {
     toast.success('Copied to clipboard!');
   };
 
-  const webhookUrl = `${window.location.origin}/api/wa/webhook`;
+  const webhookUrl = `https://pbpmtqcffhqwzboviqfw.supabase.co/functions/v1/whatsapp-webhook`;
 
   return (
     <div className="min-h-screen bg-glintup-bg p-6">
