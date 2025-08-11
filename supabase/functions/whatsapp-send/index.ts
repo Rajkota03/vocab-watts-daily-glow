@@ -63,6 +63,11 @@ Deno.serve(async (req) => {
       return await sendDailyWords(requestData);
     }
 
+    // Handle provider-specific requests
+    if (requestData.provider) {
+      return await sendDailyWords(requestData);
+    }
+
     // Handle template creation
     if (requestData.create_template || action === 'create_template') {
       return await createTemplate(requestData);
