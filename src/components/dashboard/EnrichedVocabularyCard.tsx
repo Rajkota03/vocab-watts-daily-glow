@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Volume2, BookOpen, Heart, Lightbulb, Users } from 'lucide-react';
+import { Volume2, BookOpen, Lightbulb, Users } from 'lucide-react';
 import { EnrichedVocabularyWord } from '@/services/vocabularyEnrichmentService';
+import { analyzeSentiment, getSentimentSquare, getSentimentColor } from '@/utils/sentimentAnalysis';
 
 interface EnrichedVocabularyCardProps {
   word: EnrichedVocabularyWord;
@@ -17,27 +17,10 @@ const EnrichedVocabularyCard: React.FC<EnrichedVocabularyCardProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const getSentimentIcon = (sentiment?: string) => {
-    switch (sentiment) {
-      case 'positive':
-        return <Heart className="h-4 w-4 text-green-500" />;
-      case 'negative':
-        return <Heart className="h-4 w-4 text-red-500" />;
-      default:
-        return <Heart className="h-4 w-4 text-gray-500" />;
-    }
-  };
-
-  const getSentimentColor = (sentiment?: string) => {
-    switch (sentiment) {
-      case 'positive':
-        return 'bg-green-50 border-green-200';
-      case 'negative':
-        return 'bg-red-50 border-red-200';
-      default:
-        return 'bg-gray-50 border-gray-200';
-    }
-  };
+  // Analyze sentiment if not provided
+  const sentiment = word.sentiment || analyzeSentiment(word.word);
+  const sentimentSquare = getSentimentSquare(sentiment);
+  const sentimentCardColor = getSentimentColor(sentiment);
 
   const handlePronunciation = () => {
     if ('speechSynthesis' in window) {
@@ -48,12 +31,14 @@ const EnrichedVocabularyCard: React.FC<EnrichedVocabularyCardProps> = ({
   };
 
   return (
-    <Card className={`overflow-hidden transition-all duration-300 ${getSentimentColor(word.sentiment)}`}>
+    <Card className={`overflow-hidden transition-all duration-300 ${sentimentCardColor}`}>
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <CardTitle className="text-xl font-bold text-primary flex items-center gap-2">
             {word.word}
-            {getSentimentIcon(word.sentiment)}
+            <span className="text-lg" title={`Sentiment: ${sentiment}`}>
+              {sentimentSquare}
+            </span>
           </CardTitle>
           {showCategory && (
             <Badge variant="outline" className="ml-2">

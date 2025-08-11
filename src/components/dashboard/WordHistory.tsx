@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { analyzeSentiment, getSentimentSquare } from '@/utils/sentimentAnalysis';
 
 interface WordHistoryProps {
   category: string;
@@ -149,11 +150,20 @@ const WordHistory: React.FC<WordHistoryProps> = ({ category, userId }) => {
         </Card>
       ) : (
         <div className="space-y-3">
-          {recentWords.map((word) => (
+          {recentWords.map((word) => {
+            const sentiment = analyzeSentiment(word.word);
+            const sentimentSquare = getSentimentSquare(sentiment);
+            
+            return (
             <Card key={word.id} className="overflow-hidden">
               <CardHeader className="py-3">
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg font-bold">{word.word}</CardTitle>
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                    {word.word}
+                    <span className="text-lg" title={`Sentiment: ${sentiment}`}>
+                      {sentimentSquare}
+                    </span>
+                  </CardTitle>
                   <Badge variant="outline" className="ml-2">
                     {word.category}
                   </Badge>
@@ -175,7 +185,8 @@ const WordHistory: React.FC<WordHistoryProps> = ({ category, userId }) => {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

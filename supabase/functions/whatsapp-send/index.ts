@@ -1,6 +1,31 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 
+// Simple sentiment analysis function for edge function
+function analyzeSentiment(word: string): 'positive' | 'negative' | 'neutral' {
+  const lowerWord = word.toLowerCase();
+  
+  const positiveWords = new Set(['joy', 'happiness', 'love', 'success', 'brilliant', 'excellent', 'amazing', 'wonderful', 'fantastic', 'beautiful', 'triumph', 'victory', 'achieve', 'outstanding']);
+  const negativeWords = new Set(['anger', 'hatred', 'fear', 'failure', 'terrible', 'awful', 'horrible', 'disaster', 'tragedy', 'cruel', 'evil', 'wicked', 'violence', 'destruction']);
+  
+  if (positiveWords.has(lowerWord)) return 'positive';
+  if (negativeWords.has(lowerWord)) return 'negative';
+  
+  // Pattern matching
+  if (lowerWord.startsWith('un') || lowerWord.startsWith('dis') || lowerWord.startsWith('mis')) return 'negative';
+  if (lowerWord.startsWith('pro') || lowerWord.startsWith('bene')) return 'positive';
+  
+  return 'neutral';
+}
+
+function getSentimentSquare(sentiment: 'positive' | 'negative' | 'neutral'): string {
+  switch (sentiment) {
+    case 'positive': return '🟩';
+    case 'negative': return '🟥';
+    default: return '🟧';
+  }
+}
+
 // Define types
 interface Contact {
   wa_id: string;
@@ -214,7 +239,7 @@ async function sendDailyWords(payload: any) {
         const params = firstWord
           ? [
               'Learner',              // {{1}} - Name
-              `${firstWord.word}`,    // {{2}} - Word
+              `${getSentimentSquare(analyzeSentiment(firstWord.word))} ${firstWord.word}`,    // {{2}} - Word with sentiment square
               '',                     // {{3}} - Empty field (as per template)
               `${firstWord.pronunciation || firstWord.word}`, // {{4}} - Pronunciation
               `${firstWord.definition || ''}`,               // {{5}} - Meaning
@@ -255,7 +280,7 @@ async function sendDailyWords(payload: any) {
           const templateParams = firstWord && approvedTemplate.name === 'glintup_vocab_daily'
             ? [
                 'Learner',              // {{1}} - Name
-                `${firstWord.word}`,    // {{2}} - Word
+                `${getSentimentSquare(analyzeSentiment(firstWord.word))} ${firstWord.word}`,    // {{2}} - Word with sentiment square
                 '',                     // {{3}} - Empty field (as per template)
                 `${firstWord.pronunciation || firstWord.word}`, // {{4}} - Pronunciation
                 `${firstWord.definition || ''}`,               // {{5}} - Meaning
