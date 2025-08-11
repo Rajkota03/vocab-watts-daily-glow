@@ -80,12 +80,14 @@ const Dashboard = () => {
           }
         }
         
-        // Fetch subscription data
+        // Fetch subscription data (get most recent)
         const { data: subscriptionData } = await supabase
           .from('user_subscriptions')
           .select('is_pro, category, phone_number')
           .eq('user_id', session.user.id)
-          .single();
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
         
         if (subscriptionData) {
           setSubscription({
@@ -107,8 +109,8 @@ const Dashboard = () => {
           .from('user_word_history')
           .select('id')
           .eq('user_id', session.user.id)
-          .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
-          .lt('created_at', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString());
+          .gte('date_sent', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+          .lt('date_sent', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString());
           
         if (wordsData) {
           setWordsLearnedThisMonth(wordsData.length);
