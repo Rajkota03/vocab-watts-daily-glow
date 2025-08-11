@@ -68,11 +68,6 @@ Deno.serve(async (req) => {
       return await sendDailyWords(requestData);
     }
 
-    // Handle provider-specific requests
-    if (requestData.provider) {
-      return await sendDailyWords(requestData);
-    }
-
     // Handle template creation
     if (requestData.create_template || action === 'create_template') {
       return await createTemplate(requestData);
@@ -130,9 +125,9 @@ async function sendDailyWords(payload: any) {
   console.log('sendDailyWords called with payload:', payload);
   
   try {
-    const { to, category, isPro, message, provider } = payload;
+    const { to, category, isPro, message } = payload;
     
-    console.log('Sending daily words:', { to, category, isPro, provider });
+    console.log('Sending daily words:', { to, category, isPro });
 
     if (!to) {
       console.log('No recipient phone number provided');
