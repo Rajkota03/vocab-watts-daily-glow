@@ -29,8 +29,13 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
 
   const handleSendWords = async () => {
     setLastErrorDetails(null);
+    console.log('=== SEND WORDS DEBUG START ===');
+    console.log('PhoneNumber:', phoneNumber);
+    console.log('Category:', category);
+    console.log('IsPro:', isPro);
 
     if (!phoneNumber) {
+      console.log('ERROR: No phone number provided');
       toast({
         title: "Phone Number Missing",
         description: "Your WhatsApp number is not configured in your profile.",
@@ -44,6 +49,7 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
     console.log(`Requesting daily words for ${phoneNumber}, category: ${category}, isPro: ${isPro}`);
 
     try {
+      console.log('About to call supabase.functions.invoke...');
       const { data, error } = await supabase.functions.invoke<FunctionResponse>('whatsapp-send', {
         body: {
           to: phoneNumber,
@@ -54,6 +60,8 @@ const SendDailyWordsButton: React.FC<SendDailyWordsButtonProps> = ({ phoneNumber
           message: `Here are your daily vocabulary words for ${category}. Enjoy learning!`
         }
       });
+
+      console.log('Supabase function response:', { data, error });
 
       if (error) {
         console.error("Supabase function invocation error:", error);
