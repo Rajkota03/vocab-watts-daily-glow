@@ -58,6 +58,11 @@ Deno.serve(async (req) => {
       return await initializeConfiguration();
     }
 
+    // Handle configuration check with detailed logging
+    if (requestData.checkConfig) {
+      return await checkConfiguration();
+    }
+
     // Handle daily words sending (vocabulary words)
     if (requestData.category && requestData.to) {
       return await sendDailyWords(requestData);
