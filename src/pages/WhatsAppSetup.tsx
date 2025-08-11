@@ -194,6 +194,16 @@ const WhatsAppSetup = () => {
     setLoading(false);
   };
   const handleCreateTemplate = async () => {
+    // Validate required fields
+    if (!newTemplate.name?.trim()) {
+      toast.error('Template name is required');
+      return;
+    }
+    if (!newTemplate.body_text?.trim()) {
+      toast.error('Template body text is required');
+      return;
+    }
+
     setLoading(true);
     try {
       const {
@@ -206,14 +216,20 @@ const WhatsAppSetup = () => {
         }
       });
       if (error) throw error;
-      toast.success('Template created successfully!');
-      setCreateTemplateOpen(false);
-      setNewTemplate({
-        category: 'utility',
-        language: 'en_US'
-      });
-      loadTemplates();
+      
+      if (data?.ok) {
+        toast.success('Template created successfully!');
+        setCreateTemplateOpen(false);
+        setNewTemplate({
+          category: 'utility',
+          language: 'en_US'
+        });
+        loadTemplates();
+      } else {
+        throw new Error(data?.error || 'Failed to create template');
+      }
     } catch (error) {
+      console.error('Error creating template:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to create template');
     }
     setLoading(false);
