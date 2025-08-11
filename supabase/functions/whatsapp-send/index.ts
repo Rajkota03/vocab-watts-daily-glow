@@ -606,7 +606,9 @@ async function getWhatsAppConfig(): Promise<WhatsAppConfig | null> {
 // Helper function to fetch existing templates from Meta API
 async function getMetaTemplates(config: WhatsAppConfig): Promise<any[]> {
   try {
-    const graphUrl = `https://graph.facebook.com/v21.0/${config.phone_number_id}/message_templates`;
+    // Use the correct endpoint for fetching message templates
+    // Templates are associated with the WhatsApp Business Account, not the phone number
+    const graphUrl = `https://graph.facebook.com/v21.0/me/message_templates`;
     const response = await fetch(graphUrl, {
       headers: {
         'Authorization': `Bearer ${config.token}`,
