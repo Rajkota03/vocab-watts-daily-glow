@@ -122,40 +122,48 @@ Deno.serve(async (req) => {
 
 // Daily words sending function
 async function sendDailyWords(payload: any) {
+  console.log('sendDailyWords called with payload:', payload);
+  
   try {
-    const { to, category, isPro, message } = payload;
+    const { to, category, isPro, message, provider } = payload;
     
-    console.log('Sending daily words:', { to, category, isPro });
+    console.log('Sending daily words:', { to, category, isPro, provider });
 
     if (!to) {
+      console.log('No recipient phone number provided');
       return new Response(
         JSON.stringify({ 
           success: false,
           error: 'Recipient phone number is required' 
         }),
         { 
-          status: 400, 
+          status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
     }
 
     // Get config from database
+    console.log('Getting WhatsApp config...');
     const configData = await getWhatsAppConfig();
+    console.log('Config data received:', configData ? 'Found' : 'Not found');
+    
     if (!configData) {
+      console.log('No WhatsApp configuration found');
       return new Response(
         JSON.stringify({ 
           success: false,
           error: 'WhatsApp not configured' 
         }),
         { 
-          status: 400, 
+          status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
     }
 
     let finalMessage = message || `Here are your daily vocabulary words for ${category}. Enjoy learning!`;
+    console.log('Initial message:', finalMessage);
 
     // If category is provided, generate vocabulary words
     if (category) {
@@ -168,21 +176,26 @@ async function sendDailyWords(payload: any) {
           }
         });
 
+        console.log('Words generation result:', { wordsData, wordsError });
+
         if (wordsError) {
           console.error('Error generating words:', wordsError);
-          throw new Error(`Failed to generate words: ${wordsError.message}`);
-        }
-
-        if (wordsData && wordsData.words && wordsData.words.length > 0) {
+          // Don't throw, just continue with default message
+          finalMessage = `📚 Your daily vocabulary words for ${category} are ready!`;
+        } else if (wordsData && wordsData.words && wordsData.words.length > 0) {
           // Format the words into a nice message
           const wordsText = wordsData.words.map((word: any, index: number) => 
             `${index + 1}. *${word.word}*\n   📖 ${word.definition}\n   💡 Example: _${word.example}_`
           ).join('\n\n');
           
           finalMessage = `🌟 *Daily Vocabulary - ${category.toUpperCase()}*\n\n${wordsText}\n\n📚 Keep learning! 🚀`;
+          console.log('Generated vocabulary message');
+        } else {
+          console.log('No words returned from generation');
+          finalMessage = `📚 Your daily vocabulary words for ${category} are ready!`;
         }
       } catch (error) {
-        console.error('Error generating vocabulary:', error);
+        console.error('Error in vocabulary generation:', error);
         // Continue with the default message if word generation fails
         finalMessage = `📚 Your daily vocabulary words for ${category} are ready! Check your app for more details.`;
       }
@@ -190,7 +203,14 @@ async function sendDailyWords(payload: any) {
 
     // Fetch existing templates from Meta and try to use one
     console.log('Fetching templates from Meta API...');
-    const templates = await getMetaTemplates(configData);
+    let templates = [];
+    try {
+      templates = await getMetaTemplates(configData);
+      console.log(`Found ${templates.length} templates from Meta API`);
+    } catch (error) {
+      console.error('Error fetching Meta templates:', error);
+      templates = [];
+    }
     
     if (templates.length > 0) {
       // Look for an approved template that we can use
@@ -217,6 +237,7 @@ async function sendDailyWords(payload: any) {
     }
 
     // If template sending fails or no templates available, return the prepared message
+    console.log('Returning success response with prepared message');
     return new Response(
       JSON.stringify({ 
         success: true,
@@ -238,10 +259,11 @@ async function sendDailyWords(payload: any) {
       JSON.stringify({ 
         success: false,
         error: 'Failed to send daily words',
-        details: error.message 
+        details: error.message,
+        stack: error.stack
       }),
       { 
-        status: 500, 
+        status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
