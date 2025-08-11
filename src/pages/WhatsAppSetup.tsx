@@ -196,6 +196,36 @@ const WhatsAppSetup = () => {
     setLoading(false);
   };
 
+  const createOtpTemplate = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('whatsapp-templates', {
+        body: {
+          action: 'create',
+          name: 'otp_code',
+          category: 'utility',
+          language: 'en_US',
+          body_text: 'Your Glintup verification code is {{1}}. It expires in {{2}} minutes.',
+          example_params: ['123456', '5']
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.ok) {
+        toast.success("OTP template created successfully");
+        loadTemplates();
+      } else {
+        throw new Error(data?.error || "Failed to create OTP template");
+      }
+    } catch (error) {
+      console.error('Error creating OTP template:', error);
+      toast.error(error.message || "Failed to create OTP template");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadTemplates = async () => {
     try {
       const { data } = await supabase.functions.invoke('whatsapp-templates', {
@@ -465,6 +495,16 @@ const WhatsAppSetup = () => {
                       <DialogDescription>
                         Create a message template for WhatsApp
                       </DialogDescription>
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={createOtpTemplate}
+                          disabled={loading}
+                        >
+                          Quick: Create OTP Template
+                        </Button>
+                      </div>
                     </DialogHeader>
                     <div className="space-y-4">
                       <div>

@@ -34,6 +34,48 @@ serve(async (req) => {
   if (req.method === "POST") {
     const body = await req.text();
     console.log("WA webhook:", body);
+    
+    try {
+      const data = JSON.parse(body);
+      
+      // Handle message status updates
+      if (data.entry?.[0]?.changes?.[0]?.value?.statuses) {
+        const statuses = data.entry[0].changes[0].value.statuses;
+        for (const status of statuses) {
+          console.log("Status update:", {
+            id: status.id,
+            status: status.status,
+            recipient_id: status.recipient_id,
+            timestamp: status.timestamp
+          });
+          
+          // TODO: Update message status in database
+          // You can implement this by calling a Supabase function or directly updating the DB
+        }
+      }
+      
+      // Handle inbound messages
+      if (data.entry?.[0]?.changes?.[0]?.value?.messages) {
+        const messages = data.entry[0].changes[0].value.messages;
+        for (const message of messages) {
+          console.log("Inbound message:", {
+            from: message.from,
+            text: message.text?.body,
+            timestamp: message.timestamp
+          });
+          
+          // Check for stop/unsubscribe
+          const text = message.text?.body?.toLowerCase().trim();
+          if (text === 'stop' || text === 'unsubscribe') {
+            console.log("Opt-out request from:", message.from);
+            // TODO: Mark number as opted out in database
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error processing webhook:", error);
+    }
+    
     return new Response("OK", { status: 200 });
   }
 
