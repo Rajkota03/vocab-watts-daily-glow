@@ -213,11 +213,12 @@ async function sendDailyWords(payload: any) {
       try {
         const params = firstWord
           ? [
-              'Learner',
-              `${firstWord.word}`,
-              `${firstWord.pronunciation || ''}`,
-              `${firstWord.definition || ''}`,
-              `${firstWord.example || ''}`
+              'Learner',              // {{1}} - Name
+              `${firstWord.word}`,    // {{2}} - Word
+              '',                     // {{3}} - Empty field (as per template)
+              `${firstWord.pronunciation || firstWord.word}`, // {{4}} - Pronunciation
+              `${firstWord.definition || ''}`,               // {{5}} - Meaning
+              `${firstWord.example || ''}`                   // {{6}} - Example
             ]
           : undefined;
         console.log('Attempting direct template send with', configuredTemplate);
@@ -251,11 +252,22 @@ async function sendDailyWords(payload: any) {
         console.log('Using approved template:', approvedTemplate.name);
         try {
           // Try to send using the approved template
+          const templateParams = firstWord && approvedTemplate.name === 'glintup_vocab_daily'
+            ? [
+                'Learner',              // {{1}} - Name
+                `${firstWord.word}`,    // {{2}} - Word
+                '',                     // {{3}} - Empty field (as per template)
+                `${firstWord.pronunciation || firstWord.word}`, // {{4}} - Pronunciation
+                `${firstWord.definition || ''}`,               // {{5}} - Meaning
+                `${firstWord.example || ''}`                   // {{6}} - Example
+              ]
+            : [];
+          
           return await sendTemplateMessage({
             to,
             name: approvedTemplate.name,
             language: approvedTemplate.language || 'en_US',
-            bodyParams: approvedTemplate.components?.[0]?.text ? [] : [finalMessage]
+            bodyParams: templateParams
           });
         } catch (templateError) {
           console.log('Template message failed:', templateError);
