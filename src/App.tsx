@@ -5,6 +5,8 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Admin from './pages/Admin';
 import WhatsAppSetup from './pages/WhatsAppSetup';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Toaster } from "@/components/ui/toaster";
 import WhatsAppTest from './pages/WhatsAppTest';
@@ -26,6 +28,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
