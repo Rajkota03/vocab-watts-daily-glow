@@ -348,28 +348,46 @@ export type Database = {
       whatsapp_config: {
         Row: {
           created_at: string
+          display_name: string | null
+          display_status: string | null
+          display_status_reason: string | null
           id: string
+          phone_number_id: string | null
           provider: string | null
+          token: string | null
           updated_at: string
           verification_token: string | null
+          waba_id: string | null
           webhook_url: string | null
           webhook_verified: boolean | null
         }
         Insert: {
           created_at?: string
+          display_name?: string | null
+          display_status?: string | null
+          display_status_reason?: string | null
           id?: string
+          phone_number_id?: string | null
           provider?: string | null
+          token?: string | null
           updated_at?: string
           verification_token?: string | null
+          waba_id?: string | null
           webhook_url?: string | null
           webhook_verified?: boolean | null
         }
         Update: {
           created_at?: string
+          display_name?: string | null
+          display_status?: string | null
+          display_status_reason?: string | null
           id?: string
+          phone_number_id?: string | null
           provider?: string | null
+          token?: string | null
           updated_at?: string
           verification_token?: string | null
+          waba_id?: string | null
           webhook_url?: string | null
           webhook_verified?: boolean | null
         }
