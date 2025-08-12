@@ -693,7 +693,7 @@ async function getWhatsAppConfig(): Promise<WhatsAppConfig | null> {
       return {
         id: newData.id,
         token,
-        phone_number_id: phoneNumberId,
+        phone_number_id: phoneNumberId, // phoneNumberId is already cleaned above
         waba_id: wabaId,
         display_name: 'Meta WhatsApp',
         display_status: 'active'
@@ -724,7 +724,7 @@ async function getWhatsAppConfig(): Promise<WhatsAppConfig | null> {
       return {
         id: newData.id,
         token,
-        phone_number_id: phoneNumberId,
+        phone_number_id: phoneNumberId, // phoneNumberId is already cleaned above
         waba_id: wabaId,
         display_name: 'Meta WhatsApp',
         display_status: 'active'
@@ -735,7 +735,7 @@ async function getWhatsAppConfig(): Promise<WhatsAppConfig | null> {
     return {
       id: data.id,
       token,
-      phone_number_id: phoneNumberId,
+      phone_number_id: phoneNumberId, // phoneNumberId is already cleaned above
       waba_id: wabaId,
       display_name: data.display_name || 'Meta WhatsApp',
       display_status: data.display_status || 'active'
