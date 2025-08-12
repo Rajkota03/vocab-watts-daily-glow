@@ -628,7 +628,7 @@ async function getWhatsAppConfig(): Promise<WhatsAppConfig | null> {
     
     // First check if we have the required environment variables
     const token = Deno.env.get('META_ACCESS_TOKEN');
-    const phoneNumberId = Deno.env.get('META_PHONE_NUMBER_ID');
+    const phoneNumberId = Deno.env.get('META_PHONE_NUMBER_ID')?.replace(/^\+/, ''); // Remove + prefix if present
     const wabaId = Deno.env.get('WA_WABA_ID');
     
     console.log('Environment check:', {
