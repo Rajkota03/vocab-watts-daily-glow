@@ -417,9 +417,10 @@ async function sendTextMessage(payload: { to: string; body: string }) {
         }
       );
     }
-
-    // Send message via Meta Graph API
-    const graphUrl = `https://graph.facebook.com/v21.0/${configData.phone_number_id}/messages`;
+    
+    // Send message via Meta Graph API - ensure phone number ID doesn't have + prefix
+    const cleanPhoneNumberId = configData.phone_number_id.replace(/^\+/, '');
+    const graphUrl = `https://graph.facebook.com/v21.0/${cleanPhoneNumberId}/messages`;
     const response = await fetch(graphUrl, {
       method: 'POST',
       headers: {
@@ -549,7 +550,8 @@ async function sendTemplateMessage(payload: { to: string; name: string; language
     }
 
     // Send template message via Meta Graph API
-    const graphUrl = `https://graph.facebook.com/v21.0/${configData.phone_number_id}/messages`;
+    const cleanPhoneNumberId = configData.phone_number_id.replace(/^\+/, '');
+    const graphUrl = `https://graph.facebook.com/v21.0/${cleanPhoneNumberId}/messages`;
     console.log('WhatsApp API URL:', graphUrl);
     console.log('Authorization header present:', !!configData.token);
     
@@ -793,7 +795,8 @@ async function checkConfiguration() {
 
     // Test the configuration by making a simple request to Meta API
     try {
-      const testUrl = `https://graph.facebook.com/v21.0/${config.phone_number_id}`;
+      const cleanPhoneNumberId = config.phone_number_id.replace(/^\+/, '');
+      const testUrl = `https://graph.facebook.com/v21.0/${cleanPhoneNumberId}`;
       const testResponse = await fetch(testUrl, {
         headers: {
           'Authorization': `Bearer ${config.token}`,
@@ -883,7 +886,8 @@ async function createTemplate(payload: any) {
     }
 
     // Create template via Meta Graph API
-    const graphUrl = `https://graph.facebook.com/v21.0/${configData.phone_number_id}/message_templates`;
+    const cleanPhoneNumberId = configData.phone_number_id.replace(/^\+/, '');
+    const graphUrl = `https://graph.facebook.com/v21.0/${cleanPhoneNumberId}/message_templates`;
     
     const templatePayload = {
       name: name,
