@@ -466,7 +466,11 @@ async function sendTextMessage(payload: { to: string; body: string }) {
     console.log('Text message sent successfully:', { to, messageId: result.messages?.[0]?.id });
 
     return new Response(
-      JSON.stringify({ ok: true, message_id: result.messages?.[0]?.id }),
+      JSON.stringify({ 
+        success: true, 
+        message_id: result.messages?.[0]?.id,
+        message: 'WhatsApp message sent successfully'
+      }),
       { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -605,7 +609,11 @@ async function sendTemplateMessage(payload: { to: string; name: string; language
     console.log('Template message sent successfully:', { to, template: name, messageId: result.messages?.[0]?.id });
 
     return new Response(
-      JSON.stringify({ ok: true, message_id: result.messages?.[0]?.id }),
+      JSON.stringify({ 
+        success: true, 
+        message_id: result.messages?.[0]?.id,
+        message: 'WhatsApp template message sent successfully'
+      }),
       { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
