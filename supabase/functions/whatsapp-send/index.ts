@@ -26,18 +26,29 @@ function getSentimentSquare(sentiment: 'positive' | 'negative' | 'neutral'): str
   }
 }
 
+// ===== Sentiment Emoji Helper =====
+const emojiStyle = "square"; // or "circle"
+const emojiSets = {
+  circle: { positive: "🟢", neutral: "🟠", negative: "🔴" },
+  square: { positive: "🟩", neutral: "🟧", negative: "🟥" }
+};
+const emojiMap = emojiSets[emojiStyle];
+
+function getSentimentEmoji(sentiment: 'positive' | 'negative' | 'neutral'): string {
+  return emojiMap[sentiment] || "";
+}
+
 function getSentimentSquareWithFallback(sentiment: 'positive' | 'negative' | 'neutral'): string {
-  // Try emojis first, with text fallback
   try {
-    const emoji = getSentimentSquare(sentiment);
-    console.log(`Sentiment for ${sentiment}: ${emoji} (${emoji.charCodeAt(0)})`);
-    return emoji;
+    return getSentimentEmoji(sentiment);
   } catch (error) {
-    console.warn('Emoji encoding failed, using text fallback:', error);
+    console.error('Error getting sentiment emoji, using text fallback:', error);
+    // Text fallback if emoji fails
     switch (sentiment) {
       case 'positive': return '[GREEN]';
       case 'negative': return '[RED]';
-      default: return '[ORANGE]';
+      case 'neutral': return '[ORANGE]';
+      default: return '[NEUTRAL]';
     }
   }
 }
@@ -258,16 +269,17 @@ async function sendDailyWords(payload: any) {
         
         const params = firstWord
           ? [
-               'Learner',              // {{1}} - Name
-               `${sentimentSquare} ${firstWord.word}`,    // {{2}} - Word with sentiment square
-               `${firstWord.pronunciation || firstWord.word}`, // {{3}} - Pronunciation
-               `${firstWord.definition || ''}`,               // {{4}} - Meaning
-               `${firstWord.example || ''}`                   // {{5}} - Example
+               'Learner',                                      // {{1}} - Name
+               firstWord.word,                                 // {{2}} - Word (plain)
+               `${firstWord.word} ${sentimentSquare}`,        // {{3}} - Word with sentiment emoji
+               firstWord.pronunciation || `/${firstWord.word}/`, // {{4}} - Pronunciation
+               firstWord.definition || '',                     // {{5}} - Meaning
+               firstWord.example || ''                         // {{6}} - Example
              ]
           : undefined;
         
-        console.log('Template parameters for direct send:', params);
-        console.log('Attempting direct template send with', configuredTemplate);
+        console.log('Template parameters for direct send (6 params):', params);
+        console.log(`Attempting direct template send with ${configuredTemplate}, params count: ${params?.length || 0}`);
         return await sendTemplateMessage({
           to,
           name: configuredTemplate,
@@ -304,15 +316,16 @@ async function sendDailyWords(payload: any) {
           
           const templateParams = firstWord && approvedTemplate.name === 'glintup_vocab_daily'
             ? [
-                'Learner',              // {{1}} - Name
-                `${sentimentSquare} ${firstWord.word}`,    // {{2}} - Word with sentiment square
-                `${firstWord.pronunciation || firstWord.word}`, // {{3}} - Pronunciation
-                `${firstWord.definition || ''}`,               // {{4}} - Meaning
-                `${firstWord.example || ''}`                   // {{5}} - Example
+                'Learner',                                      // {{1}} - Name
+                firstWord.word,                                 // {{2}} - Word (plain)
+                `${firstWord.word} ${sentimentSquare}`,        // {{3}} - Word with sentiment emoji
+                firstWord.pronunciation || `/${firstWord.word}/`, // {{4}} - Pronunciation
+                firstWord.definition || '',                     // {{5}} - Meaning
+                firstWord.example || ''                         // {{6}} - Example
               ]
             : [];
           
-          console.log('Template parameters for fallback send:', templateParams);
+          console.log(`Template parameters for fallback send (6 params): ${templateParams.length}`, templateParams);
           
           return await sendTemplateMessage({
             to,
