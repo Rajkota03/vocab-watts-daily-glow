@@ -93,7 +93,8 @@ export const sendWhatsAppMessage = async (request: SendWhatsAppRequest): Promise
     }
     
     // Check the success flag from the function's response
-    if (!functionResult || !functionResult.success) {
+    // Handle both old format {ok: true} and new format {success: true}
+    if (!functionResult || (!functionResult.success && !functionResult.ok)) {
       console.error("[WhatsApp] send-whatsapp function returned failure:", functionResult?.error);
       
       // Extract detailed error information if available
