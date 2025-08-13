@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -48,43 +49,34 @@ export const useEmailAuth = () => {
 
   const handleAuthSuccess = async (user: User) => {
     try {
-      // Create user subscription record with the collected data
-      const userData = user.user_metadata;
-      
-      const subscriptionData = {
-        email: user.email,
-        first_name: userData.first_name,
-        last_name: userData.last_name,
-        phone_number: userData.whatsapp_number,
-        is_pro: false,
-        level: null,
-        last_word_sent_id: null,
-        last_sent_at: null,
-        trial_ends_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days from now
-        category: 'general',
-        delivery_time: '10:00'
-      };
-
-      console.log('Creating subscription with data:', subscriptionData);
-
-      const { error } = await supabase
+      // Check if user already has a subscription
+      const { data: existingSubscription } = await supabase
         .from('user_subscriptions')
-        .insert(subscriptionData);
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error creating subscription:', error);
-        // Don't throw error here, just log it
-      } else {
-        toast({
-          title: "Welcome to VocabSpark!",
-          description: "Your free trial has started. Words will be delivered daily at 10 AM IST.",
-        });
+      if (existingSubscription) {
+        console.log('User already has a subscription, skipping creation');
+        navigate('/dashboard');
+        return;
       }
+
+      // Use the ensureUserSubscription function which properly handles the user context
+      const { ensureUserSubscription } = await import('@/services/subscriptionService');
+      await ensureUserSubscription(user.id, user.user_metadata?.whatsapp_number);
+
+      toast({
+        title: "Welcome to VocabSpark!",
+        description: "Your account is ready. You can now access your dashboard.",
+      });
 
       // Navigate to dashboard
       navigate('/dashboard');
     } catch (error) {
       console.error('Error in handleAuthSuccess:', error);
+      // Still navigate to dashboard even if subscription creation fails
+      navigate('/dashboard');
     }
   };
 
