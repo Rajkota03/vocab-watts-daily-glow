@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Clock, Calendar, Sparkles, Zap, Target, Coffee, Info } from 'lucide-react';
+import { Clock, Calendar, Target, Info, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { motion } from 'framer-motion';
 
 interface WordSchedulerProps {
   userId: string;
@@ -27,6 +27,10 @@ interface DeliverySettings {
 }
 
 const timeSlotEmojis = ['🌅', '☀️', '🌤️', '🌆', '🌙'];
+
+const MotionButton = motion(Button);
+const MotionCard = motion(Card);
+const MotionDiv = motion.div;
 
 const WordScheduler: React.FC<WordSchedulerProps> = ({ 
   userId, 
@@ -275,38 +279,43 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
   const previewTimes = getPreviewTimes();
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="space-y-1">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-purple-500" />
-          Words per day & delivery schedule
-        </h3>
-        <p className="text-sm text-muted-foreground">
-          Each word arrives at a different time. Tiny sips beat big dumps. 📈
-        </p>
-      </div>
+    <div className="pb-20 md:pb-0">
+      {/* Hero Card */}
+      <MotionCard 
+        className="rounded-xl border border-slate-200 bg-white p-4 md:p-5 shadow-[0_1px_2px_rgba(0,0,0,.06)]"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        {/* Header */}
+        <div className="mb-4">
+          <h3 className="text-[20px] leading-7 font-semibold flex items-center gap-2">
+            Words per day & schedule 📅
+          </h3>
+          <p className="text-[12px] leading-4 text-slate-500 mt-1">
+            Each word lands at a different time. Tiny sips win.
+          </p>
+        </div>
 
-      {/* Words per day slider */}
-      <Card className="p-4">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium">Daily words</Label>
-            <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
+        {/* Daily Word Count */}
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-[14px] leading-5 font-medium">Daily words</span>
+            <span className="px-2 py-1 bg-slate-100 rounded-full text-[12px] leading-4 font-semibold">
               {settings.wordsPerDay} words
-            </div>
+            </span>
           </div>
           
-          <Slider
-            value={[settings.wordsPerDay]}
-            onValueChange={handleWordsPerDayChange}
-            max={5}
+          <input
+            type="range"
             min={1}
-            step={1}
-            className="w-full"
+            max={5}
+            value={settings.wordsPerDay}
+            onChange={(e) => handleWordsPerDayChange([parseInt(e.target.value)])}
+            className="w-full h-3 accent-teal-600"
           />
           
-          <div className="flex justify-between text-xs text-muted-foreground">
+          <div className="flex justify-between text-[12px] leading-4 text-slate-500 mt-1">
             <span>1</span>
             <span>2</span>
             <span>3</span>
@@ -314,135 +323,185 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
             <span>5</span>
           </div>
           
-          <p className="text-xs text-muted-foreground">
-            Smart tip: smaller, spaced drops beat big dumps. 📈
+          <p className="text-[12px] leading-4 text-teal-700 mt-1">
+            Spaced drops beat big dumps. 📈
           </p>
         </div>
-      </Card>
 
-      {/* Custom times toggle */}
-      <Card className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <Label className="text-sm font-medium flex items-center gap-2">
-              Let me choose delivery times
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-3 w-3 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs text-xs">
-                      We distribute your words from morning to evening so your memory gets multiple small nudges.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </Label>
-            {settings.mode === 'auto' && (
-              <p className="text-xs text-muted-foreground">
-                We'll adjust around your timezone and quiet hours.
+        {/* Mode Toggle */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-[14px] leading-5 font-medium flex items-center gap-2">
+                Let me choose delivery times
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-3 w-3 text-slate-500" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs text-[12px] leading-4">
+                        We distribute your words from morning to evening so your memory gets multiple small nudges.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </Label>
+              <p className="text-[12px] leading-4 text-slate-500 mt-1">
+                Else we'll auto-space your words.
               </p>
-            )}
-          </div>
-          <Switch
-            checked={settings.mode === 'custom'}
-            onCheckedChange={handleModeToggle}
-          />
-        </div>
-      </Card>
-
-      {/* Schedule preview or custom times */}
-      {settings.mode === 'auto' ? (
-        <Card className="p-4 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
-          <Label className="text-sm font-medium mb-3 block flex items-center gap-2">
-            <Zap className="h-4 w-4 text-blue-500" />
-            Smart Spacing Preview
-          </Label>
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {previewTimes.map((time, index) => (
-              <div key={index} className="flex-shrink-0 bg-white rounded-lg p-3 shadow-sm min-w-[80px] text-center">
-                <div className="text-lg mb-1">{timeSlotEmojis[index % timeSlotEmojis.length]}</div>
-                <div className="text-xs font-medium">Word {index + 1}</div>
-                <div className="text-xs text-muted-foreground">{time}</div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      ) : (
-        <Card className="p-4 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
-          <Label className="text-sm font-medium mb-4 block flex items-center gap-2">
-            <Clock className="h-4 w-4 text-purple-500" />
-            Custom Delivery Times
-          </Label>
-          <div className="space-y-3">
-            {Array.from({ length: settings.wordsPerDay }, (_, index) => (
-              <div key={index} className="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm">
-                <span className="text-lg">{timeSlotEmojis[index % timeSlotEmojis.length]}</span>
-                <div className="flex-1">
-                  <p className="font-medium text-sm">Word {index + 1}</p>
-                </div>
-                <Input
-                  type="time"
-                  value={settings.customTimes[index] || '09:00'}
-                  onChange={(e) => handleCustomTimeChange(index, e.target.value)}
-                  className="w-24 h-8 text-sm"
-                  min="06:00"
-                  max="23:00"
-                />
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* Timeline preview */}
-      <Card className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-        <Label className="text-sm font-medium mb-3 block flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-green-500" />
-          Today's Timeline
-        </Label>
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {previewTimes.map((time, index) => (
-            <div key={index} className="flex-shrink-0 bg-white/80 rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap">
-              Word {index + 1} • {time}
             </div>
-          ))}
+            <motion.div
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300, damping: 24 }}
+            >
+              <Switch
+                checked={settings.mode === 'custom'}
+                onCheckedChange={handleModeToggle}
+              />
+            </motion.div>
+          </div>
         </div>
-        <p className="text-xs text-green-600 mt-2">
-          We never send multiple words together — your brain likes breathing room.
-        </p>
-      </Card>
 
-      {/* Mobile sticky bottom bar / Desktop CTA */}
-      <div className="sticky bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t md:static md:bg-transparent md:border-0 md:p-0">
-        <div className="flex items-center justify-between gap-4 md:flex-col md:gap-2">
-          <div className="text-xs text-muted-foreground md:text-center">
-            <span className="font-medium">{settings.wordsPerDay} words today</span>
-            <span className="hidden md:inline"> • </span>
-            <br className="md:hidden" />
-            <span>spaced across the day</span>
+        {/* Timeline Preview / Custom Times */}
+        {settings.mode === 'auto' ? (
+          <div className="mb-6">
+            <Label className="text-[14px] leading-5 font-medium mb-3 block flex items-center gap-2">
+              <Target className="h-4 w-4 text-teal-600" />
+              Preview
+            </Label>
+            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hidden">
+              {previewTimes.map((time, index) => (
+                <MotionDiv
+                  key={index}
+                  className="min-w-[80px] flex flex-col items-center gap-1 flex-shrink-0"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.12 }}
+                >
+                  <span className="text-[12px] leading-4 text-slate-500 px-2 py-1 bg-slate-100 rounded-full">
+                    Word {index + 1}
+                  </span>
+                  <motion.div 
+                    className="w-3 h-3 bg-teal-600 rounded-full"
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                  />
+                  <span className="text-[12px] leading-4 font-medium">{time}</span>
+                </MotionDiv>
+              ))}
+            </div>
           </div>
-          
-          <div className="flex gap-2">
-            <Button
-              onClick={saveSettings}
-              disabled={saving}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 flex-1 md:w-full"
-            >
-              {saving ? "Saving..." : "Apply"}
-            </Button>
-            
-            <Button
-              variant="outline"
-              onClick={handleSendNow}
-              disabled={loading || !phoneNumber}
-              className="md:w-full"
-            >
-              {loading ? "Sending..." : "Send Now"}
-            </Button>
+        ) : (
+          <div className="mb-6">
+            <Label className="text-[14px] leading-5 font-medium mb-3 block flex items-center gap-2">
+              <Clock className="h-4 w-4 text-teal-600" />
+              Custom times
+            </Label>
+            <div className="space-y-2">
+              {Array.from({ length: settings.wordsPerDay }, (_, index) => (
+                <MotionDiv
+                  key={index}
+                  className="flex items-center gap-3 h-12 p-2 bg-slate-50 rounded-lg"
+                  whileHover={{ backgroundColor: "rgb(248 250 252)" }}
+                  transition={{ duration: 0.12 }}
+                >
+                  <div className="w-6 h-6 bg-teal-600 text-white rounded-full flex items-center justify-center text-[12px] leading-4 font-semibold">
+                    {index + 1}
+                  </div>
+                  <span className="text-[14px] leading-5 font-medium flex-1">
+                    Word {index + 1}
+                  </span>
+                  <Input
+                    type="time"
+                    value={settings.customTimes[index] || '09:00'}
+                    onChange={(e) => handleCustomTimeChange(index, e.target.value)}
+                    className="w-20 h-8 text-[12px] leading-4 border-slate-300"
+                    min="06:00"
+                    max="23:00"
+                  />
+                </MotionDiv>
+              ))}
+            </div>
           </div>
+        )}
+
+        {/* Timeline Chips */}
+        <div>
+          <Label className="text-[14px] leading-5 font-medium mb-3 block flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-teal-600" />
+            Today's timeline
+          </Label>
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hidden">
+            {previewTimes.map((time, index) => (
+              <MotionDiv
+                key={index}
+                className="flex-shrink-0 bg-slate-100 rounded-full px-3 py-1 text-[12px] leading-4 font-medium whitespace-nowrap"
+                whileHover={{ scale: 1.05, backgroundColor: "rgb(226 232 240)" }}
+                transition={{ duration: 0.12 }}
+              >
+                Word {index + 1} • {time}
+              </MotionDiv>
+            ))}
+          </div>
+          <p className="text-[12px] leading-4 text-teal-700 mt-2">
+            We never drop two words at once.
+          </p>
         </div>
+      </MotionCard>
+
+      {/* Sticky Apply Bar (Mobile) */}
+      <motion.div 
+        className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t px-4 h-14 flex items-center justify-between md:hidden z-50"
+        initial={{ y: 100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+      >
+        <span className="text-[12px] leading-4 text-slate-600">
+          {settings.wordsPerDay} words • spaced today
+        </span>
+        <div className="flex gap-2">
+          <MotionButton
+            variant="ghost"
+            size="sm"
+            onClick={handleSendNow}
+            disabled={loading || !phoneNumber}
+            className="h-10 px-3 text-[12px] leading-4 border-slate-300 text-slate-800 hover:bg-slate-50"
+            whileTap={{ scale: 0.98 }}
+          >
+            <Send className="h-3 w-3 mr-1" />
+            {loading ? "Sending..." : "Send Now"}
+          </MotionButton>
+          <MotionButton
+            onClick={saveSettings}
+            disabled={saving}
+            className="h-10 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-[12px] leading-4"
+            whileTap={{ scale: 0.98 }}
+          >
+            {saving ? "Saving..." : "Apply"}
+          </MotionButton>
+        </div>
+      </motion.div>
+
+      {/* Desktop Actions */}
+      <div className="hidden md:flex md:gap-2 md:mt-4">
+        <MotionButton
+          onClick={saveSettings}
+          disabled={saving}
+          className="flex-1 h-10 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold"
+          whileTap={{ scale: 0.98 }}
+        >
+          {saving ? "Saving..." : "Apply"}
+        </MotionButton>
+        <MotionButton
+          variant="outline"
+          onClick={handleSendNow}
+          disabled={loading || !phoneNumber}
+          className="h-10 px-4 border-slate-300 text-slate-800 hover:bg-slate-50"
+          whileTap={{ scale: 0.98 }}
+        >
+          <Send className="h-4 w-4 mr-2" />
+          {loading ? "Sending..." : "Send Now"}
+        </MotionButton>
       </div>
     </div>
   );
