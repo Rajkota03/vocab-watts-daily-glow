@@ -65,6 +65,45 @@ export type Database = {
         }
         Relationships: []
       }
+      outbox_messages: {
+        Row: {
+          created_at: string
+          id: string
+          phone: string
+          retries: number
+          send_at: string
+          status: string
+          template: string
+          updated_at: string
+          user_id: string
+          variables: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          phone: string
+          retries?: number
+          send_at: string
+          status?: string
+          template?: string
+          updated_at?: string
+          user_id: string
+          variables?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          phone?: string
+          retries?: number
+          send_at?: string
+          status?: string
+          template?: string
+          updated_at?: string
+          user_id?: string
+          variables?: Json
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -134,54 +173,6 @@ export type Database = {
         }
         Relationships: []
       }
-      scheduled_word_sends: {
-        Row: {
-          category: string
-          created_at: string
-          error_details: string | null
-          id: string
-          message_id: string | null
-          phone_number: string
-          scheduled_date: string
-          scheduled_time: string
-          sent_at: string | null
-          status: string | null
-          updated_at: string
-          user_id: string
-          word_batch_number: number
-        }
-        Insert: {
-          category: string
-          created_at?: string
-          error_details?: string | null
-          id?: string
-          message_id?: string | null
-          phone_number: string
-          scheduled_date: string
-          scheduled_time: string
-          sent_at?: string | null
-          status?: string | null
-          updated_at?: string
-          user_id: string
-          word_batch_number: number
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          error_details?: string | null
-          id?: string
-          message_id?: string | null
-          phone_number?: string
-          scheduled_date?: string
-          scheduled_time?: string
-          sent_at?: string | null
-          status?: string | null
-          updated_at?: string
-          user_id?: string
-          word_batch_number?: number
-        }
-        Relationships: []
-      }
       sent_words: {
         Row: {
           category: string
@@ -216,6 +207,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_custom_times: {
+        Row: {
+          created_at: string
+          position: number
+          time: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          position: number
+          time: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          position?: number
+          time?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_delivery_settings: {
+        Row: {
+          auto_window_end: string
+          auto_window_start: string
+          created_at: string
+          mode: string
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          timezone: string
+          updated_at: string
+          user_id: string
+          words_per_day: number
+        }
+        Insert: {
+          auto_window_end?: string
+          auto_window_start?: string
+          created_at?: string
+          mode?: string
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          timezone?: string
+          updated_at?: string
+          user_id: string
+          words_per_day?: number
+        }
+        Update: {
+          auto_window_end?: string
+          auto_window_start?: string
+          created_at?: string
+          mode?: string
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+          words_per_day?: number
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -507,39 +558,6 @@ export type Database = {
           processed?: boolean | null
           provider?: string | null
           updated_at?: string
-        }
-        Relationships: []
-      }
-      word_schedules: {
-        Row: {
-          created_at: string
-          id: string
-          is_scheduled: boolean | null
-          schedule_times: Json | null
-          total_daily_words: number | null
-          updated_at: string
-          user_id: string
-          words_per_slot: number | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_scheduled?: boolean | null
-          schedule_times?: Json | null
-          total_daily_words?: number | null
-          updated_at?: string
-          user_id: string
-          words_per_slot?: number | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_scheduled?: boolean | null
-          schedule_times?: Json | null
-          total_daily_words?: number | null
-          updated_at?: string
-          user_id?: string
-          words_per_slot?: number | null
         }
         Relationships: []
       }
