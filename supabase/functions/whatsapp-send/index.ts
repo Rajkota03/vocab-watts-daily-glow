@@ -285,7 +285,7 @@ async function sendDailyWords(payload: any) {
           const templateParams = firstWord && approvedTemplate.name === 'glintup_vocab_fulfillment'
             ? [
                 'Learner',                                      // {{1}} - Name
-                finalMessage                                    // {{2}} - Complete formatted content
+                finalMessage.replace(/\n/g, ' ').replace(/\t/g, ' ').replace(/\s{5,}/g, '    ')  // {{2}} - Clean formatted content
               ]
             : firstWord && (approvedTemplate.name === 'glintup_vocab_daily' || approvedTemplate.name.includes('vocab'))
             ? [
