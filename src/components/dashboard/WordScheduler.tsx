@@ -54,6 +54,27 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
     fetchUserSettings();
   }, [userId]);
 
+  // Update custom times when word count changes
+  useEffect(() => {
+    if (settings.mode === 'custom') {
+      const newCustomTimes = [...settings.customTimes];
+      // Extend or trim the custom times array to match word count
+      while (newCustomTimes.length < wordCount) {
+        newCustomTimes.push('09:00');
+      }
+      setSettings(prev => ({
+        ...prev,
+        customTimes: newCustomTimes
+      }));
+    } else {
+      // For auto mode, regenerate times
+      setSettings(prev => ({
+        ...prev,
+        customTimes: generateAutoTimes(wordCount)
+      }));
+    }
+  }, [wordCount]);
+
   const fetchUserSettings = async () => {
     try {
       const { data: deliverySettings, error: settingsError } = await supabase
