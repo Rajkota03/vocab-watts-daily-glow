@@ -27,7 +27,6 @@ const Dashboard = () => {
   const [wordsLearnedThisMonth, setWordsLearnedThisMonth] = useState(45);
   const [showPhoneForm, setShowPhoneForm] = useState(false);
   const [wordCount, setWordCount] = useState(3); // Add word count state
-  const [scheduleMode, setScheduleMode] = useState<'auto' | 'custom'>('auto'); // Add schedule mode state
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -254,19 +253,16 @@ const Dashboard = () => {
         isAdmin={isAdmin}
         wordsLearnedThisMonth={wordsLearnedThisMonth}
       />
-      <DashboardMain 
-        subscription={subscription} 
-        handleCategoryUpdate={handleCategoryUpdate} 
-        handleNewBatch={handleNewBatch}
-        isGeneratingBatch={isGeneratingBatch}
-        wordsLearnedThisMonth={wordsLearnedThisMonth}
-        showPhoneForm={showPhoneForm}
-        handlePhoneNumberUpdate={handlePhoneNumberUpdate}
-        wordCount={wordCount}
-        scheduleMode={scheduleMode}
-        onWordCountChange={setWordCount}
-        onScheduleModeChange={setScheduleMode}
-      />
+        <DashboardMain 
+          subscription={subscription} 
+          handleCategoryUpdate={handleCategoryUpdate} 
+          handleNewBatch={handleNewBatch}
+          isGeneratingBatch={isGeneratingBatch}
+          wordsLearnedThisMonth={wordsLearnedThisMonth}
+          showPhoneForm={showPhoneForm}
+          handlePhoneNumberUpdate={handlePhoneNumberUpdate}
+          wordCount={wordCount}
+        />
     </div>
   );
 };

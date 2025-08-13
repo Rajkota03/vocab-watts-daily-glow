@@ -16,10 +16,10 @@ interface WordSchedulerProps {
   category: string;
   isPro: boolean;
   wordCount: number; // Added word count from learning settings
-  scheduleMode: 'auto' | 'custom'; // Added schedule mode from learning settings
 }
 
 interface DeliverySettings {
+  mode: 'auto' | 'custom';
   autoWindowStart: string;
   autoWindowEnd: string;
   timezone: string;
@@ -37,10 +37,10 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
   phoneNumber, 
   category, 
   isPro,
-  wordCount, // Use external word count
-  scheduleMode // Use external schedule mode
+  wordCount // Use external word count
 }) => {
   const [settings, setSettings] = useState<DeliverySettings>({
+    mode: 'auto',
     autoWindowStart: '09:00',
     autoWindowEnd: '21:00',
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -56,7 +56,7 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
 
   // Update custom times when word count changes
   useEffect(() => {
-    if (scheduleMode === 'custom') {
+    if (settings.mode === 'custom') {
       const newCustomTimes = [...settings.customTimes];
       // Extend or trim the custom times array to match word count
       while (newCustomTimes.length < wordCount) {
@@ -73,7 +73,7 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
         customTimes: generateAutoTimes(wordCount)
       }));
     }
-  }, [wordCount, scheduleMode]);
+  }, [wordCount]);
 
   const fetchUserSettings = async () => {
     try {
@@ -98,6 +98,7 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
         const times = customTimes?.map(ct => ct.time) || generateAutoTimes(wordCount);
 
         setSettings({
+          mode: deliverySettings.mode as 'auto' | 'custom',
           autoWindowStart: deliverySettings.auto_window_start,
           autoWindowEnd: deliverySettings.auto_window_end,
           timezone: deliverySettings.timezone,
@@ -121,12 +122,23 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
   };
 
   const getPreviewTimes = () => {
-    if (scheduleMode === 'auto') {
+    if (settings.mode === 'auto') {
       return generateAutoTimes(wordCount);
     }
     return settings.customTimes.slice(0, wordCount);
   };
 
+  const handleModeToggle = (enabled: boolean) => {
+    const newMode: 'auto' | 'custom' = enabled ? 'custom' : 'auto';
+    const newSettings: DeliverySettings = { 
+      ...settings, 
+      mode: newMode,
+      customTimes: newMode === 'auto' 
+        ? generateAutoTimes(wordCount)
+        : settings.customTimes
+    };
+    setSettings(newSettings);
+  };
 
   const handleCustomTimeChange = (index: number, newTime: string) => {
     const newTimes = [...settings.customTimes];
@@ -157,7 +169,7 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
         .upsert({
           user_id: userId,
           words_per_day: wordCount, // Use external word count
-          mode: scheduleMode, // Use external schedule mode
+          mode: settings.mode,
           auto_window_start: settings.autoWindowStart,
           auto_window_end: settings.autoWindowEnd,
           timezone: settings.timezone
@@ -166,7 +178,7 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
       if (settingsError) throw settingsError;
 
       // Save custom times if in custom mode
-      if (scheduleMode === 'custom') {
+      if (settings.mode === 'custom') {
         // Delete existing custom times
         await supabase
           .from('user_custom_times')
@@ -283,8 +295,39 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
+        {/* Small Sleek Toggle */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between py-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[16px] leading-6 font-semibold text-slate-800">Let me choose times</span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-slate-400" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs text-[12px] leading-4">
+                      Set custom delivery times or let us auto-space your words
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <motion.div
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 20 }}
+            >
+              <Switch
+                checked={settings.mode === 'custom'}
+                onCheckedChange={handleModeToggle}
+                className="data-[state=checked]:bg-teal-600"
+              />
+            </motion.div>
+          </div>
+        </div>
+
         {/* Sleek Timeline Preview / Modern Custom Times */}
-        {scheduleMode === 'auto' ? (
+        {settings.mode === 'auto' ? (
           <div className="mb-6">
             <div className="text-[13px] leading-5 font-medium text-slate-600 mb-3 flex items-center gap-2">
               <div className="w-1 h-4 bg-teal-500 rounded-full"></div>

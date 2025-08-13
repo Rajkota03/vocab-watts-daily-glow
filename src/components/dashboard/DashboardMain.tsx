@@ -19,9 +19,6 @@ interface DashboardMainProps {
   showPhoneForm?: boolean;
   handlePhoneNumberUpdate?: (newPhoneNumber: string) => void;
   wordCount?: number; // Add wordCount prop
-  scheduleMode?: 'auto' | 'custom'; // Add schedule mode prop
-  onWordCountChange?: (count: number) => void; // Add word count change callback
-  onScheduleModeChange?: (mode: 'auto' | 'custom') => void; // Add schedule mode change callback
 }
 
 const DashboardMain: React.FC<DashboardMainProps> = ({
@@ -32,10 +29,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
   wordsLearnedThisMonth = 0,
   showPhoneForm = false,
   handlePhoneNumberUpdate,
-  wordCount = 3, // Default word count
-  scheduleMode = 'auto', // Default schedule mode
-  onWordCountChange,
-  onScheduleModeChange
+  wordCount = 3 // Default word count
 }) => {
   const { session } = useAuthHandler();
   const userId = session?.user?.id;
@@ -65,9 +59,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
               onCategoryUpdate={handleCategoryUpdate} 
               onNewBatch={handleNewBatch}
               isLoadingNewBatch={isGeneratingBatch}
-              onWordCountChange={onWordCountChange}
-              scheduleMode={scheduleMode}
-              onScheduleModeChange={onScheduleModeChange}
+              onWordCountChange={(count) => {}} // Pass wordCount callback placeholder for now
             />
           </div>
 
@@ -79,7 +71,6 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
               category={subscription.category}
               isPro={subscription.is_pro}
               wordCount={wordCount}
-              scheduleMode={scheduleMode}
             />
           </div>
 
