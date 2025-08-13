@@ -72,6 +72,14 @@ export const ensureUserSubscription = async (userId: string, phoneNumber?: strin
     return;
   }
   
+  // Prevent multiple concurrent calls for the same user
+  const cacheKey = `creating_subscription_${userId}`;
+  if (globalThis[cacheKey]) {
+    console.log(`ensureUserSubscription: Already creating subscription for user ${userId}, skipping.`);
+    return;
+  }
+  globalThis[cacheKey] = true;
+  
   try {
     // First, check if a subscription exists
     const { data, error, count } = await supabase
@@ -101,15 +109,30 @@ export const ensureUserSubscription = async (userId: string, phoneNumber?: strin
         }
       }
       
+      // Get the current user session first
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('ensureUserSubscription: No valid session found:', sessionError);
+        return;
+      }
+      
       // Create a new subscription with default values
+      const subscriptionData = {
+        user_id: userId,
+        phone_number: phoneToUse || '',
+        is_pro: false,
+        category: 'daily-beginner',
+        email: session.user.email,
+        first_name: session.user.user_metadata?.first_name || '',
+        last_name: session.user.user_metadata?.last_name || ''
+      };
+      
+      console.log('Creating subscription with data:', subscriptionData);
+      
       const { error: insertError } = await supabase
         .from('user_subscriptions')
-        .insert({
-          user_id: userId,
-          phone_number: phoneToUse || '',
-          is_pro: false,
-          category: 'daily-beginner'
-        });
+        .insert(subscriptionData);
         
       if (insertError) {
         console.error(`ensureUserSubscription: Error creating subscription for user ${userId}:`, insertError);
@@ -119,5 +142,8 @@ export const ensureUserSubscription = async (userId: string, phoneNumber?: strin
     }
   } catch (error) {
     console.error(`ensureUserSubscription: Unexpected error for user ${userId}:`, error);
+  } finally {
+    // Clear the cache flag
+    delete globalThis[cacheKey];
   }
 };

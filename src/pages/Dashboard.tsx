@@ -72,14 +72,6 @@ const Dashboard = () => {
         
         if (profileData) {
           setUserNickname(profileData.nick_name || profileData.first_name || 'there');
-          
-          // If profile has WhatsApp number, ensure it's also in the user_subscriptions table
-          if (profileData.whatsapp_number) {
-            await import('@/services/subscriptionService')
-              .then(({ ensureUserSubscription }) => {
-                ensureUserSubscription(session.user.id, profileData.whatsapp_number);
-              });
-          }
         }
         
         // Fetch subscription data (get most recent)
@@ -99,12 +91,10 @@ const Dashboard = () => {
           });
           setShowPhoneForm(!subscriptionData.phone_number);
         } else {
-          // If no subscription data exists, ensure one is created
-          await import('@/services/subscriptionService')
-            .then(({ ensureUserSubscription }) => {
-              ensureUserSubscription(session.user.id);
-            });
-          setShowPhoneForm(true);
+          // If no subscription data exists, ensure one is created with profile WhatsApp number if available
+          const { ensureUserSubscription } = await import('@/services/subscriptionService');
+          await ensureUserSubscription(session.user.id, profileData?.whatsapp_number);
+          setShowPhoneForm(!profileData?.whatsapp_number);
         }
 
         const { data: wordsData } = await supabase
