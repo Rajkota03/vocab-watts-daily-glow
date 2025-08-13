@@ -270,8 +270,9 @@ async function sendDailyWords(payload: any) {
     }
     
     if (templates.length > 0) {
-      // Look for an approved template that we can use
-      const approvedTemplate = templates.find(t => t.status === 'APPROVED');
+      // Look for the specific vocab daily template first, then any approved template
+      const approvedTemplate = templates.find(t => t.name === 'glintup_vocab_daily' && t.status === 'APPROVED') || 
+                               templates.find(t => t.status === 'APPROVED');
       
       if (approvedTemplate) {
         console.log('Using approved template:', approvedTemplate.name);
