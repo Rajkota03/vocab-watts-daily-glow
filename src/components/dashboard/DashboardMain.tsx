@@ -44,7 +44,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
           {/* Phone Number Update Form (conditionally displayed) */}
           {showPhoneForm && userId && handlePhoneNumberUpdate && <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
               <h3 className="text-xl font-semibold mb-4 text-gray-800">Update Your WhatsApp Number</h3>
-              <PhoneNumberUpdateForm currentPhoneNumber={subscription.phone_number} userId={userId} onUpdate={handlePhoneNumberUpdate} />
+              <PhoneNumberUpdateForm currentPhoneNumber={subscription.phone_number} userId={userId} onUpdate={handlePhoneNumberUpdate} className="px-[9px]" />
             </div>}
 
           {/* Section for Learning Settings - First */}
@@ -54,7 +54,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
           </div>
 
           {/* Section for Schedule - Second */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 px-[12px] py-[6px]">
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <WordScheduler userId={userId!} phoneNumber={subscription.phone_number} category={subscription.category} isPro={subscription.is_pro} wordCount={wordCount} />
           </div>
 

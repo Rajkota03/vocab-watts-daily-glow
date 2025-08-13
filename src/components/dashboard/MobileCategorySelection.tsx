@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { BookOpen, Briefcase, MessageSquare, GraduationCap, Smile, Sparkles, Heart, Zap, RefreshCw, Check, ListOrdered, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,6 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useNavigate } from 'react-router-dom';
-
 interface MobileCategorySelectionProps {
   isPro: boolean;
   currentCategory: string;
@@ -14,7 +12,6 @@ interface MobileCategorySelectionProps {
   onNewBatch?: () => Promise<void>;
   isLoadingNewBatch?: boolean;
 }
-
 const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   isPro,
   currentCategory,
@@ -31,18 +28,14 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   React.useEffect(() => {
     let initialPrimary = null;
     let initialSub = null;
-
     if (currentCategory && currentCategory.includes('-')) {
       const [primary, sub] = currentCategory.split('-');
       initialPrimary = primary;
       initialSub = sub;
     }
-    
     setSelectedPrimary(initialPrimary);
     setSelectedSubcategory(initialSub);
-
   }, [currentCategory]);
-
   const categories = [{
     id: 'daily',
     name: 'Daily',
@@ -100,7 +93,6 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
     activeColor: 'ring-indigo-400 from-indigo-500/30 to-indigo-600/30',
     proOnly: true
   }];
-
   const difficultyLevels = [{
     id: 'beginner',
     name: 'Beginner',
@@ -126,7 +118,6 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
     activeColor: 'from-purple-500/30 to-purple-600/30',
     proOnly: true
   }];
-
   const examTypes = [{
     id: 'gre',
     name: 'GRE',
@@ -168,63 +159,53 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
     activeColor: 'from-indigo-500/30 to-indigo-600/30',
     proOnly: true
   }];
-
   const wordCountOptions = [{
     count: 1,
     message: "Focus on mastering one word at a time. 🎯",
     color: "bg-green-100 text-green-800",
     activeColor: "ring-green-500",
     proOnly: false
-  },
-  {
+  }, {
     count: 2,
     message: "A balanced approach to expand your vocabulary steadily. 📚",
     color: "bg-blue-100 text-blue-800",
     activeColor: "ring-blue-500",
     proOnly: false
-  },
-  {
+  }, {
     count: 3,
     message: "Build your vocabulary with confidence! 💪",
     color: "bg-indigo-100 text-indigo-800",
     activeColor: "ring-indigo-500",
     proOnly: false
-  },
-  {
+  }, {
     count: 4,
     message: "Take your language skills to the next level! 🚀",
     color: "bg-orange-100 text-orange-800",
     activeColor: "ring-orange-500",
     proOnly: true
-  },
-  {
+  }, {
     count: 5,
     message: "Impressive commitment to rapid vocabulary growth! 🏆",
     color: "bg-pink-100 text-pink-800",
     activeColor: "ring-pink-500",
     proOnly: true
   }];
-
   const handlePrimarySelect = (categoryId: string) => {
     setSelectedPrimary(categoryId);
     // Reset subcategory if primary changes, unless it's the same category
     if (categoryId !== selectedPrimary) {
-       setSelectedSubcategory(null);
+      setSelectedSubcategory(null);
     }
   };
-
   const handleDifficultySelect = (difficultyId: string) => {
     setSelectedSubcategory(difficultyId);
   };
-
   const handleWordCountSelect = (count: number) => {
     setWordCount(count);
   };
-
   const handleUpgrade = () => {
     navigate('/upgrade');
   };
-
   const handleApply = async () => {
     if (selectedPrimary && selectedSubcategory) {
       onCategoryUpdate(selectedPrimary, selectedSubcategory);
@@ -235,85 +216,55 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
       }
     }
   };
-
   const isFullySelected = selectedPrimary && selectedSubcategory;
 
   // Determine which subcategories/levels to show
   const subcategoryOptions = selectedPrimary === 'exam' ? examTypes : difficultyLevels;
-
   return (
     // Use flex column and allow scrolling for the main content area
     <div className="flex flex-col h-full bg-gray-50 rounded-lg">
       {/* Scrollable content area */}
-      <ScrollArea className="flex-1 p-3">
+      <ScrollArea className="flex-1 p-3 px-0 py-0 mx-0 my-0">
         {/* Word Category Section */}
-        <div className="bg-white rounded-xl p-3 mb-3 shadow-sm border border-gray-200">
+        <div className="bg-white rounded-xl p-3 mb-3 shadow-sm border border-gray-200 px-[11px]">
           <h3 className="text-sm font-semibold text-gray-800 mb-2">Word Category</h3>
           {/* Responsive grid: 3 columns default, adjust as needed */}
           <div className="grid grid-cols-3 gap-2">
-            {categories.map(category => (
-              <TooltipProvider key={category.id} delayDuration={300}>
+            {categories.map(category => <TooltipProvider key={category.id} delayDuration={300}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="relative">
-                      <button
-                        onClick={() => handlePrimarySelect(category.id)}
-                        className={cn(
-                          "relative flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 w-full aspect-square", // Use aspect-square for consistent shape
-                          "bg-gradient-to-br shadow-sm border",
-                          "hover:shadow-md hover:scale-105",
-                          selectedPrimary === category.id
-                            ? ["ring-2 ring-offset-1", category.activeColor, "border-transparent"]
-                            : "border-gray-200",
-                          category.color,
-                           category.hoverColor
-                         )}
-                         aria-label={`Select category ${category.name}`}
-                      >
-                        <div className="mb-1">{React.cloneElement(category.icon, { className: "h-5 w-5" })}</div>
+                      <button onClick={() => handlePrimarySelect(category.id)} className={cn("relative flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 w-full aspect-square",
+                    // Use aspect-square for consistent shape
+                    "bg-gradient-to-br shadow-sm border", "hover:shadow-md hover:scale-105", selectedPrimary === category.id ? ["ring-2 ring-offset-1", category.activeColor, "border-transparent"] : "border-gray-200", category.color, category.hoverColor)} aria-label={`Select category ${category.name}`}>
+                        <div className="mb-1">{React.cloneElement(category.icon, {
+                          className: "h-5 w-5"
+                        })}</div>
                         <span className="text-xs font-medium text-center leading-tight line-clamp-2">
                           {category.name}
                         </span>
-                        {selectedPrimary === category.id && (
-                          <div className="absolute -top-1 -right-1 bg-white rounded-full shadow p-0.5">
+                        {selectedPrimary === category.id && <div className="absolute -top-1 -right-1 bg-white rounded-full shadow p-0.5">
                             <Check className="h-3 w-3 text-vocab-purple" />
-                          </div>
-                        )}
+                          </div>}
                        </button>
                      </div>
                    </TooltipTrigger>
                  </Tooltip>
-              </TooltipProvider>
-            ))}
+              </TooltipProvider>)}
           </div>
         </div>
 
         {/* Difficulty Level Section - Only show if a primary category is selected */}
-        {selectedPrimary && (
-          <div className="bg-white rounded-xl p-3 mb-3 shadow-sm border border-gray-200 animate-fade-in">
+        {selectedPrimary && <div className="bg-white rounded-xl p-3 mb-3 shadow-sm border border-gray-200 animate-fade-in">
             <h3 className="text-sm font-semibold text-gray-800 mb-2">
               {selectedPrimary === 'exam' ? 'Select Exam' : 'Difficulty Level'}
             </h3>
             <div className="grid grid-cols-3 gap-2">
-              {subcategoryOptions.map(level => (
-                <TooltipProvider key={level.id} delayDuration={300}>
+              {subcategoryOptions.map(level => <TooltipProvider key={level.id} delayDuration={300}>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="relative">
-                        <button
-                          onClick={() => handleDifficultySelect(level.id)}
-                          className={cn(
-                            "p-2 rounded-lg text-sm font-medium transition-all duration-200 w-full min-h-[70px] flex flex-col justify-center items-center text-center",
-                            "bg-gradient-to-br shadow-sm border",
-                            "hover:shadow-md hover:scale-105",
-                            selectedSubcategory === level.id
-                              ? ["ring-2 ring-offset-1", level.activeColor, "border-transparent"]
-                              : "border-gray-200",
-                             level.color,
-                             level.textColor
-                           )}
-                            aria-label={`Select level ${level.name}`}
-                        >
+                        <button onClick={() => handleDifficultySelect(level.id)} className={cn("p-2 rounded-lg text-sm font-medium transition-all duration-200 w-full min-h-[70px] flex flex-col justify-center items-center text-center", "bg-gradient-to-br shadow-sm border", "hover:shadow-md hover:scale-105", selectedSubcategory === level.id ? ["ring-2 ring-offset-1", level.activeColor, "border-transparent"] : "border-gray-200", level.color, level.textColor)} aria-label={`Select level ${level.name}`}>
                           <span className="font-semibold text-xs mb-0.5 line-clamp-1">{level.name}</span>
                           <span className="text-[10px] opacity-80 line-clamp-2">
                             {level.description}
@@ -322,80 +273,49 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
                        </div>
                      </TooltipTrigger>
                    </Tooltip>
-                </TooltipProvider>
-              ))}
+                </TooltipProvider>)}
             </div>
-          </div>
-        )}
+          </div>}
 
         {/* Word Count Section - Only show if subcategory is selected */}
-        {selectedSubcategory && (
-          <div className="bg-white rounded-xl p-3 mb-3 shadow-sm border border-gray-200 animate-fade-in">
+        {selectedSubcategory && <div className="bg-white rounded-xl p-3 mb-3 shadow-sm border border-gray-200 animate-fade-in">
             <div className="flex items-center mb-2">
               <ListOrdered className="h-4 w-4 mr-1.5 text-vocab-purple" />
               <h3 className="text-sm font-semibold text-gray-800">Daily Word Count</h3>
             </div>
             {/* Responsive grid for word count */}
             <div className="grid grid-cols-5 gap-1.5 mb-2">
-              {wordCountOptions.map(option => (
-                <TooltipProvider key={option.count} delayDuration={300}>
+              {wordCountOptions.map(option => <TooltipProvider key={option.count} delayDuration={300}>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="relative">
-                        <button
-                          onClick={() => handleWordCountSelect(option.count)}
-                          className={cn(
-                            "w-full py-2.5 rounded-md text-center font-bold text-sm transition-all border",
-                            wordCount === option.count
-                              ? ["ring-2 ring-offset-1", option.activeColor, "border-transparent scale-105"]
-                              : "border-gray-200",
-                             option.color,
-                             "hover:scale-105"
-                           )}
-                           aria-label={`Select ${option.count} words per day`}
-                        >
+                        <button onClick={() => handleWordCountSelect(option.count)} className={cn("w-full py-2.5 rounded-md text-center font-bold text-sm transition-all border", wordCount === option.count ? ["ring-2 ring-offset-1", option.activeColor, "border-transparent scale-105"] : "border-gray-200", option.color, "hover:scale-105")} aria-label={`Select ${option.count} words per day`}>
                            {option.count}
                          </button>
                        </div>
                      </TooltipTrigger>
                    </Tooltip>
-                </TooltipProvider>
-              ))}
+                </TooltipProvider>)}
             </div>
             <p className="text-xs text-gray-600 italic text-center px-2">
               {wordCountOptions.find(option => option.count === wordCount)?.message}
             </p>
-          </div>
-        )}
+          </div>}
       </ScrollArea>
 
       {/* Sticky Footer Button */}
       <div className="p-3 border-t border-gray-200 bg-white rounded-b-lg sticky bottom-0 z-10">
-        <Button
-          onClick={handleApply}
-          disabled={!isFullySelected || isLoadingNewBatch}
-          className={cn(
-            "w-full bg-gradient-to-r from-vocab-purple to-indigo-500 hover:from-vocab-purple/90 hover:to-indigo-500/90 text-white h-11 rounded-lg shadow-sm text-sm font-semibold",
-            (!isFullySelected || isLoadingNewBatch) && "opacity-50 cursor-not-allowed"
-            )}
-          aria-live="polite"
-        >
-          {isLoadingNewBatch ? (
-            <>
+        <Button onClick={handleApply} disabled={!isFullySelected || isLoadingNewBatch} className={cn("w-full bg-gradient-to-r from-vocab-purple to-indigo-500 hover:from-vocab-purple/90 hover:to-indigo-500/90 text-white h-11 rounded-lg shadow-sm text-sm font-semibold", (!isFullySelected || isLoadingNewBatch) && "opacity-50 cursor-not-allowed")} aria-live="polite">
+          {isLoadingNewBatch ? <>
               <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
               Generating...
-            </>
-          ) : (
-            <>
+            </> : <>
               <Zap className="mr-2 h-4 w-4" />
               Apply Selection
-            </>
-          )}
+            </>}
         </Button>
       </div>
     </div>
   );
 };
-
 export default MobileCategorySelection;
-
