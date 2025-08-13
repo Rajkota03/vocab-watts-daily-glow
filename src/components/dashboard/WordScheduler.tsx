@@ -280,142 +280,149 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
 
   return (
     <div className="pb-20 md:pb-0 -mx-2 md:mx-0">
-      {/* Hero Card */}
+      {/* Sleek Schedule Card */}
       <MotionCard 
         className="rounded-xl border border-slate-200 bg-white p-3 md:p-5 mx-2 md:mx-0 shadow-[0_1px_2px_rgba(0,0,0,.06)]"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        {/* Header */}
-        <div className="mb-4">
-          <h3 className="text-[20px] leading-7 font-semibold flex items-center gap-2">
-            Words per day & schedule 📅
-          </h3>
-          <p className="text-[12px] leading-4 text-slate-500 mt-1">
-            Each word lands at a different time. Tiny sips win.
-          </p>
-        </div>
-
-        {/* Daily Word Count */}
+        {/* Daily Word Count - Sleek Bar */}
         <div className="mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-[14px] leading-5 font-medium">Daily words</span>
-            <span className="px-2 py-1 bg-slate-100 rounded-full text-[12px] leading-4 font-semibold">
-              {settings.wordsPerDay} words
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-[16px] leading-6 font-semibold text-slate-800">Daily words</span>
+            <span className="px-3 py-1 bg-teal-50 text-teal-700 rounded-full text-[14px] leading-5 font-semibold border border-teal-100">
+              {settings.wordsPerDay}
             </span>
           </div>
           
-          <input
-            type="range"
-            min={1}
-            max={5}
-            value={settings.wordsPerDay}
-            onChange={(e) => handleWordsPerDayChange([parseInt(e.target.value)])}
-            className="w-full h-3 accent-teal-600"
-          />
-          
-          <div className="flex justify-between text-[12px] leading-4 text-slate-500 mt-1">
-            <span>1</span>
-            <span>2</span>
-            <span>3</span>
-            <span>4</span>
-            <span>5</span>
+          {/* Sleek Range Input */}
+          <div className="relative">
+            <input
+              type="range"
+              min={1}
+              max={5}
+              value={settings.wordsPerDay}
+              onChange={(e) => handleWordsPerDayChange([parseInt(e.target.value)])}
+              className="w-full h-2 bg-slate-100 rounded-full appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-1 slider"
+              style={{
+                background: `linear-gradient(to right, #0d9488 0%, #0d9488 ${((settings.wordsPerDay - 1) / 4) * 100}%, #f1f5f9 ${((settings.wordsPerDay - 1) / 4) * 100}%, #f1f5f9 100%)`
+              }}
+            />
+            <style>{`
+              .slider::-webkit-slider-thumb {
+                appearance: none;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: #0d9488;
+                cursor: pointer;
+                border: 3px solid white;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+              }
+              .slider::-moz-range-thumb {
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: #0d9488;
+                cursor: pointer;
+                border: 3px solid white;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+              }
+            `}</style>
           </div>
           
-          <p className="text-[12px] leading-4 text-teal-700 mt-1">
-            Spaced drops beat big dumps. 📈
-          </p>
+          <div className="flex justify-between text-[11px] leading-4 text-slate-400 mt-2 px-1">
+            {[1, 2, 3, 4, 5].map(num => (
+              <span key={num} className={settings.wordsPerDay >= num ? 'text-teal-600 font-medium' : ''}>
+                {num}
+              </span>
+            ))}
+          </div>
         </div>
 
-        {/* Mode Toggle */}
+        {/* Small Sleek Toggle */}
         <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-[14px] leading-5 font-medium flex items-center gap-2">
-                Let me choose delivery times
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Info className="h-3 w-3 text-slate-500" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs text-[12px] leading-4">
-                        We distribute your words from morning to evening so your memory gets multiple small nudges.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </Label>
-              <p className="text-[12px] leading-4 text-slate-500 mt-1">
-                Else we'll auto-space your words.
-              </p>
+          <div className="flex items-center justify-between py-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[14px] leading-5 font-medium text-slate-700">Let me choose times</span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-3 w-3 text-slate-400" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs text-[11px] leading-4">
+                      Set custom delivery times or let us auto-space your words
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <motion.div
               whileTap={{ scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 300, damping: 24 }}
+              transition={{ type: "spring", stiffness: 400, damping: 20 }}
             >
               <Switch
                 checked={settings.mode === 'custom'}
                 onCheckedChange={handleModeToggle}
+                className="data-[state=checked]:bg-teal-600"
               />
             </motion.div>
           </div>
         </div>
 
-        {/* Timeline Preview / Custom Times */}
+        {/* Sleek Timeline Preview / Modern Custom Times */}
         {settings.mode === 'auto' ? (
           <div className="mb-6">
-            <Label className="text-[14px] leading-5 font-medium mb-3 block flex items-center gap-2">
-              <Target className="h-4 w-4 text-teal-600" />
-              Preview
-            </Label>
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hidden">
+            <div className="text-[13px] leading-5 font-medium text-slate-600 mb-3 flex items-center gap-2">
+              <div className="w-1 h-4 bg-teal-500 rounded-full"></div>
+              Smart spacing preview
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hidden">
               {previewTimes.map((time, index) => (
                 <MotionDiv
                   key={index}
-                  className="min-w-[80px] flex flex-col items-center gap-1 flex-shrink-0"
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.12 }}
+                  className="min-w-[70px] flex flex-col items-center gap-2 flex-shrink-0 p-2 bg-gradient-to-br from-teal-50 to-teal-100 rounded-lg border border-teal-200"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  transition={{ duration: 0.15 }}
                 >
-                  <span className="text-[12px] leading-4 text-slate-500 px-2 py-1 bg-slate-100 rounded-full">
-                    Word {index + 1}
-                  </span>
                   <motion.div 
-                    className="w-3 h-3 bg-teal-600 rounded-full"
+                    className="w-2 h-2 bg-teal-500 rounded-full"
                     animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    transition={{ duration: 0.8, delay: index * 0.1, repeat: Infinity, repeatDelay: 2 }}
                   />
-                  <span className="text-[12px] leading-4 font-medium">{time}</span>
+                  <span className="text-[11px] leading-4 font-semibold text-teal-700">{time}</span>
+                  <span className="text-[10px] leading-3 text-teal-600">#{index + 1}</span>
                 </MotionDiv>
               ))}
             </div>
           </div>
         ) : (
           <div className="mb-6">
-            <Label className="text-[14px] leading-5 font-medium mb-3 block flex items-center gap-2">
-              <Clock className="h-4 w-4 text-teal-600" />
-              Custom times
-            </Label>
+            <div className="text-[13px] leading-5 font-medium text-slate-600 mb-3 flex items-center gap-2">
+              <div className="w-1 h-4 bg-slate-500 rounded-full"></div>
+              Custom delivery times
+            </div>
             <div className="space-y-2">
               {Array.from({ length: settings.wordsPerDay }, (_, index) => (
                 <MotionDiv
                   key={index}
-                  className="flex items-center gap-3 h-12 p-2 bg-slate-50 rounded-lg"
-                  whileHover={{ backgroundColor: "rgb(248 250 252)" }}
-                  transition={{ duration: 0.12 }}
+                  className="flex items-center gap-3 h-11 px-3 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors"
+                  whileHover={{ x: 2 }}
+                  transition={{ duration: 0.15 }}
                 >
-                  <div className="w-6 h-6 bg-teal-600 text-white rounded-full flex items-center justify-center text-[12px] leading-4 font-semibold">
+                  <div className="w-5 h-5 bg-gradient-to-br from-slate-600 to-slate-700 text-white rounded-full flex items-center justify-center text-[10px] leading-3 font-bold">
                     {index + 1}
                   </div>
-                  <span className="text-[14px] leading-5 font-medium flex-1">
+                  <span className="text-[13px] leading-5 font-medium text-slate-700 flex-1">
                     Word {index + 1}
                   </span>
                   <Input
                     type="time"
                     value={settings.customTimes[index] || '09:00'}
                     onChange={(e) => handleCustomTimeChange(index, e.target.value)}
-                    className="w-20 h-8 text-[12px] leading-4 border-slate-300"
+                    className="w-16 h-7 text-[11px] leading-4 border-slate-300 rounded-md bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                     min="06:00"
                     max="23:00"
                   />
@@ -425,27 +432,20 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
           </div>
         )}
 
-        {/* Timeline Chips */}
-        <div>
-          <Label className="text-[14px] leading-5 font-medium mb-3 block flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-teal-600" />
-            Today's timeline
-          </Label>
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hidden">
+        {/* Minimal Timeline Summary */}
+        <div className="border-t border-slate-100 pt-4">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hidden">
             {previewTimes.map((time, index) => (
               <MotionDiv
                 key={index}
-                className="flex-shrink-0 bg-slate-100 rounded-full px-3 py-1 text-[12px] leading-4 font-medium whitespace-nowrap"
-                whileHover={{ scale: 1.05, backgroundColor: "rgb(226 232 240)" }}
+                className="flex-shrink-0 bg-white border border-slate-200 rounded-full px-2 py-1 text-[10px] leading-3 font-medium text-slate-600 whitespace-nowrap"
+                whileHover={{ scale: 1.05, borderColor: "rgb(20 184 166)" }}
                 transition={{ duration: 0.12 }}
               >
-                Word {index + 1} • {time}
+                #{index + 1} • {time}
               </MotionDiv>
             ))}
           </div>
-          <p className="text-[12px] leading-4 text-teal-700 mt-2">
-            We never drop two words at once.
-          </p>
         </div>
       </MotionCard>
 

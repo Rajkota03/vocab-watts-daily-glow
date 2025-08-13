@@ -48,17 +48,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
             </div>
           )}
 
-          {/* Section for Word Scheduler */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <WordScheduler 
-              userId={userId!}
-              phoneNumber={subscription.phone_number}
-              category={subscription.category}
-              isPro={subscription.is_pro}
-            />
-          </div>
-
-          {/* Section for Category Selection */}
+          {/* Section for Learning Settings - First */}
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
              <h3 className="text-xl font-semibold mb-4 text-gray-800">Learning Settings</h3>
             <CategorySelection 
@@ -67,6 +57,16 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
               onCategoryUpdate={handleCategoryUpdate} 
               onNewBatch={handleNewBatch}
               isLoadingNewBatch={isGeneratingBatch} 
+            />
+          </div>
+
+          {/* Section for Schedule - Second */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <WordScheduler 
+              userId={userId!}
+              phoneNumber={subscription.phone_number}
+              category={subscription.category}
+              isPro={subscription.is_pro}
             />
           </div>
 
