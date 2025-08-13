@@ -245,7 +245,7 @@ async function sendDailyWords(payload: any) {
           // Keep reference to the first word for template params
           firstWord = wordsData.words[0];
           
-          finalMessage = `🌟 *Daily Vocabulary - ${category.toUpperCase()}*\n\n${wordsText}\n\n📚 Keep learning! 🚀`;
+          finalMessage = `🌟 *${category.toUpperCase()}*\n\n${wordsText}\n\n📚 Keep learning! 🚀`;
           console.log('Generated vocabulary message');
         } else {
           console.log('No words returned from generation');
