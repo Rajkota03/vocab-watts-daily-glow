@@ -26,7 +26,8 @@ const Dashboard = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [wordsLearnedThisMonth, setWordsLearnedThisMonth] = useState(45);
   const [showPhoneForm, setShowPhoneForm] = useState(false);
-  const [wordCount, setWordCount] = useState(3); // Add word count state
+  const [wordCount, setWordCount] = useState(3);
+  const [customDeliveryMode, setCustomDeliveryMode] = useState(false);
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -262,6 +263,9 @@ const Dashboard = () => {
           showPhoneForm={showPhoneForm}
           handlePhoneNumberUpdate={handlePhoneNumberUpdate}
           wordCount={wordCount}
+          customDeliveryMode={customDeliveryMode}
+          onDeliveryModeChange={setCustomDeliveryMode}
+          onWordCountChange={setWordCount}
         />
     </div>
   );

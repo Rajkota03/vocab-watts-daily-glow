@@ -18,7 +18,10 @@ interface DashboardMainProps {
   wordsLearnedThisMonth?: number;
   showPhoneForm?: boolean;
   handlePhoneNumberUpdate?: (newPhoneNumber: string) => void;
-  wordCount?: number; // Add wordCount prop
+  wordCount?: number;
+  customDeliveryMode?: boolean;
+  onDeliveryModeChange?: (custom: boolean) => void;
+  onWordCountChange?: (count: number) => void;
 }
 
 const DashboardMain: React.FC<DashboardMainProps> = ({
@@ -29,7 +32,10 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
   wordsLearnedThisMonth = 0,
   showPhoneForm = false,
   handlePhoneNumberUpdate,
-  wordCount = 3 // Default word count
+  wordCount = 3,
+  customDeliveryMode = false,
+  onDeliveryModeChange,
+  onWordCountChange
 }) => {
   const { session } = useAuthHandler();
   const userId = session?.user?.id;
@@ -59,7 +65,9 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
               onCategoryUpdate={handleCategoryUpdate} 
               onNewBatch={handleNewBatch}
               isLoadingNewBatch={isGeneratingBatch}
-              onWordCountChange={(count) => {}} // Pass wordCount callback placeholder for now
+              onWordCountChange={onWordCountChange}
+              customDeliveryMode={customDeliveryMode}
+              onDeliveryModeChange={onDeliveryModeChange}
             />
           </div>
 

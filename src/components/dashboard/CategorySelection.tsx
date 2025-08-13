@@ -9,6 +9,8 @@ import CategoryGrid from './category/CategoryGrid';
 import SubcategoryGrid from './category/SubcategoryGrid';
 import WordCountSelector from './category/WordCountSelector';
 import { useToast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface CategorySelectionProps {
   isPro: boolean;
@@ -16,7 +18,9 @@ interface CategorySelectionProps {
   onCategoryUpdate: (primary: string, subcategory: string) => void;
   onNewBatch?: () => Promise<void>;
   isLoadingNewBatch?: boolean;
-  onWordCountChange?: (count: number) => void; // Add callback for word count changes
+  onWordCountChange?: (count: number) => void;
+  customDeliveryMode?: boolean;
+  onDeliveryModeChange?: (custom: boolean) => void;
 }
 
 const CategorySelection: React.FC<CategorySelectionProps> = ({
@@ -25,7 +29,9 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   onCategoryUpdate,
   onNewBatch,
   isLoadingNewBatch = false,
-  onWordCountChange
+  onWordCountChange,
+  customDeliveryMode = false,
+  onDeliveryModeChange
 }) => {
   const isMobile = useIsMobile();
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
@@ -120,7 +126,25 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
                   isPro={true}
                 />
 
-                <Button 
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50/50">
+                    <div className="space-y-1">
+                      <Label htmlFor="custom-delivery" className="text-sm font-medium text-gray-900">
+                        Let me choose times
+                      </Label>
+                      <p className="text-xs text-gray-600">
+                        Set custom delivery times for your words
+                      </p>
+                    </div>
+                    <Switch
+                      id="custom-delivery"
+                      checked={customDeliveryMode}
+                      onCheckedChange={onDeliveryModeChange}
+                    />
+                  </div>
+                </div>
+
+                <Button
                   disabled={!selectedPrimary || !selectedSubcategory || isLoadingNewBatch} 
                   onClick={handleApply} 
                   className="w-full bg-primary text-white rounded-lg py-3 h-12 font-medium transition-all hover:bg-primary/90" 
