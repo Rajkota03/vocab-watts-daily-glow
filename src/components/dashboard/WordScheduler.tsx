@@ -282,77 +282,23 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
     <div className="pb-20 md:pb-0 -mx-2 md:mx-0">
       {/* Sleek Schedule Card */}
       <MotionCard 
-        className="rounded-xl border border-slate-200 bg-white p-3 md:p-5 mx-2 md:mx-0 shadow-[0_1px_2px_rgba(0,0,0,.06)]"
+        className="rounded-xl border border-slate-200 bg-white p-4 md:p-5 mx-2 md:mx-0 shadow-[0_1px_2px_rgba(0,0,0,.06)]"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        {/* Daily Word Count - Sleek Bar */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-[16px] leading-6 font-semibold text-slate-800">Daily words</span>
-            <span className="px-3 py-1 bg-teal-50 text-teal-700 rounded-full text-[14px] leading-5 font-semibold border border-teal-100">
-              {settings.wordsPerDay}
-            </span>
-          </div>
-          
-          {/* Sleek Range Input */}
-          <div className="relative">
-            <input
-              type="range"
-              min={1}
-              max={5}
-              value={settings.wordsPerDay}
-              onChange={(e) => handleWordsPerDayChange([parseInt(e.target.value)])}
-              className="w-full h-2 bg-slate-100 rounded-full appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-1 slider"
-              style={{
-                background: `linear-gradient(to right, #0d9488 0%, #0d9488 ${((settings.wordsPerDay - 1) / 4) * 100}%, #f1f5f9 ${((settings.wordsPerDay - 1) / 4) * 100}%, #f1f5f9 100%)`
-              }}
-            />
-            <style>{`
-              .slider::-webkit-slider-thumb {
-                appearance: none;
-                width: 20px;
-                height: 20px;
-                border-radius: 50%;
-                background: #0d9488;
-                cursor: pointer;
-                border: 3px solid white;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-              }
-              .slider::-moz-range-thumb {
-                width: 20px;
-                height: 20px;
-                border-radius: 50%;
-                background: #0d9488;
-                cursor: pointer;
-                border: 3px solid white;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-              }
-            `}</style>
-          </div>
-          
-          <div className="flex justify-between text-[11px] leading-4 text-slate-400 mt-2 px-1">
-            {[1, 2, 3, 4, 5].map(num => (
-              <span key={num} className={settings.wordsPerDay >= num ? 'text-teal-600 font-medium' : ''}>
-                {num}
-              </span>
-            ))}
-          </div>
-        </div>
-
         {/* Small Sleek Toggle */}
         <div className="mb-6">
           <div className="flex items-center justify-between py-2">
             <div className="flex items-center gap-2">
-              <span className="text-[14px] leading-5 font-medium text-slate-700">Let me choose times</span>
+              <span className="text-[16px] leading-6 font-semibold text-slate-800">Let me choose times</span>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
-                    <Info className="h-3 w-3 text-slate-400" />
+                    <Info className="h-4 w-4 text-slate-400" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="max-w-xs text-[11px] leading-4">
+                    <p className="max-w-xs text-[12px] leading-4">
                       Set custom delivery times or let us auto-space your words
                     </p>
                   </TooltipContent>
