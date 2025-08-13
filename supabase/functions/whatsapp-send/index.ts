@@ -258,35 +258,6 @@ async function sendDailyWords(payload: any) {
       }
     }
 
-    // Use the glintup_vocab_fulfillment template
-    try {
-      const sentiment = firstWord ? analyzeSentiment(firstWord.word) : 'neutral';
-      const sentimentSquare = getSentimentSquareWithFallback(sentiment);
-      console.log(`First word: ${firstWord?.word}, sentiment: ${sentiment}, square: ${sentimentSquare}`);
-      
-      const params = firstWord
-        ? [
-             'Learner',                                      // {{1}} - Name
-             firstWord.word,                                 // {{2}} - Word (plain)
-             `${firstWord.word} ${sentimentSquare}`,        // {{3}} - Word with sentiment emoji
-             firstWord.pronunciation || `/${firstWord.word}/`, // {{4}} - Pronunciation
-             firstWord.definition || '',                     // {{5}} - Meaning
-             firstWord.example || ''                         // {{6}} - Example
-           ]
-        : undefined;
-      
-      console.log('Template parameters for glintup_vocab_fulfillment (6 params):', params);
-      console.log(`Attempting template send with glintup_vocab_fulfillment, params count: ${params?.length || 0}`);
-      return await sendTemplateMessage({
-        to,
-        name: 'glintup_vocab_fulfillment',
-        language: 'en_US',
-        bodyParams: params
-      });
-    } catch (directErr) {
-      console.log('glintup_vocab_fulfillment template send failed, will try lookup fallback:', directErr);
-    }
-
     // Fallback: Fetch existing templates from Meta and try to use one
     console.log('Fetching templates from Meta API...');
     let templates = [];
@@ -308,9 +279,9 @@ async function sendDailyWords(payload: any) {
           // Try to send using the approved template with sentiment
           const sentiment = firstWord ? analyzeSentiment(firstWord.word) : 'neutral';
           const sentimentSquare = getSentimentSquareWithFallback(sentiment);
-          console.log(`Fallback template - First word: ${firstWord?.word}, sentiment: ${sentiment}, square: ${sentimentSquare}`);
+          console.log(`Template - First word: ${firstWord?.word}, sentiment: ${sentiment}, square: ${sentimentSquare}`);
           
-          const templateParams = firstWord && approvedTemplate.name === 'glintup_vocab_daily'
+          const templateParams = firstWord && (approvedTemplate.name === 'glintup_vocab_daily' || approvedTemplate.name.includes('vocab'))
             ? [
                 'Learner',                                      // {{1}} - Name
                 firstWord.word,                                 // {{2}} - Word (plain)
@@ -321,7 +292,7 @@ async function sendDailyWords(payload: any) {
               ]
             : [];
           
-          console.log(`Template parameters for fallback send (6 params): ${templateParams.length}`, templateParams);
+          console.log(`Template parameters for ${approvedTemplate.name} (${templateParams.length} params):`, templateParams);
           
           return await sendTemplateMessage({
             to,
@@ -338,6 +309,7 @@ async function sendDailyWords(payload: any) {
     } else {
       console.log('No templates found from Meta API');
     }
+
 
     // If template sending fails or no templates available, return the prepared message
     console.log('Returning success response with prepared message');
