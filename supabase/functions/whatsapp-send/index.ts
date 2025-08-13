@@ -270,8 +270,8 @@ async function sendDailyWords(payload: any) {
     }
     
     if (templates.length > 0) {
-      // Look for the specific vocab daily template first, then any approved template
-      const approvedTemplate = templates.find(t => t.name === 'glintup_vocab_daily' && t.status === 'APPROVED') || 
+      // Look for the specific glintup_vocab_fulfillment template first, then any approved template
+      const approvedTemplate = templates.find(t => t.name === 'glintup_vocab_fulfillment' && t.status === 'APPROVED') || 
                                templates.find(t => t.status === 'APPROVED');
       
       if (approvedTemplate) {
@@ -282,7 +282,12 @@ async function sendDailyWords(payload: any) {
           const sentimentSquare = getSentimentSquareWithFallback(sentiment);
           console.log(`Template - First word: ${firstWord?.word}, sentiment: ${sentiment}, square: ${sentimentSquare}`);
           
-          const templateParams = firstWord && (approvedTemplate.name === 'glintup_vocab_daily' || approvedTemplate.name.includes('vocab'))
+          const templateParams = firstWord && approvedTemplate.name === 'glintup_vocab_fulfillment'
+            ? [
+                'Learner',                                      // {{1}} - Name
+                finalMessage                                    // {{2}} - Complete formatted content
+              ]
+            : firstWord && (approvedTemplate.name === 'glintup_vocab_daily' || approvedTemplate.name.includes('vocab'))
             ? [
                 'Learner',                                      // {{1}} - Name
                 firstWord.word,                                 // {{2}} - Word (plain)
