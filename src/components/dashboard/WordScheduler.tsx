@@ -279,10 +279,10 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
   const previewTimes = getPreviewTimes();
 
   return (
-    <div className="pb-20 md:pb-0">
+    <div className="pb-20 md:pb-0 -mx-2 md:mx-0">
       {/* Hero Card */}
       <MotionCard 
-        className="rounded-xl border border-slate-200 bg-white p-4 md:p-5 shadow-[0_1px_2px_rgba(0,0,0,.06)]"
+        className="rounded-xl border border-slate-200 bg-white p-3 md:p-5 mx-2 md:mx-0 shadow-[0_1px_2px_rgba(0,0,0,.06)]"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
