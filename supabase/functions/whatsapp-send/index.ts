@@ -178,7 +178,7 @@ async function sendDailyWords(payload: any) {
   console.log('sendDailyWords called with payload:', payload);
   
   try {
-    const { to, category, isPro, message } = payload;
+    const { to, category, isPro, message, wordsCount, scheduledSlot, totalSlots } = payload;
     
     console.log('Sending daily words:', { to, category, isPro });
 
@@ -226,7 +226,7 @@ async function sendDailyWords(payload: any) {
         const { data: wordsData, error: wordsError } = await supabase.functions.invoke('generate-vocab-words', {
           body: {
             category: category,
-            count: isPro ? 5 : 3 // Pro users get more words
+            count: wordsCount || (isPro ? 5 : 3) // Use specified count or default
           }
         });
 
@@ -245,7 +245,15 @@ async function sendDailyWords(payload: any) {
           // Keep reference to the first word for template params
           firstWord = wordsData.words[0];
           
-          finalMessage = `🌟 *${category.toUpperCase()}*\n\n${wordsText}\n\n📚 Keep learning! 🚀`;
+          // Add slot info if this is a scheduled send
+          let headerText = `🌟 *${category.toUpperCase()}*`;
+          if (scheduledSlot && totalSlots) {
+            const slotEmojis = ['🌅', '☀️', '🌤️', '🌆', '🌙'];
+            const slotLabels = ['Morning', 'Midday', 'Afternoon', 'Evening', 'Night'];
+            headerText += `\n${slotEmojis[scheduledSlot - 1]} ${slotLabels[scheduledSlot - 1]} Boost (${scheduledSlot}/${totalSlots})`;
+          }
+          
+          finalMessage = `${headerText}\n\n${wordsText}\n\n📚 Keep learning! 🚀`;
           console.log('Generated vocabulary message');
         } else {
           console.log('No words returned from generation');

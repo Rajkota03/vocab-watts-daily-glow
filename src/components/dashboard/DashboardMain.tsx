@@ -1,7 +1,7 @@
 import React from 'react';
 import CategorySelection from './CategorySelection';
 import { cn } from '@/lib/utils';
-import SendDailyWordsButton from './SendDailyWordsButton';
+import WordScheduler from './WordScheduler';
 
 import PhoneNumberUpdateForm from './PhoneNumberUpdateForm';
 import { useAuthHandler } from '@/hooks/useAuthHandler';
@@ -48,13 +48,10 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
             </div>
           )}
 
-          {/* Section for Daily Words */}
+          {/* Section for Word Scheduler */}
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="text-xl font-semibold mb-4 text-gray-800">Your Daily Words</h3>
-            <p className="text-gray-600 mb-4">
-              Ready for today's vocabulary boost? Click the button below to receive your words via WhatsApp.
-            </p>
-            <SendDailyWordsButton 
+            <WordScheduler 
+              userId={userId!}
               phoneNumber={subscription.phone_number}
               category={subscription.category}
               isPro={subscription.is_pro}

@@ -134,6 +134,54 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_word_sends: {
+        Row: {
+          category: string
+          created_at: string
+          error_details: string | null
+          id: string
+          message_id: string | null
+          phone_number: string
+          scheduled_date: string
+          scheduled_time: string
+          sent_at: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+          word_batch_number: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          error_details?: string | null
+          id?: string
+          message_id?: string | null
+          phone_number: string
+          scheduled_date: string
+          scheduled_time: string
+          sent_at?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+          word_batch_number: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          error_details?: string | null
+          id?: string
+          message_id?: string | null
+          phone_number?: string
+          scheduled_date?: string
+          scheduled_time?: string
+          sent_at?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+          word_batch_number?: number
+        }
+        Relationships: []
+      }
       sent_words: {
         Row: {
           category: string
@@ -459,6 +507,39 @@ export type Database = {
           processed?: boolean | null
           provider?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      word_schedules: {
+        Row: {
+          created_at: string
+          id: string
+          is_scheduled: boolean | null
+          schedule_times: Json | null
+          total_daily_words: number | null
+          updated_at: string
+          user_id: string
+          words_per_slot: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_scheduled?: boolean | null
+          schedule_times?: Json | null
+          total_daily_words?: number | null
+          updated_at?: string
+          user_id: string
+          words_per_slot?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_scheduled?: boolean | null
+          schedule_times?: Json | null
+          total_daily_words?: number | null
+          updated_at?: string
+          user_id?: string
+          words_per_slot?: number | null
         }
         Relationships: []
       }
