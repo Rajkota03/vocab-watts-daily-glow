@@ -258,37 +258,33 @@ async function sendDailyWords(payload: any) {
       }
     }
 
-    // Try direct send using configured template (faster and avoids lookup)
-    const configuredTemplate = Deno.env.get('WA_TEMPLATE_NAME');
-    const configuredLocale = Deno.env.get('WA_TEMPLATE_LOCALE') || 'en_US';
-    if (configuredTemplate) {
-      try {
-        const sentiment = firstWord ? analyzeSentiment(firstWord.word) : 'neutral';
-        const sentimentSquare = getSentimentSquareWithFallback(sentiment);
-        console.log(`First word: ${firstWord?.word}, sentiment: ${sentiment}, square: ${sentimentSquare}`);
-        
-        const params = firstWord
-          ? [
-               'Learner',                                      // {{1}} - Name
-               firstWord.word,                                 // {{2}} - Word (plain)
-               `${firstWord.word} ${sentimentSquare}`,        // {{3}} - Word with sentiment emoji
-               firstWord.pronunciation || `/${firstWord.word}/`, // {{4}} - Pronunciation
-               firstWord.definition || '',                     // {{5}} - Meaning
-               firstWord.example || ''                         // {{6}} - Example
-             ]
-          : undefined;
-        
-        console.log('Template parameters for direct send (6 params):', params);
-        console.log(`Attempting direct template send with ${configuredTemplate}, params count: ${params?.length || 0}`);
-        return await sendTemplateMessage({
-          to,
-          name: configuredTemplate,
-          language: configuredLocale,
-          bodyParams: params
-        });
-      } catch (directErr) {
-        console.log('Direct template send failed, will try lookup fallback:', directErr);
-      }
+    // Use the glintup_vocab_fulfillment template
+    try {
+      const sentiment = firstWord ? analyzeSentiment(firstWord.word) : 'neutral';
+      const sentimentSquare = getSentimentSquareWithFallback(sentiment);
+      console.log(`First word: ${firstWord?.word}, sentiment: ${sentiment}, square: ${sentimentSquare}`);
+      
+      const params = firstWord
+        ? [
+             'Learner',                                      // {{1}} - Name
+             firstWord.word,                                 // {{2}} - Word (plain)
+             `${firstWord.word} ${sentimentSquare}`,        // {{3}} - Word with sentiment emoji
+             firstWord.pronunciation || `/${firstWord.word}/`, // {{4}} - Pronunciation
+             firstWord.definition || '',                     // {{5}} - Meaning
+             firstWord.example || ''                         // {{6}} - Example
+           ]
+        : undefined;
+      
+      console.log('Template parameters for glintup_vocab_fulfillment (6 params):', params);
+      console.log(`Attempting template send with glintup_vocab_fulfillment, params count: ${params?.length || 0}`);
+      return await sendTemplateMessage({
+        to,
+        name: 'glintup_vocab_fulfillment',
+        language: 'en_US',
+        bodyParams: params
+      });
+    } catch (directErr) {
+      console.log('glintup_vocab_fulfillment template send failed, will try lookup fallback:', directErr);
     }
 
     // Fallback: Fetch existing templates from Meta and try to use one
