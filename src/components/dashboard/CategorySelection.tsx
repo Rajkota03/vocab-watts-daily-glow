@@ -16,6 +16,7 @@ interface CategorySelectionProps {
   onCategoryUpdate: (primary: string, subcategory: string) => void;
   onNewBatch?: () => Promise<void>;
   isLoadingNewBatch?: boolean;
+  onWordCountChange?: (count: number) => void; // Add callback for word count changes
 }
 
 const CategorySelection: React.FC<CategorySelectionProps> = ({
@@ -23,7 +24,8 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   currentCategory,
   onCategoryUpdate,
   onNewBatch,
-  isLoadingNewBatch = false
+  isLoadingNewBatch = false,
+  onWordCountChange
 }) => {
   const isMobile = useIsMobile();
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
@@ -83,6 +85,11 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
     />;
   }
 
+  const handleWordCountChange = (count: number) => {
+    setWordCount(count);
+    onWordCountChange?.(count); // Notify parent component
+  };
+
   return (
     <Card className="border border-stroke/50 shadow-sm rounded-2xl overflow-hidden bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/80">
       
@@ -109,7 +116,7 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
               <>
                 <WordCountSelector 
                   wordCount={wordCount} 
-                  onWordCountChange={setWordCount}
+                  onWordCountChange={handleWordCountChange}
                   isPro={true}
                 />
 

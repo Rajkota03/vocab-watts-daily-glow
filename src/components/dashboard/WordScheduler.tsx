@@ -15,10 +15,10 @@ interface WordSchedulerProps {
   phoneNumber?: string;
   category: string;
   isPro: boolean;
+  wordCount: number; // Added word count from learning settings
 }
 
 interface DeliverySettings {
-  wordsPerDay: number;
   mode: 'auto' | 'custom';
   autoWindowStart: string;
   autoWindowEnd: string;
@@ -36,10 +36,10 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
   userId, 
   phoneNumber, 
   category, 
-  isPro 
+  isPro,
+  wordCount // Use external word count
 }) => {
   const [settings, setSettings] = useState<DeliverySettings>({
-    wordsPerDay: 3,
     mode: 'auto',
     autoWindowStart: '09:00',
     autoWindowEnd: '21:00',
@@ -74,10 +74,9 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
           .eq('user_id', userId)
           .order('position');
 
-        const times = customTimes?.map(ct => ct.time) || generateAutoTimes(deliverySettings.words_per_day);
+        const times = customTimes?.map(ct => ct.time) || generateAutoTimes(wordCount);
 
         setSettings({
-          wordsPerDay: deliverySettings.words_per_day,
           mode: deliverySettings.mode as 'auto' | 'custom',
           autoWindowStart: deliverySettings.auto_window_start,
           autoWindowEnd: deliverySettings.auto_window_end,
@@ -103,21 +102,9 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
 
   const getPreviewTimes = () => {
     if (settings.mode === 'auto') {
-      return generateAutoTimes(settings.wordsPerDay);
+      return generateAutoTimes(wordCount);
     }
-    return settings.customTimes.slice(0, settings.wordsPerDay);
-  };
-
-  const handleWordsPerDayChange = (value: number[]) => {
-    const newCount = value[0];
-    const newSettings = { 
-      ...settings, 
-      wordsPerDay: newCount,
-      customTimes: settings.mode === 'auto' 
-        ? generateAutoTimes(newCount)
-        : settings.customTimes.slice(0, newCount)
-    };
-    setSettings(newSettings);
+    return settings.customTimes.slice(0, wordCount);
   };
 
   const handleModeToggle = (enabled: boolean) => {
@@ -126,7 +113,7 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
       ...settings, 
       mode: newMode,
       customTimes: newMode === 'auto' 
-        ? generateAutoTimes(settings.wordsPerDay)
+        ? generateAutoTimes(wordCount)
         : settings.customTimes
     };
     setSettings(newSettings);
@@ -137,8 +124,8 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
     newTimes[index] = newTime;
     
     // Check for duplicates
-    const uniqueTimes = new Set(newTimes.slice(0, settings.wordsPerDay));
-    if (uniqueTimes.size !== settings.wordsPerDay) {
+    const uniqueTimes = new Set(newTimes.slice(0, wordCount));
+    if (uniqueTimes.size !== wordCount) {
       toast({
         title: "Times must be different",
         description: "Please choose different times for each word delivery.",
@@ -160,7 +147,7 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
         .from('user_delivery_settings')
         .upsert({
           user_id: userId,
-          words_per_day: settings.wordsPerDay,
+          words_per_day: wordCount, // Use external word count
           mode: settings.mode,
           auto_window_start: settings.autoWindowStart,
           auto_window_end: settings.autoWindowEnd,
@@ -179,7 +166,7 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
 
         // Insert new custom times
         const customTimesData = settings.customTimes
-          .slice(0, settings.wordsPerDay)
+          .slice(0, wordCount)
           .map((time, index) => ({
             user_id: userId,
             position: index + 1,
@@ -198,7 +185,7 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
 
       toast({
         title: "Schedule saved! 🎉",
-        description: `Your ${settings.wordsPerDay} words will be spaced perfectly across the day.`
+        description: `Your ${wordCount} words will be spaced perfectly across the day.`
       });
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -351,7 +338,7 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
               Custom delivery times
             </div>
             <div className="space-y-2">
-              {Array.from({ length: settings.wordsPerDay }, (_, index) => (
+              {Array.from({ length: wordCount }, (_, index) => (
                 <MotionDiv
                   key={index}
                   className="flex items-center gap-3 h-11 px-3 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors"
@@ -403,7 +390,7 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
         transition={{ duration: 0.3, delay: 0.2 }}
       >
         <span className="text-[12px] leading-4 text-slate-600">
-          {settings.wordsPerDay} words • spaced today
+          {wordCount} words • spaced today
         </span>
         <div className="flex gap-2">
           <MotionButton

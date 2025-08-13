@@ -18,6 +18,7 @@ interface DashboardMainProps {
   wordsLearnedThisMonth?: number;
   showPhoneForm?: boolean;
   handlePhoneNumberUpdate?: (newPhoneNumber: string) => void;
+  wordCount?: number; // Add wordCount prop
 }
 
 const DashboardMain: React.FC<DashboardMainProps> = ({
@@ -27,7 +28,8 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
   isGeneratingBatch,
   wordsLearnedThisMonth = 0,
   showPhoneForm = false,
-  handlePhoneNumberUpdate
+  handlePhoneNumberUpdate,
+  wordCount = 3 // Default word count
 }) => {
   const { session } = useAuthHandler();
   const userId = session?.user?.id;
@@ -56,7 +58,8 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
               currentCategory={subscription.category} 
               onCategoryUpdate={handleCategoryUpdate} 
               onNewBatch={handleNewBatch}
-              isLoadingNewBatch={isGeneratingBatch} 
+              isLoadingNewBatch={isGeneratingBatch}
+              onWordCountChange={(count) => {}} // Pass wordCount callback placeholder for now
             />
           </div>
 
@@ -67,6 +70,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
               phoneNumber={subscription.phone_number}
               category={subscription.category}
               isPro={subscription.is_pro}
+              wordCount={wordCount}
             />
           </div>
 

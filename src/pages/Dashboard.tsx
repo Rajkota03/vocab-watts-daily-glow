@@ -26,6 +26,7 @@ const Dashboard = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [wordsLearnedThisMonth, setWordsLearnedThisMonth] = useState(45);
   const [showPhoneForm, setShowPhoneForm] = useState(false);
+  const [wordCount, setWordCount] = useState(3); // Add word count state
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -252,15 +253,16 @@ const Dashboard = () => {
         isAdmin={isAdmin}
         wordsLearnedThisMonth={wordsLearnedThisMonth}
       />
-      <DashboardMain 
-        subscription={subscription}
-        handleCategoryUpdate={handleCategoryUpdate}
-        handleNewBatch={handleNewBatch}
-        isGeneratingBatch={isGeneratingBatch}
-        wordsLearnedThisMonth={wordsLearnedThisMonth}
-        showPhoneForm={showPhoneForm}
-        handlePhoneNumberUpdate={handlePhoneNumberUpdate}
-      />
+        <DashboardMain 
+          subscription={subscription} 
+          handleCategoryUpdate={handleCategoryUpdate} 
+          handleNewBatch={handleNewBatch}
+          isGeneratingBatch={isGeneratingBatch}
+          wordsLearnedThisMonth={wordsLearnedThisMonth}
+          showPhoneForm={showPhoneForm}
+          handlePhoneNumberUpdate={handlePhoneNumberUpdate}
+          wordCount={wordCount}
+        />
     </div>
   );
 };
