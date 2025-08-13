@@ -21,6 +21,7 @@ interface CategorySelectionProps {
   onWordCountChange?: (count: number) => void;
   customDeliveryMode?: boolean;
   onDeliveryModeChange?: (custom: boolean) => void;
+  wordCount?: number;
 }
 
 const CategorySelection: React.FC<CategorySelectionProps> = ({
@@ -31,12 +32,13 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   isLoadingNewBatch = false,
   onWordCountChange,
   customDeliveryMode = false,
-  onDeliveryModeChange
+  onDeliveryModeChange,
+  wordCount: externalWordCount = 3
 }) => {
   const isMobile = useIsMobile();
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-  const [wordCount, setWordCount] = useState(3);
+  const [wordCount, setWordCount] = useState(externalWordCount);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -48,6 +50,11 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
       }
     }
   }, [currentCategory]);
+
+  // Sync with external word count
+  useEffect(() => {
+    setWordCount(externalWordCount);
+  }, [externalWordCount]);
 
   const handlePrimarySelect = (primary: string) => {
     setSelectedPrimary(primary);
