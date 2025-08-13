@@ -44,7 +44,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
           {/* Phone Number Update Form (conditionally displayed) */}
           {showPhoneForm && userId && handlePhoneNumberUpdate && <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
               <h3 className="text-xl font-semibold mb-4 text-gray-800">Update Your WhatsApp Number</h3>
-              <PhoneNumberUpdateForm currentPhoneNumber={subscription.phone_number} userId={userId} onUpdate={handlePhoneNumberUpdate} className="px-[10px]" />
+              <PhoneNumberUpdateForm currentPhoneNumber={subscription.phone_number} userId={userId} onUpdate={handlePhoneNumberUpdate} />
             </div>}
 
           {/* Section for Learning Settings - First */}
