@@ -323,7 +323,7 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
               <div className="w-1 h-4 bg-teal-500 rounded-full"></div>
               Smart spacing preview
             </div>
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hidden">
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hidden px-[25px] py-0 my-0">
               {previewTimes.map((time, index) => <MotionDiv key={index} className="min-w-[70px] flex flex-col items-center gap-2 flex-shrink-0 p-2 bg-gradient-to-br from-teal-50 to-teal-100 rounded-lg border border-teal-200" whileHover={{
             scale: 1.05,
             y: -2
