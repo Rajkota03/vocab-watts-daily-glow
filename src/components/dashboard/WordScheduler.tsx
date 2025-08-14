@@ -129,7 +129,9 @@ const CustomTimePicker: React.FC<{
 
   const handleSliderChange = () => {
     const formattedTime = `${sliderHours}:${sliderMinutes.toString().padStart(2, '0')} ${period}`;
+    console.log('Slider change - formatted time:', formattedTime);
     const time24 = formatTimeTo24Hour(formattedTime);
+    console.log('Slider change - time24:', time24);
     onChange(time24);
     setIsOpen(false);
   };
@@ -376,14 +378,18 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
     setSettings(newSettings);
   };
   const handleCustomTimeChange = (index: number, newTime: string) => {
+    console.log('Parent handleCustomTimeChange called:', { index, newTime });
     // Convert 12-hour input to 24-hour for storage
     const time24 = formatTimeTo24Hour(newTime);
+    console.log('Converted to 24-hour format:', time24);
     const newTimes = [...settings.customTimes];
     newTimes[index] = time24;
+    console.log('New times array:', newTimes);
 
     // Check for duplicates
     const uniqueTimes = new Set(newTimes.slice(0, wordCount));
     if (uniqueTimes.size !== wordCount) {
+      console.log('Duplicate times detected, not updating');
       toast({
         title: "Times must be different",
         description: "Please choose different times for each word delivery.",
@@ -391,6 +397,7 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
       });
       return;
     }
+    console.log('Updating settings with new times');
     setSettings({
       ...settings,
       customTimes: newTimes
