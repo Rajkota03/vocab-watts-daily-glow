@@ -31,46 +31,28 @@ const NumberPad: React.FC<{
   onNumberClick: (num: string) => void;
   onClear: () => void;
   onDone: () => void;
-}> = ({ onNumberClick, onClear, onDone }) => {
+}> = ({
+  onNumberClick,
+  onClear,
+  onDone
+}) => {
   const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
-  
-  return (
-    <div className="p-4 bg-background">
+  return <div className="p-4 bg-background">
       <div className="grid grid-cols-3 gap-3 mb-4">
-        {numbers.slice(0, 9).map((num) => (
-          <Button
-            key={num}
-            variant="outline"
-            className="h-12 text-lg font-semibold"
-            onClick={() => onNumberClick(num)}
-          >
+        {numbers.slice(0, 9).map(num => <Button key={num} variant="outline" className="h-12 text-lg font-semibold" onClick={() => onNumberClick(num)}>
             {num}
-          </Button>
-        ))}
-        <Button
-          variant="outline"
-          className="h-12 text-lg font-semibold"
-          onClick={onClear}
-        >
+          </Button>)}
+        <Button variant="outline" className="h-12 text-lg font-semibold" onClick={onClear}>
           Clear
         </Button>
-        <Button
-          variant="outline"
-          className="h-12 text-lg font-semibold"
-          onClick={() => onNumberClick('0')}
-        >
+        <Button variant="outline" className="h-12 text-lg font-semibold" onClick={() => onNumberClick('0')}>
           0
         </Button>
-        <Button
-          variant="outline"
-          className="h-12 text-lg font-semibold"
-          onClick={onDone}
-        >
+        <Button variant="outline" className="h-12 text-lg font-semibold" onClick={onDone}>
           Done
         </Button>
       </div>
-    </div>
-  );
+    </div>;
 };
 
 // Custom time picker component
@@ -78,18 +60,20 @@ const CustomTimePicker: React.FC<{
   value: string;
   onChange: (time: string) => void;
   index: number;
-}> = ({ value, onChange, index }) => {
+}> = ({
+  value,
+  onChange,
+  index
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [timeInput, setTimeInput] = useState('');
   const [period, setPeriod] = useState<'AM' | 'PM'>('AM');
-
   useEffect(() => {
     const time12 = formatTimeTo12Hour(value);
     const [time, ampm] = time12.split(' ');
     setTimeInput(time.replace(':', ''));
     setPeriod(ampm as 'AM' | 'PM');
   }, [value]);
-
   const formatTimeTo12Hour = (time24: string): string => {
     try {
       const date = parse(time24, 'HH:mm', new Date());
@@ -98,7 +82,6 @@ const CustomTimePicker: React.FC<{
       return time24;
     }
   };
-
   const formatTimeTo24Hour = (time12: string): string => {
     try {
       const date = parse(time12, 'h:mm a', new Date());
@@ -107,17 +90,14 @@ const CustomTimePicker: React.FC<{
       return time12;
     }
   };
-
   const handleNumberClick = (num: string) => {
     if (timeInput.length < 4) {
       setTimeInput(prev => prev + num);
     }
   };
-
   const handleClear = () => {
     setTimeInput('');
   };
-
   const handleDone = () => {
     if (timeInput.length === 3 || timeInput.length === 4) {
       let hours, minutes;
@@ -128,14 +108,12 @@ const CustomTimePicker: React.FC<{
         hours = timeInput.slice(0, 2);
         minutes = timeInput.slice(2, 4);
       }
-      
       const formattedTime = `${hours}:${minutes} ${period}`;
       const time24 = formatTimeTo24Hour(formattedTime);
       onChange(time24);
       setIsOpen(false);
     }
   };
-
   const displayTime = () => {
     if (timeInput.length === 0) return '00:00';
     if (timeInput.length === 1) return `${timeInput}:00`;
@@ -144,39 +122,30 @@ const CustomTimePicker: React.FC<{
     if (timeInput.length === 4) return `${timeInput.slice(0, 2)}:${timeInput.slice(2, 4)}`;
     return timeInput;
   };
-
-  return (
-    <div className="flex items-center gap-2">
+  return <div className="flex items-center gap-2">
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <Button
-            variant="outline"
-            className="h-8 px-3 text-xs border-border bg-background focus:border-primary transition-all font-mono"
-          >
+          <Button variant="outline" className="h-8 px-3 text-xs border-border bg-background focus:border-primary transition-all font-mono">
             {formatTimeTo12Hour(value).split(' ')[0]}
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-neutral-50">
           <div className="text-center mb-4">
             <h3 className="text-lg font-semibold mb-2">Set Time</h3>
             <div className="text-2xl font-mono bg-muted p-3 rounded-lg">
               {displayTime()} {period}
             </div>
           </div>
-          <NumberPad
-            onNumberClick={handleNumberClick}
-            onClear={handleClear}
-            onDone={handleDone}
-          />
+          <NumberPad onNumberClick={handleNumberClick} onClear={handleClear} onDone={handleDone} />
         </DialogContent>
       </Dialog>
       
       <Select value={period} onValueChange={(value: 'AM' | 'PM') => {
-        setPeriod(value);
-        const currentTime = formatTimeTo12Hour(value).split(' ')[0];
-        const newTime24 = formatTimeTo24Hour(`${currentTime} ${value}`);
-        onChange(newTime24);
-      }}>
+      setPeriod(value);
+      const currentTime = formatTimeTo12Hour(value).split(' ')[0];
+      const newTime24 = formatTimeTo24Hour(`${currentTime} ${value}`);
+      onChange(newTime24);
+    }}>
         <SelectTrigger className="w-16 h-8 text-xs">
           <SelectValue />
         </SelectTrigger>
@@ -185,10 +154,8 @@ const CustomTimePicker: React.FC<{
           <SelectItem value="PM">PM</SelectItem>
         </SelectContent>
       </Select>
-    </div>
-  );
+    </div>;
 };
-
 const timeSlotEmojis = ['🌅', '☀️', '🌤️', '🌆', '🌙'];
 const MotionButton = motion(Button);
 const MotionCard = motion(Card);
@@ -489,21 +456,18 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
               Smart spacing preview
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-              {previewTimes.map((time, index) => 
-                <MotionDiv 
-                  key={index} 
-                  className="flex items-center justify-between p-2 bg-muted/50 rounded-lg border border-border/50" 
-                  whileHover={{scale: 1.02}} 
-                  transition={{duration: 0.15}}
-                >
+              {previewTimes.map((time, index) => <MotionDiv key={index} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg border border-border/50" whileHover={{
+            scale: 1.02
+          }} transition={{
+            duration: 0.15
+          }}>
                   <div className="w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-semibold">
                     {index + 1}
                   </div>
                   <span className="text-xs font-medium text-foreground">
                     {formatTimeTo12Hour(time)}
                   </span>
-                </MotionDiv>
-              )}
+                </MotionDiv>)}
             </div>
           </div> : <div className="mb-6">
             <div className="text-[13px] leading-5 font-medium text-muted-foreground mb-3 flex items-center gap-2">
@@ -511,13 +475,13 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
               Custom delivery times
             </div>
             <div className="space-y-2">
-              {Array.from({length: wordCount}, (_, index) => 
-                <MotionDiv 
-                  key={index} 
-                  className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:border-primary/30 transition-all duration-200" 
-                  whileHover={{scale: 1.01}} 
-                  transition={{duration: 0.15}}
-                >
+              {Array.from({
+            length: wordCount
+          }, (_, index) => <MotionDiv key={index} className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:border-primary/30 transition-all duration-200" whileHover={{
+            scale: 1.01
+          }} transition={{
+            duration: 0.15
+          }}>
                   <div className="flex items-center gap-3">
                     <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-semibold">
                       {index + 1}
@@ -525,13 +489,8 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
                     <span className="text-sm font-medium text-foreground">Word {index + 1}</span>
                   </div>
                   
-                  <CustomTimePicker
-                    value={settings.customTimes[index] || '09:00'}
-                    onChange={(time) => handleCustomTimeChange(index, time)}
-                    index={index}
-                  />
-                </MotionDiv>
-              )}
+                  <CustomTimePicker value={settings.customTimes[index] || '09:00'} onChange={time => handleCustomTimeChange(index, time)} index={index} />
+                </MotionDiv>)}
             </div>
           </div>}
 
