@@ -10,7 +10,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { motion } from 'framer-motion';
 import { format, parse } from 'date-fns';
-
 interface WordSchedulerProps {
   userId: string;
   phoneNumber?: string;
@@ -18,7 +17,6 @@ interface WordSchedulerProps {
   isPro: boolean;
   wordCount: number; // Added word count from learning settings
 }
-
 interface DeliverySettings {
   mode: 'auto' | 'custom';
   autoWindowStart: string;
@@ -26,13 +24,10 @@ interface DeliverySettings {
   timezone: string;
   customTimes: string[];
 }
-
 const timeSlotEmojis = ['🌅', '☀️', '🌤️', '🌆', '🌙'];
-
 const MotionButton = motion(Button);
 const MotionCard = motion(Card);
 const MotionDiv = motion.div;
-
 const WordScheduler: React.FC<WordSchedulerProps> = ({
   userId,
   phoneNumber,
@@ -47,11 +42,11 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     customTimes: ['09:00', '12:00', '15:00', '18:00', '21:00']
   });
-
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   useEffect(() => {
     fetchUserSettings();
   }, [userId]);
@@ -60,12 +55,12 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
   useEffect(() => {
     console.log('WordScheduler - Word count changed to:', wordCount);
     const newCustomTimes = [...settings.customTimes];
-    
+
     // Extend or trim the custom times array to match word count
     while (newCustomTimes.length < wordCount) {
       newCustomTimes.push('09:00');
     }
-    
+
     // Update settings for both modes
     setSettings(prev => ({
       ...prev,
@@ -92,29 +87,22 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
       return time12; // fallback to original format if parsing fails
     }
   };
-
   const fetchUserSettings = async () => {
     try {
-      const { data: deliverySettings, error: settingsError } = await supabase
-        .from('user_delivery_settings')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
+      const {
+        data: deliverySettings,
+        error: settingsError
+      } = await supabase.from('user_delivery_settings').select('*').eq('user_id', userId).single();
       if (settingsError && settingsError.code !== 'PGRST116') {
         console.error('Error fetching delivery settings:', settingsError);
         return;
       }
-
       if (deliverySettings) {
-        const { data: customTimes, error: timesError } = await supabase
-          .from('user_custom_times')
-          .select('*')
-          .eq('user_id', userId)
-          .order('position');
-
+        const {
+          data: customTimes,
+          error: timesError
+        } = await supabase.from('user_custom_times').select('*').eq('user_id', userId).order('position');
         const times = customTimes?.map(ct => ct.time) || generateAutoTimes(wordCount);
-
         setSettings({
           mode: deliverySettings.mode as 'auto' | 'custom',
           autoWindowStart: deliverySettings.auto_window_start,
@@ -127,25 +115,23 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
       console.error('Error fetching user settings:', error);
     }
   };
-
   const generateAutoTimes = (wordCount: number) => {
     const start = 9; // 9 AM
     const end = 21; // 9 PM
     const interval = (end - start) / Math.max(1, wordCount - 1);
-    
-    return Array.from({ length: wordCount }, (_, i) => {
-      const hour = Math.round(start + (i * interval));
+    return Array.from({
+      length: wordCount
+    }, (_, i) => {
+      const hour = Math.round(start + i * interval);
       return `${hour.toString().padStart(2, '0')}:00`;
     });
   };
-
   const getPreviewTimes = () => {
     if (settings.mode === 'auto') {
       return generateAutoTimes(wordCount);
     }
     return settings.customTimes.slice(0, wordCount);
   };
-
   const handleModeToggle = (enabled: boolean) => {
     const newMode: 'auto' | 'custom' = enabled ? 'custom' : 'auto';
     const newSettings: DeliverySettings = {
@@ -155,7 +141,6 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
     };
     setSettings(newSettings);
   };
-
   const handleCustomTimeChange = (index: number, newTime: string) => {
     // Convert 12-hour input to 24-hour for storage
     const time24 = formatTimeTo24Hour(newTime);
@@ -172,30 +157,27 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
       });
       return;
     }
-
     setSettings({
       ...settings,
       customTimes: newTimes
     });
   };
-
   const saveSettings = async () => {
     if (!userId) return;
-    
     setSaving(true);
     try {
       // Save delivery settings
-      const { error: settingsError } = await supabase
-        .from('user_delivery_settings')
-        .upsert({
-          user_id: userId,
-          words_per_day: wordCount, // Use external word count
-          mode: settings.mode,
-          auto_window_start: settings.autoWindowStart,
-          auto_window_end: settings.autoWindowEnd,
-          timezone: settings.timezone
-        });
-
+      const {
+        error: settingsError
+      } = await supabase.from('user_delivery_settings').upsert({
+        user_id: userId,
+        words_per_day: wordCount,
+        // Use external word count
+        mode: settings.mode,
+        auto_window_start: settings.autoWindowStart,
+        auto_window_end: settings.autoWindowEnd,
+        timezone: settings.timezone
+      });
       if (settingsError) throw settingsError;
 
       // Save custom times if in custom mode
@@ -209,17 +191,14 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
           position: index + 1,
           time: time
         }));
-
-        const { error: timesError } = await supabase
-          .from('user_custom_times')
-          .insert(customTimesData);
-
+        const {
+          error: timesError
+        } = await supabase.from('user_custom_times').insert(customTimesData);
         if (timesError) throw timesError;
       }
 
       // Schedule today's words
       await scheduleToday();
-
       toast({
         title: "Schedule saved! 🎉",
         description: `Your ${wordCount} words will be spaced perfectly across the day.`
@@ -235,19 +214,18 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
       setSaving(false);
     }
   };
-
   const scheduleToday = async () => {
     if (!phoneNumber) return;
-
     try {
-      const { error } = await supabase.functions.invoke('schedule-today', {
+      const {
+        error
+      } = await supabase.functions.invoke('schedule-today', {
         body: {
           userId: userId,
           phoneNumber: phoneNumber,
           category: category
         }
       });
-
       if (error) {
         console.error('Error scheduling today\'s words:', error);
       }
@@ -255,7 +233,6 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
       console.error('Error calling schedule-today function:', error);
     }
   };
-
   const handleSendNow = async () => {
     if (!phoneNumber) {
       toast({
@@ -265,10 +242,12 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
       });
       return;
     }
-
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('whatsapp-send', {
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('whatsapp-send', {
         body: {
           to: phoneNumber,
           category: category,
@@ -278,12 +257,10 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
           message: `Here are your daily vocabulary words for ${category}. Enjoy learning!`
         }
       });
-
       if (error) throw error;
       if (!data?.success) {
         throw new Error(data?.error || "Failed to send words");
       }
-
       toast({
         title: "Words sent! 🚀",
         description: "Check your WhatsApp for today's vocabulary."
@@ -298,18 +275,18 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
       setLoading(false);
     }
   };
-
   const previewTimes = getPreviewTimes();
-
-  return (
-    <div className="pb-20 md:pb-0 -mx-2 md:mx-0">
+  return <div className="pb-20 md:pb-0 -mx-2 md:mx-0">
       {/* Sleek Schedule Card */}
-      <MotionCard
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="rounded-xl border border-slate-200 bg-white p-4 md:p-5 md:mx-0 shadow-[0_1px_2px_rgba(0,0,0,.06)] mx-0 px-[11px] py-[17px]"
-      >
+      <MotionCard initial={{
+      opacity: 0,
+      y: 20
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }} transition={{
+      duration: 0.3
+    }} className="rounded-xl border border-slate-200 bg-white p-4 md:p-5 md:mx-0 shadow-[0_1px_2px_rgba(0,0,0,.06)] mx-0 px-[11px] py-[17px]">
         {/* Small Sleek Toggle */}
         <div className="mb-6">
           <div className="flex items-center justify-between py-2">
@@ -328,66 +305,59 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <motion.div
-              whileTap={{ scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 400, damping: 20 }}
-            >
-              <Switch
-                checked={settings.mode === 'custom'}
-                onCheckedChange={handleModeToggle}
-                className="data-[state=checked]:bg-teal-600"
-              />
+            <motion.div whileTap={{
+            scale: 0.95
+          }} transition={{
+            type: "spring",
+            stiffness: 400,
+            damping: 20
+          }}>
+              <Switch checked={settings.mode === 'custom'} onCheckedChange={handleModeToggle} className="data-[state=checked]:bg-teal-600" />
             </motion.div>
           </div>
         </div>
 
         {/* Sleek Timeline Preview / Modern Custom Times */}
-        {settings.mode === 'auto' ? (
-          <div className="mb-6">
+        {settings.mode === 'auto' ? <div className="mb-6">
             <div className="text-[13px] leading-5 font-medium text-slate-600 mb-3 flex items-center gap-2">
               <div className="w-1 h-4 bg-teal-500 rounded-full"></div>
               Smart spacing preview
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hidden">
-              {previewTimes.map((time, index) => (
-                <MotionDiv
-                  key={index}
-                  className="min-w-[70px] flex flex-col items-center gap-2 flex-shrink-0 p-2 bg-gradient-to-br from-teal-50 to-teal-100 rounded-lg border border-teal-200"
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <motion.div
-                    className="w-2 h-2 bg-teal-500 rounded-full"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{
-                      duration: 0.8,
-                      delay: index * 0.1,
-                      repeat: Infinity,
-                      repeatDelay: 2
-                    }}
-                  />
+              {previewTimes.map((time, index) => <MotionDiv key={index} className="min-w-[70px] flex flex-col items-center gap-2 flex-shrink-0 p-2 bg-gradient-to-br from-teal-50 to-teal-100 rounded-lg border border-teal-200" whileHover={{
+            scale: 1.05,
+            y: -2
+          }} transition={{
+            duration: 0.15
+          }}>
+                  <motion.div className="w-2 h-2 bg-teal-500 rounded-full" animate={{
+              scale: [1, 1.2, 1]
+            }} transition={{
+              duration: 0.8,
+              delay: index * 0.1,
+              repeat: Infinity,
+              repeatDelay: 2
+            }} />
                   <span className="text-[11px] leading-4 font-semibold text-teal-700">
                     {formatTimeTo12Hour(time)}
                   </span>
                   <span className="text-[10px] leading-3 text-teal-600">#{index + 1}</span>
-                </MotionDiv>
-              ))}
+                </MotionDiv>)}
             </div>
-          </div>
-        ) : (
-          <div className="mb-6">
+          </div> : <div className="mb-6">
             <div className="text-[13px] leading-5 font-medium text-slate-600 mb-4 flex items-center gap-2">
               <div className="w-1 h-4 bg-slate-500 rounded-full"></div>
               Custom delivery times
             </div>
             <div className="space-y-3">
-              {Array.from({ length: wordCount }, (_, index) => (
-                <MotionDiv
-                  key={index}
-                  className="group relative bg-gradient-to-r from-white to-gray-50 border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-md transition-all duration-200"
-                  whileHover={{ y: -2, scale: 1.01 }}
-                  transition={{ duration: 0.15 }}
-                >
+              {Array.from({
+            length: wordCount
+          }, (_, index) => <MotionDiv key={index} className="group relative bg-gradient-to-r from-white to-gray-50 border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-md transition-all duration-200" whileHover={{
+            y: -2,
+            scale: 1.01
+          }} transition={{
+            duration: 0.15
+          }}>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-3 flex-1">
                       <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg group-hover:shadow-xl transition-shadow">
@@ -400,12 +370,7 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
                     </div>
                     
                     <div className="flex items-center gap-3">
-                      <Input
-                        type="time"
-                        value={formatTimeTo12Hour(settings.customTimes[index] || '09:00').split(' ')[0]}
-                        onChange={(e) => handleCustomTimeChange(index, e.target.value)}
-                        className="w-24 h-9 text-sm font-mono border-gray-300 rounded-lg bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                      />
+                      <Input type="time" value={formatTimeTo12Hour(settings.customTimes[index] || '09:00').split(' ')[0]} onChange={e => handleCustomTimeChange(index, e.target.value)} className="w-24 h-9 text-sm font-mono border-gray-300 rounded-lg bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all mx-0 px-[7px]" />
                       <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md min-w-[40px] text-center">
                         {formatTimeTo12Hour(settings.customTimes[index] || '09:00').split(' ')[1]}
                       </span>
@@ -419,11 +384,9 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
                       <span>Scheduled for {formatTimeTo12Hour(settings.customTimes[index] || '09:00')}</span>
                     </div>
                   </div>
-                </MotionDiv>
-              ))}
+                </MotionDiv>)}
             </div>
-          </div>
-        )}
+          </div>}
 
         {/* Enhanced Timeline Summary */}
         <div className="border-t border-slate-100 pt-5">
@@ -438,13 +401,12 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {previewTimes.map((time, index) => (
-              <MotionDiv
-                key={index}
-                className="flex items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg px-3 py-2 group hover:from-indigo-100 hover:to-purple-100 transition-all"
-                whileHover={{ scale: 1.02, y: -1 }}
-                transition={{ duration: 0.12 }}
-              >
+            {previewTimes.map((time, index) => <MotionDiv key={index} className="flex items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg px-3 py-2 group hover:from-indigo-100 hover:to-purple-100 transition-all" whileHover={{
+            scale: 1.02,
+            y: -1
+          }} transition={{
+            duration: 0.12
+          }}>
                 <div className="flex items-center gap-2">
                   <div className="w-5 h-5 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
                     {index + 1}
@@ -459,40 +421,33 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
                     {formatTimeTo12Hour(time).split(' ')[1]}
                   </div>
                 </div>
-              </MotionDiv>
-            ))}
+              </MotionDiv>)}
           </div>
         </div>
       </MotionCard>
 
       {/* Sticky Apply Bar (Mobile) */}
-      <motion.div
-        className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t px-4 h-14 flex items-center justify-between md:hidden z-50"
-        initial={{ y: 100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.3, delay: 0.2 }}
-      >
+      <motion.div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t px-4 h-14 flex items-center justify-between md:hidden z-50" initial={{
+      y: 100
+    }} animate={{
+      y: 0
+    }} transition={{
+      duration: 0.3,
+      delay: 0.2
+    }}>
         <span className="text-[12px] leading-4 text-slate-600">
           {wordCount} words • spaced today
         </span>
         <div className="flex gap-2">
-          <MotionButton
-            variant="ghost"
-            size="sm"
-            onClick={handleSendNow}
-            disabled={loading || !phoneNumber}
-            className="h-10 px-3 text-[12px] leading-4 border-slate-300 text-slate-800 hover:bg-slate-50"
-            whileTap={{ scale: 0.98 }}
-          >
+          <MotionButton variant="ghost" size="sm" onClick={handleSendNow} disabled={loading || !phoneNumber} className="h-10 px-3 text-[12px] leading-4 border-slate-300 text-slate-800 hover:bg-slate-50" whileTap={{
+          scale: 0.98
+        }}>
             <Send className="h-3 w-3 mr-1" />
             {loading ? "Sending..." : "Send Now"}
           </MotionButton>
-          <MotionButton
-            onClick={saveSettings}
-            disabled={saving}
-            className="h-10 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-[12px] leading-4"
-            whileTap={{ scale: 0.98 }}
-          >
+          <MotionButton onClick={saveSettings} disabled={saving} className="h-10 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-[12px] leading-4" whileTap={{
+          scale: 0.98
+        }}>
             {saving ? "Saving..." : "Apply"}
           </MotionButton>
         </div>
@@ -500,27 +455,18 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
 
       {/* Desktop Actions */}
       <div className="hidden md:flex md:gap-2 md:mt-4">
-        <MotionButton
-          onClick={saveSettings}
-          disabled={saving}
-          className="flex-1 h-10 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold"
-          whileTap={{ scale: 0.98 }}
-        >
+        <MotionButton onClick={saveSettings} disabled={saving} className="flex-1 h-10 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold" whileTap={{
+        scale: 0.98
+      }}>
           {saving ? "Saving..." : "Apply"}
         </MotionButton>
-        <MotionButton
-          variant="outline"
-          onClick={handleSendNow}
-          disabled={loading || !phoneNumber}
-          className="h-10 px-4 border-slate-300 text-slate-800 hover:bg-slate-50"
-          whileTap={{ scale: 0.98 }}
-        >
+        <MotionButton variant="outline" onClick={handleSendNow} disabled={loading || !phoneNumber} className="h-10 px-4 border-slate-300 text-slate-800 hover:bg-slate-50" whileTap={{
+        scale: 0.98
+      }}>
           <Send className="h-4 w-4 mr-2" />
           {loading ? "Sending..." : "Send Now"}
         </MotionButton>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default WordScheduler;
