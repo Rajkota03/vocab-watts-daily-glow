@@ -105,6 +105,15 @@ const CustomTimePicker: React.FC<{
     setTimeInput('');
   };
   const handleDone = () => {
+    if (!period) {
+      toast({
+        title: "Please select AM or PM",
+        description: "You must choose either AM or PM to set the time.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (timeInput.length === 3 || timeInput.length === 4) {
       let hours, minutes;
       if (timeInput.length === 3) {
@@ -128,6 +137,14 @@ const CustomTimePicker: React.FC<{
   };
 
   const handleSliderChange = () => {
+    if (!period) {
+      toast({
+        title: "Please select AM or PM",
+        description: "You must choose either AM or PM to set the time.",
+        variant: "destructive",
+      });
+      return;
+    }
     const formattedTime = `${sliderHours}:${sliderMinutes.toString().padStart(2, '0')} ${period}`;
     console.log('Slider change - formatted time:', formattedTime);
     const time24 = formatTimeTo24Hour(formattedTime);
