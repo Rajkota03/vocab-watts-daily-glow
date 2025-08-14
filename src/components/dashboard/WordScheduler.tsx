@@ -8,6 +8,8 @@ import { Clock, Calendar, Target, Info, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
 import { format, parse } from 'date-fns';
 interface WordSchedulerProps {
@@ -24,6 +26,169 @@ interface DeliverySettings {
   timezone: string;
   customTimes: string[];
 }
+// Number pad component
+const NumberPad: React.FC<{
+  onNumberClick: (num: string) => void;
+  onClear: () => void;
+  onDone: () => void;
+}> = ({ onNumberClick, onClear, onDone }) => {
+  const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
+  
+  return (
+    <div className="p-4 bg-background">
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        {numbers.slice(0, 9).map((num) => (
+          <Button
+            key={num}
+            variant="outline"
+            className="h-12 text-lg font-semibold"
+            onClick={() => onNumberClick(num)}
+          >
+            {num}
+          </Button>
+        ))}
+        <Button
+          variant="outline"
+          className="h-12 text-lg font-semibold"
+          onClick={onClear}
+        >
+          Clear
+        </Button>
+        <Button
+          variant="outline"
+          className="h-12 text-lg font-semibold"
+          onClick={() => onNumberClick('0')}
+        >
+          0
+        </Button>
+        <Button
+          variant="outline"
+          className="h-12 text-lg font-semibold"
+          onClick={onDone}
+        >
+          Done
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+// Custom time picker component
+const CustomTimePicker: React.FC<{
+  value: string;
+  onChange: (time: string) => void;
+  index: number;
+}> = ({ value, onChange, index }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [timeInput, setTimeInput] = useState('');
+  const [period, setPeriod] = useState<'AM' | 'PM'>('AM');
+
+  useEffect(() => {
+    const time12 = formatTimeTo12Hour(value);
+    const [time, ampm] = time12.split(' ');
+    setTimeInput(time.replace(':', ''));
+    setPeriod(ampm as 'AM' | 'PM');
+  }, [value]);
+
+  const formatTimeTo12Hour = (time24: string): string => {
+    try {
+      const date = parse(time24, 'HH:mm', new Date());
+      return format(date, 'h:mm a');
+    } catch (error) {
+      return time24;
+    }
+  };
+
+  const formatTimeTo24Hour = (time12: string): string => {
+    try {
+      const date = parse(time12, 'h:mm a', new Date());
+      return format(date, 'HH:mm');
+    } catch (error) {
+      return time12;
+    }
+  };
+
+  const handleNumberClick = (num: string) => {
+    if (timeInput.length < 4) {
+      setTimeInput(prev => prev + num);
+    }
+  };
+
+  const handleClear = () => {
+    setTimeInput('');
+  };
+
+  const handleDone = () => {
+    if (timeInput.length === 3 || timeInput.length === 4) {
+      let hours, minutes;
+      if (timeInput.length === 3) {
+        hours = timeInput.slice(0, 1);
+        minutes = timeInput.slice(1, 3);
+      } else {
+        hours = timeInput.slice(0, 2);
+        minutes = timeInput.slice(2, 4);
+      }
+      
+      const formattedTime = `${hours}:${minutes} ${period}`;
+      const time24 = formatTimeTo24Hour(formattedTime);
+      onChange(time24);
+      setIsOpen(false);
+    }
+  };
+
+  const displayTime = () => {
+    if (timeInput.length === 0) return '00:00';
+    if (timeInput.length === 1) return `${timeInput}:00`;
+    if (timeInput.length === 2) return `${timeInput}:00`;
+    if (timeInput.length === 3) return `${timeInput.slice(0, 1)}:${timeInput.slice(1, 3)}`;
+    if (timeInput.length === 4) return `${timeInput.slice(0, 2)}:${timeInput.slice(2, 4)}`;
+    return timeInput;
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <Button
+            variant="outline"
+            className="h-8 px-3 text-xs border-border bg-background focus:border-primary transition-all font-mono"
+          >
+            {formatTimeTo12Hour(value).split(' ')[0]}
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <div className="text-center mb-4">
+            <h3 className="text-lg font-semibold mb-2">Set Time</h3>
+            <div className="text-2xl font-mono bg-muted p-3 rounded-lg">
+              {displayTime()} {period}
+            </div>
+          </div>
+          <NumberPad
+            onNumberClick={handleNumberClick}
+            onClear={handleClear}
+            onDone={handleDone}
+          />
+        </DialogContent>
+      </Dialog>
+      
+      <Select value={period} onValueChange={(value: 'AM' | 'PM') => {
+        setPeriod(value);
+        const currentTime = formatTimeTo12Hour(value).split(' ')[0];
+        const newTime24 = formatTimeTo24Hour(`${currentTime} ${value}`);
+        onChange(newTime24);
+      }}>
+        <SelectTrigger className="w-16 h-8 text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="AM">AM</SelectItem>
+          <SelectItem value="PM">PM</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+};
+
 const timeSlotEmojis = ['🌅', '☀️', '🌤️', '🌆', '🌙'];
 const MotionButton = motion(Button);
 const MotionCard = motion(Card);
@@ -360,17 +525,11 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
                     <span className="text-sm font-medium text-foreground">Word {index + 1}</span>
                   </div>
                   
-                  <div className="flex items-center gap-2">
-                    <Input 
-                      type="time" 
-                      value={settings.customTimes[index] || '09:00'} 
-                      onChange={e => handleCustomTimeChange(index, e.target.value)} 
-                      className="w-20 h-8 text-xs border-border bg-background focus:border-primary transition-all" 
-                    />
-                    <div className="text-xs text-muted-foreground font-medium min-w-[32px] text-center">
-                      {formatTimeTo12Hour(settings.customTimes[index] || '09:00').split(' ')[1]}
-                    </div>
-                  </div>
+                  <CustomTimePicker
+                    value={settings.customTimes[index] || '09:00'}
+                    onChange={(time) => handleCustomTimeChange(index, time)}
+                    index={index}
+                  />
                 </MotionDiv>
               )}
             </div>
