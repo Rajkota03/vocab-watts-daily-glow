@@ -317,72 +317,62 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
           </div>
         </div>
 
-        {/* Sleek Timeline Preview / Modern Custom Times */}
+        {/* Sleek Timeline Preview / Minimal Custom Times */}
         {settings.mode === 'auto' ? <div className="mb-6">
-            <div className="text-[13px] leading-5 font-medium text-slate-600 mb-3 flex items-center gap-2">
-              <div className="w-1 h-4 bg-teal-500 rounded-full"></div>
+            <div className="text-[13px] leading-5 font-medium text-muted-foreground mb-3 flex items-center gap-2">
+              <div className="w-1 h-4 bg-primary rounded-full"></div>
               Smart spacing preview
             </div>
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hidden px-[25px] py-0 my-0">
-              {previewTimes.map((time, index) => <MotionDiv key={index} className="min-w-[70px] flex flex-col items-center gap-2 flex-shrink-0 p-2 bg-gradient-to-br from-teal-50 to-teal-100 rounded-lg border border-teal-200" whileHover={{
-            scale: 1.05,
-            y: -2
-          }} transition={{
-            duration: 0.15
-          }}>
-                  <motion.div className="w-2 h-2 bg-teal-500 rounded-full" animate={{
-              scale: [1, 1.2, 1]
-            }} transition={{
-              duration: 0.8,
-              delay: index * 0.1,
-              repeat: Infinity,
-              repeatDelay: 2
-            }} />
-                  <span className="text-[11px] leading-4 font-semibold text-teal-700">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              {previewTimes.map((time, index) => 
+                <MotionDiv 
+                  key={index} 
+                  className="flex items-center justify-between p-2 bg-muted/50 rounded-lg border border-border/50" 
+                  whileHover={{scale: 1.02}} 
+                  transition={{duration: 0.15}}
+                >
+                  <div className="w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-semibold">
+                    {index + 1}
+                  </div>
+                  <span className="text-xs font-medium text-foreground">
                     {formatTimeTo12Hour(time)}
                   </span>
-                  <span className="text-[10px] leading-3 text-teal-600">#{index + 1}</span>
-                </MotionDiv>)}
+                </MotionDiv>
+              )}
             </div>
           </div> : <div className="mb-6">
-            <div className="text-[13px] leading-5 font-medium text-slate-600 mb-4 flex items-center gap-2">
-              <div className="w-1 h-4 bg-slate-500 rounded-full"></div>
+            <div className="text-[13px] leading-5 font-medium text-muted-foreground mb-3 flex items-center gap-2">
+              <div className="w-1 h-4 bg-primary rounded-full"></div>
               Custom delivery times
             </div>
-            <div className="space-y-3">
-              {Array.from({
-            length: wordCount
-          }, (_, index) => <MotionDiv key={index} className="group relative bg-gradient-to-r from-white to-gray-50 border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-md transition-all duration-200" whileHover={{
-            y: -2,
-            scale: 1.01
-          }} transition={{
-            duration: 0.15
-          }}>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-3 flex-1">
-                      <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg group-hover:shadow-xl transition-shadow">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-semibold text-gray-800">Word {index + 1}</h4>
-                        <p className="text-xs text-gray-500">Delivery time</p>
-                      </div>
+            <div className="space-y-2">
+              {Array.from({length: wordCount}, (_, index) => 
+                <MotionDiv 
+                  key={index} 
+                  className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:border-primary/30 transition-all duration-200" 
+                  whileHover={{scale: 1.01}} 
+                  transition={{duration: 0.15}}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-semibold">
+                      {index + 1}
                     </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <Input type="time" value={formatTimeTo12Hour(settings.customTimes[index] || '09:00').split(' ')[0]} onChange={e => handleCustomTimeChange(index, e.target.value)} className="w-24 h-9 text-sm font-mono border-gray-300 rounded-lg bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all mx-0 px-[7px]" />
-                      
-                    </div>
+                    <span className="text-sm font-medium text-foreground">Word {index + 1}</span>
                   </div>
                   
-                  {/* Time visualization */}
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <Clock className="h-3 w-3" />
-                      <span>Scheduled for {formatTimeTo12Hour(settings.customTimes[index] || '09:00')}</span>
+                  <div className="flex items-center gap-2">
+                    <Input 
+                      type="time" 
+                      value={settings.customTimes[index] || '09:00'} 
+                      onChange={e => handleCustomTimeChange(index, e.target.value)} 
+                      className="w-20 h-8 text-xs border-border bg-background focus:border-primary transition-all" 
+                    />
+                    <div className="text-xs text-muted-foreground font-medium min-w-[32px] text-center">
+                      {formatTimeTo12Hour(settings.customTimes[index] || '09:00').split(' ')[1]}
                     </div>
                   </div>
-                </MotionDiv>)}
+                </MotionDiv>
+              )}
             </div>
           </div>}
 
