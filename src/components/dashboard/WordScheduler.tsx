@@ -66,6 +66,7 @@ const CustomTimePicker: React.FC<{
   onChange,
   index
 }) => {
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [timeInput, setTimeInput] = useState('');
   const [period, setPeriod] = useState<'AM' | 'PM'>('AM');
@@ -155,9 +156,9 @@ const CustomTimePicker: React.FC<{
 
   const displayTime = () => {
     if (timeInput.length === 0) return '00:00';
-    if (timeInput.length === 1) return `0${timeInput}:00`;
+    if (timeInput.length === 1) return `${timeInput}:00`;
     if (timeInput.length === 2) return `${timeInput}:00`;
-    if (timeInput.length === 3) return `0${timeInput.slice(0, 1)}:${timeInput.slice(1, 3)}`;
+    if (timeInput.length === 3) return `${timeInput.slice(0, 1)}:${timeInput.slice(1, 3)}`;
     if (timeInput.length === 4) return `${timeInput.slice(0, 2)}:${timeInput.slice(2, 4)}`;
     return timeInput;
   };
