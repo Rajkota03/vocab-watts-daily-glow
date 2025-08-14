@@ -45,12 +45,19 @@ const CustomTimePicker: React.FC<{
   const [sliderMinutes, setSliderMinutes] = useState(0);
   
   useEffect(() => {
-    const time12 = formatTimeTo12Hour(value);
-    const [time, ampm] = time12.split(' ');
-    const [hours, minutes] = time.split(':');
-    setPeriod(ampm as 'AM' | 'PM');
-    setSliderHours(parseInt(hours) || 9);
-    setSliderMinutes(parseInt(minutes) || 0);
+    if (value && value !== '09:00') {
+      const time12 = formatTimeTo12Hour(value);
+      const [time, ampm] = time12.split(' ');
+      const [hours, minutes] = time.split(':');
+      setPeriod(ampm as 'AM' | 'PM');
+      setSliderHours(parseInt(hours) || 9);
+      setSliderMinutes(parseInt(minutes) || 0);
+    } else {
+      // Default values
+      setPeriod('AM');
+      setSliderHours(9);
+      setSliderMinutes(0);
+    }
   }, [value]);
   
   const formatTimeTo12Hour = (time24: string): string => {
