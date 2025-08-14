@@ -399,20 +399,16 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-2">
-                      <div className="relative">
-                        <Input
-                          type="time"
-                          value={formatTimeTo12Hour(settings.customTimes[index] || '09:00')}
-                          onChange={(e) => handleCustomTimeChange(index, e.target.value)}
-                          className="w-20 h-9 text-sm font-mono border-gray-300 rounded-lg bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                        />
-                        <div className="absolute -right-12 top-1/2 -translate-y-1/2">
-                          <span className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-md">
-                            {formatTimeTo12Hour(settings.customTimes[index] || '09:00').split(' ')[1]}
-                          </span>
-                        </div>
-                      </div>
+                    <div className="flex items-center gap-3">
+                      <Input
+                        type="time"
+                        value={formatTimeTo12Hour(settings.customTimes[index] || '09:00').split(' ')[0]}
+                        onChange={(e) => handleCustomTimeChange(index, e.target.value)}
+                        className="w-24 h-9 text-sm font-mono border-gray-300 rounded-lg bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                      />
+                      <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md min-w-[40px] text-center">
+                        {formatTimeTo12Hour(settings.customTimes[index] || '09:00').split(' ')[1]}
+                      </span>
                     </div>
                   </div>
                   
