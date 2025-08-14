@@ -94,7 +94,9 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
       currentCategory={currentCategory} 
       onCategoryUpdate={onCategoryUpdate} 
       onNewBatch={onNewBatch} 
-      isLoadingNewBatch={isLoadingNewBatch} 
+      isLoadingNewBatch={isLoadingNewBatch}
+      onWordCountChange={onWordCountChange}
+      wordCount={wordCount}
     />;
   }
 

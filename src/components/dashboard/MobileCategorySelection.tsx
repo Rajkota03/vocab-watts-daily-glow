@@ -11,18 +11,22 @@ interface MobileCategorySelectionProps {
   onCategoryUpdate: (primary: string, subcategory: string) => void;
   onNewBatch?: () => Promise<void>;
   isLoadingNewBatch?: boolean;
+  onWordCountChange?: (count: number) => void;
+  wordCount?: number;
 }
 const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   isPro,
   currentCategory,
   onCategoryUpdate,
   onNewBatch,
-  isLoadingNewBatch = false
+  isLoadingNewBatch = false,
+  onWordCountChange,
+  wordCount: externalWordCount = 3
 }) => {
   const navigate = useNavigate();
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-  const [wordCount, setWordCount] = useState<number>(3);
+  const [wordCount, setWordCount] = useState<number>(externalWordCount);
 
   // Parse current category
   React.useEffect(() => {
@@ -36,6 +40,11 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
     setSelectedPrimary(initialPrimary);
     setSelectedSubcategory(initialSub);
   }, [currentCategory]);
+
+  // Sync with external word count
+  React.useEffect(() => {
+    setWordCount(externalWordCount);
+  }, [externalWordCount]);
   const categories = [{
     id: 'daily',
     name: 'Daily',
@@ -201,7 +210,9 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
     setSelectedSubcategory(difficultyId);
   };
   const handleWordCountSelect = (count: number) => {
+    console.log('MobileCategorySelection - Word count changing to:', count);
     setWordCount(count);
+    onWordCountChange?.(count); // Notify parent component
   };
   const handleUpgrade = () => {
     navigate('/upgrade');
