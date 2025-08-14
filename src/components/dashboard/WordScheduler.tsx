@@ -27,34 +27,6 @@ interface DeliverySettings {
   timezone: string;
   customTimes: string[];
 }
-// Number pad component
-const NumberPad: React.FC<{
-  onNumberClick: (num: string) => void;
-  onClear: () => void;
-  onDone: () => void;
-}> = ({
-  onNumberClick,
-  onClear,
-  onDone
-}) => {
-  const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
-  return <div className="p-4 bg-background">
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        {numbers.slice(0, 9).map(num => <Button key={num} variant="outline" className="h-12 text-lg font-semibold" onClick={() => onNumberClick(num)}>
-            {num}
-          </Button>)}
-        <Button variant="outline" className="h-12 text-lg font-semibold" onClick={onClear}>
-          Clear
-        </Button>
-        <Button variant="outline" className="h-12 text-lg font-semibold" onClick={() => onNumberClick('0')}>
-          0
-        </Button>
-        <Button variant="outline" className="h-12 text-lg font-semibold" onClick={onDone}>
-          Done
-        </Button>
-      </div>
-    </div>;
-};
 
 // Custom time picker component
 const CustomTimePicker: React.FC<{
@@ -68,19 +40,19 @@ const CustomTimePicker: React.FC<{
 }) => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [timeInput, setTimeInput] = useState('');
   const [period, setPeriod] = useState<'AM' | 'PM'>('AM');
   const [sliderHours, setSliderHours] = useState(9);
   const [sliderMinutes, setSliderMinutes] = useState(0);
+  
   useEffect(() => {
     const time12 = formatTimeTo12Hour(value);
     const [time, ampm] = time12.split(' ');
     const [hours, minutes] = time.split(':');
-    setTimeInput(time.replace(':', ''));
     setPeriod(ampm as 'AM' | 'PM');
     setSliderHours(parseInt(hours) || 9);
     setSliderMinutes(parseInt(minutes) || 0);
   }, [value]);
+  
   const formatTimeTo12Hour = (time24: string): string => {
     try {
       const date = parse(time24, 'HH:mm', new Date());
@@ -89,51 +61,13 @@ const CustomTimePicker: React.FC<{
       return time24;
     }
   };
+  
   const formatTimeTo24Hour = (time12: string): string => {
     try {
       const date = parse(time12, 'h:mm a', new Date());
       return format(date, 'HH:mm');
     } catch (error) {
       return time12;
-    }
-  };
-  const handleNumberClick = (num: string) => {
-    if (timeInput.length < 4) {
-      setTimeInput(prev => prev + num);
-    }
-  };
-  const handleClear = () => {
-    setTimeInput('');
-  };
-  const handleDone = () => {
-    if (!period) {
-      toast({
-        title: "Please select AM or PM",
-        description: "You must choose either AM or PM to set the time.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (timeInput.length === 3 || timeInput.length === 4) {
-      let hours, minutes;
-      if (timeInput.length === 3) {
-        hours = parseInt(timeInput.slice(0, 1));
-        minutes = timeInput.slice(1, 3);
-      } else {
-        hours = parseInt(timeInput.slice(0, 2));
-        minutes = timeInput.slice(2, 4);
-      }
-      
-      // Validate hours (1-12 for AM/PM format) and minutes (00-59)
-      if (hours < 1 || hours > 12 || parseInt(minutes) > 59) {
-        return; // Invalid time, don't update
-      }
-      
-      const formattedTime = `${hours}:${minutes} ${period}`;
-      const time24 = formatTimeTo24Hour(formattedTime);
-      onChange(time24);
-      setIsOpen(false);
     }
   };
 
@@ -154,14 +88,6 @@ const CustomTimePicker: React.FC<{
     setIsOpen(false);
   };
 
-  const displayTime = () => {
-    if (timeInput.length === 0) return '00:00';
-    if (timeInput.length === 1) return `${timeInput}:00`;
-    if (timeInput.length === 2) return `${timeInput}:00`;
-    if (timeInput.length === 3) return `${timeInput.slice(0, 1)}:${timeInput.slice(1, 3)}`;
-    if (timeInput.length === 4) return `${timeInput.slice(0, 2)}:${timeInput.slice(2, 4)}`;
-    return timeInput;
-  };
   
   const safeFormatTime = (timeValue: string): string => {
     try {
@@ -247,17 +173,6 @@ const CustomTimePicker: React.FC<{
             <Button onClick={handleSliderChange} className="flex-1 bg-primary hover:bg-primary/90">
               Set Time
             </Button>
-          </div>
-          
-          {/* Number Pad Alternative */}
-          <div className="mt-6 pt-6 border-t border-border/50">
-            <div className="text-center mb-4">
-              <h4 className="text-sm font-medium text-muted-foreground mb-2">Or type manually</h4>
-              <div className="text-xl font-mono bg-muted/30 p-2 rounded-lg text-foreground">
-                {displayTime()} {period}
-              </div>
-            </div>
-            <NumberPad onNumberClick={handleNumberClick} onClear={handleClear} onDone={handleDone} />
           </div>
         </DialogContent>
       </Dialog>
