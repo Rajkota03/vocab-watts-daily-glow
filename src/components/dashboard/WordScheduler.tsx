@@ -132,8 +132,8 @@ const CustomTimePicker: React.FC<{
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium text-foreground">Hours</label>
                 <Select value={period} onValueChange={(value: 'AM' | 'PM') => setPeriod(value)}>
-                  <SelectTrigger className="w-16 h-8 text-sm border-border bg-background [&>svg]:hidden">
-                    <SelectValue />
+                  <SelectTrigger className="w-20 h-8 text-sm border-border bg-background">
+                    <SelectValue placeholder="AM" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="AM">AM</SelectItem>
@@ -190,8 +190,8 @@ const CustomTimePicker: React.FC<{
       const newTime24 = formatTimeTo24Hour(`${currentTime} ${value}`);
       onChange(newTime24);
     }}>
-        <SelectTrigger className="w-16 h-10 text-sm border-border bg-background focus:border-primary transition-all [&>svg]:hidden">
-          <SelectValue />
+        <SelectTrigger className="w-20 h-10 text-sm border-border bg-background focus:border-primary transition-all">
+          <SelectValue placeholder={period} />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="AM">AM</SelectItem>
