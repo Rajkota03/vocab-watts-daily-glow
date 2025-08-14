@@ -28,6 +28,11 @@ const Dashboard = () => {
   const [showPhoneForm, setShowPhoneForm] = useState(false);
   const [wordCount, setWordCount] = useState(3);
   const [customDeliveryMode, setCustomDeliveryMode] = useState(false);
+
+  const handleWordCountChange = (count: number) => {
+    console.log('Dashboard - Word count changing to:', count);
+    setWordCount(count);
+  };
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -255,7 +260,7 @@ const Dashboard = () => {
           wordCount={wordCount}
           customDeliveryMode={customDeliveryMode}
           onDeliveryModeChange={setCustomDeliveryMode}
-          onWordCountChange={setWordCount}
+          onWordCountChange={handleWordCountChange}
         />
     </div>
   );

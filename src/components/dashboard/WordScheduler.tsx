@@ -52,6 +52,7 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
 
   // Update custom times when word count changes
   useEffect(() => {
+    console.log('WordScheduler - Word count changed to:', wordCount);
     const newCustomTimes = [...settings.customTimes];
     
     // Extend or trim the custom times array to match word count

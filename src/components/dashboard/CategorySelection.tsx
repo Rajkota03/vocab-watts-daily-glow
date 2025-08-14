@@ -99,6 +99,7 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
   }
 
   const handleWordCountChange = (count: number) => {
+    console.log('CategorySelection - Word count changing to:', count);
     setWordCount(count);
     onWordCountChange?.(count); // Notify parent component
   };
