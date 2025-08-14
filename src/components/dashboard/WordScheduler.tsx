@@ -102,12 +102,18 @@ const CustomTimePicker: React.FC<{
     if (timeInput.length === 3 || timeInput.length === 4) {
       let hours, minutes;
       if (timeInput.length === 3) {
-        hours = timeInput.slice(0, 1);
+        hours = parseInt(timeInput.slice(0, 1));
         minutes = timeInput.slice(1, 3);
       } else {
-        hours = timeInput.slice(0, 2);
+        hours = parseInt(timeInput.slice(0, 2));
         minutes = timeInput.slice(2, 4);
       }
+      
+      // Validate hours (1-12 for AM/PM format) and minutes (00-59)
+      if (hours < 1 || hours > 12 || parseInt(minutes) > 59) {
+        return; // Invalid time, don't update
+      }
+      
       const formattedTime = `${hours}:${minutes} ${period}`;
       const time24 = formatTimeTo24Hour(formattedTime);
       onChange(time24);
