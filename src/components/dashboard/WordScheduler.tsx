@@ -376,49 +376,93 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
           </div>
         ) : (
           <div className="mb-6">
-            <div className="text-[13px] leading-5 font-medium text-slate-600 mb-3 flex items-center gap-2">
+            <div className="text-[13px] leading-5 font-medium text-slate-600 mb-4 flex items-center gap-2">
               <div className="w-1 h-4 bg-slate-500 rounded-full"></div>
               Custom delivery times
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {Array.from({ length: wordCount }, (_, index) => (
                 <MotionDiv
                   key={index}
-                  className="flex items-center gap-3 h-11 px-3 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors"
-                  whileHover={{ x: 2 }}
+                  className="group relative bg-gradient-to-r from-white to-gray-50 border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-md transition-all duration-200"
+                  whileHover={{ y: -2, scale: 1.01 }}
                   transition={{ duration: 0.15 }}
                 >
-                  <div className="w-5 h-5 bg-gradient-to-br from-slate-600 to-slate-700 text-white rounded-full flex items-center justify-center text-[10px] leading-3 font-bold">
-                    {index + 1}
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg group-hover:shadow-xl transition-shadow">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-800">Word {index + 1}</h4>
+                        <p className="text-xs text-gray-500">Delivery time</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <div className="relative">
+                        <Input
+                          type="time"
+                          value={formatTimeTo12Hour(settings.customTimes[index] || '09:00')}
+                          onChange={(e) => handleCustomTimeChange(index, e.target.value)}
+                          className="w-20 h-9 text-sm font-mono border-gray-300 rounded-lg bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                        />
+                        <div className="absolute -right-12 top-1/2 -translate-y-1/2">
+                          <span className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-md">
+                            {formatTimeTo12Hour(settings.customTimes[index] || '09:00').split(' ')[1]}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-[13px] leading-5 font-medium text-slate-700 flex-1">
-                    Word {index + 1}
-                  </span>
-                  <Input
-                    type="time"
-                    value={formatTimeTo12Hour(settings.customTimes[index] || '09:00')}
-                    onChange={(e) => handleCustomTimeChange(index, e.target.value)}
-                    className="w-16 h-7 text-[11px] leading-4 border-slate-300 rounded-md bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-                    min="06:00"
-                    max="23:00"
-                  />
+                  
+                  {/* Time visualization */}
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <Clock className="h-3 w-3" />
+                      <span>Scheduled for {formatTimeTo12Hour(settings.customTimes[index] || '09:00')}</span>
+                    </div>
+                  </div>
                 </MotionDiv>
               ))}
             </div>
           </div>
         )}
 
-        {/* Minimal Timeline Summary */}
-        <div className="border-t border-slate-100 pt-4">
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hidden">
+        {/* Enhanced Timeline Summary */}
+        <div className="border-t border-slate-100 pt-5">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-indigo-500" />
+              Today's Schedule
+            </h4>
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+              {wordCount} words
+            </span>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {previewTimes.map((time, index) => (
               <MotionDiv
                 key={index}
-                className="flex-shrink-0 bg-white border border-slate-200 rounded-full px-2 py-1 text-[10px] leading-3 font-medium text-slate-600 whitespace-nowrap"
-                whileHover={{ scale: 1.05, borderColor: "rgb(20 184 166)" }}
+                className="flex items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg px-3 py-2 group hover:from-indigo-100 hover:to-purple-100 transition-all"
+                whileHover={{ scale: 1.02, y: -1 }}
                 transition={{ duration: 0.12 }}
               >
-                #{index + 1} • {formatTimeTo12Hour(time)}
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                    {index + 1}
+                  </div>
+                  <span className="text-xs font-medium text-gray-700">Word {index + 1}</span>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-bold text-indigo-700">
+                    {formatTimeTo12Hour(time).split(' ')[0]}
+                  </div>
+                  <div className="text-xs text-indigo-600 font-medium">
+                    {formatTimeTo12Hour(time).split(' ')[1]}
+                  </div>
+                </div>
               </MotionDiv>
             ))}
           </div>
