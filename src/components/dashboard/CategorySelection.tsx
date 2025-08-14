@@ -65,28 +65,12 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
 
   const handleSubcategorySelect = (subcategory: string) => {
     setSelectedSubcategory(subcategory);
-  };
-
-  const handleApply = async () => {
-    if (selectedPrimary && selectedSubcategory) {
-      try {
-        onCategoryUpdate(selectedPrimary, selectedSubcategory);
-        if (onNewBatch) {
-          await onNewBatch();
-          toast({
-            title: "Words generated successfully!",
-            description: `Your new ${wordCount} words have been scheduled for delivery.`
-          });
-        }
-      } catch (error) {
-        toast({
-          title: "Failed to generate words",
-          description: "Please try again later.",
-          variant: "destructive"
-        });
-      }
+    // Auto-update when both primary and subcategory are selected
+    if (selectedPrimary) {
+      onCategoryUpdate(selectedPrimary, subcategory);
     }
   };
+
 
   if (isMobile) {
     return <MobileCategorySelection 
@@ -153,20 +137,6 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
                     />
                   </div>
                 </div>
-
-                <Button
-                  disabled={!selectedPrimary || !selectedSubcategory || isLoadingNewBatch} 
-                  onClick={handleApply} 
-                  className="w-full bg-primary text-white rounded-lg py-3 h-12 font-medium transition-all hover:bg-primary/90" 
-                  aria-live="polite"
-                >
-                  {isLoadingNewBatch ? (
-                    <>
-                      <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
-                      Generating...
-                    </>
-                  ) : 'Apply Selection & Generate Words'}
-                </Button>
               </>
             )}
           </div>

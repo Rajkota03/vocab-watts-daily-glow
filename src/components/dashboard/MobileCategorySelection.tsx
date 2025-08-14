@@ -208,6 +208,10 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   };
   const handleDifficultySelect = (difficultyId: string) => {
     setSelectedSubcategory(difficultyId);
+    // Auto-update when both primary and subcategory are selected
+    if (selectedPrimary) {
+      onCategoryUpdate(selectedPrimary, difficultyId);
+    }
   };
   const handleWordCountSelect = (count: number) => {
     console.log('MobileCategorySelection - Word count changing to:', count);
@@ -217,17 +221,6 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
   const handleUpgrade = () => {
     navigate('/upgrade');
   };
-  const handleApply = async () => {
-    if (selectedPrimary && selectedSubcategory) {
-      onCategoryUpdate(selectedPrimary, selectedSubcategory);
-      // Assuming onNewBatch is related to applying the category/word count?
-      // If it triggers word generation, call it here.
-      if (onNewBatch) {
-        await onNewBatch();
-      }
-    }
-  };
-  const isFullySelected = selectedPrimary && selectedSubcategory;
 
   // Determine which subcategories/levels to show
   const subcategoryOptions = selectedPrimary === 'exam' ? examTypes : difficultyLevels;
@@ -314,18 +307,6 @@ const MobileCategorySelection: React.FC<MobileCategorySelectionProps> = ({
           </div>}
       </ScrollArea>
 
-      {/* Sticky Footer Button */}
-      <div className="p-3 border-t border-gray-200 bg-white rounded-b-lg sticky bottom-0 z-10">
-        <Button onClick={handleApply} disabled={!isFullySelected || isLoadingNewBatch} className={cn("w-full bg-gradient-to-r from-vocab-purple to-indigo-500 hover:from-vocab-purple/90 hover:to-indigo-500/90 text-white h-11 rounded-lg shadow-sm text-sm font-semibold", (!isFullySelected || isLoadingNewBatch) && "opacity-50 cursor-not-allowed")} aria-live="polite">
-          {isLoadingNewBatch ? <>
-              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              Generating...
-            </> : <>
-              <Zap className="mr-2 h-4 w-4" />
-              Apply Selection
-            </>}
-        </Button>
-      </div>
     </div>
   );
 };

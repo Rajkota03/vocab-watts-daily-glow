@@ -603,7 +603,7 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
           <MotionButton onClick={saveSettings} disabled={saving} className="h-10 px-4 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold text-[12px] leading-4" whileTap={{
           scale: 0.98
         }}>
-            {saving ? "Saving..." : "Apply"}
+            {saving ? "Saving..." : "Apply Settings"}
           </MotionButton>
         </div>
       </motion.div>
@@ -613,7 +613,7 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
         <MotionButton onClick={saveSettings} disabled={saving} className="flex-1 h-10 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold" whileTap={{
         scale: 0.98
       }}>
-          {saving ? "Saving..." : "Apply"}
+          {saving ? "Saving..." : "Apply Settings"}
         </MotionButton>
         <MotionButton variant="outline" onClick={handleSendNow} disabled={loading || !phoneNumber} className="h-10 px-4 border-border text-foreground hover:bg-muted/50" whileTap={{
         scale: 0.98
