@@ -5,6 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Clock, Calendar, Target, Info, Send } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -68,11 +69,16 @@ const CustomTimePicker: React.FC<{
   const [isOpen, setIsOpen] = useState(false);
   const [timeInput, setTimeInput] = useState('');
   const [period, setPeriod] = useState<'AM' | 'PM'>('AM');
+  const [sliderHours, setSliderHours] = useState(9);
+  const [sliderMinutes, setSliderMinutes] = useState(0);
   useEffect(() => {
     const time12 = formatTimeTo12Hour(value);
     const [time, ampm] = time12.split(' ');
+    const [hours, minutes] = time.split(':');
     setTimeInput(time.replace(':', ''));
     setPeriod(ampm as 'AM' | 'PM');
+    setSliderHours(parseInt(hours) || 9);
+    setSliderMinutes(parseInt(minutes) || 0);
   }, [value]);
   const formatTimeTo12Hour = (time24: string): string => {
     try {
@@ -120,6 +126,14 @@ const CustomTimePicker: React.FC<{
       setIsOpen(false);
     }
   };
+
+  const handleSliderChange = () => {
+    const formattedTime = `${sliderHours}:${sliderMinutes.toString().padStart(2, '0')} ${period}`;
+    const time24 = formatTimeTo24Hour(formattedTime);
+    onChange(time24);
+    setIsOpen(false);
+  };
+
   const displayTime = () => {
     if (timeInput.length === 0) return '00:00';
     if (timeInput.length === 1) return `0${timeInput}:00`;
@@ -128,6 +142,7 @@ const CustomTimePicker: React.FC<{
     if (timeInput.length === 4) return `${timeInput.slice(0, 2)}:${timeInput.slice(2, 4)}`;
     return timeInput;
   };
+  
   const safeFormatTime = (timeValue: string): string => {
     try {
       // Ensure the time value is in HH:mm format
@@ -150,14 +165,80 @@ const CustomTimePicker: React.FC<{
             {safeFormatTime(value)}
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-md bg-neutral-50">
-          <div className="text-center mb-4">
-            <h3 className="text-lg font-semibold mb-2">Set Time</h3>
-            <div className="text-2xl font-mono bg-muted p-3 rounded-lg">
-              {displayTime()} {period}
+        <DialogContent className="sm:max-w-lg bg-white/95 backdrop-blur border-0 shadow-xl">
+          <div className="text-center mb-6">
+            <h3 className="text-lg font-semibold mb-4 text-foreground">Set Time</h3>
+            <div className="text-3xl font-mono bg-gradient-to-r from-primary/10 to-primary/5 p-4 rounded-xl border border-primary/20 text-primary">
+              {sliderHours}:{sliderMinutes.toString().padStart(2, '0')} {period}
             </div>
           </div>
-          <NumberPad onNumberClick={handleNumberClick} onClear={handleClear} onDone={handleDone} />
+          
+          {/* Slider Controls */}
+          <div className="space-y-6 mb-6">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-foreground">Hours</label>
+                <Select value={period} onValueChange={(value: 'AM' | 'PM') => setPeriod(value)}>
+                  <SelectTrigger className="w-16 h-8 text-sm border-border bg-background [&>svg]:hidden">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="AM">AM</SelectItem>
+                    <SelectItem value="PM">PM</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Slider
+                value={[sliderHours]}
+                onValueChange={(value) => setSliderHours(value[0])}
+                min={1}
+                max={12}
+                step={1}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground px-1">
+                <span>1</span>
+                <span>12</span>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-foreground">Minutes</label>
+              <Slider
+                value={[sliderMinutes]}
+                onValueChange={(value) => setSliderMinutes(value[0])}
+                min={0}
+                max={59}
+                step={1}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground px-1">
+                <span>00</span>
+                <span>59</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1">
+              Cancel
+            </Button>
+            <Button onClick={handleSliderChange} className="flex-1 bg-primary hover:bg-primary/90">
+              Set Time
+            </Button>
+          </div>
+          
+          {/* Number Pad Alternative */}
+          <div className="mt-6 pt-6 border-t border-border/50">
+            <div className="text-center mb-4">
+              <h4 className="text-sm font-medium text-muted-foreground mb-2">Or type manually</h4>
+              <div className="text-xl font-mono bg-muted/30 p-2 rounded-lg text-foreground">
+                {displayTime()} {period}
+              </div>
+            </div>
+            <NumberPad onNumberClick={handleNumberClick} onClear={handleClear} onDone={handleDone} />
+          </div>
         </DialogContent>
       </Dialog>
       
