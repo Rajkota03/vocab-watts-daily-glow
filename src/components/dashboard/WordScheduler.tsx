@@ -116,17 +116,17 @@ const CustomTimePicker: React.FC<{
   };
   const displayTime = () => {
     if (timeInput.length === 0) return '00:00';
-    if (timeInput.length === 1) return `${timeInput}:00`;
+    if (timeInput.length === 1) return `0${timeInput}:00`;
     if (timeInput.length === 2) return `${timeInput}:00`;
-    if (timeInput.length === 3) return `${timeInput.slice(0, 1)}:${timeInput.slice(1, 3)}`;
+    if (timeInput.length === 3) return `0${timeInput.slice(0, 1)}:${timeInput.slice(1, 3)}`;
     if (timeInput.length === 4) return `${timeInput.slice(0, 2)}:${timeInput.slice(2, 4)}`;
     return timeInput;
   };
   return <div className="flex items-center gap-2">
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" className="h-8 px-3 text-xs border-border bg-background focus:border-primary transition-all font-mono">
-            {formatTimeTo12Hour(value).split(' ')[0]}
+          <Button variant="outline" className="h-10 px-4 text-sm border-border bg-background focus:border-primary transition-all font-mono tracking-wide">
+            {format(parse(value, 'HH:mm', new Date()), 'HH:mm')}
           </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-md bg-neutral-50">
@@ -146,7 +146,7 @@ const CustomTimePicker: React.FC<{
       const newTime24 = formatTimeTo24Hour(`${currentTime} ${value}`);
       onChange(newTime24);
     }}>
-        <SelectTrigger className="w-16 h-8 text-xs">
+        <SelectTrigger className="w-16 h-10 text-sm border-border bg-background focus:border-primary transition-all [&>svg]:hidden">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
