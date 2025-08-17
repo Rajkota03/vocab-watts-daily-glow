@@ -33,32 +33,15 @@ export const fetchNewWords = async (
   try {
     console.log(`fetchNewWords: Fetching up to ${limit} new words for user ${userId}, category: ${category}`);
 
-    // Get IDs of words already sent to this user/phone
-    const { data: sentWordsData, error: sentWordsError } = await supabase
-      .from("sent_words") // Assuming 'sent_words' table exists
-      .select("word_id")
-      .eq("user_id", userId)
-      .eq("category", category);
-      // Consider filtering by phone_number too if user_id isn't always the primary key
+    // Allow word repetition by not excluding previously sent words
+    console.log(`fetchNewWords: Allowing word repetition for user ${userId} in category ${category}`);
 
-    if (sentWordsError) {
-      console.error("fetchNewWords: Error fetching sent words:", sentWordsError);
-      throw new Error("Failed to check word history");
-    }
-
-    const sentWordIds = sentWordsData?.map((row) => row.word_id) || [];
-    console.log(`fetchNewWords: Found ${sentWordIds.length} previously sent words for user ${userId} in category ${category}`);
-
-    // Query for words in the specified category that haven't been sent yet
-    let query = supabase
+    // Query for words in the specified category (allowing repeats)
+    const query = supabase
       .from("vocabulary_words")
       .select("*")
       .eq("category", category)
       .limit(limit);
-
-    if (sentWordIds.length > 0) {
-      query = query.not("id", "in", `(${sentWordIds.join(",")})`);
-    }
 
     const { data: words, error: wordsError } = await query;
 
@@ -227,12 +210,10 @@ export const generateNewWordBatch = async (
                       subscriptionEndsAt && 
                       isAfter(new Date(subscriptionEndsAt), new Date());
 
-    // 3. Determine Word Limit based on Pro status and preference
-    const preferredCount = wordCountPreference ?? (isProActive ? 3 : 1); // Default: 3 for Pro, 1 for Free
-    const maxLimit = isProActive ? 5 : 3; // Max allowed: 5 for Pro, 3 for Free
-    const actualLimit = Math.min(preferredCount, maxLimit);
+    // 3. Always use limit of 1 word per request
+    const actualLimit = 1;
 
-    console.log(`generateNewWordBatch: User ${userId} - Pro Active: ${isProActive}, Preferred Count: ${preferredCount}, Actual Limit: ${actualLimit}`);
+    console.log(`generateNewWordBatch: User ${userId} - Pro Active: ${isProActive}, Actual Limit: ${actualLimit}`);
 
     // 4. Fetch New Words using the determined limit
     const newWords = await fetchNewWords(userId, phoneNumber, category, actualLimit);
@@ -264,7 +245,7 @@ export const generateNewWordBatch = async (
  */
 export const generateWordsWithAI = async (
   category: string,
-  count: number = 5
+  count: number = 1
 ): Promise<VocabularyWord[]> => {
   if (count <= 0) {
      console.log("generateWordsWithAI: Count is zero or less, skipping generation.");

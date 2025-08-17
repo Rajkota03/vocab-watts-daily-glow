@@ -34,7 +34,7 @@ serve(async (req) => {
   }
 
   try {
-    const { category, count = 5 }: VocabWordRequest = await req.json();
+    const { category, count = 1 }: VocabWordRequest = await req.json();
     
     if (!category) {
       throw new Error('Category is required');
