@@ -187,14 +187,16 @@ serve(async (req) => {
 });
 
 function generateAutoTimes(wordCount: number): string[] {
-  const start = 9; // 9 AM
-  const end = 21; // 9 PM
-  const interval = (end - start) / Math.max(1, wordCount - 1);
+  // Fixed timing schedule based on user preference
+  const schedules = {
+    1: ['09:00'],
+    2: ['09:00', '12:00'],
+    3: ['09:00', '12:00', '15:00'],
+    4: ['09:00', '12:00', '15:00', '18:00'],
+    5: ['09:00', '11:30', '14:00', '16:30', '19:00']
+  };
   
-  return Array.from({ length: wordCount }, (_, i) => {
-    const hour = Math.round(start + (i * interval));
-    return `${hour.toString().padStart(2, '0')}:00`;
-  });
+  return schedules[wordCount as keyof typeof schedules] || schedules[3];
 }
 
 async function getTodaysWords(userId: string, category: string, count: number) {
