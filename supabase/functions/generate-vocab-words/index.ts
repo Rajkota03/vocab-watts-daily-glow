@@ -34,7 +34,10 @@ serve(async (req) => {
   }
 
   try {
-    const { category, count = 1 }: VocabWordRequest = await req.json();
+    const { category }: VocabWordRequest = await req.json();
+    
+    // Always generate exactly 1 word - ignore any count parameter
+    const count = 1;
     
     if (!category) {
       throw new Error('Category is required');
@@ -46,7 +49,7 @@ serve(async (req) => {
       throw new Error("OpenAI API key is not configured");
     }
 
-    console.log(`Generating ${count} vocabulary words for category: ${category}`);
+    console.log(`Generating exactly 1 vocabulary word for category: ${category}`);
 
     // Parse the category (support both old format and new primary-subcategory format)
     let primaryCategory = category;
@@ -195,14 +198,14 @@ serve(async (req) => {
             },
             { 
               role: 'user', 
-              content: `Generate ${count} ${categoryPrompt}.
+              content: `Generate exactly 1 vocabulary word that follows this guideline: ${categoryPrompt}.
               
-              For each word, provide:
+              Provide:
               1. The word itself (ensure it matches the specified difficulty level)
               2. A clear, concise definition
               3. A natural example sentence showing how to use it in context
               
-              Format your response as a valid JSON array with this exact structure:
+              Format your response as a valid JSON array with exactly ONE word object:
               [
                 {
                   "word": "example",
@@ -212,7 +215,7 @@ serve(async (req) => {
                 }
               ]
               
-              Do not include code blocks, markdown formatting, or any text outside the JSON array. The response must be a plain valid JSON array and nothing else.` 
+              IMPORTANT: Return exactly 1 word in the array, no more, no less. Do not include code blocks, markdown formatting, or any text outside the JSON array.` 
             }
           ],
           temperature: 0.3,
