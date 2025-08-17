@@ -123,8 +123,15 @@ serve(async (req) => {
       console.log(`Formatted time: ${timeFormatted}`);
       
       try {
-        // Create date in ISO format to avoid timezone issues
-        const sendAt = new Date(`${today}T${timeFormatted}:00.000Z`);
+        // Create date in user's timezone first, then convert to UTC
+        const userTimezone = settings.timezone || 'Asia/Calcutta';
+        
+        // Create a date object in the user's timezone
+        const localDate = new Date(`${today}T${timeFormatted}:00`);
+        
+        // Convert IST to UTC (subtract 5.5 hours)
+        const offsetHours = userTimezone === 'Asia/Calcutta' ? 5.5 : 0;
+        const sendAt = new Date(localDate.getTime() - (offsetHours * 60 * 60 * 1000));
         
         if (isNaN(sendAt.getTime())) {
           console.error(`Invalid date created for time: ${timeFormatted}`);
