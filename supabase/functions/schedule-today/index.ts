@@ -93,10 +93,23 @@ serve(async (req) => {
     for (let i = 0; i < Math.min(words.length, settings.words_per_day, times.length); i++) {
       const word = words[i];
       const time = times[i];
-      const sendAt = new Date(`${today}T${time}:00`);
-
-      // Convert to user's timezone
-      const sendAtUTC = new Date(sendAt.getTime());
+      
+      console.log(`Processing word ${i + 1}: ${word.word}, time: ${time}`);
+      
+      // Ensure time is in HH:MM format
+      const timeFormatted = time.includes(':') ? time : `${time.padStart(2, '0')}:00`;
+      
+      try {
+        // Create date in ISO format to avoid timezone issues
+        const sendAt = new Date(`${today}T${timeFormatted}:00.000Z`);
+        
+        if (isNaN(sendAt.getTime())) {
+          console.error(`Invalid date created for time: ${timeFormatted}`);
+          continue;
+        }
+        
+        console.log(`Created valid date: ${sendAt.toISOString()}`);
+        const sendAtUTC = sendAt;
 
       outboxMessages.push({
         user_id: userId,
