@@ -142,7 +142,7 @@ const CustomTimePicker: React.FC<{
         </DialogTrigger>
         <DialogContent className="sm:max-w-lg bg-white/95 backdrop-blur border-0 shadow-xl">
           <div className="text-center mb-6">
-            <h3 className="text-lg font-semibold mb-4 text-foreground">Set Time</h3>
+            <h3 className="text-lg font-bold mb-4 text-foreground">Set Time</h3>
             <div className="text-3xl font-mono bg-gradient-to-r from-primary/10 to-primary/5 p-4 rounded-xl border border-primary/20 text-primary">
               {sliderHours}:{sliderMinutes.toString().padStart(2, '0')} {period}
             </div>
@@ -600,7 +600,7 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
         {/* Enhanced Timeline Summary */}
         <div className="border-t border-border/50 pt-5">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
               <Calendar className="h-4 w-4 text-primary" />
               Today's Schedule
             </h4>

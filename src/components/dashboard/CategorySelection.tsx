@@ -97,7 +97,7 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-8">
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-4">Word Category</h3>
+              <h3 className="text-sm font-bold text-gray-700 mb-4">Word Category</h3>
               <CategoryGrid selectedPrimary={selectedPrimary} onPrimarySelect={handlePrimarySelect} isPro={true} />
             </div>
             

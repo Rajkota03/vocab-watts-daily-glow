@@ -125,7 +125,7 @@ const WordHistory: React.FC<WordHistoryProps> = ({ category, userId }) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Recent Words</h3>
+        <h3 className="text-lg font-bold">Recent Words</h3>
         <Button 
           variant="ghost" 
           size="sm" 

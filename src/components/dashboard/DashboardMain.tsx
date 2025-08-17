@@ -43,13 +43,13 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
         <div id="dashboardCard" className="w-full mx-auto space-y-4">
           {/* Phone Number Update Form (conditionally displayed) */}
           {showPhoneForm && userId && handlePhoneNumberUpdate && <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h3 className="text-xl font-semibold mb-4 text-gray-800">Update Your WhatsApp Number</h3>
+              <h3 className="text-xl font-bold mb-4 text-gray-800">Update Your WhatsApp Number</h3>
               <PhoneNumberUpdateForm currentPhoneNumber={subscription.phone_number} userId={userId} onUpdate={handlePhoneNumberUpdate} />
             </div>}
 
           {/* Section for Learning Settings - First */}
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-             <h3 className="text-xl font-semibold mb-4 text-gray-800">Learning Settings</h3>
+             <h3 className="text-xl font-bold mb-4 text-gray-800">Learning Settings</h3>
             <CategorySelection isPro={subscription.is_pro} currentCategory={subscription.category} onCategoryUpdate={handleCategoryUpdate} onNewBatch={handleNewBatch} isLoadingNewBatch={isGeneratingBatch} onWordCountChange={onWordCountChange} customDeliveryMode={customDeliveryMode} onDeliveryModeChange={onDeliveryModeChange} wordCount={wordCount} />
           </div>
 
