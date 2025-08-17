@@ -164,11 +164,10 @@ async function sendWhatsAppMessage(message: any) {
 
     console.log(`Sending word: ${word} to ${message.phone}`);
 
-    // Format the message in the enhanced format
-    const formattedMessage = `Word: ${word} 🟩
+    // Format the message in the enhanced format with proper line breaks
+    const formattedMessage = `Word: ${word} 🟩 (${part_of_speech || 'Unknown'})
 Pronunciation: ${pronunciation || 'N/A'}
 Meaning: ${definition}
-Part of Speech: ${part_of_speech || 'Unknown'}
 Example: ${example}
 Memory Hook: ${memory_hook || 'Remember this word!'}`;
 

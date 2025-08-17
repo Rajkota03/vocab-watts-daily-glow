@@ -237,12 +237,11 @@ async function sendDailyWords(payload: any) {
           // Don't throw, just continue with default message
           finalMessage = `📚 Your daily vocabulary words for ${category} are ready!`;
         } else if (wordsData && wordsData.words && wordsData.words.length > 0) {
-          // Format the words using the new enhanced format
+          // Format the words using the new enhanced format with proper line breaks
           const wordsText = wordsData.words.map((word: any, index: number) => {
-            const enhancedFormat = `Word: ${word.word} 🟩
+            const enhancedFormat = `Word: ${word.word} 🟩 (${word.part_of_speech || 'Unknown'})
 Pronunciation: ${word.pronunciation || 'N/A'}
 Meaning: ${word.definition}
-Part of Speech: ${word.part_of_speech || 'Unknown'}
 Example: ${word.example}
 Memory Hook: ${word.memory_hook || 'Remember this word!'}`;
             return enhancedFormat;
