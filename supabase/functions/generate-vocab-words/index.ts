@@ -25,6 +25,9 @@ interface VocabWord {
   definition: string;
   example: string;
   category: string;
+  pronunciation: string;
+  part_of_speech: string;
+  memory_hook: string;
 }
 
 serve(async (req) => {
@@ -202,15 +205,21 @@ serve(async (req) => {
               
               Provide:
               1. The word itself (ensure it matches the specified difficulty level)
-              2. A clear, concise definition
-              3. A natural example sentence showing how to use it in context
+              2. Clear pronunciation guide (e.g., "EL-oh-kwent")
+              3. Concise definition/meaning
+              4. Part of speech (noun, verb, adjective, etc.)
+              5. Natural example sentence showing usage in context
+              6. Creative memory hook to help remember the word
               
               Format your response as a valid JSON array with exactly ONE word object:
               [
                 {
                   "word": "example",
+                  "pronunciation": "ex-AM-pull", 
                   "definition": "definition here",
+                  "part_of_speech": "noun",
                   "example": "example sentence here",
+                  "memory_hook": "creative memory technique here",
                   "category": "${category}"
                 }
               ]
@@ -260,15 +269,18 @@ serve(async (req) => {
         // Validate the structure of each word
         vocabWords = vocabWords.map(word => {
           // Ensure all required fields are present
-          if (!word.word || !word.definition || !word.example) {
+          if (!word.word || !word.definition || !word.example || !word.pronunciation || !word.part_of_speech || !word.memory_hook) {
             console.warn('Incomplete word object:', word);
             throw new Error('Invalid word format: missing required fields');
           }
           
           return {
             word: word.word,
+            pronunciation: word.pronunciation,
             definition: word.definition,
+            part_of_speech: word.part_of_speech,
             example: word.example,
+            memory_hook: word.memory_hook,
             category: category // Use the full category (including subcategory)
           };
         });
