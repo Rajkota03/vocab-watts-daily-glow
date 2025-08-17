@@ -13,13 +13,35 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
 import { format, parse } from 'date-fns';
+
+// Check if user is admin/developer
+const useIsAdmin = () => {
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id);
+        setIsAdmin(roles?.some(r => r.role === 'admin') || false);
+      }
+    };
+    checkAdminStatus();
+  }, []);
+  
+  return isAdmin;
+};
 interface WordSchedulerProps {
   userId: string;
   phoneNumber?: string;
   category: string;
   isPro: boolean;
-  wordCount: number; // Added word count from learning settings
+  wordCount: number;
 }
+
 interface DeliverySettings {
   mode: 'auto' | 'custom';
   autoWindowStart: string;
@@ -220,9 +242,9 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+  const isAdmin = useIsAdmin();
+
   useEffect(() => {
     fetchUserSettings();
   }, [userId]);
@@ -446,40 +468,25 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
 
     setLoading(true);
     try {
-      // Create an immediate outbox message instead of calling whatsapp-send directly
-      const now = new Date();
-      const { data, error } = await supabase
-        .from('outbox_messages')
-        .insert({
-          user_id: userId,
-          phone: phoneNumber,
-          send_at: now.toISOString(), // Send immediately
-          template: 'glintup_vocab_fulfilment',
-          variables: {
-            word: 'Sample',
-            definition: 'An example or instance used for testing.',
-            example: 'This is a sample vocabulary word sent immediately.',
-            category: category,
-            position: 1,
-            totalWords: 1,
-            word_id: crypto.randomUUID()
-          }
-        })
-        .select();
+      // For testing purposes - call whatsapp-send directly
+      const { data, error } = await supabase.functions.invoke('whatsapp-send', {
+        body: {
+          to: phoneNumber,
+          category: category,
+          isPro: isPro,
+          wordsCount: 1,
+          message: `🧪 TEST MESSAGE - ${category} vocabulary word`
+        }
+      });
 
       if (error) throw error;
-
-      // Trigger outbox processor immediately
-      const { error: processorError } = await supabase.functions.invoke('outbox-processor');
-      
-      if (processorError) {
-        console.warn('Outbox processor call failed:', processorError);
-        // Don't throw error, message will be processed by cron
+      if (!data?.success) {
+        throw new Error(data?.error || "Failed to send test message");
       }
 
       toast({
-        title: "Words queued! 🚀",
-        description: "Your message will be sent within the next minute."
+        title: "Test message sent! 🧪",
+        description: "Check your WhatsApp for the test vocabulary word."
       });
     } catch (error: any) {
       toast({
@@ -629,15 +636,18 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
           {wordCount} words • spaced today
         </span>
         <div className="flex gap-2">
-          <MotionButton variant="ghost" size="sm" onClick={handleSendNow} disabled={loading || !phoneNumber} className="h-10 px-3 text-[12px] leading-4 border-border text-foreground hover:bg-muted/50" whileTap={{
-          scale: 0.98
-        }}>
-            <Send className="h-3 w-3 mr-1" />
-            {loading ? "Sending..." : "Send Now"}
-          </MotionButton>
+          {/* Show Send Now button only for admins/developers on mobile */}
+          {isAdmin && (
+            <MotionButton variant="ghost" size="sm" onClick={handleSendNow} disabled={loading || !phoneNumber} className="h-10 px-3 text-[12px] leading-4 border-border text-foreground hover:bg-muted/50" whileTap={{
+              scale: 0.98
+            }}>
+              <Send className="h-3 w-3 mr-1" />
+              {loading ? "Sending..." : "Test Send"}
+            </MotionButton>
+          )}
           <MotionButton onClick={saveSettings} disabled={saving} className="h-10 px-4 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold text-[12px] leading-4" whileTap={{
-          scale: 0.98
-        }}>
+            scale: 0.98
+          }}>
             {saving ? "Saving..." : "Apply Settings"}
           </MotionButton>
         </div>
@@ -650,13 +660,23 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
       }}>
           {saving ? "Saving..." : "Apply Settings"}
         </MotionButton>
-        <MotionButton variant="outline" onClick={handleSendNow} disabled={loading || !phoneNumber} className="h-10 px-4 border-border text-foreground hover:bg-muted/50" whileTap={{
-        scale: 0.98
-      }}>
-          <Send className="h-4 w-4 mr-2" />
-          {loading ? "Sending..." : "Send Now"}
-        </MotionButton>
+        
+        {/* Show Send Now button only for admins/developers */}
+        {isAdmin && (
+          <MotionButton 
+            variant="outline" 
+            onClick={handleSendNow} 
+            disabled={loading || !phoneNumber} 
+            className="h-10 px-4 border-border text-foreground hover:bg-muted/50" 
+            whileTap={{ scale: 0.98 }}
+          >
+            <Send className="h-4 w-4 mr-2" />
+            {loading ? "Sending..." : "Test Send"}
+          </MotionButton>
+        )}
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default WordScheduler;
