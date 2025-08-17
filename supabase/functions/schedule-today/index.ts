@@ -86,8 +86,22 @@ serve(async (req) => {
       );
     }
 
-    // Create outbox messages for today
+    // Clear any existing scheduled messages for today before creating new ones
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    console.log(`Clearing existing messages for user ${userId} on ${today}`);
+    const { error: deleteError } = await supabase
+      .from('outbox_messages')
+      .delete()
+      .eq('user_id', userId)
+      .gte('send_at', `${today}T00:00:00.000Z`)
+      .lt('send_at', `${today}T23:59:59.999Z`);
+
+    if (deleteError) {
+      console.error('Error clearing existing messages:', deleteError);
+    }
+
+    // Create outbox messages for today
     const outboxMessages = [];
 
     for (let i = 0; i < Math.min(words.length, settings.words_per_day, times.length); i++) {
