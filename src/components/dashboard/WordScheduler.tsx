@@ -499,17 +499,16 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
     }
   };
   const previewTimes = getPreviewTimes();
-  return <div className="pb-20 md:pb-0 -mx-2 md:mx-0">
+  
+  return (
+    <div className="pb-20 md:pb-0 -mx-2 md:mx-0">
       {/* Sleek Schedule Card */}
-      <MotionCard initial={{
-      opacity: 0,
-      y: 20
-    }} animate={{
-      opacity: 1,
-      y: 0
-    }} transition={{
-      duration: 0.3
-    }} className="rounded-xl border border-slate-200 bg-white p-4 md:p-5 md:mx-0 shadow-[0_1px_2px_rgba(0,0,0,.06)] mx-0 px-[11px] py-[17px]">
+      <MotionCard 
+        initial={{ opacity: 0, y: 20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.3 }} 
+        className="rounded-xl border border-slate-200 bg-white p-4 md:p-5 md:mx-0 shadow-[0_1px_2px_rgba(0,0,0,.06)] mx-0 px-[11px] py-[17px]"
+      >
         {/* Small Sleek Toggle */}
         <div className="mb-6">
           <div className="flex items-center justify-between py-2">
@@ -528,51 +527,58 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <motion.div whileTap={{
-            scale: 0.95
-          }} transition={{
-            type: "spring",
-            stiffness: 400,
-            damping: 20
-          }}>
-              <Switch checked={settings.mode === 'custom'} onCheckedChange={handleModeToggle} className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-gray-300 [&>span]:bg-white" />
+            <motion.div 
+              whileTap={{ scale: 0.95 }} 
+              transition={{ type: "spring", stiffness: 400, damping: 20 }}
+            >
+              <Switch 
+                checked={settings.mode === 'custom'} 
+                onCheckedChange={handleModeToggle} 
+                className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-gray-300 [&>span]:bg-white" 
+              />
             </motion.div>
           </div>
         </div>
 
         {/* Sleek Timeline Preview / Minimal Custom Times */}
-        {settings.mode === 'auto' ? <div className="mb-6">
+        {settings.mode === 'auto' ? (
+          <div className="mb-6">
             <div className="text-[13px] leading-5 font-medium text-muted-foreground mb-3 flex items-center gap-2">
               <div className="w-1 h-4 bg-primary rounded-full"></div>
               Smart spacing preview
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-              {previewTimes.map((time, index) => <MotionDiv key={index} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg border border-border/50" whileHover={{
-            scale: 1.02
-          }} transition={{
-            duration: 0.15
-          }}>
+              {previewTimes.map((time, index) => (
+                <MotionDiv 
+                  key={index} 
+                  className="flex items-center justify-between p-2 bg-muted/50 rounded-lg border border-border/50" 
+                  whileHover={{ scale: 1.02 }} 
+                  transition={{ duration: 0.15 }}
+                >
                   <div className="w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-semibold">
                     {index + 1}
                   </div>
                   <span className="text-xs font-medium text-foreground">
                     {formatTimeTo12Hour(time)}
                   </span>
-                </MotionDiv>)}
+                </MotionDiv>
+              ))}
             </div>
-          </div> : <div className="mb-6">
+          </div>
+        ) : (
+          <div className="mb-6">
             <div className="text-[13px] leading-5 font-medium text-muted-foreground mb-3 flex items-center gap-2">
               <div className="w-1 h-4 bg-primary rounded-full"></div>
               Custom delivery times
             </div>
             <div className="space-y-2">
-              {Array.from({
-            length: wordCount
-          }, (_, index) => <MotionDiv key={index} className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:border-primary/30 transition-all duration-200" whileHover={{
-            scale: 1.01
-          }} transition={{
-            duration: 0.15
-          }}>
+              {Array.from({ length: wordCount }, (_, index) => (
+                <MotionDiv 
+                  key={index} 
+                  className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:border-primary/30 transition-all duration-200" 
+                  whileHover={{ scale: 1.01 }} 
+                  transition={{ duration: 0.15 }}
+                >
                   <div className="flex items-center gap-3">
                     <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-semibold">
                       {index + 1}
@@ -580,10 +586,16 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
                     <span className="text-sm font-medium text-foreground">Word {index + 1}</span>
                   </div>
                   
-                  <CustomTimePicker value={settings.customTimes[index] || '09:00'} onChange={time => handleCustomTimeChange(index, time)} index={index} />
-                </MotionDiv>)}
+                  <CustomTimePicker 
+                    value={settings.customTimes[index] || '09:00'} 
+                    onChange={time => handleCustomTimeChange(index, time)} 
+                    index={index} 
+                  />
+                </MotionDiv>
+              ))}
             </div>
-          </div>}
+          </div>
+        )}
 
         {/* Enhanced Timeline Summary */}
         <div className="border-t border-border/50 pt-5">
@@ -598,12 +610,13 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {previewTimes.map((time, index) => <MotionDiv key={index} className="flex items-center justify-between bg-gradient-to-r from-glintup-indigo/5 to-duolingo-purple/5 border border-glintup-indigo/20 rounded-lg px-3 py-2 group hover:from-glintup-indigo/10 hover:to-duolingo-purple/10 transition-all" whileHover={{
-            scale: 1.02,
-            y: -1
-          }} transition={{
-            duration: 0.12
-          }}>
+            {previewTimes.map((time, index) => (
+              <MotionDiv 
+                key={index} 
+                className="flex items-center justify-between bg-gradient-to-r from-glintup-indigo/5 to-duolingo-purple/5 border border-glintup-indigo/20 rounded-lg px-3 py-2 group hover:from-glintup-indigo/10 hover:to-duolingo-purple/10 transition-all" 
+                whileHover={{ scale: 1.02, y: -1 }} 
+                transition={{ duration: 0.12 }}
+              >
                 <div className="flex items-center gap-2">
                   <div className="w-5 h-5 bg-glintup-indigo text-white rounded-full flex items-center justify-center text-xs font-bold">
                     {index + 1}
@@ -618,36 +631,43 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
                     {formatTimeTo12Hour(time).split(' ')[1]}
                   </div>
                 </div>
-              </MotionDiv>)}
+              </MotionDiv>
+            ))}
           </div>
         </div>
       </MotionCard>
 
       {/* Sticky Apply Bar (Mobile) */}
-      <motion.div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t px-4 h-14 flex items-center justify-between md:hidden z-50" initial={{
-      y: 100
-    }} animate={{
-      y: 0
-    }} transition={{
-      duration: 0.3,
-      delay: 0.2
-    }}>
+      <motion.div 
+        className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t px-4 h-14 flex items-center justify-between md:hidden z-50" 
+        initial={{ y: 100 }} 
+        animate={{ y: 0 }} 
+        transition={{ duration: 0.3, delay: 0.2 }}
+      >
         <span className="text-[12px] leading-4 text-muted-foreground">
           {wordCount} words • spaced today
         </span>
         <div className="flex gap-2">
           {/* Show Send Now button only for admins/developers on mobile */}
           {isAdmin && (
-            <MotionButton variant="ghost" size="sm" onClick={handleSendNow} disabled={loading || !phoneNumber} className="h-10 px-3 text-[12px] leading-4 border-border text-foreground hover:bg-muted/50" whileTap={{
-              scale: 0.98
-            }}>
+            <MotionButton 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleSendNow} 
+              disabled={loading || !phoneNumber} 
+              className="h-10 px-3 text-[12px] leading-4 border-border text-foreground hover:bg-muted/50" 
+              whileTap={{ scale: 0.98 }}
+            >
               <Send className="h-3 w-3 mr-1" />
               {loading ? "Sending..." : "Test Send"}
             </MotionButton>
           )}
-          <MotionButton onClick={saveSettings} disabled={saving} className="h-10 px-4 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold text-[12px] leading-4" whileTap={{
-            scale: 0.98
-          }}>
+          <MotionButton 
+            onClick={saveSettings} 
+            disabled={saving} 
+            className="h-10 px-4 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold text-[12px] leading-4" 
+            whileTap={{ scale: 0.98 }}
+          >
             {saving ? "Saving..." : "Apply Settings"}
           </MotionButton>
         </div>
@@ -655,9 +675,12 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
 
       {/* Desktop Actions */}
       <div className="hidden md:flex md:gap-2 md:mt-4">
-        <MotionButton onClick={saveSettings} disabled={saving} className="flex-1 h-10 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold" whileTap={{
-        scale: 0.98
-      }}>
+        <MotionButton 
+          onClick={saveSettings} 
+          disabled={saving} 
+          className="flex-1 h-10 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold" 
+          whileTap={{ scale: 0.98 }}
+        >
           {saving ? "Saving..." : "Apply Settings"}
         </MotionButton>
         
