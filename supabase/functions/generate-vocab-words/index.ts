@@ -1,8 +1,14 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL');
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+// Initialize Supabase client
+const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -58,63 +64,114 @@ serve(async (req) => {
     
     console.log(`Parsed category: primary=${primaryCategory}, subcategory=${subcategory}`);
     
-    // Determine the prompt based on category and subcategory
+    // Try to get prompt from database first
     let categoryPrompt = "";
-    let difficultyLevel = "";
+    let promptSource = "database";
     
-    // Set difficulty level based on subcategory
-    if (subcategory === 'beginner') {
-      difficultyLevel = "basic, easy-to-understand";
-    } else if (subcategory === 'professional') {
-      difficultyLevel = "advanced, sophisticated";
-    } else {
-      // Default to intermediate
-      difficultyLevel = "moderate, practical";
-    }
-    
-    // Build prompt based on primary category and subcategory
-    switch (primaryCategory) {
-      case "business":
-        categoryPrompt = `${difficultyLevel} professional business vocabulary that would be useful in a corporate environment`;
-        break;
-      case "exam":
-        // For exam category, subcategory is the exam type not difficulty
-        if (subcategory === 'gre') {
-          categoryPrompt = "complex, high-difficulty words commonly found in GRE exams";
-        } else if (subcategory === 'ielts') {
-          categoryPrompt = "academic and formal vocabulary suitable for IELTS exams";
-        } else if (subcategory === 'toefl') {
-          categoryPrompt = "clear, comprehension-focused vocabulary ideal for TOEFL exams";
-        } else if (subcategory === 'cat') {
-          categoryPrompt = "analytical, often abstract English vocabulary for CAT exams";
-        } else if (subcategory === 'gmat') {
-          categoryPrompt = "business and formal professional vocabulary useful for GMAT exams";
+    try {
+      console.log(`Fetching prompt from database for category: ${primaryCategory}, subcategory: ${subcategory}`);
+      
+      // First try exact match (category + subcategory)
+      let { data: promptData, error } = await supabase
+        .from('vocab_prompts')
+        .select('prompt')
+        .eq('category', primaryCategory)
+        .eq('subcategory', subcategory)
+        .limit(1)
+        .single();
+      
+      // If no exact match, try category only
+      if (error || !promptData) {
+        console.log(`No exact match found, trying category-only match for: ${primaryCategory}`);
+        ({ data: promptData, error } = await supabase
+          .from('vocab_prompts')
+          .select('prompt')
+          .eq('category', primaryCategory)
+          .is('subcategory', null)
+          .limit(1)
+          .single());
+      }
+      
+      if (promptData && promptData.prompt) {
+        categoryPrompt = promptData.prompt;
+        console.log(`Using database prompt: ${categoryPrompt.substring(0, 100)}...`);
+      } else {
+        console.log(`No database prompt found, falling back to hardcoded prompts`);
+        promptSource = "hardcoded";
+        
+        // Fallback to hardcoded prompts
+        let difficultyLevel = "";
+        
+        // Set difficulty level based on subcategory
+        if (subcategory === 'beginner') {
+          difficultyLevel = "basic, simple words suitable for elementary to middle school level (grades 3-8). Focus on common, high-frequency words with 1-3 syllables that appear in everyday conversations";
+        } else if (subcategory === 'professional' || subcategory === 'advanced') {
+          difficultyLevel = "advanced, sophisticated words suitable for college level and professional settings. Include complex vocabulary with 3+ syllables, lower frequency words, and specialized terminology";
         } else {
-          categoryPrompt = "advanced academic vocabulary that would appear in standardized tests";
+          // Default to intermediate
+          difficultyLevel = "moderate, practical words suitable for high school level (grades 9-12). Include words with 2-4 syllables that are useful but not overly complex";
         }
-        break;
-      case "slang":
-        categoryPrompt = `${difficultyLevel} modern English slang and idioms used in casual conversation`;
-        break;
-      case "daily":
-        categoryPrompt = `${difficultyLevel} everyday vocabulary that enhances daily communication`;
-        break;
-      case "interview":
-        categoryPrompt = `${difficultyLevel} impressive vocabulary that would stand out in job interviews`;
-        break;
-      case "rare":
-        categoryPrompt = `${difficultyLevel} beautiful and uncommon words that enhance eloquence`;
-        break;
-      case "expression":
-        categoryPrompt = `${difficultyLevel} vocabulary focused on expressing thoughts and emotions effectively`;
-        break;
-      default:
-        // For any other category, create a sensible prompt
-        categoryPrompt = `${difficultyLevel} vocabulary related to ${primaryCategory} that would enhance knowledge in that area`;
-        break;
+        
+        // Build prompt based on primary category and subcategory
+        switch (primaryCategory) {
+          case "business":
+            categoryPrompt = `${difficultyLevel} professional business vocabulary that would be useful in a corporate environment`;
+            break;
+          case "exam":
+            // For exam category, subcategory is the exam type not difficulty
+            if (subcategory === 'gre') {
+              categoryPrompt = "complex, high-difficulty words commonly found in GRE exams with 3+ syllables and sophisticated meanings";
+            } else if (subcategory === 'ielts') {
+              categoryPrompt = "academic and formal vocabulary suitable for IELTS exams, focusing on clear, precise meanings";
+            } else if (subcategory === 'toefl') {
+              categoryPrompt = "clear, comprehension-focused vocabulary ideal for TOEFL exams with academic context";
+            } else if (subcategory === 'cat') {
+              categoryPrompt = "analytical, often abstract English vocabulary for CAT exams with complex meanings";
+            } else if (subcategory === 'gmat') {
+              categoryPrompt = "business and formal professional vocabulary useful for GMAT exams";
+            } else {
+              categoryPrompt = "advanced academic vocabulary that would appear in standardized tests";
+            }
+            break;
+          case "slang":
+            categoryPrompt = `${difficultyLevel} modern English slang and idioms used in casual conversation`;
+            break;
+          case "daily":
+            categoryPrompt = `${difficultyLevel} everyday vocabulary that enhances daily communication`;
+            break;
+          case "interview":
+            categoryPrompt = `${difficultyLevel} impressive vocabulary that would stand out in job interviews`;
+            break;
+          case "rare":
+            categoryPrompt = `${difficultyLevel} beautiful and uncommon words that enhance eloquence`;
+            break;
+          case "expression":
+            categoryPrompt = `${difficultyLevel} vocabulary focused on expressing thoughts and emotions effectively`;
+            break;
+          default:
+            // For any other category, create a sensible prompt
+            categoryPrompt = `${difficultyLevel} vocabulary related to ${primaryCategory} that would enhance knowledge in that area`;
+            break;
+        }
+      }
+    } catch (dbError) {
+      console.error('Error fetching prompt from database:', dbError);
+      promptSource = "hardcoded";
+      // Use fallback hardcoded prompts (same as above)
+      let difficultyLevel = "";
+      
+      if (subcategory === 'beginner') {
+        difficultyLevel = "basic, simple words suitable for elementary to middle school level";
+      } else if (subcategory === 'professional' || subcategory === 'advanced') {
+        difficultyLevel = "advanced, sophisticated words suitable for college level and professional settings";
+      } else {
+        difficultyLevel = "moderate, practical words suitable for high school level";
+      }
+      
+      categoryPrompt = `${difficultyLevel} vocabulary related to ${primaryCategory}`;
     }
 
-    console.log(`Using OpenAI to generate words with prompt: ${categoryPrompt}`);
+    console.log(`Using ${promptSource} prompt to generate words: ${categoryPrompt}`);
 
     // Log the API key format (first 3 and last 3 chars) for debugging
     const apiKeyDebug = openAIApiKey ? 
@@ -130,18 +187,18 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
+          model: 'gpt-4o-mini',
           messages: [
             { 
               role: 'system', 
-              content: `You are a vocabulary teaching assistant. Generate unique, interesting, and educational vocabulary words with clear definitions and helpful example sentences.` 
+              content: `You are a vocabulary teaching assistant. Generate unique, interesting, and educational vocabulary words with clear definitions and helpful example sentences. Pay careful attention to difficulty levels and word frequency to ensure appropriate classification.` 
             },
             { 
               role: 'user', 
-              content: `Generate ${count} ${categoryPrompt}. Each word should be somewhat challenging but practical for everyday use.
+              content: `Generate ${count} ${categoryPrompt}.
               
               For each word, provide:
-              1. The word itself
+              1. The word itself (ensure it matches the specified difficulty level)
               2. A clear, concise definition
               3. A natural example sentence showing how to use it in context
               
@@ -158,7 +215,7 @@ serve(async (req) => {
               Do not include code blocks, markdown formatting, or any text outside the JSON array. The response must be a plain valid JSON array and nothing else.` 
             }
           ],
-          temperature: 0.7,
+          temperature: 0.3,
         }),
       });
 
@@ -242,6 +299,7 @@ serve(async (req) => {
         primaryCategory,
         subcategory,
         source: 'openai',
+        promptSource: promptSource,
         timestamp: new Date().toISOString()
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
