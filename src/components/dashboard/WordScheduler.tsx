@@ -264,11 +264,17 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
     }
   };
   const fetchUserSettings = async () => {
+    if (!userId) {
+      console.log('No userId provided, skipping settings fetch');
+      return;
+    }
+    
     try {
       const {
         data: deliverySettings,
         error: settingsError
       } = await supabase.from('user_delivery_settings').select('*').eq('user_id', userId).single();
+      
       if (settingsError && settingsError.code !== 'PGRST116') {
         console.error('Error fetching delivery settings:', settingsError);
         return;
