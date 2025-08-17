@@ -239,11 +239,11 @@ async function sendDailyWords(payload: any) {
         } else if (wordsData && wordsData.words && wordsData.words.length > 0) {
           // Format the words using the new enhanced format with proper line breaks
           const wordsText = wordsData.words.map((word: any, index: number) => {
-            const enhancedFormat = `Word: ${word.word} 🟩 (${word.part_of_speech || 'Unknown'})
-Pronunciation: ${word.pronunciation || 'N/A'}
-Meaning: ${word.definition}
-Example: ${word.example}
-Memory Hook: ${word.memory_hook || 'Remember this word!'}`;
+            const enhancedFormat = `*Word:* ${word.word} 🟩 (${word.part_of_speech || 'Unknown'})
+*Pronunciation:* ${word.pronunciation || 'N/A'}
+*Meaning:* ${word.definition}
+*Example:* ${word.example}
+*Memory Hook:* ${word.memory_hook || 'Remember this word!'}`;
             return enhancedFormat;
           }).join('\n\n---\n\n');
           

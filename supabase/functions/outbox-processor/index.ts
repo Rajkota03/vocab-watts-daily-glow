@@ -165,11 +165,11 @@ async function sendWhatsAppMessage(message: any) {
     console.log(`Sending word: ${word} to ${message.phone}`);
 
     // Format the message in the enhanced format with proper line breaks
-    const formattedMessage = `Word: ${word} 🟩 (${part_of_speech || 'Unknown'})
-Pronunciation: ${pronunciation || 'N/A'}
-Meaning: ${definition}
-Example: ${example}
-Memory Hook: ${memory_hook || 'Remember this word!'}`;
+    const formattedMessage = `*Word:* ${word} 🟩 (${part_of_speech || 'Unknown'})
+*Pronunciation:* ${pronunciation || 'N/A'}
+*Meaning:* ${definition}
+*Example:* ${example}
+*Memory Hook:* ${memory_hook || 'Remember this word!'}`;
 
     // Call the whatsapp-send function with the formatted message
     const { data, error } = await supabase.functions.invoke('whatsapp-send', {

@@ -33,11 +33,11 @@ export const formatVocabularyMessage = (word: VocabularyWord): string => {
   // Capitalize first letter of part of speech
   const formattedPartOfSpeech = part_of_speech.charAt(0).toUpperCase() + part_of_speech.slice(1);
 
-  return `Word: ${wordText} 🟩 (${formattedPartOfSpeech})
-Pronunciation: ${pronunciation}
-Meaning: ${definition}
-Example: ${example}
-Memory Hook: ${memory_hook}`;
+  return `*Word:* ${wordText} 🟩 (${formattedPartOfSpeech})
+*Pronunciation:* ${pronunciation}
+*Meaning:* ${definition}
+*Example:* ${example}
+*Memory Hook:* ${memory_hook}`;
 };
 
 /**
