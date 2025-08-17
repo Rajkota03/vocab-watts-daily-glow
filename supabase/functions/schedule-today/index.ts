@@ -123,23 +123,20 @@ serve(async (req) => {
       console.log(`Formatted time: ${timeFormatted}`);
       
       try {
-        // Create date in user's timezone first, then convert to UTC
-        const userTimezone = settings.timezone || 'Asia/Calcutta';
+        // Convert IST to UTC: IST is UTC+5:30, so to get UTC we subtract 5.5 hours
+        const [hours, minutes] = timeFormatted.split(':').map(Number);
         
-        // Create a date object in the user's timezone
-        const localDate = new Date(`${today}T${timeFormatted}:00`);
+        // Create date in UTC by subtracting IST offset (5.5 hours)
+        const istDate = new Date(`${today}T${timeFormatted}:00`);
+        const utcDate = new Date(istDate.getTime() - (5.5 * 60 * 60 * 1000));
         
-        // Convert IST to UTC (subtract 5.5 hours)
-        const offsetHours = userTimezone === 'Asia/Calcutta' ? 5.5 : 0;
-        const sendAt = new Date(localDate.getTime() - (offsetHours * 60 * 60 * 1000));
-        
-        if (isNaN(sendAt.getTime())) {
+        if (isNaN(utcDate.getTime())) {
           console.error(`Invalid date created for time: ${timeFormatted}`);
           continue;
         }
         
-        console.log(`Created valid date: ${sendAt.toISOString()}`);
-        const sendAtUTC = sendAt;
+        console.log(`Created valid date: ${utcDate.toISOString()} (IST: ${timeFormatted})`);
+        const sendAtUTC = utcDate;
 
         outboxMessages.push({
           user_id: userId,
