@@ -215,6 +215,41 @@ async function sendDailyWords(payload: any) {
       );
     }
 
+    // Get user's first name from the database
+    let userName = 'Learner'; // Default fallback
+    try {
+      console.log('Fetching user first name for phone:', to);
+      
+      // Try to get from user_subscriptions first
+      const { data: subscription } = await supabase
+        .from('user_subscriptions')
+        .select('first_name, user_id')
+        .eq('phone_number', to)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (subscription?.first_name) {
+        userName = subscription.first_name;
+        console.log('Found first name from subscription:', userName);
+      } else if (subscription?.user_id) {
+        // Try to get from profiles table
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name')
+          .eq('id', subscription.user_id)
+          .single();
+        
+        if (profile?.first_name) {
+          userName = profile.first_name;
+          console.log('Found first name from profile:', userName);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user name:', error);
+      // Continue with default 'Learner'
+    }
+
     let finalMessage = message || `Here are your daily vocabulary words for ${category}. Enjoy learning!`;
     console.log('Initial message:', finalMessage);
     let firstWord: any = null;
@@ -289,12 +324,12 @@ async function sendDailyWords(payload: any) {
           
           const templateParams = firstWord && approvedTemplate.name === 'glintup_vocab_fulfillment'
             ? [
-                'Learner',                                      // {{1}} - Name
+                userName,                                       // {{1}} - User's first name
                 finalMessage.replace(/\n/g, ' ').replace(/\t/g, ' ').replace(/\s{5,}/g, '    ')  // {{2}} - Clean formatted content
               ]
             : firstWord && (approvedTemplate.name === 'glintup_vocab_daily' || approvedTemplate.name.includes('vocab'))
             ? [
-                'Learner',                                      // {{1}} - Name
+                userName,                                       // {{1}} - User's first name
                 firstWord.word,                                 // {{2}} - Word (plain)
                 `${firstWord.word} ${sentimentSquare}`,        // {{3}} - Word with sentiment emoji
                 firstWord.pronunciation || `/${firstWord.word}/`, // {{4}} - Pronunciation
