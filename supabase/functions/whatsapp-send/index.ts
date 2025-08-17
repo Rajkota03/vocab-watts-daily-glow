@@ -237,23 +237,21 @@ async function sendDailyWords(payload: any) {
           // Don't throw, just continue with default message
           finalMessage = `📚 Your daily vocabulary words for ${category} are ready!`;
         } else if (wordsData && wordsData.words && wordsData.words.length > 0) {
-          // Format the words into a nice message
-          const wordsText = wordsData.words.map((word: any, index: number) => 
-            `${index + 1}. *${word.word}*\n   📖 ${word.definition}\n   💡 Example: _${word.example}_`
-          ).join('\n\n');
+          // Format the words using the new enhanced format
+          const wordsText = wordsData.words.map((word: any, index: number) => {
+            const enhancedFormat = `Word: ${word.word} 🟩
+Pronunciation: ${word.pronunciation || 'N/A'}
+Meaning: ${word.definition}
+Part of Speech: ${word.part_of_speech || 'Unknown'}
+Example: ${word.example}
+Memory Hook: ${word.memory_hook || 'Remember this word!'}`;
+            return enhancedFormat;
+          }).join('\n\n---\n\n');
           
           // Keep reference to the first word for template params
           firstWord = wordsData.words[0];
           
-          // Add slot info if this is a scheduled send
-          let headerText = `🌟 *${category.toUpperCase()}*`;
-          if (scheduledSlot && totalSlots) {
-            const slotEmojis = ['🌅', '☀️', '🌤️', '🌆', '🌙'];
-            const slotLabels = ['Morning', 'Midday', 'Afternoon', 'Evening', 'Night'];
-            headerText += `\n${slotEmojis[scheduledSlot - 1]} ${slotLabels[scheduledSlot - 1]} Boost (${scheduledSlot}/${totalSlots})`;
-          }
-          
-          finalMessage = `${headerText}\n\n${wordsText}\n\n📚 Keep learning! 🚀`;
+          finalMessage = wordsText;
           console.log('Generated vocabulary message');
         } else {
           console.log('No words returned from generation');
