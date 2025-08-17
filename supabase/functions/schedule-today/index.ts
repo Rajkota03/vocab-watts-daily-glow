@@ -111,20 +111,24 @@ serve(async (req) => {
         console.log(`Created valid date: ${sendAt.toISOString()}`);
         const sendAtUTC = sendAt;
 
-      outboxMessages.push({
-        user_id: userId,
-        phone: phoneNumber,
-        send_at: sendAtUTC.toISOString(),
-        template: 'glintup_vocab_fulfilment',
-        variables: {
-          word: word.word,
-          definition: word.definition,
-          example: word.example,
-          category: category,
-          position: i + 1,
-          totalWords: Math.min(words.length, settings.words_per_day)
-        }
-      });
+        outboxMessages.push({
+          user_id: userId,
+          phone: phoneNumber,
+          send_at: sendAtUTC.toISOString(),
+          template: 'glintup_vocab_fulfilment',
+          variables: {
+            word: word.word,
+            definition: word.definition,
+            example: word.example,
+            category: category,
+            position: i + 1,
+            totalWords: Math.min(words.length, settings.words_per_day)
+          }
+        });
+      } catch (dateError) {
+        console.error(`Error creating date for time ${timeFormatted}:`, dateError);
+        continue;
+      }
     }
 
     // Insert outbox messages
