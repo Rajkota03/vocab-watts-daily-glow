@@ -535,7 +535,7 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
             stiffness: 400,
             damping: 20
           }}>
-              <Switch checked={settings.mode === 'custom'} onCheckedChange={handleModeToggle} className="data-[state=checked]:bg-gray-400 data-[state=unchecked]:bg-gray-300 [&>span]:bg-white" />
+              <Switch checked={settings.mode === 'custom'} onCheckedChange={handleModeToggle} className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-gray-300 [&>span]:bg-white" />
             </motion.div>
           </div>
         </div>
