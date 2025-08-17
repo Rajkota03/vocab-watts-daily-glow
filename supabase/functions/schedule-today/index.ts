@@ -169,22 +169,46 @@ function generateAutoTimes(wordCount: number): string[] {
 }
 
 async function getTodaysWords(userId: string, category: string, count: number) {
-  // Get words that haven't been sent to this user yet
-  const { data: words, error } = await supabase
+  console.log(`Getting words for category: ${category}, user: ${userId}, count: ${count}`);
+  
+  // First try to get words from vocabulary_words table with exact category match
+  let { data: words, error } = await supabase
     .from('vocabulary_words')
     .select('*')
     .eq('category', category)
-    .not('id', 'in', `(
-      SELECT word_id FROM sent_words 
-      WHERE user_id = '${userId}' 
-      AND category = '${category}'
-    )`)
     .limit(count);
 
   if (error) {
     console.error('Error fetching words:', error);
-    return [];
   }
 
+  // If no words found, try to generate them using the whatsapp-send function
+  if (!words || words.length === 0) {
+    console.log(`No words found in database for category ${category}, trying to generate new words`);
+    
+    try {
+      const { data: generatedWords, error: generateError } = await supabase.functions.invoke('whatsapp-send', {
+        body: {
+          action: 'generate_words_only',
+          category: category,
+          count: count
+        }
+      });
+
+      if (generateError) {
+        console.error('Error generating words:', generateError);
+        return [];
+      }
+
+      if (generatedWords?.words) {
+        console.log(`Generated ${generatedWords.words.length} words`);
+        return generatedWords.words;
+      }
+    } catch (generateError) {
+      console.error('Error calling word generation:', generateError);
+    }
+  }
+
+  console.log(`Returning ${words?.length || 0} words`);
   return words || [];
 }

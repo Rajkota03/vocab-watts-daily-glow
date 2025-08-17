@@ -385,11 +385,20 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
       }
 
       // Schedule today's words
-      await scheduleToday();
-      toast({
-        title: "Schedule saved! 🎉",
-        description: `Your ${wordCount} words will be spaced perfectly across the day.`
-      });
+      const scheduleResult = await scheduleToday();
+      
+      if (scheduleResult?.success) {
+        toast({
+          title: "Schedule saved! 🎉",
+          description: `Your ${wordCount} words will be spaced perfectly across the day.`
+        });
+      } else {
+        toast({
+          title: "Schedule saved with warning ⚠️",
+          description: `Settings saved but scheduling failed: ${scheduleResult?.error || 'Unknown error'}. Words can still be sent manually.`,
+          variant: "destructive"
+        });
+      }
     } catch (error) {
       console.error('Error saving settings:', error);
       toast({
@@ -403,21 +412,26 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
   };
   const scheduleToday = async () => {
     if (!phoneNumber) return;
+    
     try {
-      const {
-        error
-      } = await supabase.functions.invoke('schedule-today', {
+      console.log('Scheduling today with category:', category);
+      const { error } = await supabase.functions.invoke('schedule-today', {
         body: {
           userId: userId,
           phoneNumber: phoneNumber,
-          category: category
+          category: category // This should be "daily-intermediate" from props
         }
       });
+      
       if (error) {
         console.error('Error scheduling today\'s words:', error);
+        return { success: false, error: error.message };
       }
+      
+      return { success: true };
     } catch (error) {
       console.error('Error calling schedule-today function:', error);
+      return { success: false, error: error.message };
     }
   };
   const handleSendNow = async () => {
