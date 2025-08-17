@@ -161,21 +161,14 @@ async function sendWhatsAppMessage(message: any) {
 
     console.log(`Sending word: ${word} to ${message.phone}`);
 
-    // Call the whatsapp-send function with the correct format
+    // Call the whatsapp-send function with the correct format for daily words
     const { data, error } = await supabase.functions.invoke('whatsapp-send', {
       body: {
-        action: 'send_template',
+        category: category || 'daily-beginner',
         to: message.phone,
-        template: message.template,
-        variables: {
-          word,
-          definition,
-          example,
-          category: category || 'daily-beginner',
-          position,
-          totalWords
-        },
-        provider: 'aisensy'
+        isPro: false,
+        wordsCount: 1,
+        message: `📚 *WORD OF THE DAY*\n\n🌟 *${word}*\n📖 ${definition}\n💡 Example: _${example}_\n\n📚 Keep learning! 🚀`
       }
     });
 
