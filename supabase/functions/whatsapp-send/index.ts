@@ -230,7 +230,8 @@ async function sendDailyWords(payload: any) {
         .single();
       
       if (subscription?.first_name) {
-        userName = subscription.first_name;
+        // Capitalize first letter
+        userName = subscription.first_name.charAt(0).toUpperCase() + subscription.first_name.slice(1).toLowerCase();
         console.log('Found first name from subscription:', userName);
       } else if (subscription?.user_id) {
         // Try to get from profiles table
@@ -241,7 +242,8 @@ async function sendDailyWords(payload: any) {
           .single();
         
         if (profile?.first_name) {
-          userName = profile.first_name;
+          // Capitalize first letter
+          userName = profile.first_name.charAt(0).toUpperCase() + profile.first_name.slice(1).toLowerCase();
           console.log('Found first name from profile:', userName);
         }
       }
