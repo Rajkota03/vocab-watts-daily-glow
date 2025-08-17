@@ -443,28 +443,43 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
       });
       return;
     }
+
     setLoading(true);
     try {
-      const {
-        data,
-        error
-      } = await supabase.functions.invoke('whatsapp-send', {
-        body: {
-          to: phoneNumber,
-          category: category,
-          isPro: isPro,
-          sendImmediately: true,
-          debugMode: true,
-          message: `Here are your daily vocabulary words for ${category}. Enjoy learning!`
-        }
-      });
+      // Create an immediate outbox message instead of calling whatsapp-send directly
+      const now = new Date();
+      const { data, error } = await supabase
+        .from('outbox_messages')
+        .insert({
+          user_id: userId,
+          phone: phoneNumber,
+          send_at: now.toISOString(), // Send immediately
+          template: 'glintup_vocab_fulfilment',
+          variables: {
+            word: 'Sample',
+            definition: 'An example or instance used for testing.',
+            example: 'This is a sample vocabulary word sent immediately.',
+            category: category,
+            position: 1,
+            totalWords: 1,
+            word_id: crypto.randomUUID()
+          }
+        })
+        .select();
+
       if (error) throw error;
-      if (!data?.success) {
-        throw new Error(data?.error || "Failed to send words");
+
+      // Trigger outbox processor immediately
+      const { error: processorError } = await supabase.functions.invoke('outbox-processor');
+      
+      if (processorError) {
+        console.warn('Outbox processor call failed:', processorError);
+        // Don't throw error, message will be processed by cron
       }
+
       toast({
-        title: "Words sent! 🚀",
-        description: "Check your WhatsApp for today's vocabulary."
+        title: "Words queued! 🚀",
+        description: "Your message will be sent within the next minute."
       });
     } catch (error: any) {
       toast({

@@ -80,7 +80,8 @@ serve(async (req) => {
           results.push({
             messageId: message.id,
             phone: message.phone,
-            status: 'sent'
+            status: 'sent',
+            word: message.variables?.word || 'N/A'
           });
         } else {
           // Mark as failed and increment retries
@@ -99,7 +100,8 @@ serve(async (req) => {
             messageId: message.id,
             phone: message.phone,
             status: 'failed',
-            error: sendResult.error
+            error: sendResult.error,
+            word: message.variables?.word || 'N/A'
           });
         }
 
@@ -120,7 +122,8 @@ serve(async (req) => {
           messageId: message.id,
           phone: message.phone,
           status: 'failed',
-          error: error.message
+          error: error.message,
+          word: message.variables?.word || 'N/A'
         });
       }
     }
