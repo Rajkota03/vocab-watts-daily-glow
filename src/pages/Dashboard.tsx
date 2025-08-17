@@ -142,10 +142,12 @@ const Dashboard = () => {
 
   const handleCategoryUpdate = async (primary: string, subcategory: string = "") => {
     try {
-      console.log(`Updating category to: ${primary}, subcategory: ${subcategory}`);
+      // Combine primary and subcategory to form the complete category
+      const fullCategory = subcategory ? `${primary}-${subcategory}` : primary;
+      console.log(`Updating category to: ${fullCategory} (primary: ${primary}, subcategory: ${subcategory})`);
       
       const { error } = await supabase.auth.updateUser({
-        data: { category: primary }
+        data: { category: fullCategory }
       });
       
       if (error) throw error;
@@ -154,7 +156,7 @@ const Dashboard = () => {
         .from('user_subscriptions')
         .upsert({
           user_id: (await supabase.auth.getUser()).data.user?.id,
-          category: primary,
+          category: fullCategory, // Use the full category instead of just primary
           is_pro: subscription.is_pro,
           phone_number: subscription.phone_number || '+1234567890'
         });
@@ -165,7 +167,7 @@ const Dashboard = () => {
       
       setSubscription(prev => ({
         ...prev,
-        category: primary
+        category: fullCategory // Update with the full category
       }));
     } catch (error: any) {
       toast({
