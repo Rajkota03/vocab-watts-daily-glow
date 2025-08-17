@@ -96,8 +96,17 @@ serve(async (req) => {
       
       console.log(`Processing word ${i + 1}: ${word.word}, time: ${time}`);
       
-      // Ensure time is in HH:MM format
-      const timeFormatted = time.includes(':') ? time : `${time.padStart(2, '0')}:00`;
+      // Ensure time is in HH:MM format and handle both HH:MM and HH:MM:SS formats
+      let timeFormatted = time;
+      if (time.includes(':')) {
+        // If it's already in time format, ensure it's HH:MM
+        const timeParts = time.split(':');
+        timeFormatted = `${timeParts[0].padStart(2, '0')}:${timeParts[1].padStart(2, '0')}`;
+      } else {
+        timeFormatted = `${time.padStart(2, '0')}:00`;
+      }
+      
+      console.log(`Formatted time: ${timeFormatted}`);
       
       try {
         // Create date in ISO format to avoid timezone issues
@@ -122,9 +131,12 @@ serve(async (req) => {
             example: word.example,
             category: category,
             position: i + 1,
-            totalWords: Math.min(words.length, settings.words_per_day)
+            totalWords: Math.min(words.length, settings.words_per_day),
+            word_id: word.id
           }
         });
+        
+        console.log(`Added message for word: ${word.word} at ${sendAtUTC.toISOString()}`);
       } catch (dateError) {
         console.error(`Error creating date for time ${timeFormatted}:`, dateError);
         continue;
