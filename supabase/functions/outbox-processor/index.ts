@@ -157,35 +157,58 @@ serve(async (req) => {
 async function sendWhatsAppMessage(message: any) {
   try {
     const { variables } = message;
-    const { word, definition, example, position, totalWords } = variables;
+    const { word, definition, example, category, position, totalWords } = variables;
 
-    // Format the vocabulary message
-    const formattedMessage = `📚 DAILY-INTERMEDIATE\n\n` +
-      `*${word.toUpperCase()}*\n\n` +
-      `📖 *Definition:*\n${definition}\n\n` +
-      `💡 *Example:*\n${example}\n\n` +
-      `📊 Word ${position} of ${totalWords} for today`;
+    console.log(`Sending word: ${word} to ${message.phone}`);
 
-    // Call the whatsapp-send function
+    // Call the whatsapp-send function with the correct format
     const { data, error } = await supabase.functions.invoke('whatsapp-send', {
       body: {
+        action: 'send_template',
         to: message.phone,
-        message: formattedMessage,
-        scheduledMessage: true
+        template: message.template,
+        variables: {
+          word,
+          definition,
+          example,
+          category: category || 'daily-beginner',
+          position,
+          totalWords
+        },
+        provider: 'aisensy'
       }
     });
 
     if (error) {
+      console.error('WhatsApp send error:', error);
       return { success: false, error: error.message };
     }
 
     if (!data?.success) {
+      console.error('WhatsApp send failed:', data);
       return { success: false, error: data?.error || 'Unknown error' };
+    }
+
+    // Record in user word history
+    try {
+      await supabase
+        .from('user_word_history')
+        .insert({
+          user_id: message.user_id,
+          word_id: crypto.randomUUID(),
+          word: word,
+          category: category || 'daily-beginner',
+          source: 'scheduled'
+        });
+    } catch (historyError) {
+      console.error('Failed to record word history:', historyError);
+      // Don't fail the send if history recording fails
     }
 
     return { success: true, messageId: data.messageId };
 
   } catch (error) {
+    console.error('Send WhatsApp message error:', error);
     return { success: false, error: error.message };
   }
 }
