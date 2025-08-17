@@ -160,18 +160,26 @@ serve(async (req) => {
 async function sendWhatsAppMessage(message: any) {
   try {
     const { variables } = message;
-    const { word, definition, example, category, position, totalWords } = variables;
+    const { word, definition, example, category, position, totalWords, pronunciation, part_of_speech, memory_hook } = variables;
 
     console.log(`Sending word: ${word} to ${message.phone}`);
 
-    // Call the whatsapp-send function with the correct format for daily words
+    // Format the message in the enhanced format
+    const formattedMessage = `Word: ${word} 🟩
+Pronunciation: ${pronunciation || 'N/A'}
+Meaning: ${definition}
+Part of Speech: ${part_of_speech || 'Unknown'}
+Example: ${example}
+Memory Hook: ${memory_hook || 'Remember this word!'}`;
+
+    // Call the whatsapp-send function with the formatted message
     const { data, error } = await supabase.functions.invoke('whatsapp-send', {
       body: {
         category: category || 'daily-beginner',
         to: message.phone,
         isPro: false,
         wordsCount: 1,
-        message: `📚 *WORD OF THE DAY*\n\n🌟 *${word}*\n📖 ${definition}\n💡 Example: _${example}_\n\n📚 Keep learning! 🚀`
+        message: formattedMessage
       }
     });
 

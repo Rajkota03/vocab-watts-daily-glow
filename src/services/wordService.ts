@@ -279,8 +279,11 @@ export const generateWordsWithAI = async (
     const wordsToInsert = functionResult.words.map((word: any) => ({
       // Map fields from AI response to DB schema
       word: word.word,
+      pronunciation: word.pronunciation || '',
       definition: word.definition,
+      part_of_speech: word.part_of_speech || 'unknown',
       example: word.example,
+      memory_hook: word.memory_hook || '',
       category: category, // Ensure category is set
       // Add other fields like difficulty, source='AI', etc. if needed
     }));

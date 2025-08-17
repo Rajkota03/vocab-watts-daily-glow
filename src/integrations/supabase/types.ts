@@ -424,6 +424,9 @@ export type Database = {
           definition: string
           example: string
           id: string
+          memory_hook: string | null
+          part_of_speech: string | null
+          pronunciation: string | null
           word: string
         }
         Insert: {
@@ -432,6 +435,9 @@ export type Database = {
           definition: string
           example: string
           id?: string
+          memory_hook?: string | null
+          part_of_speech?: string | null
+          pronunciation?: string | null
           word: string
         }
         Update: {
@@ -440,6 +446,9 @@ export type Database = {
           definition?: string
           example?: string
           id?: string
+          memory_hook?: string | null
+          part_of_speech?: string | null
+          pronunciation?: string | null
           word?: string
         }
         Relationships: []
