@@ -18,22 +18,20 @@ const PricingSection = () => {
     isPrimary: true,
     badge: "includes WhatsApp delivery & support"
   }];
-  return <section className="section-padding bg-gray-50">
-      <div className="container-wide">
-        <div className="text-center mb-8">
-          <h2 className="heading-lg mb-2">
-            Simple, no-nonsense pricing.
+  return <section className="bg-white py-[12px]">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Pricing Plans
           </h2>
-          <p className="body-text text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             (Coming soon: ₹1999/year plan — Save 33%)
           </p>
         </div>
 
         <div className="max-w-lg mx-auto">
           {plans.map((plan, index) => <Card key={index} className="relative border-2 transition-all hover:shadow-lg border-primary shadow-xl bg-gradient-to-br from-white to-primary/5">
-              {plan.badge && <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-accent text-white text-xs font-bold py-2 px-4 rounded-full shadow-lg">
-                  {plan.badge}
-                </div>}
+              {plan.badge}
               
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 rounded-lg -z-10 blur-sm"></div>
               

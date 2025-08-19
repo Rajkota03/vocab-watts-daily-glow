@@ -18,7 +18,7 @@ const Footer = () => {
             
             
             {/* Navigation Links */}
-            <div className="flex flex-wrap gap-x-8 gap-y-4 justify-center">
+            <div className="flex flex-wrap gap-x-8 gap-y-4 justify-center bg-transparent">
               <a href="#how-it-works" className="text-gray-300 hover:text-accent transition-colors">How It Works</a>
               <a href="#pricing" className="text-gray-300 hover:text-accent transition-colors">Pricing</a>
               <Link to="/terms" className="text-gray-300 hover:text-accent transition-colors">Terms</Link>
