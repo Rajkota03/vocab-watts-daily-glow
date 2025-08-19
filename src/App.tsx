@@ -10,8 +10,6 @@ import Privacy from './pages/Privacy';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Toaster } from "@/components/ui/toaster";
 import WhatsAppTest from './pages/WhatsAppTest';
-import TwilioTest from './pages/TwilioTest';
-import AiSensyTest from './pages/AiSensyTest';
 import { useEmailAuth } from './hooks/useEmailAuth';
 
 // Auth wrapper component that uses the hook inside Router context
@@ -50,8 +48,6 @@ function App() {
               <WhatsAppTest />
             </ProtectedRoute>
           } />
-          <Route path="/twilio-test" element={<TwilioTest />} />
-          <Route path="/aisensy-test" element={<AiSensyTest />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

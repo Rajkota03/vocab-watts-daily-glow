@@ -73,7 +73,7 @@ const TryWordNow = () => {
     setIsLoading(true);
 
     try {
-      // Use the same approach as admin dashboard - send directly via WhatsApp
+      // Send directly via Meta WhatsApp Business API
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
         body: {
           to: formattedPhone,
@@ -87,7 +87,6 @@ Here is your requested content:
 *Memory Hook:* Sample memory technique
 
 — Glintup`,
-          provider: 'meta', // Use Meta WhatsApp Business API
           sendImmediately: true
         }
       });
