@@ -6,21 +6,21 @@ const HowItWorks = () => {
   const steps = [
     {
       icon: CheckCircle,
-      title: "Pick your category",
-      description: "Business, exams, everyday fluency.",
-      microcopy: "Find words that fit your world"
+      title: "Choose how many words/day you want",
+      description: "1 to 5 words daily",
+      microcopy: "Perfect dose for your schedule"
     },
     {
       icon: Smartphone,
-      title: "Get words on WhatsApp",
-      description: "5 curated words daily.",
-      microcopy: "No app downloads, no email clutter"
+      title: "Pick your preferred delivery times",
+      description: "Like 8AM, 12PM, 3PM...",
+      microcopy: "Spaced throughout your day"
     },
     {
       icon: Sparkles,
-      title: "Make them stick",
-      description: "Weekly recap & Sunday quiz (Pro).",
-      microcopy: "Turn knowledge into habit"
+      title: "Receive one word at a time via WhatsApp",
+      description: "Tap to learn. Done in 2 minutes.",
+      microcopy: "No screen overload or study pressure"
     }
   ];
 
@@ -28,9 +28,9 @@ const HowItWorks = () => {
     <section id="how-it-works" className="py-12 md:py-16 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-bold mb-3">How Glintup Works</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-3">How It Works</h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Building your vocabulary has never been this simple and effective
+            Perfect for improving vocabulary without screen overload or study pressure
           </p>
         </div>
         

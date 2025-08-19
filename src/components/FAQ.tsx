@@ -4,24 +4,20 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 const FAQ = () => {
   const faqs = [
     {
-      question: "Do I need to download an app?",
-      answer: "No — WhatsApp only. We deliver your daily words directly to your existing WhatsApp, so there's no additional app to download or manage."
+      question: "Is it really on WhatsApp?",
+      answer: "Yes! No need to install any new app. You receive your words via WhatsApp daily."
     },
     {
-      question: "What time will I receive my daily words?",
-      answer: "Daily at 10:00 AM IST. You'll get your 5 curated words at the same time every day to build a consistent learning habit."
+      question: "What time will I get my words?",
+      answer: "You decide! You can choose up to 5 different time slots for each word."
     },
     {
-      question: "Can I cancel anytime?",
-      answer: "Yes, anytime with one click. There are no long-term commitments, and you can cancel your subscription whenever you want from your account settings."
+      question: "Can I try before subscribing?",
+      answer: "Yes. Just click [Try a Free Word Now]."
     },
     {
-      question: "Are the same words sent to everyone?",
-      answer: "No, personalized by category & history. We tailor your word selection based on your chosen categories and track your learning progress to avoid repetition."
-    },
-    {
-      question: "Is the free trial really free?",
-      answer: "Yes, 3 days with no credit card required. Experience the full Glintup service for 3 days completely free, and only provide payment details if you choose to continue."
+      question: "Can I stop anytime?",
+      answer: "Of course. You're in control."
     }
   ];
 

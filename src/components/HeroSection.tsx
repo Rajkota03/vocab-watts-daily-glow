@@ -33,18 +33,18 @@ const HeroSection = () => {
             </div>
             
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6 text-dark">
-              Glintup Your Vocabulary Effortlessly
+              Master 5 New Words a Day. Delivered to You.
             </h1>
             
             <p className="text-xl lg:text-2xl text-dark/80 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-              5 smart words a day. Clear meanings, examples, and synonyms — delivered straight to WhatsApp.
+              Understand pronunciation, meaning, usage, and a memory hook — all under 2 minutes. Delivered daily on WhatsApp at your preferred time.
             </p>
             
             <div className="space-y-4 sm:space-y-0 sm:flex sm:flex-row gap-4 justify-center lg:justify-start">
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="group bg-accent hover:bg-accent/90 text-white px-8 py-4 h-auto w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95 text-lg font-semibold shadow-lg rounded-full">
-                    Start 3-Day Free Trial
+                   <Button className="group bg-accent hover:bg-accent/90 text-white px-8 py-4 h-auto w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95 text-lg font-semibold shadow-lg rounded-full">
+                    Try a Free Word Now
                     <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </DialogTrigger>
@@ -65,15 +65,15 @@ const HeroSection = () => {
             <div className="mt-8 flex flex-wrap justify-center lg:justify-start gap-4">
               <div className="flex items-center text-sm text-gray-600 bg-white/80 rounded-full px-4 py-2 shadow-sm">
                 <CheckCircle className="h-4 w-4 text-primary mr-2" />
-                <span>Verified WhatsApp delivery</span>
+                <span>No app download required</span>
               </div>
               <div className="flex items-center text-sm text-gray-600 bg-white/80 rounded-full px-4 py-2 shadow-sm">
                 <CheckCircle className="h-4 w-4 text-accent mr-2" />
-                <span>No credit card needed</span>
+                <span>Built for busy learners</span>
               </div>
               <div className="flex items-center text-sm text-gray-600 bg-white/80 rounded-full px-4 py-2 shadow-sm">
                 <CheckCircle className="h-4 w-4 text-primary mr-2" />
-                <span>Cancel anytime</span>
+                <span>One word at a time, spaced through your day</span>
               </div>
             </div>
           </div>

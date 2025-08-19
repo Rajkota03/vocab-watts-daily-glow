@@ -12,34 +12,19 @@ const PricingSection = () => {
 
   const plans = [
     {
-      name: "Free Trial",
-      price: "₹0",
-      period: "",
-      description: "3 days",
-      features: [
-        "5 words/day",
-        "WhatsApp delivery", 
-        "Examples & synonyms"
-      ],
-      buttonText: "Start Free Trial",
-      isPrimary: false
-    },
-    {
-      name: "Pro",
-      price: "₹149",
+      name: "Monthly Plan",
+      price: "₹249",
       period: "/month",
-      description: "Full access",
+      description: "Simple, no-nonsense pricing",
       features: [
-        "5 words/day",
-        "WhatsApp delivery",
-        "Examples & synonyms",
-        "Weekly recap PDF",
-        "Sunday quiz & streaks",
-        "Category packs (IELTS, Business, Interviews)"
+        "Access to 1000+ curated words",
+        "Personalized delivery schedule",
+        "WhatsApp delivery & support",
+        "Cancel anytime"
       ],
-      buttonText: "Subscribe",
+      buttonText: "Subscribe for ₹249/month",
       isPrimary: true,
-      badge: "Most Popular"
+      badge: "includes WhatsApp delivery & support"
     }
   ];
 
@@ -48,25 +33,23 @@ const PricingSection = () => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Unlock your vocabulary potential
+            Pricing Plans
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Choose the plan that fits your learning style and start expanding your vocabulary today.
+            (Coming soon: ₹1999/year plan — Save 33%)
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="max-w-lg mx-auto">
           {plans.map((plan, index) => (
-            <Card key={index} className={`relative border-2 transition-all hover:shadow-lg ${plan.isPrimary ? 'border-primary shadow-xl bg-gradient-to-br from-white to-primary/5' : 'border-gray-200 hover:border-primary/30'}`}>
+            <Card key={index} className="relative border-2 transition-all hover:shadow-lg border-primary shadow-xl bg-gradient-to-br from-white to-primary/5">
               {plan.badge && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-accent text-white text-xs font-bold py-2 px-4 rounded-full shadow-lg">
                   {plan.badge}
                 </div>
               )}
               
-              {plan.isPrimary && (
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 rounded-lg -z-10 blur-sm"></div>
-              )}
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 rounded-lg -z-10 blur-sm"></div>
               
               <CardHeader className="text-center pb-4">
                 <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
@@ -87,32 +70,12 @@ const PricingSection = () => {
                   ))}
                 </ul>
                 
-                {plan.isPrimary ? (
-                  <Button 
-                    onClick={() => navigate('/payment', { state: { plan: { isPro: true, price: 149 } } })}
-                    className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 rounded-full"
-                  >
-                    {plan.buttonText}
-                  </Button>
-                ) : (
-                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        className="w-full border-primary text-primary hover:bg-primary/10 font-semibold py-3 rounded-full"
-                      >
-                        {plan.buttonText}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md bg-white">
-                      <div className="text-center mb-6">
-                        <h3 className="text-xl font-semibold mb-2">Start your free trial</h3>
-                        <p className="text-gray-600">(30 seconds)</p>
-                      </div>
-                      <EmailSignupForm />
-                    </DialogContent>
-                  </Dialog>
-                )}
+                <Button 
+                  onClick={() => navigate('/payment', { state: { plan: { isPro: true, price: 249 } } })}
+                  className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 rounded-full"
+                >
+                  {plan.buttonText}
+                </Button>
               </CardContent>
             </Card>
           ))}

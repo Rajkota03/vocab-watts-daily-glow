@@ -20,19 +20,24 @@ const Testimonials = () => {
   
   const testimonials = [
     {
-      quote: "Best thing on my WhatsApp every morning.",
+      quote: "It's the only habit I stick to.",
       author: "Priya M.",
       role: "Marketing Manager"
     },
     {
-      quote: "Finally, vocab that's not boring!",
+      quote: "I open WhatsApp and learn — no extra effort.",
       author: "Rahul S.",
       role: "Software Engineer"
     },
     {
-      quote: "Worth every rupee!",
+      quote: "Memory hook makes the word stick instantly.",
       author: "Ananya K.",
       role: "IELTS Student"
+    },
+    {
+      quote: "Perfect when I'm having my morning tea.",
+      author: "Raj T.",
+      role: "Business Owner"
     }
   ];
 
@@ -40,9 +45,9 @@ const Testimonials = () => {
     <section className="py-12 md:py-16 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-bold mb-3">What Our Users Say</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-3">Why Learners Love It</h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Join thousands who are already sounding smarter with GLINTUP.
+            (More real testimonials coming soon)
           </p>
         </div>
         

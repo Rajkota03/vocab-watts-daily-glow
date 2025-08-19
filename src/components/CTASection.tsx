@@ -26,11 +26,11 @@ const CTASection = () => {
           </div>
           
           <h2 className="text-3xl md:text-5xl font-bold mb-6 leading-tight">
-            Ready to elevate your vocabulary?
+            Build a powerful vocabulary — one word at a time.
           </h2>
           
           <p className="text-lg md:text-xl mb-8 opacity-90 leading-relaxed">
-            Five words a day. A lifetime of clarity.
+            Start with your first word today.
           </p>
           
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-8">
@@ -38,7 +38,7 @@ const CTASection = () => {
               <DialogTrigger asChild>
                 <Button className="bg-accent hover:bg-accent/90 text-white text-base group px-8 py-6 rounded-full transition-all hover:scale-105 hover:shadow-xl w-full md:w-auto font-medium shadow-lg">
                   <Calendar className="mr-2 h-5 w-5" />
-                  Start 3-Day Free Trial
+                  Send Me a Sample Word
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
@@ -47,11 +47,11 @@ const CTASection = () => {
             </Dialog>
             
             <Button 
-              onClick={() => navigate('/payment', { state: { plan: { isPro: true, price: 149 } } })} 
+              onClick={() => navigate('/payment', { state: { plan: { isPro: true, price: 249 } } })} 
               className="bg-white hover:bg-gray-100 text-primary text-base group px-8 py-6 rounded-full transition-all hover:scale-105 hover:shadow-xl w-full md:w-auto font-medium shadow-lg"
             >
               <Sparkles className="mr-2 h-5 w-5" />
-              Go Pro – ₹149/month
+              Subscribe for ₹249/month
             </Button>
           </div>
           
