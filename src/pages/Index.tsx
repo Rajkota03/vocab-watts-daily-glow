@@ -2,7 +2,7 @@
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
-import TryWordNow from '@/components/TryWordNow';
+
 import HowItWorks from '@/components/HowItWorks';
 import SampleWordDrop from '@/components/SampleWordDrop';
 import Testimonials from '@/components/Testimonials';
@@ -24,7 +24,7 @@ const Index = () => {
       
       <main>
         <HeroSection />
-        <TryWordNow />
+        
         <SocialProofBar />
         <HowItWorks />
         <SampleWordDrop />
