@@ -105,10 +105,12 @@ Here is your requested content:
 
 — Glintup`;
 
+    console.log('=== STARTING WHATSAPP SEND ===');
     console.log('Sending word:', randomWord.word, 'to phone:', formattedPhone);
     console.log('Message to send:', message);
 
     // Send WhatsApp message using existing function with meta provider
+    console.log('About to call send-whatsapp function...');
     const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-whatsapp', {
       body: {
         to: formattedPhone, // Use 'to' parameter like admin dashboard
@@ -118,7 +120,9 @@ Here is your requested content:
       }
     });
 
-    console.log('WhatsApp function response:', { data: whatsappResult, error: whatsappError });
+    console.log('=== WHATSAPP FUNCTION RESPONSE ===');
+    console.log('WhatsApp function response data:', JSON.stringify(whatsappResult, null, 2));
+    console.log('WhatsApp function error:', JSON.stringify(whatsappError, null, 2));
 
     if (whatsappError) {
       console.error('WhatsApp sending error:', whatsappError);
@@ -135,6 +139,17 @@ Here is your requested content:
       console.error('WhatsApp service error:', whatsappResult.error);
       return new Response(
         JSON.stringify({ error: 'WhatsApp service error: ' + whatsappResult.error }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
+    }
+
+    if (!whatsappResult?.success) {
+      console.error('WhatsApp sending failed - no success flag:', whatsappResult);
+      return new Response(
+        JSON.stringify({ error: 'WhatsApp message failed to send: ' + JSON.stringify(whatsappResult) }),
         {
           status: 500,
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
