@@ -111,7 +111,7 @@ Here is your requested content:
     // Send WhatsApp message using existing function with meta provider
     const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-whatsapp', {
       body: {
-        phoneNumber: formattedPhone,
+        to: formattedPhone, // Use 'to' parameter like admin dashboard
         message: message,
         provider: 'meta', // Use Meta WhatsApp API
         userId: null // No user ID for preview requests
