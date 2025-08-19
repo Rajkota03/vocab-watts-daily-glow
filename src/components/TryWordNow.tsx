@@ -136,7 +136,7 @@ const TryWordNow = () => {
           </div>
           <h2 className="heading-lg mb-2">Try a free word now — no signup needed</h2>
           <p className="body-text text-gray-600 max-w-xl mx-auto">
-            Instantly receive a smart vocabulary word on WhatsApp and see how Glintup works.
+            Enter your name and WhatsApp number to instantly receive a smart vocabulary word.
           </p>
         </div>
 
@@ -176,7 +176,7 @@ const TryWordNow = () => {
                 ) : (
                   <>
                     <Send className="h-4 w-4 mr-2" />
-                    Send me a word
+                    Send Now
                   </>
                 )}
               </Button>
