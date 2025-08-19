@@ -185,11 +185,11 @@ const TryWordNow = () => {
             <div className="p-4">
               <div className="bg-[#DCF8C6]/50 p-3 rounded-lg rounded-tl-none">
                 <p className="text-xs text-gray-600 mb-2">Example word you'll receive:</p>
-                <p className="font-bold text-sm mb-1">Word: articulate 🟩 (adjective)</p>
-                <p className="text-xs mb-1"><strong>Pronunciation:</strong> ahr-TIK-yuh-lit</p>
-                <p className="text-xs mb-1"><strong>Meaning:</strong> having or showing the ability to speak fluently</p>
-                <p className="text-xs mb-1"><strong>Example:</strong> The articulate speaker captivated the audience.</p>
-                <p className="text-xs mb-2"><strong>Memory Hook:</strong> Think "art-ick-you-late" - your words become art.</p>
+                <p className="font-bold text-sm mb-1">Word: eloquent 🟩 (adjective)</p>
+                <p className="text-xs mb-1"><strong>Pronunciation:</strong> EL-uh-kwent</p>
+                <p className="text-xs mb-1"><strong>Meaning:</strong> fluent or persuasive in speaking or writing</p>
+                <p className="text-xs mb-1"><strong>Example:</strong> Her eloquent speech moved the entire audience to tears.</p>
+                <p className="text-xs mb-2"><strong>Memory Hook:</strong> Think "ELLA-KWENT" - Ella went and spoke beautifully.</p>
                 <p className="text-xs font-medium">— Glintup</p>
               </div>
             </div>

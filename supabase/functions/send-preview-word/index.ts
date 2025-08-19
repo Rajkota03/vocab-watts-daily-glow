@@ -98,8 +98,14 @@ const handler = async (req: Request): Promise<Response> => {
     // Select random word
     const randomWord = starterWords[Math.floor(Math.random() * starterWords.length)];
     
+    // Determine emoji based on word category (sentiment)
+    const emoji = randomWord.category === 'challenging' ? '🟥' : '🟩';
+    
     // Format the message according to the template
-    const message = `*Word:* ${randomWord.word} 🟩 (${randomWord.part_of_speech || 'word'})
+    const message = `Hi there,
+Here is your requested content:
+
+*Word:* ${randomWord.word} ${emoji} (${randomWord.part_of_speech || 'word'})
 *Pronunciation:* ${randomWord.pronunciation}
 *Meaning:* ${randomWord.definition}
 *Example:* ${randomWord.example}
