@@ -37,7 +37,7 @@ const HeroSection = () => {
             </h1>
             
             <p className="body-text text-dark/80 mb-6 max-w-xl mx-auto lg:mx-0">
-              Understand pronunciation, meaning, usage, and a memory hook — all under 2 minutes. Delivered daily on WhatsApp at your preferred time.
+              Learn pronunciation, sentiment, meaning, usage, and memory tips — in seconds.
             </p>
             
             <div className="space-y-4 sm:space-y-0 sm:flex sm:flex-row gap-4 justify-center lg:justify-start">
