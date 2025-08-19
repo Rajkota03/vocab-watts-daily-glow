@@ -1,31 +1,23 @@
-
 import React from 'react';
 import { CheckCircle, Smartphone, Sparkles } from 'lucide-react';
-
 const HowItWorks = () => {
-  const steps = [
-    {
-      icon: CheckCircle,
-      title: "Choose how many words/day you want",
-      description: "1 to 5 words daily",
-      microcopy: "Perfect dose for your schedule"
-    },
-    {
-      icon: Smartphone,
-      title: "Pick your preferred delivery times",
-      description: "Like 8AM, 12PM, 3PM...",
-      microcopy: "Spaced throughout your day"
-    },
-    {
-      icon: Sparkles,
-      title: "Receive one word at a time via WhatsApp",
-      description: "Tap to learn. Done in 2 minutes.",
-      microcopy: "No screen overload or study pressure"
-    }
-  ];
-
-  return (
-    <section id="how-it-works" className="py-12 md:py-16 bg-gray-50">
+  const steps = [{
+    icon: CheckCircle,
+    title: "Choose how many words/day you want",
+    description: "1 to 5 words daily",
+    microcopy: "Perfect dose for your schedule"
+  }, {
+    icon: Smartphone,
+    title: "Pick your preferred delivery times",
+    description: "Like 8AM, 12PM, 3PM...",
+    microcopy: "Spaced throughout your day"
+  }, {
+    icon: Sparkles,
+    title: "Receive one word at a time via WhatsApp",
+    description: "Tap to learn. Done in 2 minutes.",
+    microcopy: "No screen overload or study pressure"
+  }];
+  return <section id="how-it-works" className="md:py-16 bg-gray-50 px-0 py-0">
       <div className="container mx-auto px-4">
         <div className="text-center mb-10">
           <h2 className="text-3xl md:text-4xl font-bold mb-3">How It Works</h2>
@@ -35,8 +27,7 @@ const HowItWorks = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {steps.map((step, index) => (
-            <div key={index} className="group bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+          {steps.map((step, index) => <div key={index} className="group bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/80 mb-4 text-white group-hover:scale-110 transition-transform duration-300">
                 <step.icon className="h-8 w-8 stroke-[1.5]" />
               </div>
@@ -46,8 +37,7 @@ const HowItWorks = () => {
               <h3 className="text-xl font-bold mb-2 text-center">{step.title}</h3>
               <p className="text-sm text-accent font-medium mb-3 text-center italic">{step.microcopy}</p>
               <p className="text-gray-600 text-center">{step.description}</p>
-            </div>
-          ))}
+            </div>)}
         </div>
         
         <div className="mt-10 max-w-md mx-auto">
@@ -76,8 +66,6 @@ const HowItWorks = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default HowItWorks;

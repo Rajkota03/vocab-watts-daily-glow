@@ -1,48 +1,42 @@
-
 import React, { useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
 const Testimonials = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  
   const scrollLeft = () => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+      scrollRef.current.scrollBy({
+        left: -300,
+        behavior: 'smooth'
+      });
     }
   };
-  
   const scrollRight = () => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+      scrollRef.current.scrollBy({
+        left: 300,
+        behavior: 'smooth'
+      });
     }
   };
-  
-  const testimonials = [
-    {
-      quote: "It's the only habit I stick to.",
-      author: "Priya M.",
-      role: "Marketing Manager"
-    },
-    {
-      quote: "I open WhatsApp and learn — no extra effort.",
-      author: "Rahul S.",
-      role: "Software Engineer"
-    },
-    {
-      quote: "Memory hook makes the word stick instantly.",
-      author: "Ananya K.",
-      role: "IELTS Student"
-    },
-    {
-      quote: "Perfect when I'm having my morning tea.",
-      author: "Raj T.",
-      role: "Business Owner"
-    }
-  ];
-
-  return (
-    <section className="py-12 md:py-16 bg-gray-50">
+  const testimonials = [{
+    quote: "It's the only habit I stick to.",
+    author: "Priya M.",
+    role: "Marketing Manager"
+  }, {
+    quote: "I open WhatsApp and learn — no extra effort.",
+    author: "Rahul S.",
+    role: "Software Engineer"
+  }, {
+    quote: "Memory hook makes the word stick instantly.",
+    author: "Ananya K.",
+    role: "IELTS Student"
+  }, {
+    quote: "Perfect when I'm having my morning tea.",
+    author: "Raj T.",
+    role: "Business Owner"
+  }];
+  return <section className="md:py-16 bg-gray-50 py-[11px]">
       <div className="container mx-auto px-4">
         <div className="text-center mb-10">
           <h2 className="text-3xl md:text-4xl font-bold mb-3">Why Learners Love It</h2>
@@ -76,16 +70,11 @@ const Testimonials = () => {
           </div>
           
           {/* Testimonials slider */}
-          <div 
-            ref={scrollRef}
-            className="flex overflow-x-auto space-x-4 scrollbar-hide pb-4 snap-x snap-mandatory"
-            style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}
-          >
-            {testimonials.map((testimonial, index) => (
-              <div 
-                key={index} 
-                className="bg-white min-w-[280px] md:min-w-[350px] flex-shrink-0 p-6 rounded-2xl shadow-lg border border-gray-100 snap-start relative"
-              >
+          <div ref={scrollRef} className="flex overflow-x-auto space-x-4 scrollbar-hide pb-4 snap-x snap-mandatory" style={{
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}>
+            {testimonials.map((testimonial, index) => <div key={index} className="bg-white min-w-[280px] md:min-w-[350px] flex-shrink-0 p-6 rounded-2xl shadow-lg border border-gray-100 snap-start relative">
                 {/* Speech bubble tail */}
                 <div className="absolute -bottom-3 left-8 w-6 h-6 bg-white transform rotate-45 border-r border-b border-gray-100"></div>
                 
@@ -104,13 +93,10 @@ const Testimonials = () => {
                     <p className="text-sm text-gray-500">{testimonial.role}</p>
                   </div>
                 </div>
-              </div>
-            ))}
+              </div>)}
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default Testimonials;
