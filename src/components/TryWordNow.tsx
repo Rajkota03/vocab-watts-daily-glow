@@ -73,22 +73,12 @@ const TryWordNow = () => {
     setIsLoading(true);
 
     try {
-      // Use the same working function as the Test Send button
-      const { data, error } = await supabase.functions.invoke('whatsapp-send', {
+      // Use send-preview-word to fetch actual vocabulary words from starter_words table
+      const { data, error } = await supabase.functions.invoke('send-preview-word', {
         body: {
-          to: formattedPhone,
-          message: `Hi ${name.trim()},
-Here is your requested content:
-
-*Word:* Sample vocabulary word
-*Pronunciation:* Sample pronunciation
-*Meaning:* Sample meaning
-*Example:* Sample example sentence
-*Memory Hook:* Sample memory technique
-
-— Glintup`,
-          sendImmediately: true
-        }
+          phoneNumber: formattedPhone,
+          name: name.trim()
+        },
       });
 
       if (error) {
@@ -170,7 +160,7 @@ Here is your requested content:
           </div>
           <h2 className="heading-lg mb-2">Try a free word now — no signup needed</h2>
           <p className="body-text text-gray-600 max-w-xl mx-auto">
-            Enter your name and WhatsApp number to instantly receive a smart vocabulary word.
+            Enter your name and WhatsApp number to instantly receive one of our curated vocabulary words.
           </p>
         </div>
 
@@ -243,13 +233,14 @@ Here is your requested content:
             
             <div className="p-4">
               <div className="bg-[#DCF8C6]/50 p-3 rounded-lg rounded-tl-none">
-                <p className="text-xs text-gray-600 mb-2">Example word you'll receive:</p>
+                <p className="text-xs text-gray-600 mb-2">You'll receive one of these words:</p>
                 <p className="font-bold text-sm mb-1">Word: eloquent 🟩 (adjective)</p>
                 <p className="text-xs mb-1"><strong>Pronunciation:</strong> EL-uh-kwent</p>
                 <p className="text-xs mb-1"><strong>Meaning:</strong> fluent or persuasive in speaking or writing</p>
                 <p className="text-xs mb-1"><strong>Example:</strong> Her eloquent speech moved the entire audience to tears.</p>
                 <p className="text-xs mb-2"><strong>Memory Hook:</strong> Think "ELLA-KWENT" - Ella went and spoke beautifully.</p>
-                <p className="text-xs font-medium">— Glintup</p>
+                <p className="text-xs text-gray-500 mt-2">*Words: Inarticulate, Eloquent, Ignorant, Mediocre, Articulate</p>
+                <p className="text-xs font-medium mt-2">— Glintup</p>
               </div>
             </div>
           </div>
