@@ -104,6 +104,27 @@ export type Database = {
         }
         Relationships: []
       }
+      preview_word_requests: {
+        Row: {
+          created_at: string
+          id: string
+          phone_number: string
+          word_sent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          phone_number: string
+          word_sent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          phone_number?: string
+          word_sent?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -207,6 +228,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      starter_words: {
+        Row: {
+          category: string | null
+          created_at: string
+          definition: string
+          example: string
+          id: string
+          is_active: boolean | null
+          memory_hook: string | null
+          part_of_speech: string | null
+          pronunciation: string | null
+          word: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          definition: string
+          example: string
+          id?: string
+          is_active?: boolean | null
+          memory_hook?: string | null
+          part_of_speech?: string | null
+          pronunciation?: string | null
+          word: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          definition?: string
+          example?: string
+          id?: string
+          is_active?: boolean | null
+          memory_hook?: string | null
+          part_of_speech?: string | null
+          pronunciation?: string | null
+          word?: string
+        }
+        Relationships: []
       }
       user_custom_times: {
         Row: {

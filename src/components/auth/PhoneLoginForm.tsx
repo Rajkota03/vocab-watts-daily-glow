@@ -32,7 +32,15 @@ interface WhatsAppMessageStatus {
 }
 
 export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }) => {
-  const [phone, setPhone] = useState('');
+  // Check if there's a prefilled phone number from preview word feature
+  const [phone, setPhone] = useState(() => {
+    const storedPhone = localStorage.getItem('previewPhoneNumber');
+    if (storedPhone) {
+      localStorage.removeItem('previewPhoneNumber'); // Clear after use
+      return storedPhone;
+    }
+    return '';
+  });
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
