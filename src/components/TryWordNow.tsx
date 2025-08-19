@@ -73,8 +73,8 @@ const TryWordNow = () => {
     setIsLoading(true);
 
     try {
-      // Send directly via Meta WhatsApp Business API
-      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+      // Use the same working function as the Test Send button
+      const { data, error } = await supabase.functions.invoke('whatsapp-send', {
         body: {
           to: formattedPhone,
           message: `Hi ${name.trim()},
