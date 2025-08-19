@@ -41,29 +41,7 @@ const HowItWorks = () => {
         </div>
         
         <div className="mt-10 max-w-md mx-auto">
-          <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-200">
-            <div className="flex items-center mb-4 bg-[#128C7E] text-white p-2 rounded-t-lg">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <span className="font-bold">G</span>
-              </div>
-              <div className="ml-3">
-                <p className="font-medium">Glintup</p>
-                <p className="text-xs opacity-80">Online</p>
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="bg-[#DCF8C6]/50 p-3 rounded-lg rounded-tl-none">
-                <p className="font-bold mb-1">Today's Word: Ubiquitous</p>
-                <p className="text-sm mb-1.5">Present, appearing, or found everywhere</p>
-                <p className="text-sm italic border-l-2 border-[#25D366] pl-2">Smartphones have become ubiquitous in our daily lives, used for everything from communication to navigation.</p>
-              </div>
-              
-              <div className="text-right text-xs text-gray-500">
-                7:30 AM
-              </div>
-            </div>
-          </div>
+          
         </div>
       </div>
     </section>;
