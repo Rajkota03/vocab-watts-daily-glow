@@ -56,27 +56,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Processing preview word request for:', formattedPhone);
 
-    // Check rate limiting - prevent same number from requesting within 1 hour (for testing)
-    const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString();
-    
-    const { data: existingRequest } = await supabase
-      .from('preview_word_requests')
-      .select('id')
-      .eq('phone_number', formattedPhone)
-      .gte('created_at', oneHourAgo)
-      .maybeSingle();
-
-    if (existingRequest) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'You can only request one preview word per hour. Please try again in a bit.' 
-        }),
-        {
-          status: 429,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
-        }
-      );
-    }
+    // Temporarily disable rate limiting for testing
+    console.log('Rate limiting disabled for testing');
 
     // Get a random starter word
     const { data: starterWords, error: wordsError } = await supabase
