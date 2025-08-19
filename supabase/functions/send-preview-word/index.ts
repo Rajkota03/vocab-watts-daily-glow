@@ -8,6 +8,7 @@ const corsHeaders = {
 
 interface PreviewWordRequest {
   phoneNumber: string;
+  name: string;
 }
 
 const supabase = createClient(
@@ -22,11 +23,21 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { phoneNumber }: PreviewWordRequest = await req.json();
+    const { phoneNumber, name }: PreviewWordRequest = await req.json();
 
     if (!phoneNumber) {
       return new Response(
         JSON.stringify({ error: 'Phone number is required' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
+    }
+
+    if (!name) {
+      return new Response(
+        JSON.stringify({ error: 'Name is required' }),
         {
           status: 400,
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -102,7 +113,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emoji = randomWord.category === 'challenging' ? '🟥' : '🟩';
     
     // Format the message according to the template
-    const message = `Hi there,
+    const message = `Hi ${name},
 Here is your requested content:
 
 *Word:* ${randomWord.word} ${emoji} (${randomWord.part_of_speech || 'word'})

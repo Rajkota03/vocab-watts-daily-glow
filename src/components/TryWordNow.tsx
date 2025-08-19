@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const TryWordNow = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
@@ -22,6 +23,15 @@ const TryWordNow = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!name.trim()) {
+      toast({
+        title: "Name required",
+        description: "Please enter your name",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!phoneNumber.trim()) {
       toast({
         title: "Phone number required",
@@ -44,7 +54,7 @@ const TryWordNow = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke('send-preview-word', {
-        body: { phoneNumber }
+        body: { phoneNumber, name: name.trim() }
       });
 
       if (error) {
@@ -131,36 +141,46 @@ const TryWordNow = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="max-w-md mx-auto">
-          <div className="flex flex-col sm:flex-row gap-3 mb-4">
-            <div className="flex-1 relative">
-              <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                type="tel"
-                placeholder="Enter WhatsApp number"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                className="pl-10 h-12 text-base"
-                disabled={isLoading}
-              />
-            </div>
-            <Button 
-              type="submit" 
-              size="lg"
+          <div className="space-y-3 mb-4">
+            <Input
+              type="text"
+              placeholder="Enter your name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="h-12 text-base"
               disabled={isLoading}
-              className="bg-primary hover:bg-primary/90 text-white h-12 px-6"
-            >
-              {isLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Send me a word
-                </>
-              )}
-            </Button>
+            />
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 relative">
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  type="tel"
+                  placeholder="Enter WhatsApp number"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="pl-10 h-12 text-base"
+                  disabled={isLoading}
+                />
+              </div>
+              <Button 
+                type="submit" 
+                size="lg"
+                disabled={isLoading}
+                className="bg-primary hover:bg-primary/90 text-white h-12 px-6"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Send me a word
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
           
           <div className="flex items-center justify-center text-xs text-gray-500">
