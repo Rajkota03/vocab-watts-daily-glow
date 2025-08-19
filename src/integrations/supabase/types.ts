@@ -608,6 +608,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      user_owns_outbox_message: {
+        Args: { message_phone: string; message_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
