@@ -125,6 +125,7 @@ Here is your requested content:
 — Glintup`;
 
     console.log('Sending word:', randomWord.word, 'to phone:', formattedPhone);
+    console.log('Message to send:', message);
 
     // Send WhatsApp message using existing function
     const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-whatsapp', {
@@ -135,10 +136,23 @@ Here is your requested content:
       }
     });
 
+    console.log('WhatsApp function response:', { data: whatsappResult, error: whatsappError });
+
     if (whatsappError) {
       console.error('WhatsApp sending error:', whatsappError);
       return new Response(
-        JSON.stringify({ error: 'Failed to send WhatsApp message' }),
+        JSON.stringify({ error: 'Failed to send WhatsApp message: ' + whatsappError.message }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
+    }
+
+    if (whatsappResult?.error) {
+      console.error('WhatsApp service error:', whatsappResult.error);
+      return new Response(
+        JSON.stringify({ error: 'WhatsApp service error: ' + whatsappResult.error }),
         {
           status: 500,
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
