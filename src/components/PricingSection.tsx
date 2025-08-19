@@ -13,10 +13,10 @@ const PricingSection = () => {
     price: "₹249",
     period: "/month",
     description: "Simple, no-nonsense pricing",
-    features: ["Access to 1000+ curated words", "Personalized delivery schedule", "WhatsApp delivery & support", "Cancel anytime"],
+    features: ["Access to 1000+ curated words", "Personalized delivery schedule", "WhatsApp delivery", "Cancel anytime"],
     buttonText: "Subscribe for ₹249/month",
     isPrimary: true,
-    badge: "Includes WhatsApp delivery & support"
+    badge: "Includes WhatsApp delivery"
   }];
   return <section className="section-padding bg-white">
       <div className="container mx-auto px-4">
@@ -31,13 +31,13 @@ const PricingSection = () => {
 
         <div className="max-w-lg mx-auto">
           {plans.map((plan, index) => <Card key={index} className="relative border-2 transition-all hover:shadow-lg border-primary shadow-xl bg-gradient-to-br from-white to-primary/5">
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-white px-4 py-1 rounded-full text-sm font-medium z-10">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-primary text-white px-4 py-2 rounded-full text-sm font-medium z-10 whitespace-nowrap">
                 {plan.badge}
               </div>
               
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 rounded-lg -z-10 blur-sm"></div>
               
-              <CardHeader className="text-center pb-4 pt-8">
+              <CardHeader className="text-center pb-4 pt-10">
                 <CardTitle className="heading-md">{plan.name}</CardTitle>
                 <CardDescription className="body-text text-gray-600">{plan.description}</CardDescription>
                 <div className="mt-4">
