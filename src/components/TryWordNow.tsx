@@ -13,11 +13,29 @@ const TryWordNow = () => {
   const { toast } = useToast();
 
   const validatePhoneNumber = (phone: string): boolean => {
-    // Remove all non-digit characters
-    const cleaned = phone.replace(/\D/g, '');
+    // Remove all non-digit characters except +
+    const cleaned = phone.replace(/[^\d+]/g, '');
     
-    // Check if it's a valid Indian mobile number (10 digits) or international format
-    return cleaned.length === 10 || (cleaned.length === 12 && cleaned.startsWith('91'));
+    // Check if it starts with + and has country code, or is just 10 digits
+    if (cleaned.startsWith('+')) {
+      // International format: +91xxxxxxxxxx (13 chars total)
+      return cleaned.length >= 12 && cleaned.length <= 15;
+    } else {
+      // Local format: 10 digits
+      return cleaned.length === 10;
+    }
+  };
+
+  const formatPhoneNumber = (phone: string): string => {
+    // Remove all non-digit characters except +
+    let cleaned = phone.replace(/[^\d+]/g, '');
+    
+    // If it doesn't start with + and is 10 digits, add +91
+    if (!cleaned.startsWith('+') && cleaned.length === 10) {
+      cleaned = '+91' + cleaned;
+    }
+    
+    return cleaned;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,18 +61,35 @@ const TryWordNow = () => {
 
     if (!validatePhoneNumber(phoneNumber)) {
       toast({
-        title: "Invalid phone number",
-        description: "Please enter a valid mobile number",
+        title: "Invalid phone number", 
+        description: "Please enter with country code (+911234567890) or without (+91 will be added automatically)",
         variant: "destructive",
       });
       return;
     }
 
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('send-preview-word', {
-        body: { phoneNumber, name: name.trim() }
+      // Use the same approach as admin dashboard - send directly via WhatsApp
+      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+        body: {
+          to: formattedPhone,
+          message: `Hi ${name.trim()},
+Here is your requested content:
+
+*Word:* Sample vocabulary word
+*Pronunciation:* Sample pronunciation
+*Meaning:* Sample meaning
+*Example:* Sample example sentence
+*Memory Hook:* Sample memory technique
+
+— Glintup`,
+          provider: 'meta', // Use Meta WhatsApp Business API
+          sendImmediately: true
+        }
       });
 
       if (error) {
@@ -155,7 +190,7 @@ const TryWordNow = () => {
                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   type="tel"
-                  placeholder="Enter WhatsApp number"
+                  placeholder="+911234567890 or 1234567890"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   className="pl-10 h-12 text-base"
@@ -183,9 +218,14 @@ const TryWordNow = () => {
             </div>
           </div>
           
-          <div className="flex items-center justify-center text-xs text-gray-500">
-            <AlertCircle className="h-3 w-3 mr-1" />
-            We'll only send one message. No spam.
+          <div className="text-center space-y-1">
+            <div className="flex items-center justify-center text-xs text-gray-500">
+              <AlertCircle className="h-3 w-3 mr-1" />
+              We'll only send one message. No spam.
+            </div>
+            <p className="text-xs text-gray-400">
+              Use +91 country code or enter 10-digit number (we'll add +91 automatically)
+            </p>
           </div>
         </form>
 
