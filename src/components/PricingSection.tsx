@@ -16,31 +16,33 @@ const PricingSection = () => {
     features: ["Access to 1000+ curated words", "Personalized delivery schedule", "WhatsApp delivery & support", "Cancel anytime"],
     buttonText: "Subscribe for ₹249/month",
     isPrimary: true,
-    badge: "includes WhatsApp delivery & support"
+    badge: "Includes WhatsApp delivery & support"
   }];
-  return <section className="bg-white py-[12px]">
+  return <section className="section-padding bg-white">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+        <div className="text-center mb-8">
+          <h2 className="heading-lg mb-3">
             Pricing Plans
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="body-text text-gray-600 max-w-2xl mx-auto">
             (Coming soon: ₹1999/year plan — Save 33%)
           </p>
         </div>
 
         <div className="max-w-lg mx-auto">
           {plans.map((plan, index) => <Card key={index} className="relative border-2 transition-all hover:shadow-lg border-primary shadow-xl bg-gradient-to-br from-white to-primary/5">
-              {plan.badge}
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-white px-4 py-1 rounded-full text-sm font-medium z-10">
+                {plan.badge}
+              </div>
               
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 rounded-lg -z-10 blur-sm"></div>
               
-              <CardHeader className="text-center pb-4">
-                <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-                <CardDescription className="text-gray-600">{plan.description}</CardDescription>
+              <CardHeader className="text-center pb-4 pt-8">
+                <CardTitle className="heading-md">{plan.name}</CardTitle>
+                <CardDescription className="body-text text-gray-600">{plan.description}</CardDescription>
                 <div className="mt-4">
-                  <span className="text-4xl font-bold">{plan.price}</span>
-                  <span className="text-gray-500">{plan.period}</span>
+                  <span className="text-4xl font-bold text-dark">{plan.price}</span>
+                  <span className="body-text text-gray-500">{plan.period}</span>
                 </div>
               </CardHeader>
               
@@ -48,7 +50,7 @@ const PricingSection = () => {
                 <ul className="space-y-3 mb-6">
                   {plan.features.map((feature, idx) => <li key={idx} className="flex items-center gap-3">
                       <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" />
-                      <span className="text-gray-700">{feature}</span>
+                      <span className="body-text text-gray-700">{feature}</span>
                     </li>)}
                 </ul>
                 
