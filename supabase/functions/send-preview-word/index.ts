@@ -108,11 +108,12 @@ Here is your requested content:
     console.log('Sending word:', randomWord.word, 'to phone:', formattedPhone);
     console.log('Message to send:', message);
 
-    // Send WhatsApp message using existing function
+    // Send WhatsApp message using existing function with meta provider
     const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-whatsapp', {
       body: {
         phoneNumber: formattedPhone,
         message: message,
+        provider: 'meta', // Use Meta WhatsApp API
         userId: null // No user ID for preview requests
       }
     });
