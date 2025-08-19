@@ -14,11 +14,11 @@ const FAQ = () => {
     question: "Can I stop anytime?",
     answer: "Of course. You're in control."
   }];
-  return <section className="bg-gray-50 py-[8px]">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Frequently Asked Questions</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+  return <section className="section-padding bg-gray-50">
+      <div className="container-wide">
+        <div className="text-center mb-10">
+          <h2 className="heading-lg mb-3">Frequently Asked Questions</h2>
+          <p className="body-text text-gray-600 max-w-2xl mx-auto">
             Everything you need to know about Glintup
           </p>
         </div>

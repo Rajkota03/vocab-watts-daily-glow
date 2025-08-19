@@ -7,25 +7,25 @@ import SignupForm from './SignupForm';
 const CTASection = () => {
   const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  return <section className="py-20 bg-gradient-to-br from-primary to-duolingo-purple text-white relative overflow-hidden">
+  return <section className="section-padding-lg bg-gradient-to-br from-primary to-duolingo-purple text-white relative overflow-hidden">
       {/* Decorative elements */}
-      <div className="absolute top-0 left-0 w-full h-full opacity-10 py-0">
+      <div className="absolute top-0 left-0 w-full h-full opacity-10">
         <div className="absolute top-10 left-10 w-40 h-40 rounded-full bg-white"></div>
         <div className="absolute bottom-10 right-10 w-60 h-60 rounded-full bg-white"></div>
       </div>
       
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container-wide relative z-10">
         <div className="max-w-3xl mx-auto text-center">
           <div className="inline-flex items-center justify-center mb-6 bg-white/20 backdrop-blur-sm py-2 px-4 rounded-full shadow-lg">
             <Sparkles className="h-5 w-5 mr-2 text-duolingo-yellow" />
             <span className="text-sm font-medium">Elevate your vocabulary with zero effort</span>
           </div>
           
-          <h2 className="text-3xl md:text-5xl font-bold mb-6 leading-tight">
+          <h2 className="heading-xl mb-4">
             Build a powerful vocabulary — one word at a time.
           </h2>
           
-          <p className="text-lg md:text-xl mb-8 opacity-90 leading-relaxed">
+          <p className="body-text mb-6 opacity-90">
             Start with your first word today.
           </p>
           

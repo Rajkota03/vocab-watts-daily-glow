@@ -18,13 +18,13 @@ const PricingSection = () => {
     isPrimary: true,
     badge: "includes WhatsApp delivery & support"
   }];
-  return <section className="bg-white py-[12px]">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Pricing Plans
+  return <section className="section-padding bg-gray-50">
+      <div className="container-wide">
+        <div className="text-center mb-8">
+          <h2 className="heading-lg mb-2">
+            Simple, no-nonsense pricing.
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="body-text text-gray-600 max-w-2xl mx-auto">
             (Coming soon: ₹1999/year plan — Save 33%)
           </p>
         </div>

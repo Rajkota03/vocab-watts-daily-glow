@@ -36,11 +36,11 @@ const Testimonials = () => {
     author: "Raj T.",
     role: "Business Owner"
   }];
-  return <section className="md:py-16 bg-gray-50 py-[11px]">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-bold mb-3">Why Learners Love It</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+  return <section className="section-padding bg-white">
+      <div className="container-wide">
+        <div className="text-center mb-8">
+          <h2 className="heading-lg mb-2">Why Learners Love It</h2>
+          <p className="body-text text-gray-600 max-w-2xl mx-auto">
             (More real testimonials coming soon)
           </p>
         </div>
@@ -74,12 +74,12 @@ const Testimonials = () => {
           scrollbarWidth: 'none',
           msOverflowStyle: 'none'
         }}>
-            {testimonials.map((testimonial, index) => <div key={index} className="bg-white min-w-[280px] md:min-w-[350px] flex-shrink-0 p-6 rounded-2xl shadow-lg border border-gray-100 snap-start relative">
+            {testimonials.map((testimonial, index) => <div key={index} className="bg-white min-w-[280px] md:min-w-[320px] flex-shrink-0 p-5 rounded-xl shadow-md border border-gray-200 snap-start relative">
                 {/* Speech bubble tail */}
-                <div className="absolute -bottom-3 left-8 w-6 h-6 bg-white transform rotate-45 border-r border-b border-gray-100"></div>
+                <div className="absolute -bottom-2 left-6 w-4 h-4 bg-white transform rotate-45 border-r border-b border-gray-200"></div>
                 
-                <div className="mb-4">
-                  <p className="text-gray-700 text-lg leading-relaxed">"{testimonial.quote}"</p>
+                <div className="mb-3">
+                  <p className="text-gray-700 body-text">"{testimonial.quote}"</p>
                 </div>
                 
                 <div className="flex items-center pt-4 border-t border-gray-100">

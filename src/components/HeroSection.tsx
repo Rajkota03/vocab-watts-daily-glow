@@ -8,9 +8,9 @@ import heroIllustration from '@/assets/hero-learning-illustration.jpg';
 const HeroSection = () => {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const navigate = useNavigate();
-  return <section className="min-h-screen py-12 md:py-0 flex items-center bg-gradient-to-br from-white to-primary/5 overflow-hidden relative">
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="flex flex-col lg:flex-row gap-12 items-center">
+  return <section className="min-h-screen section-padding-lg flex items-center bg-gradient-to-br from-white to-primary/5 overflow-hidden relative">
+      <div className="container-wide relative z-10">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
           {/* Illustration - Left side on desktop, top on mobile */}
           <div className="flex-1 order-1 lg:order-1">
             <div className="relative max-w-lg mx-auto">
@@ -32,11 +32,11 @@ const HeroSection = () => {
               <span className="font-bold">Learn directly on WhatsApp</span>
             </div>
             
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6 text-dark">
+            <h1 className="heading-xl text-dark mb-4">
               Master 5 New Words a Day. Delivered to You.
             </h1>
             
-            <p className="text-xl lg:text-2xl text-dark/80 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+            <p className="body-text text-dark/80 mb-6 max-w-xl mx-auto lg:mx-0">
               Understand pronunciation, meaning, usage, and a memory hook — all under 2 minutes. Delivered daily on WhatsApp at your preferred time.
             </p>
             
@@ -62,17 +62,17 @@ const HeroSection = () => {
               </Button>
             </div>
             
-            <div className="mt-8 flex flex-wrap justify-center lg:justify-start gap-4">
-              <div className="flex items-center text-sm text-gray-600 bg-white/80 rounded-full px-4 py-2 shadow-sm">
-                <CheckCircle className="h-4 w-4 text-primary mr-2" />
+            <div className="mt-6 flex flex-wrap justify-center lg:justify-start gap-3">
+              <div className="flex items-center body-text-sm text-gray-600 bg-white/80 rounded-full px-3 py-1.5 shadow-sm">
+                <CheckCircle className="h-4 w-4 text-primary mr-2 flex-shrink-0" />
                 <span>No app download required</span>
               </div>
-              <div className="flex items-center text-sm text-gray-600 bg-white/80 rounded-full px-4 py-2 shadow-sm">
-                <CheckCircle className="h-4 w-4 text-accent mr-2" />
+              <div className="flex items-center body-text-sm text-gray-600 bg-white/80 rounded-full px-3 py-1.5 shadow-sm">
+                <CheckCircle className="h-4 w-4 text-accent mr-2 flex-shrink-0" />
                 <span>Built for busy learners</span>
               </div>
-              <div className="flex items-center text-sm text-gray-600 bg-white/80 rounded-full px-4 py-2 shadow-sm">
-                <CheckCircle className="h-4 w-4 text-primary mr-2" />
+              <div className="flex items-center body-text-sm text-gray-600 bg-white/80 rounded-full px-3 py-1.5 shadow-sm">
+                <CheckCircle className="h-4 w-4 text-primary mr-2 flex-shrink-0" />
                 <span>One word at a time, spaced through your day</span>
               </div>
             </div>
