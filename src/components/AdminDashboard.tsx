@@ -5,6 +5,7 @@ import AdminLayout from './admin/AdminLayout';
 import OverviewTab from './admin/tabs/OverviewTab';
 import UserManagementTab from './admin/tabs/UserManagementTab';
 import VocabularyTab from './admin/tabs/VocabularyTab';
+import BulkOperationsTab from './admin/tabs/BulkOperationsTab';
 import SubscriptionsTab from './admin/tabs/SubscriptionsTab';
 import MessagesTab from './admin/tabs/MessagesTab';
 import MessagesSetupTab from './admin/tabs/MessagesSetupTab';
@@ -58,6 +59,8 @@ const AdminDashboard = () => {
         return <UserManagementTab key={refreshKey} />;
       case 'vocabulary':
         return <VocabularyTab key={refreshKey} />;
+      case 'bulk-operations':
+        return <BulkOperationsTab key={refreshKey} />;
       case 'subscriptions':
         return <SubscriptionsTab key={refreshKey} />;
       case 'messages':
