@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Loader2, Trash2, Upload, BarChart3, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -36,6 +38,7 @@ const BulkOperationsTab = () => {
   const [clearLoading, setClearLoading] = useState(false);
   const [topUpProgress, setTopUpProgress] = useState(0);
   const [currentOperation, setCurrentOperation] = useState('');
+  const [wordsPerCategory, setWordsPerCategory] = useState(500);
 
   useEffect(() => {
     fetchStats();
@@ -153,7 +156,8 @@ const BulkOperationsTab = () => {
   };
 
   const topUpWords = async () => {
-    if (!window.confirm('This will generate 500 words for each category and level combination (approximately 10,500 total words). Continue?')) {
+    const totalWords = CATEGORIES.reduce((sum, cat) => sum + cat.levels.length, 0) * wordsPerCategory;
+    if (!window.confirm(`This will first clear existing words, then generate ${wordsPerCategory} words for each category and level combination (approximately ${totalWords.toLocaleString()} total words). Continue?`)) {
       return;
     }
 
@@ -161,6 +165,18 @@ const BulkOperationsTab = () => {
       setLoading(true);
       setTopUpProgress(0);
       
+      // First clear all existing words (except general)
+      setCurrentOperation('Clearing existing vocabulary words...');
+      const { error: clearError } = await supabase
+        .from('vocabulary_words')
+        .delete()
+        .neq('category', 'general');
+
+      if (clearError) {
+        throw new Error(`Failed to clear existing words: ${clearError.message}`);
+      }
+
+      // Now generate new words
       const totalOperations = CATEGORIES.reduce((sum, cat) => sum + cat.levels.length, 0);
       let completed = 0;
 
@@ -180,7 +196,7 @@ const BulkOperationsTab = () => {
                 },
                 body: JSON.stringify({
                   category: categoryLevel,
-                  count: 500
+                  count: wordsPerCategory
                 }),
               }
             );
@@ -339,24 +355,40 @@ const BulkOperationsTab = () => {
               Top Up Words
             </CardTitle>
             <CardDescription>
-              Generate 500 words for each category and level combination using AI.
+              Clear existing words and generate new words for each category and level combination using AI.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="words-count">Words per category/level combination</Label>
+              <Input
+                id="words-count"
+                type="number"
+                min="1"
+                max="1000"
+                value={wordsPerCategory}
+                onChange={(e) => setWordsPerCategory(Number(e.target.value))}
+                disabled={loading}
+                placeholder="Enter number of words"
+              />
+              <p className="text-xs text-muted-foreground">
+                Total words to generate: {(CATEGORIES.reduce((sum, cat) => sum + cat.levels.length, 0) * wordsPerCategory).toLocaleString()}
+              </p>
+            </div>
             <Button 
               onClick={topUpWords}
-              disabled={loading}
+              disabled={loading || wordsPerCategory < 1}
               className="w-full"
             >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
+                  Processing...
                 </>
               ) : (
                 <>
                   <Upload className="mr-2 h-4 w-4" />
-                  Start Top Up
+                  Clear & Generate {wordsPerCategory} Words Each
                 </>
               )}
             </Button>
