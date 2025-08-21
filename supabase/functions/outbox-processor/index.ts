@@ -22,17 +22,10 @@ serve(async (req) => {
     const now = new Date();
     console.log(`Processing messages scheduled for ${now.toISOString()}`);
 
-    // Get messages that are ready to send with subscription validation
+    // Get messages that are ready to send
     const { data: messages, error: fetchError } = await supabase
       .from('outbox_messages')
-      .select(`
-        *,
-        user_subscriptions!left(
-          is_pro,
-          trial_ends_at,
-          subscription_ends_at
-        )
-      `)
+      .select('*')
       .eq('status', 'queued')
       .lte('send_at', now.toISOString())
       .limit(500);
