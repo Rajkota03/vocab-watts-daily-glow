@@ -45,7 +45,6 @@ serve(async (req) => {
         const { data: existingSchedule } = await supabase
           .from('outbox_messages')
           .select('id')
-          .eq('user_id', subscription.user_id || 'no_user')
           .eq('phone', subscription.phone_number)
           .gte('send_at', `${today}T00:00:00.000Z`)
           .lt('send_at', `${today}T23:59:59.999Z`)
@@ -106,8 +105,11 @@ serve(async (req) => {
           const istDate = new Date(`${today}T${time}:00`);
           const utcDate = new Date(istDate.getTime() - (5.5 * 60 * 60 * 1000));
           
+          // Generate a consistent user_id if none exists
+          const messageUserId = subscription.user_id || `phone_${subscription.phone_number.replace(/\D/g, '')}`;
+          
           outboxMessages.push({
-            user_id: subscription.user_id || null,
+            user_id: messageUserId,
             phone: subscription.phone_number,
             send_at: utcDate.toISOString(),
             template: 'glintup_vocab_fulfilment',
@@ -127,13 +129,25 @@ serve(async (req) => {
           });
         }
 
-        // Insert outbox messages
-        const { data: insertedMessages, error: insertError } = await supabase
-          .from('outbox_messages')
-          .insert(outboxMessages);
+        // Insert outbox messages one by one to handle conflicts better
+        let successfulInserts = 0;
+        let insertError = null;
+        
+        for (const message of outboxMessages) {
+          const { error: singleInsertError } = await supabase
+            .from('outbox_messages')
+            .insert(message);
+            
+          if (singleInsertError) {
+            console.error(`Error inserting single message for ${subscription.phone_number} at ${message.send_at}:`, singleInsertError);
+            insertError = singleInsertError;
+          } else {
+            successfulInserts++;
+          }
+        }
 
-        if (insertError) {
-          console.error(`Error inserting messages for ${subscription.phone_number}:`, insertError);
+        if (insertError && successfulInserts === 0) {
+          console.error(`Error inserting all messages for ${subscription.phone_number}:`, insertError);
           results.push({
             subscriptionId: subscription.id,
             phone: subscription.phone_number,
@@ -143,13 +157,14 @@ serve(async (req) => {
           continue;
         }
 
-        console.log(`Scheduled ${outboxMessages.length} messages for ${subscription.phone_number}`);
+        console.log(`Scheduled ${successfulInserts}/${outboxMessages.length} messages for ${subscription.phone_number}`);
         
         results.push({
           subscriptionId: subscription.id,
           phone: subscription.phone_number,
-          status: 'scheduled',
-          messagesCount: outboxMessages.length,
+          status: successfulInserts === outboxMessages.length ? 'scheduled' : 'partial',
+          messagesCount: successfulInserts,
+          totalAttempted: outboxMessages.length,
           deliveryTimes: deliveryTimes,
           words: words.map(w => w.word)
         });
