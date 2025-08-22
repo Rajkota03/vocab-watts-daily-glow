@@ -186,24 +186,18 @@ const BulkOperationsTab = () => {
           setCurrentOperation(`Generating words for ${categoryLevel}...`);
 
           try {
-            const response = await fetch(
-              `https://pbpmtqcffhqwzboviqfw.supabase.co/functions/v1/generate-vocab-words`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBicG10cWNmZmhxd3pib3ZpcWZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMTk4NDEsImV4cCI6MjA1OTc5NTg0MX0.IinFO7UL9mbSP4hvpFGRRr_I7KEeDrwXWv8oZkfhAV4`
-                },
-                body: JSON.stringify({
-                  category: categoryLevel,
-                  count: wordsPerCategory
-                }),
+            const { data: result, error: funcError } = await supabase.functions.invoke('generate-vocab-words', {
+              body: {
+                category: categoryLevel,
+                count: wordsPerCategory
               }
-            );
+            });
 
-            const result = await response.json();
+            if (funcError) {
+              throw new Error(`Function error: ${funcError.message}`);
+            }
             
-            if (!response.ok || result.error) {
+            if (result?.error) {
               console.warn(`Failed to generate words for ${categoryLevel}:`, result.error);
               toast({
                 title: "Partial Failure",
@@ -212,7 +206,7 @@ const BulkOperationsTab = () => {
               });
             } else {
               // Insert the generated words directly into the database
-              if (result.words && result.words.length > 0) {
+              if (result?.words && result.words.length > 0) {
                 const { error: insertError } = await supabase
                   .from('vocabulary_words')
                   .insert(
