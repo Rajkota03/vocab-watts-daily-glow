@@ -8,6 +8,7 @@ import { SubscriptionMetricsGrid } from '../subscriptions/metrics/SubscriptionMe
 import { SubscriptionChartsGrid } from '../subscriptions/charts/SubscriptionChartsGrid';
 import { SubscriptionsTable } from '../subscriptions/table/SubscriptionsTable';
 import { useSubscriptionsData } from '@/hooks/useSubscriptionsData';
+import { supabase } from '@/integrations/supabase/client';
 
 type Subscription = Database['public']['Tables']['user_subscriptions']['Row'];
 
@@ -91,6 +92,45 @@ const SubscriptionsTab = () => {
     });
   };
 
+  const handleToggleProStatus = async (subscription: Subscription, newStatus: boolean) => {
+    try {
+      const updateData: any = {
+        is_pro: newStatus,
+      };
+
+      // If switching to pro, set a far future end date (unlimited)
+      // If switching to free, clear the subscription end date
+      if (newStatus) {
+        updateData.subscription_ends_at = new Date('2099-12-31').toISOString();
+      } else {
+        updateData.subscription_ends_at = null;
+      }
+
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .update(updateData)
+        .eq('id', subscription.id);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: `Subscription status updated to ${newStatus ? 'Pro' : 'Free'}`,
+      });
+
+      refreshData();
+    } catch (error) {
+      console.error('Error toggling pro status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update subscription status",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -117,6 +157,7 @@ const SubscriptionsTab = () => {
             subscriptions={subscriptions}
             loading={loading}
             onEdit={handleEditSubscription}
+            onToggleProStatus={handleToggleProStatus}
           />
         </CardContent>
       </Card>

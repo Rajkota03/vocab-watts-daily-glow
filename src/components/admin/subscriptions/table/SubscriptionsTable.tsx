@@ -3,6 +3,7 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Loader2, Pencil } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
 
@@ -12,9 +13,10 @@ interface SubscriptionsTableProps {
   subscriptions: Subscription[];
   loading: boolean;
   onEdit: (subscription: Subscription) => void;
+  onToggleProStatus: (subscription: Subscription, newStatus: boolean) => Promise<void>;
 }
 
-export function SubscriptionsTable({ subscriptions, loading, onEdit }: SubscriptionsTableProps) {
+export function SubscriptionsTable({ subscriptions, loading, onEdit, onToggleProStatus }: SubscriptionsTableProps) {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '—';
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -48,6 +50,7 @@ export function SubscriptionsTable({ subscriptions, loading, onEdit }: Subscript
           <TableRow>
             <TableHead>Phone</TableHead>
             <TableHead>Plan</TableHead>
+            <TableHead>Pro Status</TableHead>
             <TableHead>Category</TableHead>
             <TableHead>Created</TableHead>
             <TableHead>Trial Ends</TableHead>
@@ -67,6 +70,18 @@ export function SubscriptionsTable({ subscriptions, loading, onEdit }: Subscript
                 }>
                   {sub.is_pro ? 'Pro' : 'Free Trial'}
                 </Badge>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={sub.is_pro}
+                    onCheckedChange={(checked) => onToggleProStatus(sub, checked)}
+                    aria-label={`Toggle pro status for ${sub.phone_number}`}
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {sub.is_pro ? 'Pro' : 'Free'}
+                  </span>
+                </div>
               </TableCell>
               <TableCell>{sub.category || '—'}</TableCell>
               <TableCell>{formatDate(sub.created_at)}</TableCell>
