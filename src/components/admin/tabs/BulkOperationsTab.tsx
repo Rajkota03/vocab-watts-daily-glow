@@ -128,10 +128,11 @@ const BulkOperationsTab = () => {
     try {
       setClearLoading(true);
       
+      // Use a more reliable deletion method
       const { error } = await supabase
         .from('vocabulary_words')
         .delete()
-        .gte('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+        .not('id', 'is', null); // Delete all records
 
       if (error) throw error;
 
@@ -273,7 +274,7 @@ const BulkOperationsTab = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{getTotalWords().toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Excluding general category</p>
+            <p className="text-xs text-muted-foreground">All vocabulary words</p>
           </CardContent>
         </Card>
         <Card>
@@ -370,7 +371,7 @@ const BulkOperationsTab = () => {
               ) : (
                 <>
                   <Upload className="mr-2 h-4 w-4" />
-                  Clear & Generate {wordsPerCategory} Words Each
+                  Add {wordsPerCategory} Words Each
                 </>
               )}
             </Button>
@@ -408,7 +409,7 @@ const BulkOperationsTab = () => {
             <div className="space-y-4">
               {stats.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  No vocabulary words found (excluding general category)
+                  No vocabulary words found
                 </div>
               ) : (
                 stats.map((stat) => (
