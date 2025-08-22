@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Trash2, Upload, BarChart3, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import OpenAIBalanceCard from '../OpenAIBalanceCard';
 
 interface CategoryStats {
   category: string;
@@ -275,7 +276,7 @@ const BulkOperationsTab = () => {
       </div>
 
       {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total Words</CardTitle>
@@ -303,6 +304,9 @@ const BulkOperationsTab = () => {
             <p className="text-xs text-muted-foreground">Active categories</p>
           </CardContent>
         </Card>
+        <div className="md:col-span-1">
+          <OpenAIBalanceCard />
+        </div>
       </div>
 
       {/* Bulk Operations */}
@@ -420,32 +424,65 @@ const BulkOperationsTab = () => {
                   No vocabulary words found
                 </div>
               ) : (
-                stats.map((stat) => (
-                  <div key={stat.category} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium capitalize">{stat.category}</h4>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary">
-                          {stat.total_words} words
-                        </Badge>
-                        {stat.duplicates > 0 && (
-                          <Badge variant="destructive" className="flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" />
-                            {stat.duplicates} duplicates
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                      {Object.entries(stat.levels).map(([level, count]) => (
-                        <div key={level} className="flex justify-between">
-                          <span className="text-muted-foreground capitalize">{level}:</span>
-                          <span className="font-medium">{count}</span>
-                        </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left p-2 font-medium">Category</th>
+                        <th className="text-center p-2 font-medium">Beginner</th>
+                        <th className="text-center p-2 font-medium">Intermediate</th>
+                        <th className="text-center p-2 font-medium">Advanced</th>
+                        <th className="text-center p-2 font-medium">Professional</th>
+                        <th className="text-center p-2 font-medium">Total Words</th>
+                        <th className="text-center p-2 font-medium">Duplicates</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stats.map((stat) => (
+                        <tr key={stat.category} className="border-b hover:bg-muted/50">
+                          <td className="p-2 font-medium capitalize">
+                            {stat.category === 'exam' ? 'Exam (GRE, IELTS, TOEFL, CAT, GMAT)' : stat.category}
+                          </td>
+                          <td className="text-center p-2">
+                            <Badge variant={stat.levels.beginner ? "default" : "secondary"}>
+                              {stat.levels.beginner || 0}
+                            </Badge>
+                          </td>
+                          <td className="text-center p-2">
+                            <Badge variant={stat.levels.intermediate ? "default" : "secondary"}>
+                              {stat.levels.intermediate || 0}
+                            </Badge>
+                          </td>
+                          <td className="text-center p-2">
+                            <Badge variant={stat.levels.advanced ? "default" : "secondary"}>
+                              {stat.levels.advanced || 0}
+                            </Badge>
+                          </td>
+                          <td className="text-center p-2">
+                            <Badge variant={stat.levels.professional ? "default" : "secondary"}>
+                              {stat.levels.professional || 0}
+                            </Badge>
+                          </td>
+                          <td className="text-center p-2">
+                            <Badge variant="outline" className="font-bold">
+                              {stat.total_words}
+                            </Badge>
+                          </td>
+                          <td className="text-center p-2">
+                            {stat.duplicates > 0 ? (
+                              <Badge variant="destructive" className="flex items-center gap-1 justify-center">
+                                <AlertCircle className="h-3 w-3" />
+                                {stat.duplicates}
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary">0</Badge>
+                            )}
+                          </td>
+                        </tr>
                       ))}
-                    </div>
-                  </div>
-                ))
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           )}
