@@ -26,7 +26,11 @@ const CATEGORIES = [
   { name: 'business', levels: ['beginner', 'intermediate', 'professional'] },
   { name: 'academic', levels: ['intermediate', 'advanced'] },
   { name: 'creative', levels: ['intermediate', 'advanced'] },
-  { name: 'exam', levels: ['intermediate', 'advanced'] },
+  { name: 'exam-gre', levels: ['intermediate', 'advanced'] },
+  { name: 'exam-ielts', levels: ['intermediate', 'advanced'] },
+  { name: 'exam-toefl', levels: ['intermediate', 'advanced'] },
+  { name: 'exam-cat', levels: ['intermediate', 'advanced'] },
+  { name: 'exam-gmat', levels: ['intermediate', 'advanced'] },
   { name: 'interview', levels: ['beginner', 'intermediate'] },
   { name: 'slang', levels: ['intermediate', 'advanced'] },
 ];
@@ -38,7 +42,7 @@ const BulkOperationsTab = () => {
   const [clearLoading, setClearLoading] = useState(false);
   const [topUpProgress, setTopUpProgress] = useState(0);
   const [currentOperation, setCurrentOperation] = useState('');
-  const [wordsPerCategory, setWordsPerCategory] = useState(500);
+  const [wordsPerCategory, setWordsPerCategory] = useState(50);
 
   useEffect(() => {
     fetchStats();

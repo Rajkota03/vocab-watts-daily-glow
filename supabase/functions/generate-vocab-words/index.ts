@@ -37,10 +37,10 @@ serve(async (req) => {
   }
 
   try {
-    const { category }: VocabWordRequest = await req.json();
+    const { category, count = 1 }: VocabWordRequest = await req.json();
     
-    // Always generate exactly 1 word - ignore any count parameter
-    const count = 1;
+    // Use the count parameter, default to 1 if not provided
+    const wordsToGenerate = Math.min(Math.max(count, 1), 100); // Cap at 100 for safety
     
     if (!category) {
       throw new Error('Category is required');
@@ -52,7 +52,7 @@ serve(async (req) => {
       throw new Error("OpenAI API key is not configured");
     }
 
-    console.log(`Generating exactly 1 vocabulary word for category: ${category}`);
+    console.log(`Generating exactly ${wordsToGenerate} vocabulary word(s) for category: ${category}`);
 
     // Parse the category (support both old format and new primary-subcategory format)
     let primaryCategory = category;
@@ -124,20 +124,36 @@ serve(async (req) => {
             categoryPrompt = `${difficultyLevel} professional business vocabulary that would be useful in a corporate environment`;
             break;
           case "exam":
-            // For exam category, subcategory is the exam type not difficulty
-            if (subcategory === 'gre') {
+            // Handle new exam format: exam-gre, exam-ielts, etc.
+            if (primaryCategory === 'exam' && subcategory === 'gre') {
               categoryPrompt = "complex, high-difficulty words commonly found in GRE exams with 3+ syllables and sophisticated meanings";
-            } else if (subcategory === 'ielts') {
+            } else if (primaryCategory === 'exam' && subcategory === 'ielts') {
               categoryPrompt = "academic and formal vocabulary suitable for IELTS exams, focusing on clear, precise meanings";
-            } else if (subcategory === 'toefl') {
+            } else if (primaryCategory === 'exam' && subcategory === 'toefl') {
               categoryPrompt = "clear, comprehension-focused vocabulary ideal for TOEFL exams with academic context";
-            } else if (subcategory === 'cat') {
+            } else if (primaryCategory === 'exam' && subcategory === 'cat') {
               categoryPrompt = "analytical, often abstract English vocabulary for CAT exams with complex meanings";
-            } else if (subcategory === 'gmat') {
+            } else if (primaryCategory === 'exam' && subcategory === 'gmat') {
               categoryPrompt = "business and formal professional vocabulary useful for GMAT exams";
             } else {
               categoryPrompt = "advanced academic vocabulary that would appear in standardized tests";
             }
+            break;
+          // Handle the new exam-* categories
+          case "exam-gre":
+            categoryPrompt = "complex, high-difficulty words commonly found in GRE exams with 3+ syllables and sophisticated meanings";
+            break;
+          case "exam-ielts":
+            categoryPrompt = "academic and formal vocabulary suitable for IELTS exams, focusing on clear, precise meanings";
+            break;
+          case "exam-toefl":
+            categoryPrompt = "clear, comprehension-focused vocabulary ideal for TOEFL exams with academic context";
+            break;
+          case "exam-cat":
+            categoryPrompt = "analytical, often abstract English vocabulary for CAT exams with complex meanings";
+            break;
+          case "exam-gmat":
+            categoryPrompt = "business and formal professional vocabulary useful for GMAT exams";
             break;
           case "slang":
             categoryPrompt = `${difficultyLevel} modern English slang and idioms used in casual conversation`;
@@ -201,9 +217,9 @@ serve(async (req) => {
             },
             { 
               role: 'user', 
-              content: `Generate exactly 1 vocabulary word that follows this guideline: ${categoryPrompt}.
+              content: `Generate exactly ${wordsToGenerate} vocabulary word${wordsToGenerate > 1 ? 's' : ''} that follow${wordsToGenerate === 1 ? 's' : ''} this guideline: ${categoryPrompt}.
               
-              Provide:
+              For each word, provide:
               1. The word itself (ensure it matches the specified difficulty level)
               2. Clear pronunciation guide (e.g., "EL-oh-kwent")
               3. Concise definition/meaning
@@ -211,7 +227,7 @@ serve(async (req) => {
               5. Natural example sentence showing usage in context
               6. Creative memory hook to help remember the word
               
-              Format your response as a valid JSON array with exactly ONE word object:
+              Format your response as a valid JSON array with exactly ${wordsToGenerate} word object${wordsToGenerate > 1 ? 's' : ''}:
               [
                 {
                   "word": "example",
@@ -221,10 +237,10 @@ serve(async (req) => {
                   "example": "example sentence here",
                   "memory_hook": "creative memory technique here",
                   "category": "${category}"
-                }
+                }${wordsToGenerate > 1 ? ',\n                {\n                  "word": "another",\n                  "pronunciation": "uh-NUHTH-er",\n                  "definition": "one more definition here",\n                  "part_of_speech": "adjective",\n                  "example": "another example sentence here",\n                  "memory_hook": "another memory technique here",\n                  "category": "' + category + '"\n                }' : ''}
               ]
               
-              IMPORTANT: Return exactly 1 word in the array, no more, no less. Do not include code blocks, markdown formatting, or any text outside the JSON array.` 
+              IMPORTANT: Return exactly ${wordsToGenerate} word${wordsToGenerate > 1 ? 's' : ''} in the array, no more, no less. Make sure each word is unique and different from the others. Do not include code blocks, markdown formatting, or any text outside the JSON array.` 
             }
           ],
           temperature: 0.3,
