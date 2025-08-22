@@ -128,17 +128,63 @@ const BulkOperationsTab = () => {
     try {
       setClearLoading(true);
       
-      // Use a more reliable deletion method
-      const { error } = await supabase
-        .from('vocabulary_words')
-        .delete()
-        .not('id', 'is', null); // Delete all records
+      // First check admin status
+      const { data: adminCheck, error: adminError } = await supabase.rpc('has_role', {
+        _user_id: (await supabase.auth.getUser()).data.user?.id,
+        _role: 'admin'
+      });
 
-      if (error) throw error;
+      if (adminError) {
+        throw new Error(`Admin check failed: ${adminError.message}`);
+      }
+
+      if (!adminCheck) {
+        throw new Error('Insufficient permissions: Admin role required');
+      }
+
+      // Get count before deletion for verification
+      const { count: beforeCount, error: countError } = await supabase
+        .from('vocabulary_words')
+        .select('*', { count: 'exact', head: true });
+
+      if (countError) {
+        throw new Error(`Count check failed: ${countError.message}`);
+      }
+
+      console.log(`About to delete ${beforeCount} vocabulary words`);
+
+      // Use service role approach through RPC if direct deletion fails
+      const { data: deleteResult, error: deleteError } = await supabase
+        .rpc('delete_all_vocabulary_words');
+
+      if (deleteError) {
+        // Fallback to direct deletion
+        console.log('RPC failed, trying direct deletion:', deleteError.message);
+        
+        const { error: directDeleteError } = await supabase
+          .from('vocabulary_words')
+          .delete()
+          .not('id', 'is', null);
+
+        if (directDeleteError) {
+          throw new Error(`Direct deletion failed: ${directDeleteError.message}`);
+        }
+      }
+
+      // Verify deletion
+      const { count: afterCount, error: verifyError } = await supabase
+        .from('vocabulary_words')
+        .select('*', { count: 'exact', head: true });
+
+      if (verifyError) {
+        throw new Error(`Verification failed: ${verifyError.message}`);
+      }
+
+      console.log(`Deleted words. Before: ${beforeCount}, After: ${afterCount}`);
 
       toast({
         title: "Words Cleared",
-        description: "All vocabulary words have been deleted successfully.",
+        description: `Successfully deleted ${beforeCount - (afterCount || 0)} vocabulary words.`,
       });
 
       // Refresh stats
@@ -146,8 +192,8 @@ const BulkOperationsTab = () => {
     } catch (error) {
       console.error('Error clearing words:', error);
       toast({
-        title: "Error",
-        description: "Failed to clear vocabulary words",
+        title: "Error", 
+        description: `Failed to clear vocabulary words: ${error.message}`,
         variant: "destructive"
       });
     } finally {
