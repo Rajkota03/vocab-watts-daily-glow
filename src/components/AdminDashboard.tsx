@@ -13,6 +13,7 @@ import ActivityTab from './admin/tabs/ActivityTab';
 import SettingsTab from './admin/tabs/SettingsTab';
 import UserRolesTab from './admin/tabs/UserRolesTab';
 import PromptManagerTab from './admin/tabs/PromptManagerTab';
+import DailyReportTab from './admin/tabs/DailyReportTab';
 
 
 const AdminDashboard = () => {
@@ -67,6 +68,8 @@ const AdminDashboard = () => {
         return <MessagesTab key={refreshKey} />;
       case 'messages-setup':
         return <MessagesSetupTab key={refreshKey} />;
+      case 'daily-report':
+        return <DailyReportTab key={refreshKey} />;
       case 'activity':
         return <ActivityTab key={refreshKey} />;
       case 'settings':

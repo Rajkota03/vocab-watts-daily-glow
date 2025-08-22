@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { 
   Users, BarChart2, MessageSquare, Activity, 
   Settings, Database, PieChart, Shield, FileText,
-  LineChart, ArrowLeft, Image, Phone, Zap
+  LineChart, ArrowLeft, Image, Phone, Zap, Calendar
 } from 'lucide-react';
 import { 
   Sheet, SheetContent, SheetTrigger 
@@ -30,6 +30,7 @@ const navItems: NavItem[] = [
   { title: 'Analytics', icon: LineChart, value: 'analytics', path: '/admin/analytics' },
   { title: 'Prompt Manager', icon: FileText, value: 'prompts', path: '/admin' },
   { title: 'WhatsApp Setup', icon: Phone, value: 'whatsapp-setup', path: '/admin/whatsapp-setup' },
+  { title: 'Daily Report', icon: Calendar, value: 'daily-report', path: '/admin' },
   
   { title: 'Subscriptions', icon: BarChart2, value: 'subscriptions', path: '/admin' },
   { title: 'Messages', icon: MessageSquare, value: 'messages', path: '/admin' },
