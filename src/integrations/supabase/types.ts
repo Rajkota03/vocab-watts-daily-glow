@@ -647,6 +647,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      delete_all_vocabulary_words: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_whatsapp_message_status: {
         Args: { message_sid_param: string }
         Returns: {
