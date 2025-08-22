@@ -48,11 +48,10 @@ const BulkOperationsTab = () => {
     try {
       setStatsLoading(true);
       
-      // Get all vocabulary words except 'general' category
+      // Get all vocabulary words
       const { data: words, error } = await supabase
         .from('vocabulary_words')
         .select('category, word')
-        .neq('category', 'general')
         .order('category');
 
       if (error) throw error;
@@ -122,7 +121,7 @@ const BulkOperationsTab = () => {
   };
 
   const clearAllWords = async () => {
-    if (!window.confirm('Are you sure you want to delete ALL vocabulary words (except general category)? This action cannot be undone!')) {
+    if (!window.confirm('Are you sure you want to delete ALL vocabulary words? This action cannot be undone!')) {
       return;
     }
 
@@ -132,13 +131,13 @@ const BulkOperationsTab = () => {
       const { error } = await supabase
         .from('vocabulary_words')
         .delete()
-        .neq('category', 'general');
+        .gte('id', '00000000-0000-0000-0000-000000000000'); // Delete all
 
       if (error) throw error;
 
       toast({
         title: "Words Cleared",
-        description: "All vocabulary words (except general) have been deleted successfully.",
+        description: "All vocabulary words have been deleted successfully.",
       });
 
       // Refresh stats
@@ -157,7 +156,7 @@ const BulkOperationsTab = () => {
 
   const topUpWords = async () => {
     const totalWords = CATEGORIES.reduce((sum, cat) => sum + cat.levels.length, 0) * wordsPerCategory;
-    if (!window.confirm(`This will first clear existing words, then generate ${wordsPerCategory} words for each category and level combination (approximately ${totalWords.toLocaleString()} total words). Continue?`)) {
+    if (!window.confirm(`This will generate ${wordsPerCategory} NEW words for each category and level combination (approximately ${totalWords.toLocaleString()} total words), avoiding duplicates. Continue?`)) {
       return;
     }
 
@@ -165,18 +164,7 @@ const BulkOperationsTab = () => {
       setLoading(true);
       setTopUpProgress(0);
       
-      // First clear all existing words (except general)
-      setCurrentOperation('Clearing existing vocabulary words...');
-      const { error: clearError } = await supabase
-        .from('vocabulary_words')
-        .delete()
-        .neq('category', 'general');
-
-      if (clearError) {
-        throw new Error(`Failed to clear existing words: ${clearError.message}`);
-      }
-
-      // Now generate new words
+      // Generate new words without clearing
       const totalOperations = CATEGORIES.reduce((sum, cat) => sum + cat.levels.length, 0);
       let completed = 0;
 
@@ -317,7 +305,7 @@ const BulkOperationsTab = () => {
               Clear All Words
             </CardTitle>
             <CardDescription>
-              Remove all vocabulary words except the 'general' category. This cannot be undone.
+              Remove all vocabulary words. This cannot be undone.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -349,7 +337,7 @@ const BulkOperationsTab = () => {
               Top Up Words
             </CardTitle>
             <CardDescription>
-              Clear existing words and generate new words for each category and level combination using AI.
+              Generate new words for each category and level combination using AI, avoiding duplicates.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
