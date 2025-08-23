@@ -41,21 +41,10 @@ const HeroSection = () => {
             </p>
             
             <div className="space-y-4 sm:space-y-0 sm:flex sm:flex-row gap-4 justify-center lg:justify-start">
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                   <Button className="group bg-accent hover:bg-accent/90 text-white px-8 py-4 h-auto w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95 text-lg font-semibold shadow-lg rounded-full">
-                    Try a Free Word Now
-                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md bg-white">
-                  <div className="text-center mb-6">
-                    <h3 className="text-xl font-semibold mb-2">Start your free trial</h3>
-                    <p className="text-gray-600">(30 seconds)</p>
-                  </div>
-                  <EmailSignupForm /> 
-                </DialogContent>
-              </Dialog>
+              <Button className="group bg-accent hover:bg-accent/90 text-white px-8 py-4 h-auto w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95 text-lg font-semibold shadow-lg rounded-full" onClick={() => navigate('/onboarding')}>
+                Start Free Trial
+                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </Button>
               
               <Button onClick={() => navigate('/login')} variant="outline" className="border-primary text-primary hover:bg-primary/10 text-lg px-8 py-4 h-auto w-full sm:w-auto transition-all duration-300 rounded-full">
                 Log in / Go Pro

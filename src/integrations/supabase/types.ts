@@ -133,6 +133,7 @@ export type Database = {
           id: string
           last_name: string
           nick_name: string | null
+          trial_user: boolean | null
           updated_at: string
           whatsapp_number: string
         }
@@ -143,6 +144,7 @@ export type Database = {
           id: string
           last_name: string
           nick_name?: string | null
+          trial_user?: boolean | null
           updated_at?: string
           whatsapp_number: string
         }
@@ -153,6 +155,7 @@ export type Database = {
           id?: string
           last_name?: string
           nick_name?: string | null
+          trial_user?: boolean | null
           updated_at?: string
           whatsapp_number?: string
         }
@@ -638,6 +641,10 @@ export type Database = {
       cleanup_expired_otp_codes: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      convert_trial_to_pro_user: {
+        Args: { user_id_param: string }
+        Returns: boolean
       }
       create_whatsapp_tables: {
         Args: Record<PropertyKey, never>

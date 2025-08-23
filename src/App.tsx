@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Index from './pages/Index';
 import Login from './pages/Login';
+import Onboarding from './pages/Onboarding';
+import Upgrade from './pages/Upgrade';
 import Dashboard from './pages/Dashboard';
 import Admin from './pages/Admin';
 import WhatsAppSetup from './pages/WhatsAppSetup';
@@ -25,7 +27,9 @@ function App() {
         <Toaster />
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/upgrade" element={<Upgrade />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/dashboard" element={
