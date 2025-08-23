@@ -30,10 +30,10 @@ interface CategoryStats {
 const REGULAR_CATEGORIES = [
   { name: 'daily', levels: ['beginner', 'intermediate', 'advanced'] },
   { name: 'business', levels: ['beginner', 'intermediate', 'advanced'] },
-  { name: 'academic', levels: ['beginner', 'intermediate', 'advanced'] },
-  { name: 'creative', levels: ['beginner', 'intermediate', 'advanced'] },
   { name: 'interview', levels: ['beginner', 'intermediate', 'advanced'] },
   { name: 'slang', levels: ['beginner', 'intermediate', 'advanced'] },
+  { name: 'rare', levels: ['beginner', 'intermediate', 'advanced'] },
+  { name: 'expression', levels: ['beginner', 'intermediate', 'advanced'] },
 ];
 
 // Exam categories with specific exam types (not difficulty levels)
