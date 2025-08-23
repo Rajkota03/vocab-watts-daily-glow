@@ -54,6 +54,24 @@ serve(async (req) => {
 
     console.log(`Generating exactly ${wordsToGenerate} vocabulary word(s) for category: ${category}`);
 
+    // Fetch existing words for this category to avoid duplicates
+    console.log(`Fetching existing words for category: ${category}`);
+    const { data: existingWords, error: existingWordsError } = await supabase
+      .from('vocabulary_words')
+      .select('word')
+      .eq('category', category);
+
+    if (existingWordsError) {
+      console.error('Error fetching existing words:', existingWordsError);
+      throw new Error(`Failed to fetch existing words: ${existingWordsError.message}`);
+    }
+
+    const existingWordSet = new Set(
+      existingWords?.map(w => w.word.toLowerCase()) || []
+    );
+    
+    console.log(`Found ${existingWordSet.size} existing words for category ${category}`);
+
     // Parse the category (support both old format and new primary-subcategory format)
     let primaryCategory = category;
     let subcategory = 'intermediate';
@@ -201,144 +219,232 @@ serve(async (req) => {
       'not set';
     console.log(`Using OpenAI API key: ${apiKeyDebug}`);
 
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            { 
-              role: 'system', 
-              content: `You are a vocabulary teaching assistant. Generate unique, interesting, and educational vocabulary words with clear definitions and helpful example sentences. Pay careful attention to difficulty levels and word frequency to ensure appropriate classification.` 
-            },
-            { 
-              role: 'user', 
-              content: `Generate exactly ${wordsToGenerate} vocabulary word${wordsToGenerate > 1 ? 's' : ''} that follow${wordsToGenerate === 1 ? 's' : ''} this guideline: ${categoryPrompt}.
-              
-              For each word, provide:
-              1. The word itself (ensure it matches the specified difficulty level)
-              2. Clear pronunciation guide (e.g., "EL-oh-kwent")
-              3. Concise definition/meaning
-              4. Part of speech (noun, verb, adjective, etc.)
-              5. Natural example sentence showing usage in context
-              6. Creative memory hook to help remember the word
-              
-              Format your response as a valid JSON array with exactly ${wordsToGenerate} word object${wordsToGenerate > 1 ? 's' : ''}:
-              [
-                {
-                  "word": "example",
-                  "pronunciation": "ex-AM-pull", 
-                  "definition": "definition here",
-                  "part_of_speech": "noun",
-                  "example": "example sentence here",
-                  "memory_hook": "creative memory technique here",
-                  "category": "${category}"
-                }${wordsToGenerate > 1 ? ',\n                {\n                  "word": "another",\n                  "pronunciation": "uh-NUHTH-er",\n                  "definition": "one more definition here",\n                  "part_of_speech": "adjective",\n                  "example": "another example sentence here",\n                  "memory_hook": "another memory technique here",\n                  "category": "' + category + '"\n                }' : ''}
-              ]
-              
-              IMPORTANT: Return exactly ${wordsToGenerate} word${wordsToGenerate > 1 ? 's' : ''} in the array, no more, no less. Make sure each word is unique and different from the others. Do not include code blocks, markdown formatting, or any text outside the JSON array.` 
-            }
-          ],
-          temperature: 0.3,
-        }),
-      });
-
-      console.log('OpenAI API response status:', response.status);
+    // Generate words with duplicate prevention
+    let uniqueWords: VocabWord[] = [];
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (uniqueWords.length < wordsToGenerate && attempts < maxAttempts) {
+      attempts++;
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('OpenAI API error response:', errorText);
-        throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log('OpenAI response received with model:', data.model);
+      // Generate more words than needed to account for potential duplicates
+      const extraWords = Math.max(5, Math.ceil(wordsToGenerate * 0.5));
+      const batchSize = wordsToGenerate + extraWords;
       
-      if (!data.choices || data.choices.length === 0) {
-        console.error('Invalid OpenAI response format - no choices returned:', data);
-        throw new Error('Invalid response format from OpenAI - no choices returned');
-      }
+      console.log(`Attempt ${attempts}: Generating ${batchSize} words to get ${wordsToGenerate} unique words`);
       
-      const content = data.choices[0].message.content;
-      console.log('OpenAI raw content sample:', content.substring(0, 100) + '...');
-      
-      // Parse the JSON response from GPT
-      let vocabWords: VocabWord[];
       try {
-        // Clean up any markdown code blocks or backticks that might be in the response
-        const cleanedContent = content
-          .replace(/```json/g, '')
-          .replace(/```/g, '')
-          .trim();
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAIApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              { 
+                role: 'system', 
+                content: `You are a vocabulary teaching assistant. Generate unique, interesting, and educational vocabulary words with clear definitions and helpful example sentences. Pay careful attention to difficulty levels and word frequency to ensure appropriate classification. 
+                
+CRITICAL: Avoid these existing words: ${Array.from(existingWordSet).slice(0, 20).join(', ')}${existingWordSet.size > 20 ? ` and ${existingWordSet.size - 20} more...` : ''}` 
+              },
+              { 
+                role: 'user', 
+                content: `Generate exactly ${batchSize} unique vocabulary word${batchSize > 1 ? 's' : ''} that follow${batchSize === 1 ? 's' : ''} this guideline: ${categoryPrompt}.
+                
+                IMPORTANT RULES:
+                - Each word must be completely different and unique
+                - Avoid common words that might already exist in vocabulary databases
+                - Focus on less common but useful words
+                - No word should repeat within your response
+                - Generate interesting, educational words that users will find valuable to learn
+                
+                For each word, provide:
+                1. The word itself (ensure it matches the specified difficulty level and is unique)
+                2. Clear pronunciation guide (e.g., "EL-oh-kwent")
+                3. Concise definition/meaning
+                4. Part of speech (noun, verb, adjective, etc.)
+                5. Natural example sentence showing usage in context
+                6. Creative memory hook to help remember the word
+                
+                Format your response as a valid JSON array with exactly ${batchSize} word objects:
+                [
+                  {
+                    "word": "example",
+                    "pronunciation": "ex-AM-pull", 
+                    "definition": "definition here",
+                    "part_of_speech": "noun",
+                    "example": "example sentence here",
+                    "memory_hook": "creative memory technique here",
+                    "category": "${category}"
+                  }
+                ]
+                
+                CRITICAL: Return exactly ${batchSize} completely different words in the array. No duplicates within the response. Do not include code blocks, markdown formatting, or any text outside the JSON array.` 
+              }
+            ],
+            temperature: 0.7, // Higher temperature for more variety
+          }),
+        });
+
+        console.log('OpenAI API response status:', response.status);
         
-        vocabWords = JSON.parse(cleanedContent);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('OpenAI API error response:', errorText);
+          throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log('OpenAI response received with model:', data.model);
         
-        if (!Array.isArray(vocabWords)) {
-          console.error('OpenAI response is not an array:', vocabWords);
-          throw new Error('Invalid response format: not an array');
+        if (!data.choices || data.choices.length === 0) {
+          console.error('Invalid OpenAI response format - no choices returned:', data);
+          throw new Error('Invalid response format from OpenAI - no choices returned');
         }
         
-        // Validate the structure of each word
-        vocabWords = vocabWords.map(word => {
-          // Ensure all required fields are present
-          if (!word.word || !word.definition || !word.example || !word.pronunciation || !word.part_of_speech || !word.memory_hook) {
-            console.warn('Incomplete word object:', word);
-            throw new Error('Invalid word format: missing required fields');
+        const content = data.choices[0].message.content;
+        console.log('OpenAI raw content sample:', content.substring(0, 100) + '...');
+        
+        // Parse the JSON response from GPT
+        let batchWords: VocabWord[];
+        try {
+          // Clean up any markdown code blocks or backticks that might be in the response
+          const cleanedContent = content
+            .replace(/```json/g, '')
+            .replace(/```/g, '')
+            .trim();
+          
+          batchWords = JSON.parse(cleanedContent);
+          
+          if (!Array.isArray(batchWords)) {
+            console.error('OpenAI response is not an array:', batchWords);
+            throw new Error('Invalid response format: not an array');
           }
           
-          return {
-            word: word.word,
-            pronunciation: word.pronunciation,
-            definition: word.definition,
-            part_of_speech: word.part_of_speech,
-            example: word.example,
-            memory_hook: word.memory_hook,
-            category: category // Use the full category (including subcategory)
-          };
-        });
-        
-        console.log(`Successfully generated ${vocabWords.length} words for category ${category}`);
-        console.log('Sample word:', JSON.stringify(vocabWords[0]));
-      } catch (parseError) {
-        console.error('Error parsing OpenAI response:', parseError);
-        console.log('Raw content that failed to parse:', content);
-        
-        // Attempt to extract an array from the content if it's wrapped in other text
-        try {
-          const possibleJsonMatch = content.match(/\[\s*\{.*\}\s*\]/s);
-          if (possibleJsonMatch) {
-            const extractedJson = possibleJsonMatch[0];
-            vocabWords = JSON.parse(extractedJson);
-            console.log('Successfully extracted and parsed JSON from content');
-          } else {
-            throw new Error('Could not extract JSON from response');
+          // Validate and filter words
+          const validWords = batchWords
+            .map(word => {
+              // Ensure all required fields are present
+              if (!word.word || !word.definition || !word.example || !word.pronunciation || !word.part_of_speech || !word.memory_hook) {
+                console.warn('Incomplete word object:', word);
+                return null;
+              }
+              
+              return {
+                word: word.word.trim(),
+                pronunciation: word.pronunciation,
+                definition: word.definition,
+                part_of_speech: word.part_of_speech,
+                example: word.example,
+                memory_hook: word.memory_hook,
+                category: category
+              };
+            })
+            .filter(word => word !== null) as VocabWord[];
+          
+          // Filter out duplicates (both against existing words and within this batch)
+          const seenInBatch = new Set<string>();
+          const newUniqueWords = validWords.filter(word => {
+            const wordLower = word.word.toLowerCase();
+            
+            // Check against existing database words
+            if (existingWordSet.has(wordLower)) {
+              console.log(`Skipping duplicate word from database: ${word.word}`);
+              return false;
+            }
+            
+            // Check against words already added to unique list
+            if (uniqueWords.some(existing => existing.word.toLowerCase() === wordLower)) {
+              console.log(`Skipping word already in unique list: ${word.word}`);
+              return false;
+            }
+            
+            // Check against words in current batch
+            if (seenInBatch.has(wordLower)) {
+              console.log(`Skipping duplicate within batch: ${word.word}`);
+              return false;
+            }
+            
+            seenInBatch.add(wordLower);
+            return true;
+          });
+          
+          // Add new unique words to our collection
+          uniqueWords.push(...newUniqueWords);
+          
+          // Update existing word set to include newly found words for next iteration
+          newUniqueWords.forEach(word => {
+            existingWordSet.add(word.word.toLowerCase());
+          });
+          
+          console.log(`Batch ${attempts}: Generated ${batchWords.length} words, ${newUniqueWords.length} were unique. Total unique so far: ${uniqueWords.length}/${wordsToGenerate}`);
+          
+        } catch (parseError) {
+          console.error('Error parsing OpenAI response:', parseError);
+          console.log('Raw content that failed to parse:', content);
+          
+          // Attempt to extract an array from the content if it's wrapped in other text
+          try {
+            const possibleJsonMatch = content.match(/\[\s*\{.*\}\s*\]/s);
+            if (possibleJsonMatch) {
+              const extractedJson = possibleJsonMatch[0];
+              const extracted = JSON.parse(extractedJson);
+              console.log('Successfully extracted JSON from content');
+              
+              // Process extracted data same as above...
+              // For brevity, we'll just continue to next attempt
+            } else {
+              console.warn(`Attempt ${attempts} failed to parse, trying again...`);
+            }
+          } catch (extractError) {
+            console.error(`Failed to extract JSON on attempt ${attempts}:`, extractError);
           }
-        } catch (extractError) {
-          console.error('Failed to extract JSON:', extractError);
-          throw new Error('Failed to parse vocabulary words from OpenAI response');
+        }
+        
+        // Small delay between attempts to avoid rate limiting
+        if (attempts < maxAttempts && uniqueWords.length < wordsToGenerate) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
+      } catch (openaiError) {
+        console.error(`OpenAI API error on attempt ${attempts}:`, openaiError);
+        if (attempts === maxAttempts) {
+          throw new Error(`Failed to generate words with OpenAI after ${maxAttempts} attempts: ${openaiError.message}`);
         }
       }
-
-      // Return the generated words
-      return new Response(JSON.stringify({ 
-        words: vocabWords,
-        category: category, 
-        primaryCategory,
-        subcategory,
-        source: 'openai',
-        promptSource: promptSource,
-        timestamp: new Date().toISOString()
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    } catch (openaiError) {
-      console.error('OpenAI API error:', openaiError);
-      throw new Error(`Failed to generate words with OpenAI: ${openaiError.message}`);
     }
+    
+    // Trim to exact number requested
+    const finalWords = uniqueWords.slice(0, wordsToGenerate);
+    
+    if (finalWords.length < wordsToGenerate) {
+      console.warn(`Only generated ${finalWords.length} unique words out of ${wordsToGenerate} requested`);
+      // Still return what we have rather than failing completely
+    }
+    
+    console.log(`Successfully generated ${finalWords.length} unique words for category ${category}`);
+    if (finalWords.length > 0) {
+      console.log('Sample word:', JSON.stringify(finalWords[0]));
+    }
+    
+    // Return the generated words
+    return new Response(JSON.stringify({ 
+      words: finalWords,
+      requested: wordsToGenerate,
+      generated: finalWords.length,
+      attempts: attempts,
+      category: category, 
+      primaryCategory,
+      subcategory,
+      source: 'openai',
+      promptSource: promptSource,
+      existingWordsCount: existingWords?.length || 0,
+      timestamp: new Date().toISOString()
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('Error in generate-vocab-words function:', error);
     

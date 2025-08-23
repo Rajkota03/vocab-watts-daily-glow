@@ -237,22 +237,47 @@ const BulkOperationsTab = () => {
             } else {
               // Insert the generated words directly into the database
               if (result?.words && result.words.length > 0) {
-                const { error: insertError } = await supabase
+                // Check for existing words before insertion to avoid duplicates
+                const { data: existingCategoryWords, error: fetchError } = await supabase
                   .from('vocabulary_words')
-                  .insert(
-                    result.words.map((word: any) => ({
-                      word: word.word,
-                      definition: word.definition,
-                      example: word.example,
-                      category: categoryLevel,
-                      part_of_speech: word.partOfSpeech || word.part_of_speech,
-                      memory_hook: word.memoryHook || word.memory_hook,
-                      pronunciation: word.pronunciation
-                    }))
-                  );
+                  .select('word')
+                  .eq('category', categoryLevel);
+                
+                if (fetchError) {
+                  console.error(`Error fetching existing words for ${categoryLevel}:`, fetchError);
+                }
+                
+                const existingWordSet = new Set(
+                  existingCategoryWords?.map(w => w.word.toLowerCase()) || []
+                );
+                
+                // Filter out words that already exist in database
+                const uniqueWordsToInsert = result.words.filter((word: any) => 
+                  !existingWordSet.has(word.word.toLowerCase())
+                );
+                
+                if (uniqueWordsToInsert.length > 0) {
+                  const { error: insertError } = await supabase
+                    .from('vocabulary_words')
+                    .insert(
+                      uniqueWordsToInsert.map((word: any) => ({
+                        word: word.word,
+                        definition: word.definition,
+                        example: word.example,
+                        category: categoryLevel,
+                        part_of_speech: word.partOfSpeech || word.part_of_speech,
+                        memory_hook: word.memoryHook || word.memory_hook,
+                        pronunciation: word.pronunciation
+                      }))
+                    );
 
-                if (insertError) {
-                  console.error(`Error inserting words for ${categoryLevel}:`, insertError);
+                  if (insertError) {
+                    console.error(`Error inserting words for ${categoryLevel}:`, insertError);
+                  } else {
+                    console.log(`Successfully inserted ${uniqueWordsToInsert.length} unique words for ${categoryLevel}`);
+                  }
+                } else {
+                  console.log(`No new unique words to insert for ${categoryLevel} (all were duplicates)`);
                 }
               }
             }
@@ -295,22 +320,47 @@ const BulkOperationsTab = () => {
           } else {
             // Insert the generated words directly into the database
             if (result?.words && result.words.length > 0) {
-              const { error: insertError } = await supabase
+              // Check for existing words before insertion to avoid duplicates
+              const { data: existingCategoryWords, error: fetchError } = await supabase
                 .from('vocabulary_words')
-                .insert(
-                  result.words.map((word: any) => ({
-                    word: word.word,
-                    definition: word.definition,
-                    example: word.example,
-                    category: categoryLevel,
-                    part_of_speech: word.partOfSpeech || word.part_of_speech,
-                    memory_hook: word.memoryHook || word.memory_hook,
-                    pronunciation: word.pronunciation
-                  }))
-                );
+                .select('word')
+                .eq('category', categoryLevel);
+              
+              if (fetchError) {
+                console.error(`Error fetching existing words for ${categoryLevel}:`, fetchError);
+              }
+              
+              const existingWordSet = new Set(
+                existingCategoryWords?.map(w => w.word.toLowerCase()) || []
+              );
+              
+              // Filter out words that already exist in database
+              const uniqueWordsToInsert = result.words.filter((word: any) => 
+                !existingWordSet.has(word.word.toLowerCase())
+              );
+              
+              if (uniqueWordsToInsert.length > 0) {
+                const { error: insertError } = await supabase
+                  .from('vocabulary_words')
+                  .insert(
+                    uniqueWordsToInsert.map((word: any) => ({
+                      word: word.word,
+                      definition: word.definition,
+                      example: word.example,
+                      category: categoryLevel,
+                      part_of_speech: word.partOfSpeech || word.part_of_speech,
+                      memory_hook: word.memoryHook || word.memory_hook,
+                      pronunciation: word.pronunciation
+                    }))
+                  );
 
-              if (insertError) {
-                console.error(`Error inserting words for ${categoryLevel}:`, insertError);
+                if (insertError) {
+                  console.error(`Error inserting words for ${categoryLevel}:`, insertError);
+                } else {
+                  console.log(`Successfully inserted ${uniqueWordsToInsert.length} unique words for ${categoryLevel}`);
+                }
+              } else {
+                console.log(`No new unique words to insert for ${categoryLevel} (all were duplicates)`);
               }
             }
           }
