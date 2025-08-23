@@ -105,8 +105,8 @@ serve(async (req) => {
           const istDate = new Date(`${today}T${time}:00`);
           const utcDate = new Date(istDate.getTime() - (5.5 * 60 * 60 * 1000));
           
-          // Generate a consistent user_id if none exists
-          const messageUserId = subscription.user_id || `phone_${subscription.phone_number.replace(/\D/g, '')}`;
+          // Generate a proper UUID if user_id is missing
+          const messageUserId = subscription.user_id || crypto.randomUUID();
           
           outboxMessages.push({
             user_id: messageUserId,
