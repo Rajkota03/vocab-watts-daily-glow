@@ -103,8 +103,8 @@ serve(async (req) => {
       messageId: whatsappResult?.messageId,
       status: whatsappResult?.status,
       webhookUrl: whatsappResult?.webhookUrl,
-      usingTemplate: whatsappResult?.usingTemplate || !!whatsAppTemplateId,
-      templateId: whatsappResult?.templateId || whatsAppTemplateId,
+      usingTemplate: whatsappResult?.usingTemplate || !!metaTemplateId,
+      templateId: whatsappResult?.templateId || metaTemplateId,
       messagingServiceSid: whatsappResult?.messagingServiceSid,
       troubleshooting: whatsappResult?.troubleshooting
     };
