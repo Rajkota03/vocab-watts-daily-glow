@@ -84,7 +84,7 @@ serve(async (req) => {
     
     console.log("Using Meta template:", metaTemplateId);
     
-    const { data: whatsappResult, error: whatsappError } = await supabaseAdmin.functions.invoke(
+    let { data: whatsappResult, error: whatsappError } = await supabaseAdmin.functions.invoke(
       "send-whatsapp",
       { body: requestBody }
     );
