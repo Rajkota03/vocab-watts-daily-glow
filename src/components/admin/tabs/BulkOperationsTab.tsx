@@ -18,23 +18,26 @@ interface CategoryStats {
     beginner?: number;
     intermediate?: number;
     advanced?: number;
-    professional?: number;
+    gre?: number;
+    gmat?: number;
+    ielts?: number;
+    sat?: number;
+    toefl?: number;
   };
 }
 
-const CATEGORIES = [
+// Regular categories with difficulty levels
+const REGULAR_CATEGORIES = [
   { name: 'daily', levels: ['beginner', 'intermediate', 'advanced'] },
-  { name: 'business', levels: ['beginner', 'intermediate', 'professional'] },
-  { name: 'academic', levels: ['intermediate', 'advanced'] },
-  { name: 'creative', levels: ['intermediate', 'advanced'] },
-  { name: 'exam-gre', levels: ['intermediate', 'advanced'] },
-  { name: 'exam-ielts', levels: ['intermediate', 'advanced'] },
-  { name: 'exam-toefl', levels: ['intermediate', 'advanced'] },
-  { name: 'exam-cat', levels: ['intermediate', 'advanced'] },
-  { name: 'exam-gmat', levels: ['intermediate', 'advanced'] },
-  { name: 'interview', levels: ['beginner', 'intermediate'] },
-  { name: 'slang', levels: ['intermediate', 'advanced'] },
+  { name: 'business', levels: ['beginner', 'intermediate', 'advanced'] },
+  { name: 'academic', levels: ['beginner', 'intermediate', 'advanced'] },
+  { name: 'creative', levels: ['beginner', 'intermediate', 'advanced'] },
+  { name: 'interview', levels: ['beginner', 'intermediate', 'advanced'] },
+  { name: 'slang', levels: ['beginner', 'intermediate', 'advanced'] },
 ];
+
+// Exam categories with specific exam types (not difficulty levels)
+const EXAM_TYPES = ['gre', 'gmat', 'ielts', 'sat', 'toefl'];
 
 const BulkOperationsTab = () => {
   const [loading, setLoading] = useState(false);
@@ -61,34 +64,60 @@ const BulkOperationsTab = () => {
 
       if (error) throw error;
 
-      // Process stats by category
+      // Initialize category map with proper structure
       const categoryMap = new Map<string, CategoryStats>();
       
+      // Initialize regular categories
+      REGULAR_CATEGORIES.forEach(category => {
+        categoryMap.set(category.name, {
+          category: category.name,
+          total_words: 0,
+          duplicates: 0,
+          levels: {}
+        });
+      });
+      
+      // Initialize exam category
+      categoryMap.set('exam', {
+        category: 'exam',
+        total_words: 0,
+        duplicates: 0,
+        levels: {}
+      });
+
       words?.forEach(word => {
-        const mainCategory = word.category.split('-')[0];
-        const level = word.category.includes('-') ? word.category.split('-')[1] : 'intermediate';
-        
-        if (!categoryMap.has(mainCategory)) {
-          categoryMap.set(mainCategory, {
-            category: mainCategory,
-            total_words: 0,
-            duplicates: 0,
-            levels: {}
-          });
+        if (word.category.startsWith('exam-')) {
+          // Handle exam categories
+          const examType = word.category.replace('exam-', '');
+          const examStats = categoryMap.get('exam')!;
+          examStats.total_words++;
+          examStats.levels[examType as keyof typeof examStats.levels] = 
+            (examStats.levels[examType as keyof typeof examStats.levels] || 0) + 1;
+        } else if (word.category.includes('-')) {
+          // Handle regular categories with levels
+          const [categoryName, level] = word.category.split('-');
+          if (categoryMap.has(categoryName)) {
+            const categoryStats = categoryMap.get(categoryName)!;
+            categoryStats.total_words++;
+            categoryStats.levels[level as keyof typeof categoryStats.levels] = 
+              (categoryStats.levels[level as keyof typeof categoryStats.levels] || 0) + 1;
+          }
         }
-        
-        const categoryStats = categoryMap.get(mainCategory)!;
-        categoryStats.total_words++;
-        categoryStats.levels[level as keyof typeof categoryStats.levels] = 
-          (categoryStats.levels[level as keyof typeof categoryStats.levels] || 0) + 1;
       });
 
       // Check for duplicates within each category
       const duplicatePromises = Array.from(categoryMap.keys()).map(async (category) => {
+        let pattern = category;
+        if (category === 'exam') {
+          pattern = 'exam-%';
+        } else {
+          pattern = `${category}-%`;
+        }
+        
         const { data: categoryWords, error } = await supabase
           .from('vocabulary_words')
           .select('word')
-          .like('category', `${category}%`);
+          .like('category', pattern);
         
         if (error) return { category, duplicates: 0 };
         
@@ -165,7 +194,10 @@ const BulkOperationsTab = () => {
   };
 
   const topUpWords = async () => {
-    const totalWords = CATEGORIES.reduce((sum, cat) => sum + cat.levels.length, 0) * wordsPerCategory;
+    const regularTotal = REGULAR_CATEGORIES.reduce((sum, cat) => sum + cat.levels.length, 0);
+    const examTotal = EXAM_TYPES.length;
+    const totalWords = (regularTotal + examTotal) * wordsPerCategory;
+    
     if (!window.confirm(`This will generate ${wordsPerCategory} NEW words for each category and level combination (approximately ${totalWords.toLocaleString()} total words), avoiding duplicates. Continue?`)) {
       return;
     }
@@ -174,11 +206,11 @@ const BulkOperationsTab = () => {
       setLoading(true);
       setTopUpProgress(0);
       
-      // Generate new words without clearing
-      const totalOperations = CATEGORIES.reduce((sum, cat) => sum + cat.levels.length, 0);
+      const totalOperations = regularTotal + examTotal;
       let completed = 0;
 
-      for (const category of CATEGORIES) {
+      // Handle regular categories
+      for (const category of REGULAR_CATEGORIES) {
         for (const level of category.levels) {
           const categoryLevel = `${category.name}-${level}`;
           setCurrentOperation(`Generating words for ${categoryLevel}...`);
@@ -234,6 +266,63 @@ const BulkOperationsTab = () => {
           // Small delay to prevent overwhelming the API
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
+      }
+
+      // Handle exam types
+      for (const examType of EXAM_TYPES) {
+        const categoryLevel = `exam-${examType}`;
+        setCurrentOperation(`Generating words for ${categoryLevel}...`);
+
+        try {
+          const { data: result, error: funcError } = await supabase.functions.invoke('generate-vocab-words', {
+            body: {
+              category: categoryLevel,
+              count: wordsPerCategory
+            }
+          });
+
+          if (funcError) {
+            throw new Error(`Function error: ${funcError.message}`);
+          }
+          
+          if (result?.error) {
+            console.warn(`Failed to generate words for ${categoryLevel}:`, result.error);
+            toast({
+              title: "Partial Failure",
+              description: `Failed to generate words for ${categoryLevel}`,
+              variant: "destructive"
+            });
+          } else {
+            // Insert the generated words directly into the database
+            if (result?.words && result.words.length > 0) {
+              const { error: insertError } = await supabase
+                .from('vocabulary_words')
+                .insert(
+                  result.words.map((word: any) => ({
+                    word: word.word,
+                    definition: word.definition,
+                    example: word.example,
+                    category: categoryLevel,
+                    part_of_speech: word.partOfSpeech || word.part_of_speech,
+                    memory_hook: word.memoryHook || word.memory_hook,
+                    pronunciation: word.pronunciation
+                  }))
+                );
+
+              if (insertError) {
+                console.error(`Error inserting words for ${categoryLevel}:`, insertError);
+              }
+            }
+          }
+        } catch (err) {
+          console.error(`Error processing ${categoryLevel}:`, err);
+        }
+
+        completed++;
+        setTopUpProgress((completed / totalOperations) * 100);
+        
+        // Small delay to prevent overwhelming the API
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
       setCurrentOperation('');
@@ -300,7 +389,7 @@ const BulkOperationsTab = () => {
             <CardTitle className="text-sm font-medium">Categories</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{CATEGORIES.length}</div>
+            <div className="text-2xl font-bold">{REGULAR_CATEGORIES.length + 1}</div>
             <p className="text-xs text-muted-foreground">Active categories</p>
           </CardContent>
         </Card>
@@ -367,7 +456,7 @@ const BulkOperationsTab = () => {
                 placeholder="Enter number of words"
               />
               <p className="text-xs text-muted-foreground">
-                Total words to generate: {(CATEGORIES.reduce((sum, cat) => sum + cat.levels.length, 0) * wordsPerCategory).toLocaleString()}
+                Total words to generate: {((REGULAR_CATEGORIES.reduce((sum, cat) => sum + cat.levels.length, 0) + EXAM_TYPES.length) * wordsPerCategory).toLocaleString()}
               </p>
             </div>
             <Button 
@@ -432,8 +521,12 @@ const BulkOperationsTab = () => {
                         <th className="text-center p-2 font-medium">Beginner</th>
                         <th className="text-center p-2 font-medium">Intermediate</th>
                         <th className="text-center p-2 font-medium">Advanced</th>
-                        <th className="text-center p-2 font-medium">Professional</th>
-                        <th className="text-center p-2 font-medium">Total Words</th>
+                        <th className="text-center p-2 font-medium">GRE</th>
+                        <th className="text-center p-2 font-medium">GMAT</th>
+                        <th className="text-center p-2 font-medium">IELTS</th>
+                        <th className="text-center p-2 font-medium">SAT</th>
+                        <th className="text-center p-2 font-medium">TOEFL</th>
+                        <th className="text-center p-2 font-medium">Total</th>
                         <th className="text-center p-2 font-medium">Duplicates</th>
                       </tr>
                     </thead>
@@ -441,47 +534,80 @@ const BulkOperationsTab = () => {
                       {stats.map((stat) => (
                         <tr key={stat.category} className="border-b hover:bg-muted/50">
                           <td className="p-2 font-medium capitalize">
-                            {stat.category === 'exam' ? 'Exam (GRE, IELTS, TOEFL, CAT, GMAT)' : stat.category}
+                            {stat.category === 'exam' ? 'Exam (All Types)' : stat.category}
                           </td>
-                          <td className="text-center p-2">
-                            <Badge variant={stat.levels.beginner ? "default" : "secondary"}>
-                              {stat.levels.beginner || 0}
-                            </Badge>
-                          </td>
-                          <td className="text-center p-2">
-                            <Badge variant={stat.levels.intermediate ? "default" : "secondary"}>
-                              {stat.levels.intermediate || 0}
-                            </Badge>
-                          </td>
-                          <td className="text-center p-2">
-                            <Badge variant={stat.levels.advanced ? "default" : "secondary"}>
-                              {stat.levels.advanced || 0}
-                            </Badge>
-                          </td>
-                          <td className="text-center p-2">
-                            <Badge variant={stat.levels.professional ? "default" : "secondary"}>
-                              {stat.levels.professional || 0}
-                            </Badge>
-                          </td>
+                          {stat.category === 'exam' ? (
+                            <>
+                              <td className="text-center p-2">-</td>
+                              <td className="text-center p-2">-</td>
+                              <td className="text-center p-2">-</td>
+                              <td className="text-center p-2">
+                                <Badge variant={stat.levels.gre ? "default" : "secondary"}>
+                                  {stat.levels.gre || 0}
+                                </Badge>
+                              </td>
+                              <td className="text-center p-2">
+                                <Badge variant={stat.levels.gmat ? "default" : "secondary"}>
+                                  {stat.levels.gmat || 0}
+                                </Badge>
+                              </td>
+                              <td className="text-center p-2">
+                                <Badge variant={stat.levels.ielts ? "default" : "secondary"}>
+                                  {stat.levels.ielts || 0}
+                                </Badge>
+                              </td>
+                              <td className="text-center p-2">
+                                <Badge variant={stat.levels.sat ? "default" : "secondary"}>
+                                  {stat.levels.sat || 0}
+                                </Badge>
+                              </td>
+                              <td className="text-center p-2">
+                                <Badge variant={stat.levels.toefl ? "default" : "secondary"}>
+                                  {stat.levels.toefl || 0}
+                                </Badge>
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="text-center p-2">
+                                <Badge variant={stat.levels.beginner ? "default" : "secondary"}>
+                                  {stat.levels.beginner || 0}
+                                </Badge>
+                              </td>
+                              <td className="text-center p-2">
+                                <Badge variant={stat.levels.intermediate ? "default" : "secondary"}>
+                                  {stat.levels.intermediate || 0}
+                                </Badge>
+                              </td>
+                              <td className="text-center p-2">
+                                <Badge variant={stat.levels.advanced ? "default" : "secondary"}>
+                                  {stat.levels.advanced || 0}
+                                </Badge>
+                              </td>
+                              <td className="text-center p-2">-</td>
+                              <td className="text-center p-2">-</td>
+                              <td className="text-center p-2">-</td>
+                              <td className="text-center p-2">-</td>
+                              <td className="text-center p-2">-</td>
+                            </>
+                          )}
                           <td className="text-center p-2">
                             <Badge variant="outline" className="font-bold">
                               {stat.total_words}
                             </Badge>
                           </td>
                           <td className="text-center p-2">
-                            {stat.duplicates > 0 ? (
-                              <Badge variant="destructive" className="flex items-center gap-1 justify-center">
-                                <AlertCircle className="h-3 w-3" />
-                                {stat.duplicates}
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary">0</Badge>
-                            )}
+                            <Badge 
+                              variant={stat.duplicates > 0 ? "destructive" : "secondary"}
+                              className={stat.duplicates > 0 ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200" : ""}
+                            >
+                              {stat.duplicates}
+                            </Badge>
                           </td>
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                   </table>
                 </div>
               )}
             </div>
