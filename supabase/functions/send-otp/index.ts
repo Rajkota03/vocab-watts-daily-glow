@@ -61,33 +61,28 @@ serve(async (req) => {
     console.log("OTP stored successfully.");
 
     // --- Send OTP via WhatsApp (Invoke send-whatsapp function) ---
-    // Format the OTP message with clear formatting for better visibility
+    // Format the OTP message with clear formatting for better visibility (fallback)
     const otpMessage = `Your GlintUp verification code is: *${otp}*\n\nThis code will expire in 10 minutes. Do not share this code with anyone.`;
     
-    // Get template ID from parameter, environment or default
-    const whatsAppTemplateId = templateId || 
-      Deno.env.get("WHATSAPP_TEMPLATE_SID") || 
-      Deno.env.get("TWILIO_WHATSAPP_TEMPLATE_SID");
+    // Use the Meta WhatsApp template for OTP (replace with your actual template name)
+    const metaTemplateId = templateId || "otp_verification_glintup";
     
     console.log(`Invoking send-whatsapp to send OTP ${otp} to ${formattedPhone}`);
-    console.log(`Using template: ${whatsAppTemplateId ? 'Yes' : 'No'}`);
+    console.log(`Using Meta template: ${metaTemplateId}`);
     
     const requestBody: any = {
       to: formattedPhone,
-      message: otpMessage, // Fallback message if template is not available or fails
+      message: otpMessage, // Fallback message if template fails
+      templateId: metaTemplateId,
+      templateLanguage: "en",
+      templateValues: {
+        "1": otp,           // {{1}} in template = OTP code
+        "2": "10"           // {{2}} in template = expiry minutes
+      },
       debugMode: true
     };
     
-    // If a template ID is available, use it (this will bypass opt-in requirements)
-    if (whatsAppTemplateId) {
-      requestBody.templateId = whatsAppTemplateId;
-      requestBody.templateValues = {
-        otp: otp,
-        expiryMinutes: "10",
-        appName: "GlintUp"
-      };
-      console.log("Using template ID:", whatsAppTemplateId);
-    }
+    console.log("Using Meta template:", metaTemplateId);
     
     const { data: whatsappResult, error: whatsappError } = await supabaseAdmin.functions.invoke(
       "send-whatsapp",

@@ -165,15 +165,42 @@ async function handleMetaRequest(req: Request, requestData: any) {
     // Format phone number for Meta API (remove whatsapp: prefix if present)
     const formattedTo = to.replace('whatsapp:', '').replace(/[^\d+]/g, '');
     
-    // Prepare Meta WhatsApp API payload
-    const metaPayload = {
-      messaging_product: "whatsapp",
-      to: formattedTo,
-      type: "text",
-      text: {
-        body: finalMessage
-      }
-    };
+    // Check if this is a template message request
+    let metaPayload;
+    if (requestData.templateId && requestData.templateValues) {
+      // Use Meta WhatsApp template
+      console.log("Using Meta WhatsApp template:", requestData.templateId);
+      metaPayload = {
+        messaging_product: "whatsapp",
+        to: formattedTo,
+        type: "template",
+        template: {
+          name: requestData.templateId,
+          language: {
+            code: requestData.templateLanguage || "en"
+          },
+          components: [
+            {
+              type: "body",
+              parameters: Object.values(requestData.templateValues).map(value => ({
+                type: "text",
+                text: String(value)
+              }))
+            }
+          ]
+        }
+      };
+    } else {
+      // Use regular text message
+      metaPayload = {
+        messaging_product: "whatsapp",
+        to: formattedTo,
+        type: "text",
+        text: {
+          body: finalMessage
+        }
+      };
+    }
     
     console.log("Meta API payload prepared for:", formattedTo);
 
