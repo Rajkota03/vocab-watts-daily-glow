@@ -89,9 +89,27 @@ serve(async (req) => {
       { body: requestBody }
     );
 
-    if (whatsappError) {
-      console.error("Error invoking send-whatsapp function:", whatsappError);
-      throw new Error(`Failed to send OTP via WhatsApp: ${whatsappError.message}`);
+    // If template fails, try with plain text message
+    if (whatsappError || (whatsappResult && !whatsappResult.success)) {
+      console.log("Template failed, trying with plain text message");
+      const fallbackRequest = {
+        to: formattedPhone,
+        message: otpMessage,
+        debugMode: true
+      };
+      
+      const { data: fallbackResult, error: fallbackError } = await supabaseAdmin.functions.invoke(
+        "send-whatsapp",
+        { body: fallbackRequest }
+      );
+      
+      if (fallbackError) {
+        console.error("Error with fallback message:", fallbackError);
+        throw new Error(`Failed to send OTP via WhatsApp: ${fallbackError.message}`);
+      }
+      
+      // Use fallback result for response
+      whatsappResult = fallbackResult;
     }
 
     console.log("send-whatsapp invoked successfully for OTP:", whatsappResult);
