@@ -65,7 +65,7 @@ serve(async (req) => {
     const otpMessage = `Your GlintUp verification code is: *${otp}*\n\nThis code will expire in 10 minutes. Do not share this code with anyone.`;
     
     // Use the Meta WhatsApp template for OTP (replace with your actual template name)
-    const metaTemplateId = templateId || "otp_verification_glintup";
+    const metaTemplateId = templateId || "glintup_otp_code";
     
     console.log(`Invoking send-whatsapp to send OTP ${otp} to ${formattedPhone}`);
     console.log(`Using Meta template: ${metaTemplateId}`);
