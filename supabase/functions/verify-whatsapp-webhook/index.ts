@@ -21,7 +21,7 @@ serve(async (req) => {
     const webhookInfo = {
       url: webhookUrl,
       verifyTokenConfigured: !!verifyToken,
-      provider: 'twilio',
+      provider: 'meta',
       updated_at: new Date().toISOString()
     };
 
