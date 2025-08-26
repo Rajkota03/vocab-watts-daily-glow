@@ -94,6 +94,7 @@ serve(async (req) => {
       .from('outbox_messages')
       .delete()
       .eq('user_id', userId)
+      .eq('status', 'queued')
       .gte('send_at', `${today}T00:00:00.000Z`)
       .lt('send_at', `${today}T23:59:59.999Z`);
 
@@ -143,6 +144,7 @@ serve(async (req) => {
           phone: phoneNumber,
           send_at: sendAtUTC.toISOString(),
           template: 'glintup_vocab_fulfilment',
+          scheduler_source: 'manual-scheduler',
           variables: {
             word: word.word,
             definition: word.definition,

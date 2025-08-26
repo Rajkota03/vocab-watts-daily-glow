@@ -79,9 +79,31 @@ serve(async (req) => {
           settings = newSettings;
         }
 
-        // Use delivery_time from subscription if no user settings
-        const wordsPerDay = settings?.words_per_day || 3;
-        const deliveryTimes = generateDeliveryTimes(subscription.delivery_time, wordsPerDay);
+        // Get delivery times based on mode
+        let deliveryTimes: string[];
+        let wordsPerDay: number;
+        
+        if (settings?.mode === 'custom') {
+          // Get custom times for this user
+          const { data: customTimes } = await supabase
+            .from('user_custom_times')
+            .select('time')
+            .eq('user_id', subscription.user_id)
+            .order('position');
+          
+          if (customTimes && customTimes.length > 0) {
+            deliveryTimes = customTimes.map(ct => ct.time);
+            wordsPerDay = customTimes.length;
+          } else {
+            // Fallback to auto mode if no custom times found
+            wordsPerDay = settings.words_per_day || 3;
+            deliveryTimes = generateDeliveryTimes(subscription.delivery_time, wordsPerDay);
+          }
+        } else {
+          // Auto mode
+          wordsPerDay = settings?.words_per_day || 3;
+          deliveryTimes = generateDeliveryTimes(subscription.delivery_time, wordsPerDay);
+        }
 
         console.log(`Scheduling ${wordsPerDay} words for ${subscription.phone_number} at times:`, deliveryTimes);
 
@@ -113,6 +135,7 @@ serve(async (req) => {
             phone: subscription.phone_number,
             send_at: utcDate.toISOString(),
             template: 'glintup_vocab_fulfilment',
+            scheduler_source: 'daily-scheduler',
             variables: {
               word: word.word,
               definition: word.definition,

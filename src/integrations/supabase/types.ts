@@ -71,6 +71,7 @@ export type Database = {
           id: string
           phone: string
           retries: number
+          scheduler_source: string | null
           send_at: string
           status: string
           template: string
@@ -83,6 +84,7 @@ export type Database = {
           id?: string
           phone: string
           retries?: number
+          scheduler_source?: string | null
           send_at: string
           status?: string
           template?: string
@@ -95,6 +97,7 @@ export type Database = {
           id?: string
           phone?: string
           retries?: number
+          scheduler_source?: string | null
           send_at?: string
           status?: string
           template?: string
