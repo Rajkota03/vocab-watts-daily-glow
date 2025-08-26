@@ -84,7 +84,12 @@ const DeliveryReport: React.FC = () => {
   useEffect(() => {
     fetchReport();
     // Optional: auto-refresh every 5 minutes to keep the report fresh
-    const id = setInterval(fetchReport, 5 * 60 * 1000);
+    const id = setInterval(() => {
+      // Only refresh if the page is visible
+      if (!document.hidden) {
+        fetchReport();
+      }
+    }, 5 * 60 * 1000);
     return () => clearInterval(id);
   }, []);
 

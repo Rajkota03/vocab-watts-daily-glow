@@ -9,6 +9,7 @@ import Admin from './pages/Admin';
 import WhatsAppSetup from './pages/WhatsAppSetup';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
+import EmailConfirmation from './pages/EmailConfirmation';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Toaster } from "@/components/ui/toaster";
 import WhatsAppTest from './pages/WhatsAppTest';
@@ -32,6 +33,7 @@ function App() {
           <Route path="/upgrade" element={<Upgrade />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/auth/confirm" element={<EmailConfirmation />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />

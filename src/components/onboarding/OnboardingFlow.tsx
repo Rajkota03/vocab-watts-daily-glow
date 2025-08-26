@@ -67,7 +67,7 @@ const OnboardingFlow = () => {
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/auth/confirm`,
           data: {
             first_name: firstName.trim(),
             last_name: lastName.trim(),

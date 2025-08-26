@@ -22,15 +22,16 @@ export const useEmailAuth = () => {
         setUser(session?.user ?? null);
         
         if (event === 'SIGNED_IN' && session?.user) {
-          // Handle successful signup/login
+          // Handle successful signup/login - always redirect to dashboard
           setTimeout(() => {
-            handleAuthSuccess(session.user);
+            navigate('/dashboard');
           }, 0);
         }
         
         if (event === 'SIGNED_OUT') {
           setUser(null);
           setSession(null);
+          navigate('/');
         }
         
         setIsLoading(false);
