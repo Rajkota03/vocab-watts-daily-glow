@@ -25,8 +25,20 @@ serve(async (req) => {
     const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
     const messagingServiceSid = Deno.env.get("TWILIO_MESSAGING_SERVICE_SID");
 
+    console.log("Checking Twilio credentials:", {
+      accountSid: accountSid ? `Present (${accountSid.substring(0, 6)}...)` : "Missing",
+      authToken: authToken ? "Present" : "Missing",
+      messagingServiceSid: messagingServiceSid ? `Present (${messagingServiceSid.substring(0, 6)}...)` : "Missing"
+    });
+
     if (!accountSid || !authToken || !messagingServiceSid) {
-      throw new Error("Twilio credentials not configured. Please set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_MESSAGING_SERVICE_SID.");
+      const error = `Twilio credentials not configured. Missing: ${[
+        !accountSid && "TWILIO_ACCOUNT_SID",
+        !authToken && "TWILIO_AUTH_TOKEN", 
+        !messagingServiceSid && "TWILIO_MESSAGING_SERVICE_SID"
+      ].filter(Boolean).join(", ")}`;
+      console.error(error);
+      throw new Error(error);
     }
 
     // Format phone number (ensure + prefix)
