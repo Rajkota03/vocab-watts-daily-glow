@@ -32,7 +32,7 @@ serve(async (req) => {
     // Format phone number (ensure + prefix)
     const formattedTo = to.startsWith('+') ? to : `+${to}`;
     
-    console.log(`Sending SMS via Twilio to: ${formattedTo}`);
+    console.log(`Sending SMS via Twilio Messaging Service to: ${formattedTo}`);
     if (debugMode) {
       console.log(`Message: ${message}`);
     }
