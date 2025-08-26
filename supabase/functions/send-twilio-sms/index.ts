@@ -23,10 +23,10 @@ serve(async (req) => {
     // Get Twilio credentials from environment
     const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
     const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const fromNumber = Deno.env.get("TWILIO_FROM_NUMBER");
+    const messagingServiceSid = Deno.env.get("TWILIO_MESSAGING_SERVICE_SID");
 
-    if (!accountSid || !authToken || !fromNumber) {
-      throw new Error("Twilio credentials not configured. Please set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_FROM_NUMBER.");
+    if (!accountSid || !authToken || !messagingServiceSid) {
+      throw new Error("Twilio credentials not configured. Please set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_MESSAGING_SERVICE_SID.");
     }
 
     // Format phone number (ensure + prefix)
@@ -42,7 +42,7 @@ serve(async (req) => {
     
     const formData = new FormData();
     formData.append('To', formattedTo);
-    formData.append('From', fromNumber);
+    formData.append('MessagingServiceSid', messagingServiceSid);
     formData.append('Body', message);
 
     // Send SMS via Twilio
@@ -79,7 +79,7 @@ serve(async (req) => {
         credentials: {
           accountSid: accountSid ? "Set" : "Missing",
           authToken: authToken ? "Set" : "Missing", 
-          fromNumber: fromNumber || "Missing"
+          messagingServiceSid: messagingServiceSid || "Missing"
         }
       } : undefined
     }), {
