@@ -4,7 +4,6 @@ import { ArrowRight, CheckCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import EmailSignupForm from './auth/EmailSignupForm';
 import { useNavigate } from 'react-router-dom';
-import heroIllustration from '@/assets/hero-learning-illustration.jpg';
 const HeroSection = () => {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const navigate = useNavigate();
@@ -18,8 +17,8 @@ const HeroSection = () => {
               <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-accent/10 rounded-full blur-xl"></div>
               
               <img 
-                src={heroIllustration} 
-                alt="Person learning vocabulary on WhatsApp - cartoon illustration" 
+                src="/lovable-uploads/real-names-illustration.png" 
+                alt="Person with smartphone showing real contact names like Sarah Johnson, Michael Chen - modern illustration" 
                 className="w-full h-auto object-contain relative z-10 rounded-2xl shadow-lg"
               />
             </div>
