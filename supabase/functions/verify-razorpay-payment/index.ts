@@ -66,11 +66,9 @@ serve(async (req) => {
       razorpay_payment_id,
       razorpay_signature,
       email,
-      password, // WARNING: Receiving password here is insecure. Consider alternative auth flows.
       firstName,
       lastName,
       whatsappNumber,
-      // deliveryTime // Add if needed for subscription update
     } = await req.json();
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !email || !whatsappNumber || !firstName) {
@@ -93,13 +91,12 @@ serve(async (req) => {
 
     console.log("Razorpay signature verified successfully.");
 
-    // --- Find or Create User Account ---
+    // --- Find Existing User Only ---
     let userId: string | undefined;
-    let userExists = false;
 
-    // Check if user exists by email
+    // Check if user exists by email in profiles table
     const { data: existingUserData, error: getUserError } = await supabaseAdmin
-      .from("users") // Assuming you query the auth.users table or a profiles table
+      .from("profiles")
       .select("id")
       .eq("email", email)
       .single();
@@ -111,31 +108,11 @@ serve(async (req) => {
 
     if (existingUserData) {
       userId = existingUserData.id;
-      userExists = true;
       console.log(`User found with email ${email}, ID: ${userId}`);
     } else {
-      // User doesn't exist, create one
-      console.log(`User not found with email ${email}. Creating new user...`);
-      if (!password) {
-         throw new Error("Password is required to create a new user account.");
-      }
-      const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-        email: email,
-        password: password,
-        email_confirm: true, // Auto-confirm email for simplicity, adjust as needed
-        user_metadata: {
-          first_name: firstName,
-          last_name: lastName || firstName, // Use first name if last name is missing
-          whatsapp_number: formattedWhatsappNumber,
-        },
-      });
-
-      if (createUserError) {
-        console.error("Error creating user:", createUserError);
-        throw new Error(`Failed to create user account: ${createUserError.message}`);
-      }
-      userId = newUser?.user?.id;
-      console.log(`New user created successfully, ID: ${userId}`);
+      // User doesn't exist - payment should only be processed for existing authenticated users
+      console.error(`Payment verification failed: No user found with email ${email}`);
+      throw new Error("Payment verification failed: User must be registered and authenticated first.");
     }
 
     if (!userId) {

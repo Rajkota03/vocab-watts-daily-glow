@@ -18,13 +18,29 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Update the WhatsApp configuration with new token
+    // Get WhatsApp configuration from environment variables
+    const metaAccessToken = Deno.env.get('META_ACCESS_TOKEN')
+    const metaPhoneNumberId = Deno.env.get('META_PHONE_NUMBER_ID')
+    const whatsappVerifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN')
+
+    if (!metaAccessToken || !metaPhoneNumberId || !whatsappVerifyToken) {
+      console.error('Missing required WhatsApp environment variables')
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'WhatsApp configuration missing. Please contact administrator.' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
+
+    // Update the WhatsApp configuration with tokens from environment
     const { data, error } = await supabase
       .from('whatsapp_config')
       .upsert({
-        token: 'EAAXbVrl8PJkBPFpwqILHVNZA0YU0b3Qylm0K3o2vD28ARaiGd4kiASqbbf98NyBcc9n3VpptZAzuaeoCYAU060kpIHpP2i5mVBy2srBhE6i04Ma05B7zK2o9Fu7SglLiSqF1axgEUcufZCZCWk2JcfIXK53AbC12PNrYXvqpwZBi6lHFszjjbMN0ukpER5HTKcAZDZD',
-        phone_number_id: '1210928836703397',
-        verify_token: 'glintup_verify_2024',
+        token: metaAccessToken,
+        phone_number_id: metaPhoneNumberId,
+        verify_token: whatsappVerifyToken,
         provider: 'meta',
         updated_at: new Date().toISOString()
       })

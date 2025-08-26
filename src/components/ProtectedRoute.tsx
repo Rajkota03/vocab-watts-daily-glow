@@ -87,14 +87,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
       try {
         console.log("ProtectedRoute: Handling auth check for:", session.user.email);
         
-        // For admin email, auto-authorize
-        if (session.user.email === 'rajkota.sql@gmail.com' && requiredRole === 'admin') {
-          console.log("ProtectedRoute: Admin user authorized");
-          authCheckComplete = true;
-          setIsAuthorized(true);
-          setIsLoading(false);
-          return;
-        }
+        // Check for admin role using proper role-based authorization
+        // Remove hardcoded email check for security
 
         // For regular users accessing dashboard (default role), just authorize them
         if (requiredRole === 'user') {
