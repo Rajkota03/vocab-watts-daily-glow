@@ -73,9 +73,8 @@ serve(async (req) => {
       .select("*")
       .eq("phone_number", formattedPhone)
       .limit(1)
-      .maybeSingle();  // Using maybeSingle instead of single to prevent errors
+      .maybeSingle();
 
-    // --- Create session or return subscription data ---
     let responseData = { success: true };
 
     if (subError) {
@@ -85,6 +84,67 @@ serve(async (req) => {
       console.log("Existing subscription found:", subscriptionData);
       responseData.subscriptionExists = true;
       responseData.subscription = subscriptionData;
+
+      // --- Create or sign in user if subscription exists ---
+      if (subscriptionData.user_id) {
+        // User has an existing Supabase Auth account, create session
+        console.log("Creating session for existing user:", subscriptionData.user_id);
+        
+        const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
+          type: 'magiclink',
+          email: subscriptionData.email || `${formattedPhone.replace('+', '')}@phone.temp`,
+        });
+
+        if (!sessionError && sessionData) {
+          responseData.session = sessionData;
+          responseData.user = sessionData.user;
+        } else {
+          console.error("Error creating session:", sessionError);
+        }
+      } else {
+        // Create a new Supabase Auth user for this phone number
+        const tempEmail = `${formattedPhone.replace('+', '')}@phone.temp`;
+        console.log("Creating new Auth user for phone:", formattedPhone);
+        
+        const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
+          email: tempEmail,
+          phone: formattedPhone,
+          email_confirm: true,
+          phone_confirm: true,
+          user_metadata: {
+            phone_number: formattedPhone,
+            verified_via_otp: true,
+            first_name: subscriptionData.first_name,
+            last_name: subscriptionData.last_name
+          }
+        });
+
+        if (createUserError) {
+          console.error("Error creating user:", createUserError);
+          throw new Error("Failed to create user account");
+        }
+
+        if (newUser?.user) {
+          console.log("New user created:", newUser.user.id);
+          
+          // Update subscription with user_id
+          await supabaseAdmin
+            .from("user_subscriptions")
+            .update({ user_id: newUser.user.id })
+            .eq("phone_number", formattedPhone);
+
+          // Generate session for new user
+          const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
+            type: 'magiclink',
+            email: tempEmail,
+          });
+
+          if (!sessionError && sessionData) {
+            responseData.session = sessionData;
+            responseData.user = newUser.user;
+          }
+        }
+      }
     } else {
       console.log("No existing subscription found.");
       responseData.subscriptionExists = false;

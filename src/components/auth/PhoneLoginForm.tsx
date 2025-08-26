@@ -180,6 +180,20 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onLoginSuccess }
       if (error) throw new Error(error.message);
       if (!data?.success) throw new Error(data?.error || 'Failed to verify OTP.');
       
+      // If we got session data back, use it to sign in
+      if (data?.session?.access_token) {
+        console.log("Setting session from OTP verification");
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
+        
+        if (sessionError) {
+          console.error("Error setting session:", sessionError);
+          throw new Error("Failed to establish session");
+        }
+      }
+      
       // Show success message
       setSuccess("Verification successful! Logging you in...");
       toast({ 
