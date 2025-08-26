@@ -87,8 +87,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
       try {
         console.log("ProtectedRoute: Handling auth check for:", session.user.email);
         
-        // Check for admin role using proper role-based authorization
-        // Remove hardcoded email check for security
+        // Use proper database function to check admin role
+        const { data: isAdminResult, error: adminCheckError } = await supabase.rpc('is_admin_user', { 
+          _user_id: session.user.id 
+        });
+        
+        if (adminCheckError) {
+          console.error("ProtectedRoute: Admin check failed:", adminCheckError);
+        } else if (isAdminResult && requiredRole === 'admin') {
+          console.log("ProtectedRoute: Admin user authorized via database");
+          authCheckComplete = true;
+          setIsAuthorized(true);
+          setIsLoading(false);
+          return;
+        }
 
         // For regular users accessing dashboard (default role), just authorize them
         if (requiredRole === 'user') {

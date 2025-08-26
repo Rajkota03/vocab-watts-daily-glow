@@ -1,4 +1,3 @@
-
 // /home/ubuntu/glintup_project/supabase/functions/verify-razorpay-payment/index.ts
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
@@ -116,7 +115,7 @@ serve(async (req) => {
     }
 
     if (!userId) {
-      throw new Error("Could not determine user ID after check/creation.");
+      throw new Error("Could not determine user ID after check.");
     }
 
     // --- Update or Create Subscription ---
@@ -161,4 +160,3 @@ serve(async (req) => {
     });
   }
 });
-

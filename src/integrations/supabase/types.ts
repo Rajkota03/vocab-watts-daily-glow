@@ -679,6 +679,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin_user: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       user_owns_outbox_message: {
         Args: { message_phone: string; message_user_id: string }
         Returns: boolean
