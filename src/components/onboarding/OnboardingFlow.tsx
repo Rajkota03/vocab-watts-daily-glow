@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, Loader2, Mail, User } from 'lucide-react';
+import { CheckCircle, Loader2, Mail, User, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
@@ -123,10 +123,34 @@ const OnboardingFlow = () => {
 
   // Success state
   if (success) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 border border-primary/10">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Navigation Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/')}
+              className="flex items-center text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Home
+            </Button>
+            <div className="flex items-center">
+              <img 
+                src="/logo.svg" 
+                alt="Glintup" 
+                className="h-8 w-auto"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-3xl shadow-2xl p-8 border border-primary/10">
             <div className="text-center">
               <div className="mx-auto w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mb-6 shadow-lg">
                 <CheckCircle className="h-10 w-10 text-white" />
@@ -147,9 +171,33 @@ const OnboardingFlow = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-3xl shadow-2xl p-8 border border-primary/10">
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          {/* Navigation Header */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/')}
+                className="flex items-center text-gray-600 hover:text-gray-900"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Home
+              </Button>
+              <div className="flex items-center">
+                <img 
+                  src="/logo.svg" 
+                  alt="Glintup" 
+                  className="h-8 w-auto"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl shadow-2xl p-8 border border-primary/10">
           {/* Header */}
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Start Your Free Trial</h2>
