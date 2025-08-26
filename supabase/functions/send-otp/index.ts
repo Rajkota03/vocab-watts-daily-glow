@@ -60,71 +60,44 @@ serve(async (req) => {
     }
     console.log("OTP stored successfully.");
 
-    // --- Send OTP via WhatsApp (Invoke send-whatsapp function) ---
-    // Format the OTP message with clear formatting for better visibility (fallback)
-    const otpMessage = `Your GlintUp verification code is: *${otp}*\n\nThis code will expire in 10 minutes. Do not share this code with anyone.`;
+    // --- Send OTP via Twilio SMS (Invoke send-twilio-sms function) ---
+    const otpMessage = `Your GlintUp verification code is: ${otp}\n\nThis code will expire in 10 minutes. Do not share this code with anyone.`;
     
-    // Use the Meta WhatsApp template for OTP (replace with your actual template name)
-    const metaTemplateId = templateId || "glintup_otp_code";
+    console.log(`Sending OTP ${otp} via Twilio SMS to ${formattedPhone}`);
     
-    console.log(`Invoking send-whatsapp to send OTP ${otp} to ${formattedPhone}`);
-    console.log(`Using Meta template: ${metaTemplateId}`);
-    
-    const requestBody: any = {
+    const smsRequestBody = {
       to: formattedPhone,
-      message: otpMessage, // Fallback message if template fails
-      templateId: metaTemplateId,
-      templateLanguage: "en",
-      templateValues: {
-        "1": otp,           // {{1}} in template = OTP code
-        "2": "10"           // {{2}} in template = expiry minutes
-      },
+      message: otpMessage,
       debugMode: true
     };
     
-    console.log("Using Meta template:", metaTemplateId);
-    
-    let { data: whatsappResult, error: whatsappError } = await supabaseAdmin.functions.invoke(
-      "send-whatsapp",
-      { body: requestBody }
+    const { data: smsResult, error: smsError } = await supabaseAdmin.functions.invoke(
+      "send-twilio-sms",
+      { body: smsRequestBody }
     );
 
-    // If template fails, try with plain text message
-    if (whatsappError || (whatsappResult && !whatsappResult.success)) {
-      console.log("Template failed, trying with plain text message");
-      const fallbackRequest = {
-        to: formattedPhone,
-        message: otpMessage,
-        debugMode: true
-      };
-      
-      const { data: fallbackResult, error: fallbackError } = await supabaseAdmin.functions.invoke(
-        "send-whatsapp",
-        { body: fallbackRequest }
-      );
-      
-      if (fallbackError) {
-        console.error("Error with fallback message:", fallbackError);
-        throw new Error(`Failed to send OTP via WhatsApp: ${fallbackError.message}`);
-      }
-      
-      // Use fallback result for response
-      whatsappResult = fallbackResult;
+    if (smsError) {
+      console.error("Error sending SMS via Twilio:", smsError);
+      throw new Error(`Failed to send OTP via SMS: ${smsError.message}`);
     }
 
-    console.log("send-whatsapp invoked successfully for OTP:", whatsappResult);
+    if (!smsResult?.success) {
+      console.error("SMS sending failed:", smsResult);
+      throw new Error(`Failed to send OTP via SMS: ${smsResult?.error || 'Unknown error'}`);
+    }
+
+    console.log("SMS sent successfully via Twilio:", smsResult);
 
     // Format the response to include helpful information for debugging
     const responseData = {
       success: true,
-      message: "OTP sent successfully.",
-      messageId: whatsappResult?.messageId,
-      status: whatsappResult?.status,
-      webhookUrl: whatsappResult?.webhookUrl,
-      usingTemplate: whatsappResult?.usingTemplate || !!metaTemplateId,
-      templateId: whatsappResult?.templateId || metaTemplateId,
-      messagingServiceSid: whatsappResult?.messagingServiceSid,
-      troubleshooting: whatsappResult?.troubleshooting
+      message: "OTP sent successfully via SMS.",
+      messageId: smsResult?.messageId,
+      status: smsResult?.status,
+      to: smsResult?.to,
+      from: smsResult?.from,
+      provider: "twilio",
+      troubleshooting: smsResult?.troubleshooting
     };
 
     // --- Return Success Response ---
