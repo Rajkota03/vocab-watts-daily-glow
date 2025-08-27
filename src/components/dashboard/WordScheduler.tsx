@@ -137,7 +137,7 @@ const CustomTimePicker: React.FC<{
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
           <Button variant="outline" className="h-10 px-4 text-sm border-border bg-background focus:border-primary transition-all font-mono tracking-wide">
-            {safeFormatTime(value)}
+            {formatTimeTo12Hour(value)}
           </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-lg bg-white/95 backdrop-blur border-0 shadow-xl">
@@ -208,7 +208,7 @@ const CustomTimePicker: React.FC<{
       
       <Select value={period} onValueChange={(value: 'AM' | 'PM') => {
       setPeriod(value);
-      const currentTime = formatTimeTo12Hour(value).split(' ')[0];
+      const currentTime = `${sliderHours}:${sliderMinutes.toString().padStart(2, '0')}`;
       const newTime24 = formatTimeTo24Hour(`${currentTime} ${value}`);
       onChange(newTime24);
     }}>
