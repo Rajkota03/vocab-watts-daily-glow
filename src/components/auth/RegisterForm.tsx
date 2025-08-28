@@ -56,7 +56,7 @@ export function RegisterForm({ onSubmit, isLoading }: RegisterFormProps) {
                     <Input 
                       type="text"
                       placeholder="John" 
-                      className="pl-10 bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
+                      className="pl-10 bg-white/50 border border-gray-200 focus:border-primary"
                       {...field}
                     />
                   </FormControl>
@@ -80,7 +80,7 @@ export function RegisterForm({ onSubmit, isLoading }: RegisterFormProps) {
                     <Input 
                       type="text"
                       placeholder="Doe" 
-                      className="pl-10 bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
+                      className="pl-10 bg-white/50 border border-gray-200 focus:border-primary"
                       {...field}
                     />
                   </FormControl>
@@ -105,7 +105,7 @@ export function RegisterForm({ onSubmit, isLoading }: RegisterFormProps) {
                   <Input 
                     type="text" 
                     placeholder="Enter your nickname" 
-                    className="pl-10 bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
+                    className="pl-10 bg-white/50 border border-gray-200 focus:border-primary"
                     {...field}
                   />
                 </FormControl>
@@ -132,7 +132,7 @@ export function RegisterForm({ onSubmit, isLoading }: RegisterFormProps) {
                   <Input 
                     type="tel"
                     placeholder="+1234567890" 
-                    className="pl-10 bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
+                    className="pl-10 bg-white/50 border border-gray-200 focus:border-primary"
                     {...field}
                   />
                 </FormControl>
@@ -159,7 +159,7 @@ export function RegisterForm({ onSubmit, isLoading }: RegisterFormProps) {
                   <Input 
                     type="email" 
                     placeholder="your@email.com" 
-                    className="pl-10 bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
+                    className="pl-10 bg-white/50 border border-gray-200 focus:border-primary"
                     {...field}
                   />
                 </FormControl>
@@ -183,7 +183,7 @@ export function RegisterForm({ onSubmit, isLoading }: RegisterFormProps) {
                   <Input 
                     type="password" 
                     placeholder="••••••••" 
-                    className="pl-10 bg-white/50 border border-gray-200 focus:border-[#9b87f5]"
+                    className="pl-10 bg-white/50 border border-gray-200 focus:border-primary"
                     {...field}
                   />
                 </FormControl>
@@ -195,7 +195,7 @@ export function RegisterForm({ onSubmit, isLoading }: RegisterFormProps) {
         
         <Button 
           type="submit" 
-          className="w-full py-6 text-base font-medium shadow-md transition-all hover:scale-[1.01] bg-gradient-to-r from-[#9b87f5] to-[#7E69AB]" 
+          className="w-full py-6 text-base font-medium bg-primary hover:bg-primary/90 text-white shadow-lg transition-all hover:scale-[1.01] hover:shadow-xl" 
           disabled={isLoading}
         >
           {isLoading ? (

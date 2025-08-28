@@ -119,9 +119,9 @@ const Payment = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10">
-      {/* Header */}
-      <div className="w-full py-4 px-6 bg-white/95 backdrop-blur-md border-b border-gray-100">
-        <div className="flex items-center justify-between max-w-6xl mx-auto">
+      {/* Header - Consistent with Home Page */}
+      <nav className="fixed top-0 w-full z-50 bg-white/95 shadow-md backdrop-blur-md">
+        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <Button variant="ghost" size="sm" asChild>
             <Link to="/" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
               <ArrowLeft className="h-4 w-4" />
@@ -129,16 +129,16 @@ const Payment = () => {
             </Link>
           </Button>
           
-          <Link to="/" className="flex items-center">
-            <img src="/logo-horizontal.svg" alt="GLINTUP" className="h-8" />
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/lovable-uploads/7486a276-d787-490b-a716-26688baba4e0.png" alt="Glintup" className="h-8" />
           </Link>
           
           <div className="w-16" /> {/* Spacer for centering */}
         </div>
-      </div>
+      </nav>
 
       {/* Content */}
-      <div className="flex items-center justify-center p-4 pt-8">
+      <div className="flex items-center justify-center p-4 pt-24">{/* Added pt-24 for navbar spacing */}
         <div className="w-full max-w-md">
           <div className="bg-white rounded-3xl shadow-2xl p-8 border border-primary/10">
             {/* Header */}
