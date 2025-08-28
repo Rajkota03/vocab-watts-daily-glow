@@ -145,174 +145,238 @@ const CustomTimePicker: React.FC<{
           </div>
         </motion.button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg border-0 bg-gradient-to-br from-white to-gray-50/50 shadow-2xl">
-        <DialogHeader className="text-center space-y-3 pb-2">
-          <div className="mx-auto w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center">
-            <Clock className="w-6 h-6 text-white" />
+      <DialogContent className="sm:max-w-md border-0 bg-white shadow-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="text-center space-y-2 pb-4 border-b border-gray-100">
+          <div className="mx-auto w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center">
+            <Clock className="w-5 h-5 text-white" />
           </div>
-          <DialogTitle className="text-xl font-bold text-glintup-indigo">
+          <DialogTitle className="text-lg font-bold text-gray-900">
             Set Delivery Time
           </DialogTitle>
-          <p className="text-sm text-muted-foreground">Choose when to receive your vocabulary word</p>
+          <p className="text-sm text-gray-600">Choose when to receive your vocabulary word</p>
         </DialogHeader>
 
-        <div className="space-y-6 pt-2">
-          {/* Time Display */}
+        <div className="space-y-6 py-4">
+          {/* Time Preview Display */}
           <motion.div 
-            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-glintup-indigo to-glintup-mint p-8"
-            whileHover={{ scale: 1.02 }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="text-center p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100"
+            key={`${sliderHours}-${sliderMinutes}-${period}`}
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.2 }}
           >
-            <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
-            <div className="relative text-center">
-              <motion.div 
-                className="text-5xl font-black text-white mb-2 font-mono tracking-tight"
-                key={`${sliderHours}-${sliderMinutes}-${period}`}
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                {sliderHours.toString().padStart(2, '0')}:{sliderMinutes.toString().padStart(2, '0')}
-              </motion.div>
-              <motion.div 
-                className="inline-flex items-center gap-2 bg-white/20 rounded-full px-4 py-2"
-                whileHover={{ scale: 1.05 }}
-              >
-                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                <span className="text-white font-bold text-lg">{period}</span>
-              </motion.div>
+            <div className="text-3xl font-bold text-gray-900 mb-1 font-mono">
+              {sliderHours.toString().padStart(2, '0')}:{sliderMinutes.toString().padStart(2, '0')}
+            </div>
+            <div className="inline-flex items-center gap-2 bg-white/80 rounded-full px-3 py-1 border border-blue-200">
+              <div className={`w-2 h-2 rounded-full ${period === 'AM' ? 'bg-orange-400' : 'bg-indigo-500'}`}></div>
+              <span className="text-gray-900 font-semibold text-sm">{period}</span>
             </div>
           </motion.div>
 
-          {/* Quick Times */}
+          {/* Method Selection */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <Info className="w-4 h-4" />
+                Selection Method
+              </div>
+              <div className="flex gap-1 bg-white rounded-lg p-1 border">
+                <button
+                  onClick={() => {/* Toggle to quick select mode */}}
+                  className="px-3 py-1 text-xs font-medium rounded-md transition-colors text-gray-600 hover:text-gray-900"
+                >
+                  Quick
+                </button>
+                <button
+                  onClick={() => {/* Toggle to custom mode */}}
+                  className="px-3 py-1 text-xs font-medium rounded-md transition-colors bg-blue-100 text-blue-700"
+                >
+                  Custom
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Times - Popular Presets */}
           <div className="space-y-3">
-            <label className="text-sm font-semibold text-glintup-text flex items-center gap-2">
-              <Zap className="w-4 h-4 text-accent" />
-              Quick Select
-            </label>
-            <div className="grid grid-cols-5 gap-2">
-              {quickTimes.map((time, index) => (
-                <motion.div
-                  key={time.value}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      onChange(time.value);
-                      setIsOpen(false);
-                    }}
-                    className="w-full h-12 text-xs font-medium bg-white hover:bg-gradient-to-r hover:from-primary/10 hover:to-glintup-mint/10 hover:text-glintup-indigo border-2 hover:border-primary/30 transition-all duration-300 hover:scale-105"
-                  >
-                    {time.label}
-                  </Button>
-                </motion.div>
-              ))}
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-amber-500" />
+              <label className="text-sm font-semibold text-gray-900">Popular Times</label>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {quickTimes.map((time, timeIndex) => {
+                const isSelected = value === time.value;
+                return (
+                  <TooltipProvider key={time.value}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <motion.button
+                          onClick={() => {
+                            onChange(time.value);
+                            setIsOpen(false);
+                          }}
+                          className={`p-3 rounded-xl text-left transition-all duration-200 border-2 ${
+                            isSelected 
+                              ? 'bg-blue-50 border-blue-200 text-blue-900' 
+                              : 'bg-white border-gray-200 text-gray-700 hover:border-blue-200 hover:bg-blue-25'
+                          }`}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: timeIndex * 0.05 }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{timeSlotEmojis[timeIndex]}</span>
+                            <div>
+                              <div className="font-semibold text-sm">{time.label}</div>
+                              <div className="text-xs text-gray-500">
+                                {timeIndex === 0 && 'Morning'}
+                                {timeIndex === 1 && 'Lunch'}
+                                {timeIndex === 2 && 'Afternoon'}
+                                {timeIndex === 3 && 'Evening'}
+                                {timeIndex === 4 && 'Night'}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Set delivery for {time.label}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                );
+              })}
             </div>
           </div>
 
-          {/* Custom Controls */}
-          <div className="space-y-5">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-semibold text-glintup-text flex items-center gap-2">
-                <Bell className="w-4 h-4 text-glintup-mint" />
-                Period
+          {/* Divider */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-gray-200"></div>
+            <span className="text-xs text-gray-500 bg-white px-2">or customize</span>
+            <div className="flex-1 h-px bg-gray-200"></div>
+          </div>
+
+          {/* Custom Time Controls */}
+          <div className="space-y-4">
+            {/* Period Selection - More Prominent */}
+            <div>
+              <label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <Bell className="w-4 h-4 text-blue-500" />
+                Time Period
               </label>
-              <div className="flex bg-gray-100 rounded-xl p-1">
-                <Button
-                  variant={period === 'AM' ? 'default' : 'ghost'}
-                  size="sm"
+              <div className="grid grid-cols-2 gap-2">
+                <button
                   onClick={() => setPeriod('AM')}
-                  className={`px-6 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                  className={`p-4 rounded-xl text-center transition-all duration-200 border-2 ${
                     period === 'AM' 
-                      ? 'bg-gradient-to-r from-primary to-glintup-mint text-white shadow-lg' 
-                      : 'text-gray-600 hover:text-glintup-indigo'
+                      ? 'bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200 text-orange-900' 
+                      : 'bg-white border-gray-200 text-gray-600 hover:border-orange-200 hover:bg-orange-25'
                   }`}
                 >
-                  AM
-                </Button>
-                <Button
-                  variant={period === 'PM' ? 'default' : 'ghost'}
-                  size="sm"
+                  <div className="text-2xl mb-1">🌅</div>
+                  <div className="font-semibold text-sm">AM</div>
+                  <div className="text-xs text-gray-500">Morning</div>
+                </button>
+                <button
                   onClick={() => setPeriod('PM')}
-                  className={`px-6 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                  className={`p-4 rounded-xl text-center transition-all duration-200 border-2 ${
                     period === 'PM' 
-                      ? 'bg-gradient-to-r from-primary to-glintup-mint text-white shadow-lg' 
-                      : 'text-gray-600 hover:text-glintup-indigo'
+                      ? 'bg-gradient-to-r from-indigo-50 to-indigo-100 border-indigo-200 text-indigo-900' 
+                      : 'bg-white border-gray-200 text-gray-600 hover:border-indigo-200 hover:bg-indigo-25'
                   }`}
                 >
-                  PM
-                </Button>
+                  <div className="text-2xl mb-1">🌆</div>
+                  <div className="font-semibold text-sm">PM</div>
+                  <div className="text-xs text-gray-500">Evening</div>
+                </button>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="text-sm font-medium text-glintup-text">Hours</label>
-                  <div className="bg-glintup-bg rounded-lg px-3 py-1">
-                    <span className="text-lg font-bold text-glintup-indigo">
-                      {sliderHours.toString().padStart(2, '0')}
-                    </span>
-                  </div>
-                </div>
-                <div className="relative">
-                  <Slider 
-                    value={[sliderHours]} 
-                    onValueChange={value => setSliderHours(value[0])} 
-                    min={1} 
-                    max={12} 
-                    step={1} 
-                    className="w-full" 
-                  />
+            {/* Hours Slider */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-gray-900">Hour</label>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-1">
+                  <span className="text-lg font-bold text-blue-900">
+                    {sliderHours.toString().padStart(2, '0')}
+                  </span>
                 </div>
               </div>
+              <Slider 
+                value={[sliderHours]} 
+                onValueChange={value => setSliderHours(value[0])} 
+                min={1} 
+                max={12} 
+                step={1} 
+                className="w-full" 
+              />
+              <div className="flex justify-between text-xs text-gray-500 px-1">
+                <span>1</span>
+                <span>6</span>
+                <span>12</span>
+              </div>
+            </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="text-sm font-medium text-glintup-text">Minutes</label>
-                  <div className="bg-glintup-bg rounded-lg px-3 py-1">
-                    <span className="text-lg font-bold text-glintup-indigo">
-                      {sliderMinutes.toString().padStart(2, '0')}
-                    </span>
-                  </div>
+            {/* Minutes Slider - Improved Precision */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-gray-900">Minutes</label>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-1">
+                  <span className="text-lg font-bold text-blue-900">
+                    {sliderMinutes.toString().padStart(2, '0')}
+                  </span>
                 </div>
-                <div className="relative">
-                  <Slider 
-                    value={[sliderMinutes]} 
-                    onValueChange={value => setSliderMinutes(value[0])} 
-                    min={0} 
-                    max={59} 
-                    step={5} 
-                    className="w-full" 
-                  />
-                </div>
+              </div>
+              <Slider 
+                value={[sliderMinutes]} 
+                onValueChange={value => setSliderMinutes(value[0])} 
+                min={0} 
+                max={59} 
+                step={1} 
+                className="w-full" 
+              />
+              <div className="flex justify-between text-xs text-gray-500 px-1">
+                <span>00</span>
+                <span>15</span>
+                <span>30</span>
+                <span>45</span>
+                <span>59</span>
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-2">
+          {/* Action Buttons - Always Visible */}
+          <div className="flex gap-3 pt-4 border-t border-gray-100 sticky bottom-0 bg-white">
             <Button 
               variant="outline" 
               onClick={() => setIsOpen(false)} 
-              className="flex-1 h-12 font-semibold border-2 hover:bg-gray-50"
+              className="flex-1 h-11 font-medium border-gray-300 hover:bg-gray-50"
             >
               Cancel
             </Button>
-            <motion.div className="flex-1">
-              <MotionButton 
-                onClick={handleSliderChange} 
-                className="w-full h-12 font-semibold bg-gradient-to-r from-primary to-glintup-mint hover:from-primary/90 hover:to-glintup-mint/90 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Set Time
-              </MotionButton>
-            </motion.div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.div className="flex-1">
+                    <MotionButton 
+                      onClick={handleSliderChange} 
+                      className="w-full h-11 font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      disabled={!period}
+                    >
+                      Set Time
+                    </MotionButton>
+                  </motion.div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Confirm time selection: {sliderHours.toString().padStart(2, '0')}:{sliderMinutes.toString().padStart(2, '0')} {period}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       </DialogContent>
