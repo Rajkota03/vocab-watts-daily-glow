@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLocation, Navigate, Link } from 'react-router-dom';
 import { RegisterForm } from '@/components/auth/RegisterForm';
@@ -10,7 +9,6 @@ import { useRazorpay } from '@/hooks/useRazorpay';
 import { Button } from '@/components/ui/button';
 import { usePricing } from '@/hooks/usePricing';
 import type { RegisterFormValues } from '@/types/auth';
-
 interface LocationState {
   plan: {
     isPro: boolean;
@@ -18,16 +16,24 @@ interface LocationState {
     category?: string;
   };
 }
-
 const Payment = () => {
   const location = useLocation();
-  const { plan } = (location.state as LocationState) || {};
-  const { toast } = useToast();
+  const {
+    plan
+  } = location.state as LocationState || {};
+  const {
+    toast
+  } = useToast();
   const navigate = useNavigate();
   const razorpayLoaded = useRazorpay();
   const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
-  const { getEffectivePrice, getPriceDisplay, getOriginalPriceDisplay, hasActiveDiscount, isLoading } = usePricing();
-
+  const {
+    getEffectivePrice,
+    getPriceDisplay,
+    getOriginalPriceDisplay,
+    hasActiveDiscount,
+    isLoading
+  } = usePricing();
   const handleSubmit = async (values: RegisterFormValues) => {
     if (!razorpayLoaded) {
       toast({
@@ -37,23 +43,26 @@ const Payment = () => {
       });
       return;
     }
-
     setIsProcessingPayment(true);
     try {
       const currentPrice = getEffectivePrice();
-      const { data: orderData, error: orderError } = await supabase.functions.invoke('create-razorpay-order', {
-        body: { amount: currentPrice * 100 } // Convert to paise (current price)
+      const {
+        data: orderData,
+        error: orderError
+      } = await supabase.functions.invoke('create-razorpay-order', {
+        body: {
+          amount: currentPrice * 100
+        } // Convert to paise (current price)
       });
-
       if (orderError) throw orderError;
-
       const options = {
         key: orderData.key,
         amount: orderData.amount,
         currency: "INR",
         name: "GLINTUP",
         description: `GLINTUP Pro Plan - Premium vocabulary learning on WhatsApp - ${getPriceDisplay()}/month`,
-        image: "/lovable-uploads/7486a276-d787-490b-a716-26688baba4e0.png", // Your actual logo
+        image: "/lovable-uploads/7486a276-d787-490b-a716-26688baba4e0.png",
+        // Your actual logo
         order_id: orderData.id,
         prefill: {
           name: `${values.firstName} ${values.lastName}`,
@@ -61,7 +70,8 @@ const Payment = () => {
           contact: values.whatsappNumber
         },
         theme: {
-          color: "#00A79D", // Your brand primary teal color
+          color: "#00A79D",
+          // Your brand primary teal color
           backdrop_color: "rgba(0, 167, 157, 0.1)" // Light teal backdrop
         },
         modal: {
@@ -69,7 +79,7 @@ const Payment = () => {
           escape: true,
           handleback: true,
           confirm_close: true,
-          ondismiss: function() {
+          ondismiss: function () {
             toast({
               title: "Payment Cancelled",
               description: "You can try again anytime.",
@@ -82,36 +92,31 @@ const Payment = () => {
             blocks: {
               banks: {
                 name: 'Pay using ' + getPriceDisplay(),
-                instruments: [
-                  {
-                    method: 'upi'
-                  },
-                  {
-                    method: 'card'
-                  },
-                  {
-                    method: 'netbanking'
-                  },
-                  {
-                    method: 'wallet'
-                  }
-                ],
-              },
-            },
-            hide: [
-              {
-                method: 'emi'
+                instruments: [{
+                  method: 'upi'
+                }, {
+                  method: 'card'
+                }, {
+                  method: 'netbanking'
+                }, {
+                  method: 'wallet'
+                }]
               }
-            ],
+            },
+            hide: [{
+              method: 'emi'
+            }],
             preferences: {
               show_default_blocks: true
             }
           }
         },
-        handler: async function(response: any) {
+        handler: async function (response: any) {
           try {
             // Create user account
-            const { error: signUpError } = await supabase.auth.signUp({
+            const {
+              error: signUpError
+            } = await supabase.auth.signUp({
               email: values.email,
               password: values.password,
               options: {
@@ -126,14 +131,11 @@ const Payment = () => {
                 }
               }
             });
-
             if (signUpError) throw signUpError;
-
             toast({
               title: "Welcome to GLINTUP Pro! 🎉",
-              description: "Your account has been created successfully.",
+              description: "Your account has been created successfully."
             });
-
             navigate('/dashboard');
           } catch (error: any) {
             toast({
@@ -144,7 +146,6 @@ const Payment = () => {
           }
         }
       };
-
       const razorpay = new window.Razorpay(options);
       razorpay.open();
     } catch (error: any) {
@@ -157,13 +158,10 @@ const Payment = () => {
       setIsProcessingPayment(false);
     }
   };
-
   if (!plan) {
     return <Navigate to="/" replace />;
   }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10">
+  return <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10">
       {/* Header - Consistent with Home Page */}
       <nav className="fixed top-0 w-full z-50 bg-white/95 shadow-md backdrop-blur-md">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
@@ -185,20 +183,16 @@ const Payment = () => {
       {/* Content */}
       <div className="flex items-center justify-center p-4 pt-24">{/* Added pt-24 for navbar spacing */}
         <div className="w-full max-w-md">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 border border-primary/10">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 border border-primary/10 px-[16px] py-[26px]">
             {/* Header */}
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
                 Subscribe to Pro Plan
               </h2>
-              {isLoading ? (
-                <p className="text-gray-600 text-sm mb-4">
+              {isLoading ? <p className="text-gray-600 text-sm mb-4">
                   Loading pricing...
-                </p>
-              ) : (
-                <div className="mb-4">
-                  {hasActiveDiscount() ? (
-                    <div className="text-center">
+                </p> : <div className="mb-4">
+                  {hasActiveDiscount() ? <div className="text-center">
                       <div className="flex items-center justify-center gap-3 mb-2">
                         <span className="text-lg font-bold text-primary">{getPriceDisplay()}/month</span>
                         <span className="text-sm text-gray-500 line-through">{getOriginalPriceDisplay()}/month</span>
@@ -209,14 +203,10 @@ const Payment = () => {
                       <p className="text-gray-600 text-sm">
                         Premium vocabulary learning experience - Special discount applied!
                       </p>
-                    </div>
-                  ) : (
-                    <p className="text-gray-600 text-sm">
+                    </div> : <p className="text-gray-600 text-sm">
                       {getPriceDisplay()}/month - Premium vocabulary learning experience
-                    </p>
-                  )}
-                </div>
-              )}
+                    </p>}
+                </div>}
               <div className="flex items-center gap-2 justify-center">
                 <Lock className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium text-gray-700">Secure Payment with Razorpay</span>
@@ -228,8 +218,6 @@ const Payment = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Payment;
