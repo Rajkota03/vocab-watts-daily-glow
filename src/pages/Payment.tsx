@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useRazorpay } from '@/hooks/useRazorpay';
 import { Button } from '@/components/ui/button';
+import { usePricing } from '@/hooks/usePricing';
 import type { RegisterFormValues } from '@/types/auth';
 
 interface LocationState {
@@ -25,6 +26,7 @@ const Payment = () => {
   const navigate = useNavigate();
   const razorpayLoaded = useRazorpay();
   const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
+  const { getEffectivePrice, getPriceDisplay, getOriginalPriceDisplay, hasActiveDiscount, isLoading } = usePricing();
 
   const handleSubmit = async (values: RegisterFormValues) => {
     if (!razorpayLoaded) {
@@ -38,8 +40,9 @@ const Payment = () => {
 
     setIsProcessingPayment(true);
     try {
+      const currentPrice = getEffectivePrice();
       const { data: orderData, error: orderError } = await supabase.functions.invoke('create-razorpay-order', {
-        body: { amount: 249 * 100 } // Convert to paise (₹249)
+        body: { amount: currentPrice * 100 } // Convert to paise (current price)
       });
 
       if (orderError) throw orderError;
@@ -49,7 +52,7 @@ const Payment = () => {
         amount: orderData.amount,
         currency: "INR",
         name: "GLINTUP",
-        description: "GLINTUP Pro Plan - Learn vocabulary on WhatsApp",
+        description: `GLINTUP Pro Plan - Learn vocabulary on WhatsApp - ${getPriceDisplay()}/month`,
         image: "https://your-domain.com/logo.svg",
         order_id: orderData.id,
         prefill: {
@@ -143,9 +146,32 @@ const Payment = () => {
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
                 Subscribe to Pro Plan
               </h2>
-              <p className="text-gray-600 text-sm mb-4">
-                ₹249/month - Premium vocabulary learning experience
-              </p>
+              {isLoading ? (
+                <p className="text-gray-600 text-sm mb-4">
+                  Loading pricing...
+                </p>
+              ) : (
+                <div className="mb-4">
+                  {hasActiveDiscount() ? (
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-3 mb-2">
+                        <span className="text-lg font-bold text-primary">{getPriceDisplay()}/month</span>
+                        <span className="text-sm text-gray-500 line-through">{getOriginalPriceDisplay()}/month</span>
+                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-medium">
+                          LIMITED OFFER!
+                        </span>
+                      </div>
+                      <p className="text-gray-600 text-sm">
+                        Premium vocabulary learning experience - Special discount applied!
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-gray-600 text-sm">
+                      {getPriceDisplay()}/month - Premium vocabulary learning experience
+                    </p>
+                  )}
+                </div>
+              )}
               <div className="flex items-center gap-2 justify-center">
                 <Lock className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium text-gray-700">Secure Payment with Razorpay</span>

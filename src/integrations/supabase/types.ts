@@ -128,6 +128,42 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing_config: {
+        Row: {
+          billing_cycle: string
+          created_at: string
+          currency: string
+          discount_enabled: boolean
+          discounted_price: number | null
+          id: string
+          original_price: number
+          plan_name: string
+          updated_at: string
+        }
+        Insert: {
+          billing_cycle?: string
+          created_at?: string
+          currency?: string
+          discount_enabled?: boolean
+          discounted_price?: number | null
+          id?: string
+          original_price: number
+          plan_name: string
+          updated_at?: string
+        }
+        Update: {
+          billing_cycle?: string
+          created_at?: string
+          currency?: string
+          discount_enabled?: boolean
+          discounted_price?: number | null
+          id?: string
+          original_price?: number
+          plan_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profile_audit_log: {
         Row: {
           accessed_profile_id: string
@@ -690,6 +726,16 @@ export type Database = {
       delete_all_vocabulary_words: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      get_current_pricing: {
+        Args: { plan_name_param?: string }
+        Returns: {
+          billing_cycle: string
+          currency: string
+          discount_enabled: boolean
+          discounted_price: number
+          original_price: number
+        }[]
       }
       get_public_profile_info: {
         Args: { profile_user_id: string }

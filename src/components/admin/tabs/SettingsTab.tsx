@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
+import PricingManagement from '../PricingManagement';
 
 interface AppSettingsForm {
   sendingFrequency: string;
@@ -23,7 +24,7 @@ interface NotificationSettingsForm {
 }
 
 const SettingsTab = () => {
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState('pricing');
   
   const appSettingsForm = useForm<AppSettingsForm>({
     defaultValues: {
@@ -67,10 +68,15 @@ const SettingsTab = () => {
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full md:w-auto grid-cols-2 md:inline-flex">
+        <TabsList className="grid w-full md:w-auto grid-cols-3 md:inline-flex">
+          <TabsTrigger value="pricing">Pricing</TabsTrigger>
           <TabsTrigger value="general">General Settings</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="pricing" className="mt-6">
+          <PricingManagement />
+        </TabsContent>
         
         <TabsContent value="general" className="mt-6">
           <Card>

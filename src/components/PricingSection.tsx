@@ -5,18 +5,64 @@ import { CheckCircle, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useNavigate } from 'react-router-dom';
 import EmailSignupForm from './auth/EmailSignupForm';
+import { usePricing } from '@/hooks/usePricing';
 const PricingSection = () => {
   const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const { getEffectivePrice, getPriceDisplay, getOriginalPriceDisplay, hasActiveDiscount, isLoading } = usePricing();
+
+  const handleSubscribe = () => {
+    navigate('/payment', {
+      state: {
+        plan: {
+          isPro: true,
+          price: getEffectivePrice()
+        }
+      }
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <section className="section-padding bg-white">
+        <div className="container mx-auto px-4 text-center">
+          <div className="text-lg">Loading pricing...</div>
+        </div>
+      </section>
+    );
+  }
+
+  const renderPriceDisplay = () => {
+    if (hasActiveDiscount()) {
+      return (
+        <div className="flex flex-col items-center">
+          <div className="flex items-center gap-3">
+            <span className="text-4xl font-bold text-primary">{getPriceDisplay()}</span>
+            <span className="text-xl text-gray-500 line-through">{getOriginalPriceDisplay()}</span>
+          </div>
+          <span className="text-lg text-red-600 font-medium">Limited Time Discount!</span>
+        </div>
+      );
+    }
+
+    return <span className="text-4xl font-bold text-primary">{getPriceDisplay()}</span>;
+  };
+
+  const renderButtonText = () => {
+    return hasActiveDiscount() 
+      ? `Get Discount - Subscribe for ${getPriceDisplay()}/month`
+      : `Subscribe for ${getPriceDisplay()}/month`;
+  };
+
   const plans = [{
     name: "Monthly Plan",
-    price: "₹249",
+    price: renderPriceDisplay(),
     period: "/month",
     description: "Simple, no-nonsense pricing",
     features: ["Access to 1000+ curated words", "Personalized delivery schedule", "WhatsApp delivery", "Cancel anytime"],
-    buttonText: "Subscribe for ₹249/month",
+    buttonText: renderButtonText(),
     isPrimary: true,
-    badge: "Includes WhatsApp delivery"
+    badge: hasActiveDiscount() ? "Special Offer!" : "Includes WhatsApp delivery"
   }];
   return <section className="section-padding bg-white">
       <div className="container mx-auto px-4">
@@ -54,14 +100,7 @@ const PricingSection = () => {
                     </li>)}
                 </ul>
                 
-                <Button onClick={() => navigate('/payment', {
-              state: {
-                plan: {
-                  isPro: true,
-                  price: 249
-                }
-              }
-            })} className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 rounded-full">
+                <Button onClick={handleSubscribe} className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 rounded-full">
                   {plan.buttonText}
                 </Button>
               </CardContent>

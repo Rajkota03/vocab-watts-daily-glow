@@ -1,11 +1,43 @@
 import React from 'react';
-import { Button } from "@/components/ui/button";
-import { Calendar, Sparkles, CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Sparkles, CheckCircle, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import SignupForm from './SignupForm';
+import { usePricing } from '@/hooks/usePricing';
 const CTASection = () => {
   const navigate = useNavigate();
+  const { getEffectivePrice, getPriceDisplay, getOriginalPriceDisplay, hasActiveDiscount, isLoading } = usePricing();
+
+  const handleSubscribe = () => {
+    navigate('/payment', {
+      state: {
+        plan: {
+          isPro: true,
+          price: getEffectivePrice()
+        }
+      }
+    });
+  };
+
+  const renderPriceDisplay = () => {
+    if (isLoading) {
+      return "Loading...";
+    }
+
+    if (hasActiveDiscount()) {
+      return (
+        <span className="flex items-center gap-2">
+          Subscribe for {getPriceDisplay()}/month
+          <span className="text-sm text-gray-500 line-through">
+            {getOriginalPriceDisplay()}
+          </span>
+        </span>
+      );
+    }
+
+    return `Subscribe for ${getPriceDisplay()}/month`;
+  };
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   return <section className="section-padding-lg bg-gradient-to-br from-primary to-duolingo-purple text-white relative overflow-hidden">
       {/* Decorative elements */}
@@ -42,16 +74,9 @@ const CTASection = () => {
               </DialogContent>
             </Dialog>
             
-            <Button onClick={() => navigate('/payment', {
-            state: {
-              plan: {
-                isPro: true,
-                price: 249
-              }
-            }
-          })} className="bg-white hover:bg-gray-100 text-primary text-base group px-8 py-6 rounded-full transition-all hover:scale-105 hover:shadow-xl w-full md:w-auto font-medium shadow-lg">
+            <Button onClick={handleSubscribe} className="bg-white hover:bg-gray-100 text-primary text-base group px-8 py-6 rounded-full transition-all hover:scale-105 hover:shadow-xl w-full md:w-auto font-medium shadow-lg" disabled={isLoading}>
               <Sparkles className="mr-2 h-5 w-5" />
-              Subscribe for ₹249/month
+              {renderPriceDisplay()}
             </Button>
           </div>
           

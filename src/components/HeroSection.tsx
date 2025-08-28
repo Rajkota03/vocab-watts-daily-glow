@@ -1,12 +1,44 @@
 import React from 'react';
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import { ArrowRight, CheckCircle } from 'lucide-react';
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import EmailSignupForm from './auth/EmailSignupForm';
 import { useNavigate } from 'react-router-dom';
+import { usePricing } from '@/hooks/usePricing';
 const HeroSection = () => {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const navigate = useNavigate();
+  const { getEffectivePrice, getPriceDisplay, getOriginalPriceDisplay, hasActiveDiscount, isLoading } = usePricing();
+
+  const handleSubscribe = () => {
+    navigate('/payment', {
+      state: {
+        plan: {
+          isPro: true,
+          price: getEffectivePrice()
+        }
+      }
+    });
+  };
+
+  const renderPriceDisplay = () => {
+    if (isLoading) {
+      return "Loading...";
+    }
+
+    if (hasActiveDiscount()) {
+      return (
+        <span className="flex items-center gap-2">
+          Subscribe for {getPriceDisplay()}/month
+          <span className="text-sm text-white/70 line-through">
+            {getOriginalPriceDisplay()}
+          </span>
+        </span>
+      );
+    }
+
+    return `Subscribe for ${getPriceDisplay()}/month`;
+  };
   return <section className="min-h-screen section-padding-lg flex items-center bg-gradient-to-br from-white to-primary/5 overflow-hidden relative">
       <div className="container-wide relative z-10">
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
@@ -45,15 +77,8 @@ const HeroSection = () => {
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
               
-              <Button onClick={() => navigate('/payment', {
-                state: {
-                  plan: {
-                    isPro: true,
-                    price: 249
-                  }
-                }
-              })} className="group bg-primary hover:bg-primary/90 text-white px-8 py-4 h-auto w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95 text-lg font-semibold shadow-lg rounded-full">
-                Subscribe for ₹249/month
+              <Button onClick={handleSubscribe} className="group bg-primary hover:bg-primary/90 text-white px-8 py-4 h-auto w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95 text-lg font-semibold shadow-lg rounded-full" disabled={isLoading}>
+                {renderPriceDisplay()}
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
             </div>
