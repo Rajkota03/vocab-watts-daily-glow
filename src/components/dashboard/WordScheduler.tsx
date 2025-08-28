@@ -236,9 +236,9 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
   const [settings, setSettings] = useState<DeliverySettings>({
     mode: 'auto',
     autoWindowStart: '09:00',
-    autoWindowEnd: '21:00',
+    autoWindowEnd: '19:00',
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    customTimes: ['09:00', '12:00', '15:00', '18:00', '21:00']
+    customTimes: ['09:00', '12:00', '19:00'] // 9 AM, 12 PM, 7 PM
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -320,8 +320,16 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
     }
   };
   const generateAutoTimes = (wordCount: number) => {
+    // Define better default times based on word count
+    const defaultTimes = ['09:00', '12:00', '19:00']; // 9 AM, 12 PM, 7 PM
+    
+    if (wordCount <= 3) {
+      return defaultTimes.slice(0, wordCount);
+    }
+    
+    // For more than 3 words, spread between 9 AM and 7 PM
     const start = 9; // 9 AM
-    const end = 21; // 9 PM
+    const end = 19; // 7 PM
     const interval = (end - start) / Math.max(1, wordCount - 1);
     return Array.from({
       length: wordCount
