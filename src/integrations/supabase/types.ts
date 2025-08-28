@@ -692,7 +692,7 @@ export type Database = {
         Returns: Json
       }
       get_public_profile_info: {
-        Args: { user_uuid: string }
+        Args: { profile_user_id: string }
         Returns: {
           created_at: string
           first_name: string
@@ -739,7 +739,7 @@ export type Database = {
         Returns: undefined
       }
       user_exists: {
-        Args: { user_uuid: string }
+        Args: { check_user_id: string }
         Returns: boolean
       }
       user_owns_outbox_message: {
