@@ -45,9 +45,29 @@ const HeroSection = () => {
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
               
-              <Button onClick={() => navigate('/login')} variant="outline" className="border-primary text-primary hover:bg-primary/10 text-lg px-8 py-4 h-auto w-full sm:w-auto transition-all duration-300 rounded-full">
-                Log in / Go Pro
+              <Button onClick={() => navigate('/payment', {
+                state: {
+                  plan: {
+                    isPro: true,
+                    price: 249
+                  }
+                }
+              })} className="group bg-primary hover:bg-primary/90 text-white px-8 py-4 h-auto w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95 text-lg font-semibold shadow-lg rounded-full">
+                Subscribe for ₹249/month
+                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
+            </div>
+            
+            <div className="mt-4 text-center lg:text-left">
+              <p className="text-sm text-gray-600">
+                Already have an account?{' '}
+                <button 
+                  onClick={() => navigate('/login')} 
+                  className="text-primary hover:text-primary/80 font-medium underline"
+                >
+                  Log in here
+                </button>
+              </p>
             </div>
             
             <div className="mt-6 flex flex-wrap justify-center lg:justify-start gap-3">

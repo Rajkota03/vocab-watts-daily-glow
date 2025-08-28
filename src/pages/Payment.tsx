@@ -7,6 +7,7 @@ import { ArrowRight, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useRazorpay } from '@/hooks/useRazorpay';
 import type { RegisterFormValues } from '@/types/auth';
 
 interface LocationState {
@@ -22,11 +23,23 @@ const Payment = () => {
   const { plan } = (location.state as LocationState) || {};
   const { toast } = useToast();
   const navigate = useNavigate();
+  const razorpayLoaded = useRazorpay();
+  const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
 
   const handleSubmit = async (values: RegisterFormValues) => {
+    if (!razorpayLoaded) {
+      toast({
+        title: "Payment system loading",
+        description: "Please wait for the payment system to load and try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsProcessingPayment(true);
     try {
       const { data: orderData, error: orderError } = await supabase.functions.invoke('create-razorpay-order', {
-        body: { amount: 149 * 100 } // Convert to paise
+        body: { amount: 249 * 100 } // Convert to paise (₹249)
       });
 
       if (orderError) throw orderError;
@@ -91,6 +104,8 @@ const Payment = () => {
         description: error.message,
         variant: "destructive"
       });
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
@@ -102,7 +117,7 @@ const Payment = () => {
     <div className="min-h-screen bg-gradient-to-br from-[#9b87f5]/10 to-[#7E69AB]/10 py-12 px-4">
       <div className="container max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-[#9b87f5] to-[#7E69AB]">
-          Complete Your Pro Subscription
+          Subscribe to Pro Plan - ₹249/month
         </h1>
         
         <div className="grid md:grid-cols-2 gap-8">
@@ -112,7 +127,7 @@ const Payment = () => {
               <CardTitle className="text-2xl">Create Your Account</CardTitle>
             </CardHeader>
             <CardContent>
-              <RegisterForm onSubmit={handleSubmit} isLoading={false} />
+              <RegisterForm onSubmit={handleSubmit} isLoading={isProcessingPayment} />
             </CardContent>
           </Card>
 
@@ -123,7 +138,7 @@ const Payment = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="text-3xl font-bold text-[#9b87f5]">
-                ₹149 <span className="text-sm font-normal text-gray-500">/month</span>
+                ₹249 <span className="text-sm font-normal text-gray-500">/month</span>
               </div>
               
               <ul className="space-y-3">
@@ -145,8 +160,12 @@ const Payment = () => {
               </ul>
 
               <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Lock className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-semibold text-blue-800">Secure Payment</span>
+                </div>
                 <p className="text-sm text-blue-800">
-                  Fill in your details and click "Create Account" to proceed with the payment. Your Pro access will be activated immediately after successful payment.
+                  Fill in your details and click "Create Account" to proceed with secure Razorpay payment. Your Pro access will be activated immediately after successful payment.
                 </p>
               </div>
             </CardContent>
