@@ -86,10 +86,20 @@ const PricingManagement = () => {
 
       toast({
         title: "Success",
-        description: "Pricing configuration updated successfully",
+        description: "Pricing configuration updated successfully. Changes are live across the website!",
       });
 
-      fetchPricingConfig(); // Refresh data
+      // Refresh local data and trigger global updates
+      await fetchPricingConfig();
+      
+      // Force refresh all pricing displays by triggering a custom event
+      window.dispatchEvent(new CustomEvent('pricingUpdated', { 
+        detail: { 
+          ...updates,
+          plan_name: 'pro'
+        } 
+      }));
+      
     } catch (error: any) {
       toast({
         title: "Error",

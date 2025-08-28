@@ -14,33 +14,69 @@ export const usePricing = (planName: string = 'pro') => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchPricing = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase.rpc('get_current_pricing', {
-          plan_name_param: planName
+  const fetchPricing = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Use direct table query for better real-time updates
+      const { data, error } = await supabase
+        .from('pricing_config')
+        .select('original_price, discounted_price, discount_enabled, currency, billing_cycle')
+        .eq('plan_name', planName)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setPricing({
+          original_price: Number(data.original_price),
+          discounted_price: data.discounted_price ? Number(data.discounted_price) : undefined,
+          discount_enabled: data.discount_enabled,
+          currency: data.currency,
+          billing_cycle: data.billing_cycle
         });
-
-        if (error) throw error;
-
-        if (data && data.length > 0) {
-          setPricing({
-            original_price: Number(data[0].original_price),
-            discounted_price: data[0].discounted_price ? Number(data[0].discounted_price) : undefined,
-            discount_enabled: data[0].discount_enabled,
-            currency: data[0].currency,
-            billing_cycle: data[0].billing_cycle
-          });
-        }
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (err: any) {
+      console.error('Error fetching pricing:', err);
+      setError(err.message);
+      // Fallback to default pricing if fetch fails
+      setPricing({
+        original_price: 249,
+        discounted_price: undefined,
+        discount_enabled: false,
+        currency: 'INR',
+        billing_cycle: 'monthly'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchPricing();
+
+    // Set up real-time subscription for pricing changes
+    const subscription = supabase
+      .channel('pricing_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'pricing_config',
+          filter: `plan_name=eq.${planName}`
+        },
+        (payload) => {
+          console.log('Pricing updated:', payload);
+          fetchPricing(); // Refetch when pricing changes
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [planName]);
 
   // Calculate the effective price (discounted if enabled, otherwise original)
@@ -77,32 +113,6 @@ export const usePricing = (planName: string = 'pro') => {
     getPriceDisplay,
     getOriginalPriceDisplay,
     hasActiveDiscount,
-    refetch: () => {
-      const fetchPricing = async () => {
-        try {
-          setIsLoading(true);
-          const { data, error } = await supabase.rpc('get_current_pricing', {
-            plan_name_param: planName
-          });
-
-          if (error) throw error;
-
-          if (data && data.length > 0) {
-            setPricing({
-              original_price: Number(data[0].original_price),
-              discounted_price: data[0].discounted_price ? Number(data[0].discounted_price) : undefined,
-              discount_enabled: data[0].discount_enabled,
-              currency: data[0].currency,
-              billing_cycle: data[0].billing_cycle
-            });
-          }
-        } catch (err: any) {
-          setError(err.message);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchPricing();
-    }
+    refetch: fetchPricing
   };
 };
