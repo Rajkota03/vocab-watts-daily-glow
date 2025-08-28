@@ -82,14 +82,14 @@ const CustomTimePicker: React.FC<{
   }, [value]);
   const formatTimeTo12Hour = (time24: string): string => {
     try {
-      if (!time24 || time24.length < 5) return '9:00 AM';
+      if (!time24 || time24.length < 5) return '09:00 AM';
       const [hours, minutes] = time24.split(':').map(Number);
       const period = hours >= 12 ? 'PM' : 'AM';
       const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-      return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+      return `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
     } catch (error) {
       console.error('Error formatting time:', error);
-      return '9:00 AM';
+      return '09:00 AM';
     }
   };
   const formatTimeTo24Hour = (time12: string): string => {
@@ -109,25 +109,25 @@ const CustomTimePicker: React.FC<{
       });
       return;
     }
-    const formattedTime = `${sliderHours}:${sliderMinutes.toString().padStart(2, '0')} ${period}`;
+    const formattedTime = `${sliderHours.toString().padStart(2, '0')}:${sliderMinutes.toString().padStart(2, '0')} ${period}`;
     const time24 = formatTimeTo24Hour(formattedTime);
     onChange(time24);
     setIsOpen(false);
   };
   const quickTimes = [{
-    label: '9:00 AM',
+    label: '09:00 AM',
     value: '09:00'
   }, {
     label: '12:00 PM',
     value: '12:00'
   }, {
-    label: '3:00 PM',
+    label: '03:00 PM',
     value: '15:00'
   }, {
-    label: '6:00 PM',
+    label: '06:00 PM',
     value: '18:00'
   }, {
-    label: '9:00 PM',
+    label: '09:00 PM',
     value: '21:00'
   }];
   return <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -155,7 +155,7 @@ const CustomTimePicker: React.FC<{
         <div className="space-y-4">
           <div className="text-center p-4 bg-glintup-bg rounded-lg">
             <div className="text-3xl font-mono font-bold text-glintup-indigo">
-              {sliderHours}:{sliderMinutes.toString().padStart(2, '0')} {period}
+              {sliderHours.toString().padStart(2, '0')}:{sliderMinutes.toString().padStart(2, '0')} {period}
             </div>
           </div>
           
@@ -188,7 +188,7 @@ const CustomTimePicker: React.FC<{
             
             <div>
               <label className="text-sm font-medium text-glintup-text mb-2 block">
-                Hours: {sliderHours}
+                Hours: {sliderHours.toString().padStart(2, '0')}
               </label>
               <Slider value={[sliderHours]} onValueChange={value => setSliderHours(value[0])} min={1} max={12} step={1} className="w-full" />
             </div>
@@ -253,14 +253,14 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
   }, [wordCount]);
   const formatTimeTo12Hour = (time24: string): string => {
     try {
-      if (!time24 || time24.length < 5) return '9:00 AM';
+      if (!time24 || time24.length < 5) return '09:00 AM';
       const [hours, minutes] = time24.split(':').map(Number);
       const period = hours >= 12 ? 'PM' : 'AM';
       const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-      return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+      return `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
     } catch (error) {
       console.error('Error formatting time:', error);
-      return '9:00 AM';
+      return '09:00 AM';
     }
   };
   const formatTimeTo24Hour = (time12: string): string => {
