@@ -692,7 +692,7 @@ export type Database = {
         Returns: Json
       }
       get_public_profile_info: {
-        Args: { profile_user_id: string }
+        Args: { user_uuid: string }
         Returns: {
           created_at: string
           first_name: string
