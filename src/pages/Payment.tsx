@@ -1,9 +1,8 @@
 
 import React from 'react';
 import { useLocation, Navigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RegisterForm } from '@/components/auth/RegisterForm';
-import { ArrowRight, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -115,65 +114,35 @@ const Payment = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#9b87f5]/10 to-[#7E69AB]/10 py-12 px-4">
-      <div className="container max-w-6xl mx-auto">
-        <div className="text-center mb-8">
-          <img src="/logo-horizontal.svg" alt="GLINTUP" className="h-12 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#9b87f5] to-[#7E69AB]">
-            Subscribe to Pro Plan - ₹249/month
-          </h1>
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10">
+      {/* Header */}
+      <div className="w-full py-4 px-6 bg-white/95 backdrop-blur-md">
+        <div className="flex items-center justify-center">
+          <img src="/logo-horizontal.svg" alt="GLINTUP" className="h-8" />
         </div>
-        
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Left side - Registration form */}
-          <Card className="border border-gray-100/50 shadow-xl bg-white/95 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-2xl">Create Your Account</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <RegisterForm onSubmit={handleSubmit} isLoading={isProcessingPayment} />
-            </CardContent>
-          </Card>
+      </div>
 
-          {/* Right side - Pricing box */}
-          <Card className="border-2 border-[#9b87f5] shadow-xl bg-white/95 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-xl">Pro Plan Benefits</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="text-3xl font-bold text-[#9b87f5]">
-                ₹249 <span className="text-sm font-normal text-gray-500">/month</span>
+      {/* Content */}
+      <div className="flex items-center justify-center p-4 pt-8">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 border border-primary/10">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Subscribe to Pro Plan
+              </h2>
+              <p className="text-gray-600 text-sm mb-4">
+                ₹249/month - Premium vocabulary learning experience
+              </p>
+              <div className="flex items-center gap-2 justify-center">
+                <Lock className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-gray-700">Secure Payment with Razorpay</span>
               </div>
-              
-              <ul className="space-y-3">
-                {[
-                  "10 vocabulary words daily",
-                  "Choose your category",
-                  "Custom delivery time",
-                  "Personalized difficulty",
-                  "Progress tracking",
-                  "Example sentences",
-                  "Daily practice quizzes",
-                  "Priority support"
-                ].map((feature, index) => (
-                  <li key={index} className="flex items-center gap-2 text-gray-700">
-                    <ArrowRight className="h-4 w-4 text-[#9b87f5]" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <Lock className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-semibold text-blue-800">Secure Payment</span>
-                </div>
-                <p className="text-sm text-blue-800">
-                  Fill in your details and click "Create Account" to proceed with secure Razorpay payment. Your Pro access will be activated immediately after successful payment.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+            
+            {/* Registration form */}
+            <RegisterForm onSubmit={handleSubmit} isLoading={isProcessingPayment} />
+          </div>
         </div>
       </div>
     </div>
