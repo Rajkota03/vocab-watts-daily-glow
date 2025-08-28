@@ -145,69 +145,174 @@ const CustomTimePicker: React.FC<{
           </div>
         </motion.button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-primary" />
+      <DialogContent className="sm:max-w-lg border-0 bg-gradient-to-br from-white to-gray-50/50 shadow-2xl">
+        <DialogHeader className="text-center space-y-3 pb-2">
+          <div className="mx-auto w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center">
+            <Clock className="w-6 h-6 text-white" />
+          </div>
+          <DialogTitle className="text-xl font-bold text-glintup-indigo">
             Set Delivery Time
           </DialogTitle>
+          <p className="text-sm text-muted-foreground">Choose when to receive your vocabulary word</p>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="text-center p-4 bg-glintup-bg rounded-lg">
-            <div className="text-3xl font-mono font-bold text-glintup-indigo">
-              {sliderHours.toString().padStart(2, '0')}:{sliderMinutes.toString().padStart(2, '0')} {period}
+
+        <div className="space-y-6 pt-2">
+          {/* Time Display */}
+          <motion.div 
+            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-glintup-indigo to-glintup-mint p-8"
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+          >
+            <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+            <div className="relative text-center">
+              <motion.div 
+                className="text-5xl font-black text-white mb-2 font-mono tracking-tight"
+                key={`${sliderHours}-${sliderMinutes}-${period}`}
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                {sliderHours.toString().padStart(2, '0')}:{sliderMinutes.toString().padStart(2, '0')}
+              </motion.div>
+              <motion.div 
+                className="inline-flex items-center gap-2 bg-white/20 rounded-full px-4 py-2"
+                whileHover={{ scale: 1.05 }}
+              >
+                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                <span className="text-white font-bold text-lg">{period}</span>
+              </motion.div>
             </div>
-          </div>
-          
-          {/* Quick Select */}
-          <div>
-            <label className="text-sm font-medium text-glintup-text mb-2 block">Quick Select</label>
-            <div className="grid grid-cols-5 gap-1">
-              {quickTimes.map(time => <Button key={time.value} variant="outline" size="sm" onClick={() => {
-              onChange(time.value);
-              setIsOpen(false);
-            }} className="text-xs">
-                  {time.label}
-                </Button>)}
-            </div>
-          </div>
-          
-          {/* Custom Time */}
+          </motion.div>
+
+          {/* Quick Times */}
           <div className="space-y-3">
+            <label className="text-sm font-semibold text-glintup-text flex items-center gap-2">
+              <Zap className="w-4 h-4 text-accent" />
+              Quick Select
+            </label>
+            <div className="grid grid-cols-5 gap-2">
+              {quickTimes.map((time, index) => (
+                <motion.div
+                  key={time.value}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      onChange(time.value);
+                      setIsOpen(false);
+                    }}
+                    className="w-full h-12 text-xs font-medium bg-white hover:bg-gradient-to-r hover:from-primary/10 hover:to-glintup-mint/10 hover:text-glintup-indigo border-2 hover:border-primary/30 transition-all duration-300 hover:scale-105"
+                  >
+                    {time.label}
+                  </Button>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom Controls */}
+          <div className="space-y-5">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-glintup-text">Period</label>
-              <div className="flex gap-1">
-                <Button variant={period === 'AM' ? 'default' : 'outline'} size="sm" onClick={() => setPeriod('AM')}>
+              <label className="text-sm font-semibold text-glintup-text flex items-center gap-2">
+                <Bell className="w-4 h-4 text-glintup-mint" />
+                Period
+              </label>
+              <div className="flex bg-gray-100 rounded-xl p-1">
+                <Button
+                  variant={period === 'AM' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setPeriod('AM')}
+                  className={`px-6 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                    period === 'AM' 
+                      ? 'bg-gradient-to-r from-primary to-glintup-mint text-white shadow-lg' 
+                      : 'text-gray-600 hover:text-glintup-indigo'
+                  }`}
+                >
                   AM
                 </Button>
-                <Button variant={period === 'PM' ? 'default' : 'outline'} size="sm" onClick={() => setPeriod('PM')}>
+                <Button
+                  variant={period === 'PM' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setPeriod('PM')}
+                  className={`px-6 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                    period === 'PM' 
+                      ? 'bg-gradient-to-r from-primary to-glintup-mint text-white shadow-lg' 
+                      : 'text-gray-600 hover:text-glintup-indigo'
+                  }`}
+                >
                   PM
                 </Button>
               </div>
             </div>
-            
-            <div>
-              <label className="text-sm font-medium text-glintup-text mb-2 block">
-                Hours: {sliderHours.toString().padStart(2, '0')}
-              </label>
-              <Slider value={[sliderHours]} onValueChange={value => setSliderHours(value[0])} min={1} max={12} step={1} className="w-full" />
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-glintup-text mb-2 block">
-                Minutes: {sliderMinutes.toString().padStart(2, '0')}
-              </label>
-              <Slider value={[sliderMinutes]} onValueChange={value => setSliderMinutes(value[0])} min={0} max={59} step={5} className="w-full" />
+
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-medium text-glintup-text">Hours</label>
+                  <div className="bg-glintup-bg rounded-lg px-3 py-1">
+                    <span className="text-lg font-bold text-glintup-indigo">
+                      {sliderHours.toString().padStart(2, '0')}
+                    </span>
+                  </div>
+                </div>
+                <div className="relative">
+                  <Slider 
+                    value={[sliderHours]} 
+                    onValueChange={value => setSliderHours(value[0])} 
+                    min={1} 
+                    max={12} 
+                    step={1} 
+                    className="w-full" 
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-medium text-glintup-text">Minutes</label>
+                  <div className="bg-glintup-bg rounded-lg px-3 py-1">
+                    <span className="text-lg font-bold text-glintup-indigo">
+                      {sliderMinutes.toString().padStart(2, '0')}
+                    </span>
+                  </div>
+                </div>
+                <div className="relative">
+                  <Slider 
+                    value={[sliderMinutes]} 
+                    onValueChange={value => setSliderMinutes(value[0])} 
+                    min={0} 
+                    max={59} 
+                    step={5} 
+                    className="w-full" 
+                  />
+                </div>
+              </div>
             </div>
           </div>
-          
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1">
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsOpen(false)} 
+              className="flex-1 h-12 font-semibold border-2 hover:bg-gray-50"
+            >
               Cancel
             </Button>
-            <Button onClick={handleSliderChange} className="flex-1">
-              Set Time
-            </Button>
+            <motion.div className="flex-1">
+              <MotionButton 
+                onClick={handleSliderChange} 
+                className="w-full h-12 font-semibold bg-gradient-to-r from-primary to-glintup-mint hover:from-primary/90 hover:to-glintup-mint/90 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Set Time
+              </MotionButton>
+            </motion.div>
           </div>
         </div>
       </DialogContent>
