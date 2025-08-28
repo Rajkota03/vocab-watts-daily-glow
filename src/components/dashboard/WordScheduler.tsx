@@ -257,34 +257,34 @@ const CustomTimePicker: React.FC<{
 
           {/* Custom Time Controls */}
           <div className="space-y-4">
-            {/* Period Selection - More Prominent */}
+            {/* Period Selection - More Compact */}
             <div>
-              <label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <label className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
                 <Bell className="w-4 h-4 text-blue-500" />
                 Time Period
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => setPeriod('AM')}
-                  className={`p-4 rounded-xl text-center transition-all duration-200 border-2 ${
+                  className={`p-2 rounded-lg text-center transition-all duration-200 border-2 ${
                     period === 'AM' 
                       ? 'bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200 text-orange-900' 
                       : 'bg-white border-gray-200 text-gray-600 hover:border-orange-200 hover:bg-orange-25'
                   }`}
                 >
-                  <div className="text-2xl mb-1">🌅</div>
+                  <div className="text-lg mb-0.5">🌅</div>
                   <div className="font-semibold text-sm">AM</div>
                   <div className="text-xs text-gray-500">Morning</div>
                 </button>
                 <button
                   onClick={() => setPeriod('PM')}
-                  className={`p-4 rounded-xl text-center transition-all duration-200 border-2 ${
+                  className={`p-2 rounded-lg text-center transition-all duration-200 border-2 ${
                     period === 'PM' 
                       ? 'bg-gradient-to-r from-indigo-50 to-indigo-100 border-indigo-200 text-indigo-900' 
                       : 'bg-white border-gray-200 text-gray-600 hover:border-indigo-200 hover:bg-indigo-25'
                   }`}
                 >
-                  <div className="text-2xl mb-1">🌆</div>
+                  <div className="text-lg mb-0.5">🌆</div>
                   <div className="font-semibold text-sm">PM</div>
                   <div className="text-xs text-gray-500">Evening</div>
                 </button>
