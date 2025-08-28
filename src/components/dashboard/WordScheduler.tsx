@@ -359,7 +359,7 @@ const CustomTimePicker: React.FC<{
                   <motion.div className="flex-1">
                     <MotionButton 
                       onClick={handleSliderChange} 
-                      className="w-full h-11 font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg"
+                      className="w-full h-11 font-semibold bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 text-white shadow-md hover:shadow-lg"
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       disabled={!period}
