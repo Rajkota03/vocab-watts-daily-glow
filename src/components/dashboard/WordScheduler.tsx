@@ -136,7 +136,7 @@ const CustomTimePicker: React.FC<{
         scale: 1.02
       }} whileTap={{
         scale: 0.98
-      }} className="group flex items-center gap-2 bg-white border border-stroke rounded-lg hover:bg-gray-50 hover:border-primary/30 transition-all duration-200 py-[4px] px-[16px]">
+      }} className="group flex items-center gap-2 bg-white border border-stroke rounded-lg hover:bg-gray-50 hover:border-primary/30 transition-all duration-200 py-[4px] px-[16px] min-w-[100px] justify-center">
           <Clock className="w-4 h-4 text-primary" />
           <div className="text-left">
             <div className="text-sm font-semibold text-glintup-text">
