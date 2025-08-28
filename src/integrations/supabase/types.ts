@@ -711,6 +711,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_public_profile_info: {
+        Args: { profile_user_id: string }
+        Returns: {
+          created_at: string
+          first_name: string
+          id: string
+          nick_name: string
+        }[]
+      }
       get_whatsapp_message_status: {
         Args: { message_sid_param: string }
         Returns: {
