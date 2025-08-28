@@ -52,8 +52,8 @@ const Payment = () => {
         amount: orderData.amount,
         currency: "INR",
         name: "GLINTUP",
-        description: `GLINTUP Pro Plan - Learn vocabulary on WhatsApp - ${getPriceDisplay()}/month`,
-        image: "https://your-domain.com/logo.svg",
+        description: `GLINTUP Pro Plan - Premium vocabulary learning on WhatsApp - ${getPriceDisplay()}/month`,
+        image: "/lovable-uploads/7486a276-d787-490b-a716-26688baba4e0.png", // Your actual logo
         order_id: orderData.id,
         prefill: {
           name: `${values.firstName} ${values.lastName}`,
@@ -61,7 +61,52 @@ const Payment = () => {
           contact: values.whatsappNumber
         },
         theme: {
-          color: "#00A79D" // Use brand primary color
+          color: "#00A79D", // Your brand primary teal color
+          backdrop_color: "rgba(0, 167, 157, 0.1)" // Light teal backdrop
+        },
+        modal: {
+          backdropclose: false,
+          escape: true,
+          handleback: true,
+          confirm_close: true,
+          ondismiss: function() {
+            toast({
+              title: "Payment Cancelled",
+              description: "You can try again anytime.",
+              variant: "destructive"
+            });
+          }
+        },
+        config: {
+          display: {
+            blocks: {
+              banks: {
+                name: 'Pay using ' + getPriceDisplay(),
+                instruments: [
+                  {
+                    method: 'upi'
+                  },
+                  {
+                    method: 'card'
+                  },
+                  {
+                    method: 'netbanking'
+                  },
+                  {
+                    method: 'wallet'
+                  }
+                ],
+              },
+            },
+            hide: [
+              {
+                method: 'emi'
+              }
+            ],
+            preferences: {
+              show_default_blocks: true
+            }
+          }
         },
         handler: async function(response: any) {
           try {
