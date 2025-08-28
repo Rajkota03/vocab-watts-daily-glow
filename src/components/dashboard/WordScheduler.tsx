@@ -84,10 +84,16 @@ const CustomTimePicker: React.FC<{
   
   const formatTimeTo12Hour = (time24: string): string => {
     try {
-      const date = parse(time24, 'HH:mm', new Date());
-      return format(date, 'h:mm a');
+      if (!time24 || time24.length < 5) return '9:00 AM';
+      
+      const [hours, minutes] = time24.split(':').map(Number);
+      const period = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+      
+      return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
     } catch (error) {
-      return time24;
+      console.error('Error formatting time:', error);
+      return '9:00 AM'; // fallback to default time
     }
   };
   
@@ -269,10 +275,16 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
   // Helper function to convert 24-hour to 12-hour format
   const formatTimeTo12Hour = (time24: string): string => {
     try {
-      const date = parse(time24, 'HH:mm', new Date());
-      return format(date, 'h:mm a');
+      if (!time24 || time24.length < 5) return '9:00 AM';
+      
+      const [hours, minutes] = time24.split(':').map(Number);
+      const period = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+      
+      return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
     } catch (error) {
-      return time24; // fallback to original format if parsing fails
+      console.error('Error formatting time:', error);
+      return '9:00 AM'; // fallback to default time
     }
   };
 
