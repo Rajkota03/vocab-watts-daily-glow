@@ -136,117 +136,76 @@ const CustomTimePicker: React.FC<{
         scale: 1.02
       }} whileTap={{
         scale: 0.98
-      }} className="group flex items-center justify-center gap-2 bg-white border border-stroke rounded-lg hover:bg-gray-50 hover:border-primary/30 transition-all duration-200 py-2 px-4 w-[120px]">
-          <Clock className="w-4 h-4 text-primary flex-shrink-0" />
-          <div className="text-sm font-semibold text-glintup-text text-center">
-            {formatTimeTo12Hour(value)}
+      }} className="group flex items-center gap-2 bg-white border border-stroke rounded-lg hover:bg-gray-50 hover:border-primary/30 transition-all duration-200 py-0 px-[13px]">
+          <Clock className="w-4 h-4 text-primary" />
+          <div className="text-left">
+            <div className="text-sm font-semibold text-glintup-text">
+              {formatTimeTo12Hour(value)}
+            </div>
           </div>
         </motion.button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader className="text-center space-y-2">
-          <DialogTitle className="flex items-center justify-center gap-2 text-xl">
-            <Clock className="w-6 h-6 text-primary" />
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-primary" />
             Set Delivery Time
           </DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-6">
-          {/* Time Display */}
-          <div className="text-center p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border">
-            <div className="text-4xl font-mono font-bold text-primary mb-2">
-              {sliderHours}:{sliderMinutes.toString().padStart(2, '0')}
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              <Button 
-                variant={period === 'AM' ? 'default' : 'outline'} 
-                size="sm" 
-                onClick={() => setPeriod('AM')}
-                className="w-16"
-              >
-                AM
-              </Button>
-              <Button 
-                variant={period === 'PM' ? 'default' : 'outline'} 
-                size="sm" 
-                onClick={() => setPeriod('PM')}
-                className="w-16"
-              >
-                PM
-              </Button>
+        <div className="space-y-4">
+          <div className="text-center p-4 bg-glintup-bg rounded-lg">
+            <div className="text-3xl font-mono font-bold text-glintup-indigo">
+              {sliderHours}:{sliderMinutes.toString().padStart(2, '0')} {period}
             </div>
           </div>
           
           {/* Quick Select */}
-          <div className="space-y-3">
-            <label className="text-sm font-semibold text-foreground">Quick Select</label>
-            <div className="grid grid-cols-3 gap-2">
-              {quickTimes.map(time => (
-                <Button 
-                  key={time.value} 
-                  variant="outline" 
-                  onClick={() => {
-                    onChange(time.value);
-                    setIsOpen(false);
-                  }}
-                  className="h-10 text-sm font-medium"
-                >
+          <div>
+            <label className="text-sm font-medium text-glintup-text mb-2 block">Quick Select</label>
+            <div className="grid grid-cols-5 gap-1">
+              {quickTimes.map(time => <Button key={time.value} variant="outline" size="sm" onClick={() => {
+              onChange(time.value);
+              setIsOpen(false);
+            }} className="text-xs">
                   {time.label}
+                </Button>)}
+            </div>
+          </div>
+          
+          {/* Custom Time */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-glintup-text">Period</label>
+              <div className="flex gap-1">
+                <Button variant={period === 'AM' ? 'default' : 'outline'} size="sm" onClick={() => setPeriod('AM')}>
+                  AM
                 </Button>
-              ))}
+                <Button variant={period === 'PM' ? 'default' : 'outline'} size="sm" onClick={() => setPeriod('PM')}>
+                  PM
+                </Button>
+              </div>
             </div>
-          </div>
-          
-          {/* Custom Sliders */}
-          <div className="space-y-4">
-            <label className="text-sm font-semibold text-foreground">Custom Time</label>
             
-            <div className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Hours</span>
-                  <span className="text-sm font-bold text-foreground">{sliderHours}</span>
-                </div>
-                <Slider 
-                  value={[sliderHours]} 
-                  onValueChange={value => setSliderHours(value[0])} 
-                  min={1} 
-                  max={12} 
-                  step={1} 
-                  className="w-full"
-                />
-              </div>
-              
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Minutes</span>
-                  <span className="text-sm font-bold text-foreground">{sliderMinutes.toString().padStart(2, '0')}</span>
-                </div>
-                <Slider 
-                  value={[sliderMinutes]} 
-                  onValueChange={value => setSliderMinutes(value[0])} 
-                  min={0} 
-                  max={59} 
-                  step={5} 
-                  className="w-full"
-                />
-              </div>
+            <div>
+              <label className="text-sm font-medium text-glintup-text mb-2 block">
+                Hours: {sliderHours}
+              </label>
+              <Slider value={[sliderHours]} onValueChange={value => setSliderHours(value[0])} min={1} max={12} step={1} className="w-full" />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-glintup-text mb-2 block">
+                Minutes: {sliderMinutes.toString().padStart(2, '0')}
+              </label>
+              <Slider value={[sliderMinutes]} onValueChange={value => setSliderMinutes(value[0])} min={0} max={59} step={5} className="w-full" />
             </div>
           </div>
           
-          {/* Actions */}
-          <div className="flex gap-3 pt-4">
-            <Button 
-              variant="outline" 
-              onClick={() => setIsOpen(false)} 
-              className="flex-1 h-11"
-            >
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1">
               Cancel
             </Button>
-            <Button 
-              onClick={handleSliderChange} 
-              className="flex-1 h-11"
-            >
+            <Button onClick={handleSliderChange} className="flex-1">
               Set Time
             </Button>
           </div>
