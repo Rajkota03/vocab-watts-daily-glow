@@ -66,6 +66,17 @@ const PricingManagement = () => {
     try {
       setSaving(true);
       
+      // Validate that if discount is enabled, discounted price is provided
+      if (formData.discount_enabled && !formData.discounted_price) {
+        toast({
+          title: "Validation Error",
+          description: "Please provide a discounted price when discount is enabled.",
+          variant: "destructive"
+        });
+        setSaving(false);
+        return;
+      }
+      
       const updates: any = {
         original_price: parseFloat(formData.original_price),
         discount_enabled: formData.discount_enabled
@@ -222,7 +233,7 @@ const PricingManagement = () => {
           {/* Save Button */}
           <Button 
             onClick={handleSave} 
-            disabled={isSaving || !formData.original_price}
+            disabled={isSaving || !formData.original_price || (formData.discount_enabled && !formData.discounted_price)}
             className="w-full"
           >
             {isSaving ? (
