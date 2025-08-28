@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,6 +11,78 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
+
+const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+
+async function sendAdminNotification(results: any[], today: string, totalSubscriptions: number) {
+  try {
+    const successfulSchedules = results.filter(r => r.status === 'scheduled').length;
+    const partialSchedules = results.filter(r => r.status === 'partial').length;
+    const failedSchedules = results.filter(r => r.status === 'failed').length;
+    const totalMessages = results.reduce((sum, r) => sum + (r.messagesCount || 0), 0);
+
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center;">
+          <h1 style="margin: 0; font-size: 24px;">GlintUp Daily Scheduler Report</h1>
+          <p style="margin: 10px 0 0 0; opacity: 0.9;">Date: ${today}</p>
+        </div>
+        
+        <div style="padding: 20px; background-color: #f8f9fa;">
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;">
+            <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+              <h3 style="margin: 0 0 5px 0; color: #28a745; font-size: 24px;">${successfulSchedules}</h3>
+              <p style="margin: 0; color: #666; font-size: 14px;">Successful</p>
+            </div>
+            <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+              <h3 style="margin: 0 0 5px 0; color: #dc3545; font-size: 24px;">${failedSchedules}</h3>
+              <p style="margin: 0; color: #666; font-size: 14px;">Failed</p>
+            </div>
+          </div>
+          
+          <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 15px 0; color: #333;">Summary</h3>
+            <ul style="margin: 0; padding-left: 20px; color: #666;">
+              <li>Total Active Subscriptions: ${totalSubscriptions}</li>
+              <li>Successfully Scheduled: ${successfulSchedules}</li>
+              <li>Partially Scheduled: ${partialSchedules}</li>
+              <li>Failed: ${failedSchedules}</li>
+              <li>Total Messages Scheduled: ${totalMessages}</li>
+            </ul>
+          </div>
+          
+          ${failedSchedules > 0 ? `
+          <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 20px; border-radius: 8px; margin-top: 20px;">
+            <h3 style="margin: 0 0 15px 0; color: #856404;">Failed Schedules</h3>
+            ${results.filter(r => r.status === 'failed').map(r => `
+              <div style="margin-bottom: 10px; padding: 10px; background: white; border-radius: 4px;">
+                <strong>Phone:</strong> ${r.phone}<br>
+                <strong>Error:</strong> ${r.error}
+              </div>
+            `).join('')}
+          </div>
+          ` : ''}
+        </div>
+        
+        <div style="background: #667eea; color: white; padding: 15px; text-align: center; font-size: 12px;">
+          <p style="margin: 0;">This is an automated notification from GlintUp Daily Scheduler</p>
+          <p style="margin: 5px 0 0 0; opacity: 0.8;">Time: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST</p>
+        </div>
+      </div>
+    `;
+
+    await resend.emails.send({
+      from: 'GlintUp System <noreply@glintup.com>',
+      to: ['admin@glintup.com'],
+      subject: `Daily Scheduler Report - ${today} (${successfulSchedules}/${totalSubscriptions} successful)`,
+      html: emailHtml,
+    });
+
+    console.log('Admin notification email sent successfully');
+  } catch (error) {
+    console.error('Failed to send admin notification email:', error);
+  }
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -202,6 +275,9 @@ serve(async (req) => {
         });
       }
     }
+
+    // Send admin notification email
+    await sendAdminNotification(results, today, subscriptions?.length || 0);
 
     return new Response(
       JSON.stringify({
