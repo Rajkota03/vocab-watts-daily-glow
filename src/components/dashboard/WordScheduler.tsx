@@ -635,67 +635,71 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
           </div>
         ) : (
           <div className="mb-6">
-            <div className="text-[13px] leading-5 font-medium text-muted-foreground mb-4 flex items-center gap-2">
-              <div className="w-1 h-4 bg-gradient-to-b from-blue-500 to-indigo-500 rounded-full"></div>
+            <div className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-3">
+              <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-indigo-500 rounded-full"></div>
               Custom delivery times
             </div>
-            <div className="grid gap-3">
+            <div className="space-y-3">
               {Array.from({ length: wordCount }, (_, index) => (
                 <MotionDiv 
                   key={index} 
-                  className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-50 to-blue-50/30 border-2 border-gray-100 hover:border-blue-200 p-4 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5" 
-                  whileHover={{ scale: 1.01 }} 
+                  className="group relative overflow-hidden rounded-3xl bg-white border border-gray-100 hover:border-blue-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1" 
+                  whileHover={{ scale: 1.005 }} 
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between p-5">
                     <div className="flex items-center gap-4">
-                      <div className="relative">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 text-white rounded-2xl flex items-center justify-center text-sm font-bold shadow-lg">
+                      <div className="relative flex-shrink-0">
+                        <div className="w-14 h-14 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 text-white rounded-2xl flex items-center justify-center text-lg font-bold shadow-lg shadow-blue-500/25">
                           {index + 1}
                         </div>
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white flex items-center justify-center">
-                          <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full border-2 border-white shadow-sm">
+                          <div className="w-full h-full flex items-center justify-center">
+                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <div className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-lg font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
                           Word {index + 1}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-sm text-gray-500 font-medium">
                           Vocabulary delivery #{index + 1}
                         </div>
                       </div>
                     </div>
                     
-                    <CustomTimePicker 
-                      value={settings.customTimes[index] || '09:00'} 
-                      onChange={time => handleCustomTimeChange(index, time)} 
-                      index={index} 
-                    />
+                    <div className="flex-shrink-0">
+                      <CustomTimePicker 
+                        value={settings.customTimes[index] || '09:00'} 
+                        onChange={time => handleCustomTimeChange(index, time)} 
+                        index={index} 
+                      />
+                    </div>
                   </div>
                   
-                  {/* Decorative gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-indigo-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                  {/* Subtle background pattern */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-50/20 via-transparent to-indigo-50/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   
-                  {/* Time slot indicator */}
-                  <div className="absolute top-2 right-2 opacity-20 group-hover:opacity-40 transition-opacity">
-                    <Clock className="w-4 h-4 text-blue-500" />
-                  </div>
+                  {/* Bottom accent line */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
                 </MotionDiv>
               ))}
             </div>
             
-            {/* Progress indicator */}
-            <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
-              <div className="flex gap-1">
+            {/* Minimal progress indicator */}
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <div className="flex gap-2">
                 {Array.from({ length: wordCount }, (_, index) => (
                   <div 
                     key={index}
-                    className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-400 to-indigo-400"
+                    className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-400 to-indigo-400 shadow-sm"
                   />
                 ))}
               </div>
-              <span>{wordCount} times configured</span>
+              <div className="text-sm text-gray-500 font-medium">
+                {wordCount} delivery {wordCount === 1 ? 'time' : 'times'} set
+              </div>
             </div>
           </div>
         )}
