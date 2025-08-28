@@ -116,117 +116,165 @@ const CustomTimePicker: React.FC<{
       return;
     }
     const formattedTime = `${sliderHours}:${sliderMinutes.toString().padStart(2, '0')} ${period}`;
-    console.log('Slider change - formatted time:', formattedTime);
     const time24 = formatTimeTo24Hour(formattedTime);
-    console.log('Slider change - time24:', time24);
     onChange(time24);
     setIsOpen(false);
   };
 
-  
-  const safeFormatTime = (timeValue: string): string => {
-    try {
-      // Ensure the time value is in HH:mm format
-      const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-      if (!timeRegex.test(timeValue)) {
-        return '09:00'; // fallback to default time
-      }
-      const date = parse(timeValue, 'HH:mm', new Date());
-      return format(date, 'HH:mm');
-    } catch (error) {
-      console.error('Error formatting time:', error);
-      return '09:00'; // fallback to default time
-    }
-  };
+  const quickTimes = [
+    { label: '9:00 AM', value: '09:00' },
+    { label: '12:00 PM', value: '12:00' },
+    { label: '3:00 PM', value: '15:00' },
+    { label: '6:00 PM', value: '18:00' },
+    { label: '9:00 PM', value: '21:00' }
+  ];
 
-  return <div className="flex items-center gap-2">
+  return (
+    <div className="flex items-center gap-2">
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" className="h-10 px-4 text-sm border-border bg-background focus:border-primary transition-all font-mono tracking-wide">
-            {formatTimeTo12Hour(value)}
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-lg bg-white/95 backdrop-blur border-0 shadow-xl">
-          <div className="text-center mb-6">
-            <h3 className="text-lg font-bold mb-4 text-foreground">Set Time</h3>
-            <div className="text-3xl font-mono bg-gradient-to-r from-primary/10 to-primary/5 p-4 rounded-xl border border-primary/20 text-primary">
-              {sliderHours}:{sliderMinutes.toString().padStart(2, '0')} {period}
-            </div>
-          </div>
-          
-          {/* Slider Controls */}
-          <div className="space-y-6 mb-6">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-foreground">Hours</label>
-                <Select value={period} onValueChange={(value: 'AM' | 'PM') => setPeriod(value)}>
-                  <SelectTrigger className="w-20 h-8 text-sm border-border bg-background">
-                    <SelectValue placeholder="AM" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="AM">AM</SelectItem>
-                    <SelectItem value="PM">PM</SelectItem>
-                  </SelectContent>
-                </Select>
+          <motion.button
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-100 hover:border-blue-200 px-6 py-3 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-sm font-bold">
+                <Clock className="w-4 h-4" />
               </div>
-              <Slider
-                value={[sliderHours]}
-                onValueChange={(value) => setSliderHours(value[0])}
-                min={1}
-                max={12}
-                step={1}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground px-1">
-                <span>1</span>
-                <span>12</span>
+              <div className="text-left">
+                <div className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                  {formatTimeTo12Hour(value).split(' ')[0]}
+                </div>
+                <div className="text-xs font-medium text-blue-500 uppercase tracking-wide">
+                  {formatTimeTo12Hour(value).split(' ')[1]}
+                </div>
+              </div>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-indigo-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          </motion.button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-lg bg-white/95 backdrop-blur-xl border-0 shadow-2xl rounded-3xl">
+          <div className="p-6">
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
+                <Clock className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold mb-2 text-gray-900">Set Time</h3>
+              <div className="text-4xl font-mono bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border-2 border-blue-100 text-blue-600">
+                {sliderHours}:{sliderMinutes.toString().padStart(2, '0')} {period}
               </div>
             </div>
             
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-foreground">Minutes</label>
-              <Slider
-                value={[sliderMinutes]}
-                onValueChange={(value) => setSliderMinutes(value[0])}
-                min={0}
-                max={59}
-                step={1}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground px-1">
-                <span>00</span>
-                <span>59</span>
+            {/* Quick Time Buttons */}
+            <div className="mb-6">
+              <label className="text-sm font-semibold text-gray-700 mb-3 block">Quick Select</label>
+              <div className="grid grid-cols-5 gap-2">
+                {quickTimes.map((time) => (
+                  <motion.button
+                    key={time.value}
+                    onClick={() => {
+                      onChange(time.value);
+                      setIsOpen(false);
+                    }}
+                    className="px-3 py-2 text-xs font-medium rounded-xl bg-gray-100 hover:bg-blue-100 hover:text-blue-600 transition-all duration-200"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    {time.label}
+                  </motion.button>
+                ))}
               </div>
             </div>
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1">
-              Cancel
-            </Button>
-            <Button onClick={handleSliderChange} className="flex-1 bg-primary hover:bg-primary/90">
-              Set Time
-            </Button>
+            
+            {/* Custom Time Sliders */}
+            <div className="space-y-6 mb-8">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold text-gray-700">Hours</label>
+                  <div className="flex gap-2">
+                    <motion.button
+                      onClick={() => setPeriod('AM')}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                        period === 'AM' 
+                          ? 'bg-blue-500 text-white shadow-lg' 
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      AM
+                    </motion.button>
+                    <motion.button
+                      onClick={() => setPeriod('PM')}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                        period === 'PM' 
+                          ? 'bg-blue-500 text-white shadow-lg' 
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      PM
+                    </motion.button>
+                  </div>
+                </div>
+                <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl">
+                  <Slider
+                    value={[sliderHours]}
+                    onValueChange={(value) => setSliderHours(value[0])}
+                    min={1}
+                    max={12}
+                    step={1}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 mt-2 px-2">
+                    <span>1</span>
+                    <span>6</span>
+                    <span>12</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <label className="text-sm font-semibold text-gray-700">Minutes</label>
+                <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl">
+                  <Slider
+                    value={[sliderMinutes]}
+                    onValueChange={(value) => setSliderMinutes(value[0])}
+                    min={0}
+                    max={59}
+                    step={5}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 mt-2 px-2">
+                    <span>00</span>
+                    <span>30</span>
+                    <span>59</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsOpen(false)} 
+                className="flex-1 rounded-xl border-gray-200 hover:bg-gray-50"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSliderChange} 
+                className="flex-1 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-medium shadow-lg"
+              >
+                Set Time
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
-      
-      <Select value={period} onValueChange={(value: 'AM' | 'PM') => {
-      setPeriod(value);
-      const currentTime = `${sliderHours}:${sliderMinutes.toString().padStart(2, '0')}`;
-      const newTime24 = formatTimeTo24Hour(`${currentTime} ${value}`);
-      onChange(newTime24);
-    }}>
-        <SelectTrigger className="w-20 h-10 text-sm border-border bg-background focus:border-primary transition-all">
-          <SelectValue placeholder={period} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="AM">AM</SelectItem>
-          <SelectItem value="PM">PM</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>;
+    </div>
+  );
 };
 const timeSlotEmojis = ['🌅', '☀️', '🌤️', '🌆', '🌙'];
 const MotionButton = motion(Button);
@@ -587,32 +635,67 @@ const WordScheduler: React.FC<WordSchedulerProps> = ({
           </div>
         ) : (
           <div className="mb-6">
-            <div className="text-[13px] leading-5 font-medium text-muted-foreground mb-3 flex items-center gap-2">
-              <div className="w-1 h-4 bg-primary rounded-full"></div>
+            <div className="text-[13px] leading-5 font-medium text-muted-foreground mb-4 flex items-center gap-2">
+              <div className="w-1 h-4 bg-gradient-to-b from-blue-500 to-indigo-500 rounded-full"></div>
               Custom delivery times
             </div>
-            <div className="space-y-2">
+            <div className="grid gap-3">
               {Array.from({ length: wordCount }, (_, index) => (
                 <MotionDiv 
                   key={index} 
-                  className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:border-primary/30 transition-all duration-200" 
+                  className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-50 to-blue-50/30 border-2 border-gray-100 hover:border-blue-200 p-4 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5" 
                   whileHover={{ scale: 1.01 }} 
-                  transition={{ duration: 0.15 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-semibold">
-                      {index + 1}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 text-white rounded-2xl flex items-center justify-center text-sm font-bold shadow-lg">
+                          {index + 1}
+                        </div>
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white flex items-center justify-center">
+                          <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                          Word {index + 1}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Vocabulary delivery #{index + 1}
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-sm font-medium text-foreground">Word {index + 1}</span>
+                    
+                    <CustomTimePicker 
+                      value={settings.customTimes[index] || '09:00'} 
+                      onChange={time => handleCustomTimeChange(index, time)} 
+                      index={index} 
+                    />
                   </div>
                   
-                  <CustomTimePicker 
-                    value={settings.customTimes[index] || '09:00'} 
-                    onChange={time => handleCustomTimeChange(index, time)} 
-                    index={index} 
-                  />
+                  {/* Decorative gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-indigo-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                  
+                  {/* Time slot indicator */}
+                  <div className="absolute top-2 right-2 opacity-20 group-hover:opacity-40 transition-opacity">
+                    <Clock className="w-4 h-4 text-blue-500" />
+                  </div>
                 </MotionDiv>
               ))}
+            </div>
+            
+            {/* Progress indicator */}
+            <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
+              <div className="flex gap-1">
+                {Array.from({ length: wordCount }, (_, index) => (
+                  <div 
+                    key={index}
+                    className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-400 to-indigo-400"
+                  />
+                ))}
+              </div>
+              <span>{wordCount} times configured</span>
             </div>
           </div>
         )}
