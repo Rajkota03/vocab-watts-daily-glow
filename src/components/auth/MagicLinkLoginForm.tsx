@@ -59,11 +59,6 @@ const PasswordLoginForm = () => {
 
   return (
     <div className="relative z-10">
-      <div className="text-center mb-6">
-        <h3 className="text-xl font-bold mb-2">Welcome Back</h3>
-        <p className="text-gray-600 text-sm">Enter your email and password to log in</p>
-      </div>
-
       <form onSubmit={handleLogin} className="space-y-4">
         {/* Email */}
         <div>
