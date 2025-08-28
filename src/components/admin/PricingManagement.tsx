@@ -238,11 +238,24 @@ const PricingManagement = () => {
             )}
           </Button>
 
+          {/* Test Refresh Button */}
+          <Button 
+            variant="outline"
+            onClick={() => {
+              // Force refresh all pricing displays
+              window.location.reload();
+            }}
+            className="w-full"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh All Pricing Displays
+          </Button>
+
           {/* Warning */}
           <Alert>
             <AlertDescription>
-              Changes to pricing will be reflected across the entire website immediately. 
-              Make sure to test the payment flow after making changes.
+              Changes to pricing will be reflected across the entire website immediately via real-time updates.
+              If pricing doesn't update on other pages, use the "Refresh All Pricing Displays" button above.
             </AlertDescription>
           </Alert>
         </CardContent>
