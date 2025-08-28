@@ -668,27 +668,7 @@ export type Database = {
       }
     }
     Views: {
-      public_profiles: {
-        Row: {
-          created_at: string | null
-          first_name: string | null
-          id: string | null
-          nick_name: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          first_name?: string | null
-          id?: string | null
-          nick_name?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          first_name?: string | null
-          id?: string | null
-          nick_name?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       cleanup_expired_otp_codes: {
@@ -713,6 +693,15 @@ export type Database = {
       }
       get_public_profile_info: {
         Args: { profile_user_id: string }
+        Returns: {
+          created_at: string
+          first_name: string
+          id: string
+          nick_name: string
+        }[]
+      }
+      get_safe_profile_data: {
+        Args: { requesting_user_id?: string }
         Returns: {
           created_at: string
           first_name: string
