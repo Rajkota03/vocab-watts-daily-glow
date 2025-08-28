@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
-import { RefreshCw, Search, Calendar, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { RefreshCw, Search, Calendar, CheckCircle, XCircle, Clock, Mail, TestTube } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface DailyReportData {
@@ -29,6 +29,7 @@ const DailyReportTab = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [testingEmail, setTestingEmail] = useState(false);
   const { toast } = useToast();
 
   const fetchDailyReport = async () => {
@@ -173,6 +174,30 @@ const DailyReportTab = () => {
     }
   };
 
+  const sendTestEmail = async () => {
+    try {
+      setTestingEmail(true);
+      
+      const { error } = await supabase.functions.invoke('test-daily-report');
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Test daily report email sent successfully!"
+      });
+    } catch (error) {
+      console.error('Error sending test email:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send test email",
+        variant: "destructive"
+      });
+    } finally {
+      setTestingEmail(false);
+    }
+  };
+
   useEffect(() => {
     fetchDailyReport();
   }, [selectedDate]);
@@ -221,6 +246,10 @@ const DailyReportTab = () => {
           <Button onClick={fetchDailyReport} disabled={loading} variant="outline">
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
+          </Button>
+          <Button onClick={sendTestEmail} disabled={testingEmail} variant="secondary">
+            <TestTube className={`h-4 w-4 mr-2 ${testingEmail ? 'animate-pulse' : ''}`} />
+            {testingEmail ? 'Sending...' : 'Test Email'}
           </Button>
         </div>
       </div>
