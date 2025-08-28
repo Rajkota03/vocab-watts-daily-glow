@@ -1,12 +1,13 @@
 
 import React from 'react';
-import { useLocation, Navigate } from 'react-router-dom';
+import { useLocation, Navigate, Link } from 'react-router-dom';
 import { RegisterForm } from '@/components/auth/RegisterForm';
-import { Lock } from 'lucide-react';
+import { Lock, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useRazorpay } from '@/hooks/useRazorpay';
+import { Button } from '@/components/ui/button';
 import type { RegisterFormValues } from '@/types/auth';
 
 interface LocationState {
@@ -57,7 +58,7 @@ const Payment = () => {
           contact: values.whatsappNumber
         },
         theme: {
-          color: "#9b87f5"
+          color: "#00A79D" // Use brand primary color
         },
         handler: async function(response: any) {
           try {
@@ -116,9 +117,20 @@ const Payment = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10">
       {/* Header */}
-      <div className="w-full py-4 px-6 bg-white/95 backdrop-blur-md">
-        <div className="flex items-center justify-center">
-          <img src="/logo-horizontal.svg" alt="GLINTUP" className="h-8" />
+      <div className="w-full py-4 px-6 bg-white/95 backdrop-blur-md border-b border-gray-100">
+        <div className="flex items-center justify-between max-w-6xl mx-auto">
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Link>
+          </Button>
+          
+          <Link to="/" className="flex items-center">
+            <img src="/logo-horizontal.svg" alt="GLINTUP" className="h-8" />
+          </Link>
+          
+          <div className="w-16" /> {/* Spacer for centering */}
         </div>
       </div>
 
