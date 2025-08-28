@@ -199,12 +199,12 @@ const CustomTimePicker: React.FC<{
           </div>
 
           {/* Quick Times - Popular Presets */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-amber-500" />
               <label className="text-sm font-semibold text-gray-900">Popular Times</label>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {quickTimes.map((time, timeIndex) => {
                 const isSelected = value === time.value;
                 return (
@@ -216,7 +216,7 @@ const CustomTimePicker: React.FC<{
                             onChange(time.value);
                             setIsOpen(false);
                           }}
-                          className={`p-3 rounded-xl text-left transition-all duration-200 border-2 ${
+                          className={`p-2 rounded-lg text-center transition-all duration-200 border-2 ${
                             isSelected 
                               ? 'bg-blue-50 border-blue-200 text-blue-900' 
                               : 'bg-white border-gray-200 text-gray-700 hover:border-blue-200 hover:bg-blue-25'
@@ -227,18 +227,14 @@ const CustomTimePicker: React.FC<{
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: timeIndex * 0.05 }}
                         >
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">{timeSlotEmojis[timeIndex]}</span>
-                            <div>
-                              <div className="font-semibold text-sm">{time.label}</div>
-                              <div className="text-xs text-gray-500">
-                                {timeIndex === 0 && 'Morning'}
-                                {timeIndex === 1 && 'Lunch'}
-                                {timeIndex === 2 && 'Afternoon'}
-                                {timeIndex === 3 && 'Evening'}
-                                {timeIndex === 4 && 'Night'}
-                              </div>
-                            </div>
+                          <div className="text-sm mb-1">{timeSlotEmojis[timeIndex]}</div>
+                          <div className="font-semibold text-xs">{time.label}</div>
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            {timeIndex === 0 && 'Morning'}
+                            {timeIndex === 1 && 'Lunch'}
+                            {timeIndex === 2 && 'Afternoon'}
+                            {timeIndex === 3 && 'Evening'}
+                            {timeIndex === 4 && 'Night'}
                           </div>
                         </motion.button>
                       </TooltipTrigger>
