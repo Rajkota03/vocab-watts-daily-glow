@@ -128,6 +128,36 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_audit_log: {
+        Row: {
+          accessed_profile_id: string
+          action: string
+          id: string
+          ip_address: unknown | null
+          timestamp: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          accessed_profile_id: string
+          action: string
+          id?: string
+          ip_address?: unknown | null
+          timestamp?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          accessed_profile_id?: string
+          action?: string
+          id?: string
+          ip_address?: unknown | null
+          timestamp?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -638,7 +668,27 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          created_at: string | null
+          first_name: string | null
+          id: string | null
+          nick_name: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          first_name?: string | null
+          id?: string | null
+          nick_name?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          first_name?: string | null
+          id?: string | null
+          nick_name?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       cleanup_expired_otp_codes: {
@@ -684,6 +734,14 @@ export type Database = {
       }
       is_admin_user: {
         Args: { _user_id: string }
+        Returns: boolean
+      }
+      log_profile_access: {
+        Args: { accessed_profile_id: string; action_type: string }
+        Returns: undefined
+      }
+      user_exists: {
+        Args: { user_uuid: string }
         Returns: boolean
       }
       user_owns_outbox_message: {
