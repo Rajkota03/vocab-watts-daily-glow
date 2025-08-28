@@ -49,7 +49,8 @@ const Payment = () => {
         amount: orderData.amount,
         currency: "INR",
         name: "GLINTUP",
-        description: "Pro Plan Subscription",
+        description: "GLINTUP Pro Plan - Learn vocabulary on WhatsApp",
+        image: "https://your-domain.com/logo.svg",
         order_id: orderData.id,
         prefill: {
           name: `${values.firstName} ${values.lastName}`,
@@ -116,9 +117,12 @@ const Payment = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#9b87f5]/10 to-[#7E69AB]/10 py-12 px-4">
       <div className="container max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-[#9b87f5] to-[#7E69AB]">
-          Subscribe to Pro Plan - ₹249/month
-        </h1>
+        <div className="text-center mb-8">
+          <img src="/logo-horizontal.svg" alt="GLINTUP" className="h-12 mx-auto mb-4" />
+          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#9b87f5] to-[#7E69AB]">
+            Subscribe to Pro Plan - ₹249/month
+          </h1>
+        </div>
         
         <div className="grid md:grid-cols-2 gap-8">
           {/* Left side - Registration form */}
