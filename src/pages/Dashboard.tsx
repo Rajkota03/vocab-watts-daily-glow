@@ -184,23 +184,33 @@ const Dashboard = () => {
       
       if (error) throw error;
       
+      // Update existing subscription record instead of upserting
       const { error: subscriptionError } = await supabase
         .from('user_subscriptions')
-        .upsert({
-          user_id: (await supabase.auth.getUser()).data.user?.id,
-          category: fullCategory, // Use the full category instead of just primary
-          is_pro: subscription.is_pro,
-          phone_number: subscription.phone_number || '+1234567890'
-        });
+        .update({
+          category: fullCategory
+        })
+        .eq('user_id', session?.user?.id);
       
       if (subscriptionError) {
         console.error('Error updating subscription:', subscriptionError);
+        toast({
+          title: 'Error',
+          description: 'Failed to save category settings',
+          variant: 'destructive'
+        });
+        return;
       }
       
       setSubscription(prev => ({
         ...prev,
-        category: fullCategory // Update with the full category
+        category: fullCategory
       }));
+      
+      toast({
+        title: 'Category Updated',
+        description: `Switched to ${fullCategory.replace('-', ' ')} category`,
+      });
     } catch (error: any) {
       toast({
         title: 'Error',
