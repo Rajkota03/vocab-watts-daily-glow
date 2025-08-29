@@ -15,7 +15,11 @@ import {
   Calendar,
   Settings,
   TrendingUp,
-  Activity
+  Activity,
+  Wrench,
+  Database,
+  Shield,
+  Zap
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -246,6 +250,153 @@ const SchedulerTab = () => {
   const getDeliveryRate = () => {
     const total = stats.deliveredToday + stats.failedToday;
     return total > 0 ? ((stats.deliveredToday / total) * 100).toFixed(1) : '0';
+  };
+
+  const repairInvalidDates = async () => {
+    try {
+      setLoading(true);
+      
+      // Fix invalid subscription dates
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .update({
+          subscription_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          trial_ends_at: null
+        })
+        .is('subscription_ends_at', null)
+        .eq('is_pro', true);
+
+      if (error) throw error;
+
+      toast({
+        title: "Date Repair Complete",
+        description: "Fixed invalid subscription dates",
+      });
+
+      setTimeout(fetchSchedulerData, 1000);
+    } catch (error) {
+      console.error('Error repairing dates:', error);
+      toast({
+        title: "Error",
+        description: "Failed to repair invalid dates",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const repairDeliverySettings = async () => {
+    try {
+      setLoading(true);
+      
+      // Get users without delivery settings
+      const { data: usersWithoutSettings, error: usersError } = await supabase
+        .from('user_subscriptions')
+        .select('user_id')
+        .not('user_id', 'is', null);
+
+      if (usersError) throw usersError;
+
+      if (usersWithoutSettings) {
+        for (const user of usersWithoutSettings) {
+          await supabase
+            .from('user_delivery_settings')
+            .upsert({
+              user_id: user.user_id,
+              mode: 'auto',
+              words_per_day: 3,
+              auto_window_start: '09:00:00',
+              auto_window_end: '21:00:00',
+              timezone: 'UTC'
+            }, { onConflict: 'user_id' });
+        }
+      }
+
+      toast({
+        title: "Settings Repair Complete",
+        description: `Created delivery settings for ${usersWithoutSettings?.length || 0} users`,
+      });
+
+      setTimeout(fetchSchedulerData, 1000);
+    } catch (error) {
+      console.error('Error repairing settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to repair delivery settings",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const validateSubscriptions = async () => {
+    try {
+      setLoading(true);
+      
+      // Remove subscriptions with invalid user_ids
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .delete()
+        .is('phone_number', null);
+
+      if (error) throw error;
+
+      toast({
+        title: "Validation Complete",
+        description: "Cleaned invalid subscription records",
+      });
+
+      setTimeout(fetchSchedulerData, 1000);
+    } catch (error) {
+      console.error('Error validating subscriptions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to validate subscriptions",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const emergencyReschedule = async () => {
+    try {
+      setLoading(true);
+      
+      // Clear today's failed outbox messages and retrigger scheduler
+      const today = new Date().toISOString().split('T')[0];
+      await supabase
+        .from('outbox_messages')
+        .delete()
+        .gte('created_at', `${today}T00:00:00Z`)
+        .lt('created_at', `${today}T23:59:59Z`)
+        .eq('status', 'failed');
+
+      // Trigger scheduler
+      const { error } = await supabase.functions.invoke('daily-scheduler', {
+        body: { manual_trigger: true, emergency: true }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Emergency Reschedule Complete",
+        description: "Cleared failed messages and retrigggered scheduler",
+      });
+
+      setTimeout(fetchSchedulerData, 2000);
+    } catch (error) {
+      console.error('Error in emergency reschedule:', error);
+      toast({
+        title: "Error",
+        description: "Failed to perform emergency reschedule",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -485,6 +636,150 @@ const SchedulerTab = () => {
             </Button>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Health Repair Controls */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Wrench className="h-5 w-5" />
+          <h3 className="text-xl font-semibold">Health Repair Controls</h3>
+          <Badge variant="outline">Auto-Fix Issues</Badge>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="border-orange-200 bg-orange-50/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Database className="h-4 w-4 text-orange-600" />
+                Fix Invalid Dates
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Repair subscription dates causing scheduler errors
+              </p>
+              <Button
+                onClick={repairInvalidDates}
+                disabled={loading}
+                size="sm"
+                className="w-full"
+                variant="outline"
+              >
+                {loading ? (
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                ) : (
+                  <>
+                    <Database className="mr-2 h-3 w-3" />
+                    Repair Dates
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-blue-200 bg-blue-50/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Settings className="h-4 w-4 text-blue-600" />
+                Fix Delivery Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Create missing user delivery configurations
+              </p>
+              <Button
+                onClick={repairDeliverySettings}
+                disabled={loading}
+                size="sm"
+                className="w-full"
+                variant="outline"
+              >
+                {loading ? (
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                ) : (
+                  <>
+                    <Settings className="mr-2 h-3 w-3" />
+                    Repair Settings
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-purple-200 bg-purple-50/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Shield className="h-4 w-4 text-purple-600" />
+                Validate Subscriptions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Clean invalid or corrupted subscription records
+              </p>
+              <Button
+                onClick={validateSubscriptions}
+                disabled={loading}
+                size="sm"
+                className="w-full"
+                variant="outline"
+              >
+                {loading ? (
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                ) : (
+                  <>
+                    <Shield className="mr-2 h-3 w-3" />
+                    Validate Data
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-red-200 bg-red-50/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Zap className="h-4 w-4 text-red-600" />
+                Emergency Reschedule
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Clear failed messages and restart scheduling
+              </p>
+              <Button
+                onClick={emergencyReschedule}
+                disabled={loading}
+                size="sm"
+                className="w-full"
+                variant="destructive"
+              >
+                {loading ? (
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                ) : (
+                  <>
+                    <Zap className="mr-2 h-3 w-3" />
+                    Emergency Fix
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <p className="text-sm font-medium">Health Repair Guide:</p>
+            <ul className="text-sm mt-1 space-y-1">
+              <li><strong>Fix Invalid Dates:</strong> Resolves "Invalid time value" errors by setting proper subscription end dates</li>
+              <li><strong>Fix Delivery Settings:</strong> Creates default delivery preferences for users without settings</li>
+              <li><strong>Validate Subscriptions:</strong> Removes corrupted subscription records that cause processing failures</li>
+              <li><strong>Emergency Reschedule:</strong> Nuclear option - clears today's failed messages and restarts the entire process</li>
+            </ul>
+          </AlertDescription>
+        </Alert>
       </div>
 
       {/* Scheduler Information */}
