@@ -94,7 +94,6 @@ serve(async (req) => {
       .from('outbox_messages')
       .delete()
       .eq('user_id', userId)
-      .eq('status', 'queued')
       .gte('send_at', `${today}T00:00:00.000Z`)
       .lt('send_at', `${today}T23:59:59.999Z`);
 
