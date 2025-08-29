@@ -29,9 +29,29 @@ const Dashboard = () => {
   const [wordCount, setWordCount] = useState(3);
   const [customDeliveryMode, setCustomDeliveryMode] = useState(false);
 
-  const handleWordCountChange = (count: number) => {
+  const handleWordCountChange = async (count: number) => {
     console.log('Dashboard - Word count changing to:', count);
     setWordCount(count);
+    
+    // Save to delivery settings
+    if (session?.user?.id) {
+      try {
+        const { error } = await supabase
+          .from('user_delivery_settings')
+          .upsert({
+            user_id: session.user.id,
+            words_per_day: count,
+            mode: customDeliveryMode ? 'custom' : 'auto',
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+          });
+        
+        if (error) {
+          console.error('Error saving word count:', error);
+        }
+      } catch (error) {
+        console.error('Error updating word count:', error);
+      }
+    }
   };
   
   const { toast } = useToast();
@@ -111,6 +131,18 @@ const Dashboard = () => {
           
         if (wordsData) {
           setWordsLearnedThisMonth(wordsData.length);
+        }
+
+        // Load delivery settings including word count
+        const { data: deliverySettings } = await supabase
+          .from('user_delivery_settings')
+          .select('words_per_day, mode')
+          .eq('user_id', session.user.id)
+          .single();
+          
+        if (deliverySettings) {
+          setWordCount(deliverySettings.words_per_day || 3);
+          setCustomDeliveryMode(deliverySettings.mode === 'custom');
         }
       } catch (error) {
         console.error('Error loading user data:', error);
