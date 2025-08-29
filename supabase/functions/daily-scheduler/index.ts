@@ -97,10 +97,11 @@ serve(async (req) => {
     
     console.log(`Scheduling words for date: ${today}`);
 
-    // Get all active subscriptions (trial or pro)
+    // Get all active subscriptions (trial or pro) with valid user_id
     const { data: subscriptions, error: subsError } = await supabase
       .from('user_subscriptions')
       .select('*')
+      .not('user_id', 'is', null)  // Only include subscriptions with valid user_id
       .or(`trial_ends_at.gte.${now.toISOString()},subscription_ends_at.gte.${now.toISOString()},and(is_pro.eq.true,subscription_ends_at.is.null)`);
 
     if (subsError) {
@@ -111,9 +112,17 @@ serve(async (req) => {
     console.log(`Found ${subscriptions?.length || 0} active subscriptions`);
 
     const results = [];
+    let processedCount = 0;
+    let skippedCount = 0;
 
     for (const subscription of subscriptions || []) {
       try {
+        // Skip if no valid user_id (this should be filtered out above, but double-check)
+        if (!subscription.user_id) {
+          console.log(`Skipping subscription ${subscription.id} - no user_id`);
+          skippedCount++;
+          continue;
+        }
         // Check if already scheduled for today
         const { data: existingSchedule } = await supabase
           .from('outbox_messages')
@@ -133,11 +142,12 @@ serve(async (req) => {
           .from('user_delivery_settings')
           .select('*')
           .eq('user_id', subscription.user_id)
-          .single();
+          .maybeSingle();
 
         if (!settings && subscription.user_id) {
+          console.log(`Creating default delivery settings for user ${subscription.user_id}`);
           // Create default settings
-          const { data: newSettings } = await supabase
+          const { data: newSettings, error: createError } = await supabase
             .from('user_delivery_settings')
             .insert({
               user_id: subscription.user_id,
@@ -149,6 +159,18 @@ serve(async (req) => {
             })
             .select()
             .single();
+            
+          if (createError) {
+            console.error(`Error creating delivery settings for user ${subscription.user_id}:`, createError);
+            results.push({
+              subscriptionId: subscription.id,
+              phone: subscription.phone_number,
+              status: 'failed',
+              error: 'Failed to create delivery settings'
+            });
+            skippedCount++;
+            continue;
+          }
           settings = newSettings;
         }
 
@@ -264,6 +286,8 @@ serve(async (req) => {
           deliveryTimes: deliveryTimes,
           words: words.map(w => w.word)
         });
+        
+        processedCount++;
 
       } catch (error) {
         console.error(`Error processing subscription ${subscription.id}:`, error);
@@ -273,7 +297,16 @@ serve(async (req) => {
           status: 'failed',
           error: error.message
         });
+        skippedCount++;
       }
+    }
+
+    console.log(`Processing complete: ${processedCount} processed, ${skippedCount} skipped`);
+    
+    // Alert if significantly fewer messages were scheduled than expected
+    const successfullyScheduled = results.filter(r => r.status === 'scheduled').length;
+    if (successfullyScheduled < (subscriptions?.length || 0) * 0.8) {
+      console.warn(`WARNING: Only ${successfullyScheduled}/${subscriptions?.length || 0} subscriptions were successfully scheduled!`);
     }
 
     // Send admin notification email
@@ -283,6 +316,9 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         date: today,
+        total_subscriptions: subscriptions?.length || 0,
+        processed_count: processedCount,
+        skipped_count: skippedCount,
         processedSubscriptions: results.length,
         results
       }),
