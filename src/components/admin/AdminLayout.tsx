@@ -31,6 +31,7 @@ const navItems: NavItem[] = [
   { title: 'Prompt Manager', icon: FileText, value: 'prompts', path: '/admin' },
   { title: 'WhatsApp Setup', icon: Phone, value: 'whatsapp-setup', path: '/admin/whatsapp-setup' },
   { title: 'Daily Report', icon: Calendar, value: 'daily-report', path: '/admin' },
+  { title: 'Scheduler Control', icon: Zap, value: 'scheduler', path: '/admin' },
   { title: 'Word Delivery', icon: Truck, value: 'word-delivery', path: '/admin' },
   
   { title: 'Subscriptions', icon: BarChart2, value: 'subscriptions', path: '/admin' },

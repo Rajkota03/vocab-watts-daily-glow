@@ -14,6 +14,7 @@ import SettingsTab from './admin/tabs/SettingsTab';
 import UserRolesTab from './admin/tabs/UserRolesTab';
 import PromptManagerTab from './admin/tabs/PromptManagerTab';
 import DailyReportTab from './admin/tabs/DailyReportTab';
+import SchedulerTab from './admin/tabs/SchedulerTab';
 import { WordDeliveryMonitor } from './admin/WordDeliveryMonitor';
 
 
@@ -71,6 +72,8 @@ const AdminDashboard = () => {
         return <MessagesSetupTab key={refreshKey} />;
       case 'daily-report':
         return <DailyReportTab key={refreshKey} />;
+      case 'scheduler':
+        return <SchedulerTab key={refreshKey} />;
       case 'word-delivery':
         return <WordDeliveryMonitor key={refreshKey} />;
       case 'activity':
