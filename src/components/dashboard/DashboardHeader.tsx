@@ -33,13 +33,20 @@ const DashboardHeader = ({
         </div>
       </div>
     
-      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
         <div className="hidden md:block text-right mr-2">
           <p className="font-medium">Hey, {userNickname || 'there'}</p>
           <p className="text-xs text-gray-500">
             {wordsLearnedThisMonth} words learned this month
           </p>
         </div>
+        
+        <Link to="/settings">
+          <Button variant="ghost" size="sm" title="Settings">
+            <Settings className="h-4 w-4" />
+            <span className="sr-only">Settings</span>
+          </Button>
+        </Link>
         
         <Button variant="ghost" size="sm" onClick={handleSignOut} title="Sign out">
           <LogOut className="h-4 w-4" />

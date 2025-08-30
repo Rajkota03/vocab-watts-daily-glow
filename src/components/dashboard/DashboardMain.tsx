@@ -4,7 +4,6 @@ import { cn } from '@/lib/utils';
 import WordScheduler from './WordScheduler';
 import PhoneNumberUpdateForm from './PhoneNumberUpdateForm';
 import { useAuthHandler } from '@/hooks/useAuthHandler';
-import { SubscriptionManager } from './SubscriptionManager';
 interface DashboardMainProps {
   subscription: {
     is_pro: boolean;
@@ -48,8 +47,20 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
               <PhoneNumberUpdateForm currentPhoneNumber={subscription.phone_number} userId={userId} onUpdate={handlePhoneNumberUpdate} />
             </div>}
 
-          {/* Subscription Management Section */}
-          <SubscriptionManager userId={userId} />
+          {/* Subscription Status Display (minimal) */}
+          {subscription.is_pro && (
+            <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-4 rounded-lg border border-primary/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="font-medium text-primary">Pro Plan Active</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>Premium features unlocked</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Section for Learning Settings - First */}
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">

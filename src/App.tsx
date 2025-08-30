@@ -6,6 +6,7 @@ import Onboarding from './pages/Onboarding';
 import Upgrade from './pages/Upgrade';
 import Payment from './pages/Payment';
 import Dashboard from './pages/Dashboard';
+import Settings from './pages/Settings';
 import Admin from './pages/Admin';
 import WhatsAppSetup from './pages/WhatsAppSetup';
 import Terms from './pages/Terms';
@@ -39,6 +40,11 @@ function App() {
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <Settings />
             </ProtectedRoute>
           } />
           <Route path="/admin" element={
