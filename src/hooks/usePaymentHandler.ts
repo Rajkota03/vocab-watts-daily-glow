@@ -67,16 +67,18 @@ export const usePaymentHandler = ({ razorpayLoaded }: PaymentHandlerOptions) => 
         amount: orderResult.data.amount,
         currency: orderResult.data.currency,
         name: 'GLINTUP',
-        description: 'Vocabulary Pro Subscription',
-        order_id: orderResult.data.id,
+        description: orderResult.data.type === 'subscription' ? 'Vocabulary Pro Monthly Subscription' : 'Vocabulary Pro Subscription',
+        order_id: orderResult.data.type === 'subscription' ? undefined : orderResult.data.id,
+        subscription_id: orderResult.data.type === 'subscription' ? orderResult.data.subscription_id : undefined,
         handler: async function(response: any) {
           try {
             const subscriptionResult = await completeSubscription({
               phoneNumber,
               category,
               isPro: true,
-              razorpayOrderId: response.razorpay_order_id,
+              razorpayOrderId: response.razorpay_order_id || orderResult.data.id,
               razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySubscriptionId: response.razorpay_subscription_id || orderResult.data.subscription_id,
               deliveryTime: '10:00'
             });
 

@@ -10,6 +10,7 @@ export interface PaymentData {
   deliveryTime?: string;
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
+  razorpaySubscriptionId?: string;
   userId?: string; // Add userId parameter
 }
 
@@ -24,6 +25,7 @@ export const createRazorpayOrder = async (data: Omit<PaymentData, 'razorpayOrder
 
     const { data: orderData, error } = await supabase.functions.invoke('create-razorpay-order', {
       body: {
+        amount: 79900, // ₹799 in paise
         phoneNumber: data.phoneNumber,
         category: data.category,
         isPro: data.isPro
@@ -130,6 +132,9 @@ export const completeSubscription = async (data: PaymentData) => {
     if (data.isPro && data.razorpayOrderId && data.razorpayPaymentId) {
       subscriptionData.razorpay_order_id = data.razorpayOrderId;
       subscriptionData.razorpay_payment_id = data.razorpayPaymentId;
+      if (data.razorpaySubscriptionId) {
+        subscriptionData.razorpay_subscription_id = data.razorpaySubscriptionId;
+      }
     }
 
     console.log('Inserting subscription with data:', JSON.stringify(subscriptionData));
