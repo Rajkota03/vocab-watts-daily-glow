@@ -177,7 +177,7 @@ const Settings = () => {
                 className="mr-4"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
+                Dashboard
               </Button>
               <h1 className="text-lg font-semibold">Settings</h1>
             </div>
