@@ -49,7 +49,8 @@ serve(async (req) => {
             .from('user_subscriptions')
             .update({
               subscription_ends_at: new Date(subscription.current_end * 1000).toISOString(),
-              razorpay_subscription_id: subscription.id
+              razorpay_subscription_id: subscription.id,
+              subscription_status: 'active'
             })
             .eq('phone_number', phoneNumber)
           
@@ -76,7 +77,8 @@ serve(async (req) => {
             .from('user_subscriptions')
             .update({
               subscription_ends_at: newEnd.toISOString(),
-              razorpay_payment_id: payment.id
+              razorpay_payment_id: payment.id,
+              subscription_status: 'active'
             })
             .eq('phone_number', phoneNumber)
           
@@ -100,7 +102,7 @@ serve(async (req) => {
             .update({
               // Don't change subscription_ends_at - let it expire naturally
               razorpay_subscription_id: subscription.id,
-              // Could add a cancelled_at field if needed
+              subscription_status: 'cancelled'
             })
             .eq('phone_number', phoneNumber)
           
@@ -123,7 +125,8 @@ serve(async (req) => {
             .from('user_subscriptions')
             .update({
               is_pro: false,
-              subscription_ends_at: new Date().toISOString()
+              subscription_ends_at: new Date().toISOString(),
+              subscription_status: 'expired'
             })
             .eq('phone_number', phoneNumber)
           

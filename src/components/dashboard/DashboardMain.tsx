@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import WordScheduler from './WordScheduler';
 import PhoneNumberUpdateForm from './PhoneNumberUpdateForm';
 import { useAuthHandler } from '@/hooks/useAuthHandler';
+import { SubscriptionManager } from './SubscriptionManager';
 interface DashboardMainProps {
   subscription: {
     is_pro: boolean;
@@ -46,6 +47,9 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
               <h3 className="text-xl font-bold mb-4 text-gray-800">Update Your WhatsApp Number</h3>
               <PhoneNumberUpdateForm currentPhoneNumber={subscription.phone_number} userId={userId} onUpdate={handlePhoneNumberUpdate} />
             </div>}
+
+          {/* Subscription Management Section */}
+          <SubscriptionManager userId={userId} />
 
           {/* Section for Learning Settings - First */}
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">

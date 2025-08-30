@@ -437,7 +437,9 @@ export type Database = {
           phone_number: string
           razorpay_order_id: string | null
           razorpay_payment_id: string | null
+          razorpay_subscription_id: string | null
           subscription_ends_at: string | null
+          subscription_status: string | null
           trial_ends_at: string | null
           user_id: string | null
         }
@@ -456,7 +458,9 @@ export type Database = {
           phone_number: string
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
+          razorpay_subscription_id?: string | null
           subscription_ends_at?: string | null
+          subscription_status?: string | null
           trial_ends_at?: string | null
           user_id?: string | null
         }
@@ -475,7 +479,9 @@ export type Database = {
           phone_number?: string
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
+          razorpay_subscription_id?: string | null
           subscription_ends_at?: string | null
+          subscription_status?: string | null
           trial_ends_at?: string | null
           user_id?: string | null
         }
@@ -707,6 +713,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cancel_user_subscription: {
+        Args: { user_id_param: string }
+        Returns: Json
+      }
       cleanup_expired_otp_codes: {
         Args: Record<PropertyKey, never>
         Returns: undefined

@@ -7,6 +7,7 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardMain from '@/components/dashboard/DashboardMain';
 import { useAuthHandler } from '@/hooks/useAuthHandler';
 import PhoneNumberUpdateForm from '@/components/dashboard/PhoneNumberUpdateForm';
+import { SubscriptionManager } from '@/components/dashboard/SubscriptionManager';
 
 interface UserSubscription {
   is_pro: boolean;
