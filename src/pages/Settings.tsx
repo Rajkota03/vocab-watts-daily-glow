@@ -176,7 +176,6 @@ const Settings = () => {
                 onClick={() => navigate('/dashboard')}
                 className="mr-4"
               >
-                <ArrowLeft className="h-4 w-4 mr-2" />
                 Dashboard
               </Button>
               <h1 className="text-lg font-semibold">Settings</h1>
