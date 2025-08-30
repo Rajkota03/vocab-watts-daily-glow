@@ -178,7 +178,6 @@ const Settings = () => {
               >
                 Dashboard
               </Button>
-              <h1 className="text-lg font-semibold">Settings</h1>
             </div>
           </div>
         </div>
@@ -186,6 +185,7 @@ const Settings = () => {
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-lg font-semibold mb-6">Settings</h1>
         <Accordion type="single" collapsible className="space-y-4">
           {/* Subscription Management */}
           <AccordionItem value="subscription" className="border rounded-lg">
