@@ -9,9 +9,10 @@ import { format } from 'date-fns';
 
 interface SubscriptionManagerProps {
   userId: string | null;
+  showManageLink?: boolean;
 }
 
-export const SubscriptionManager = ({ userId }: SubscriptionManagerProps) => {
+export const SubscriptionManager = ({ userId, showManageLink = true }: SubscriptionManagerProps) => {
   const [isCancelling, setIsCancelling] = useState(false);
   const { 
     is_pro, 
@@ -79,7 +80,7 @@ export const SubscriptionManager = ({ userId }: SubscriptionManagerProps) => {
           <CreditCard className="h-5 w-5" />
           Subscription Status
         </CardTitle>
-        <CardDescription>Manage your Pro subscription</CardDescription>
+        <CardDescription>Your Pro subscription details</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
@@ -107,47 +108,68 @@ export const SubscriptionManager = ({ userId }: SubscriptionManagerProps) => {
               </div>
             )}
           </div>
-          
-          {isActive && (
+        </div>
+
+        {showManageLink && (
+          <div className="pt-2 border-t">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  Cancel Subscription
-                </Button>
+                <button 
+                  className="text-sm text-blue-600 hover:text-blue-800 underline cursor-pointer"
+                  disabled={isCancelling}
+                >
+                  Manage subscription
+                </button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
+                  <AlertDialogTitle>Manage Subscription</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to cancel your Pro subscription? You'll continue to have access to Pro features until the end of your current billing period 
-                    {subscriptionEndDate && ` (${format(subscriptionEndDate, 'PPP')})`}.
+                    {isActive ? (
+                      <>
+                        Your Pro subscription is currently active. Cancelling will stop auto-renewal, but you'll continue to have access to Pro features until the end of your current billing period
+                        {subscriptionEndDate && ` (${format(subscriptionEndDate, 'PPP')})`}.
+                      </>
+                    ) : isCancelled ? (
+                      'Your subscription has been cancelled and will not auto-renew.'
+                    ) : (
+                      'Manage your subscription settings.'
+                    )}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleCancelSubscription}
-                    disabled={isCancelling}
-                    className="bg-destructive hover:bg-destructive/90"
-                  >
-                    {isCancelling ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Cancelling...
-                      </>
-                    ) : (
-                      'Cancel Subscription'
-                    )}
-                  </AlertDialogAction>
+                  <AlertDialogCancel>Close</AlertDialogCancel>
+                  {isActive && (
+                    <AlertDialogAction
+                      onClick={handleCancelSubscription}
+                      disabled={isCancelling}
+                      className="bg-destructive hover:bg-destructive/90"
+                    >
+                      {isCancelling ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Cancelling...
+                        </>
+                      ) : (
+                        'Cancel Auto-Renewal'
+                      )}
+                    </AlertDialogAction>
+                  )}
+                  {isCancelled && (
+                    <AlertDialogAction
+                      onClick={() => {
+                        // Reactivation logic would go here
+                        console.log('Reactivate subscription');
+                      }}
+                    >
+                      Reactivate Subscription
+                    </AlertDialogAction>
+                  )}
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-          )}
-          
-          {isCancelled && (
-            <Button size="sm">Reactivate Subscription</Button>
-          )}
-        </div>
+          </div>
+        )}
 
         {isCancelled && (
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
